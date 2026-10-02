@@ -5,58 +5,74 @@ import java.util.Base64;
 import org.json.JSONArray;
 import org.json.JSONObject;
 
-/* JADX INFO: loaded from: classes.dex */
+/** The ChatGPT account ID and email carried in an OAuth ID or access token. */
 public final class JwtClaims {
+    private static final JwtClaims EMPTY = new JwtClaims("", "");
+
     public final String accountId;
     public final String email;
 
-    private JwtClaims(String str, String str2) {
-        this.accountId = str == null ? "" : str;
-        this.email = str2 == null ? "" : str2;
+    private JwtClaims(String accountId, String email) {
+        this.accountId = accountId == null ? "" : accountId;
+        this.email = email == null ? "" : email;
     }
 
-    public static JwtClaims fromTokens(String str, String str2) {
-        JwtClaims jwtClaims = parse(str);
-        JwtClaims jwtClaims2 = parse(str2);
-        return new JwtClaims(jwtClaims.accountId.isEmpty() ? jwtClaims2.accountId : jwtClaims.accountId, jwtClaims.email.isEmpty() ? jwtClaims2.email : jwtClaims.email);
+    /** Reads claims from the ID token, falling back to the access token for missing values. */
+    public static JwtClaims fromTokens(String idToken, String accessToken) {
+        JwtClaims primary = parse(idToken);
+        JwtClaims fallback = parse(accessToken);
+        return new JwtClaims(
+                primary.accountId.isEmpty() ? fallback.accountId : primary.accountId,
+                primary.email.isEmpty() ? fallback.email : primary.email);
     }
 
-    public static JwtClaims parse(String str) {
-        JSONArray jSONArrayOptJSONArray;
-        JSONObject jSONObjectOptJSONObject;
-        if (str == null) {
-            return new JwtClaims("", "");
+    public static JwtClaims parse(String token) {
+        if (token == null) {
+            return EMPTY;
         }
-        String[] strArrSplit = str.split("\\.");
-        if (strArrSplit.length != 3) {
-            return new JwtClaims("", "");
+        String[] parts = token.split("\\.");
+        if (parts.length != 3) {
+            return EMPTY;
         }
         try {
-            JSONObject jSONObject = new JSONObject(new String(Base64.getUrlDecoder().decode(pad(strArrSplit[1])), StandardCharsets.UTF_8));
-            String strOptString = jSONObject.optString("chatgpt_account_id", "");
-            JSONObject jSONObjectOptJSONObject2 = jSONObject.optJSONObject("https://api.openai.com/auth");
-            if (strOptString.isEmpty() && jSONObjectOptJSONObject2 != null) {
-                strOptString = jSONObjectOptJSONObject2.optString("chatgpt_account_id", "");
-            }
-            if (strOptString.isEmpty() && (jSONArrayOptJSONArray = jSONObject.optJSONArray("organizations")) != null && jSONArrayOptJSONArray.length() > 0 && (jSONObjectOptJSONObject = jSONArrayOptJSONArray.optJSONObject(0)) != null) {
-                strOptString = jSONObjectOptJSONObject.optString("id", "");
-            }
-            return new JwtClaims(strOptString, jSONObject.optString("email", ""));
+            byte[] payload = Base64.getUrlDecoder().decode(pad(parts[1]));
+            JSONObject claims = new JSONObject(new String(payload, StandardCharsets.UTF_8));
+            return new JwtClaims(accountId(claims), claims.optString("email", ""));
         } catch (Exception e) {
-            return new JwtClaims("", "");
+            return EMPTY;
         }
     }
 
-    private static String pad(String str) {
-        int length = str.length() % 4;
-        if (length != 0) {
-            StringBuilder sb = new StringBuilder(str);
-            while (length < 4) {
-                sb.append('=');
-                length++;
-            }
-            return sb.toString();
+    private static String accountId(JSONObject claims) {
+        String accountId = claims.optString("chatgpt_account_id", "");
+        if (!accountId.isEmpty()) {
+            return accountId;
         }
-        return str;
+        JSONObject auth = claims.optJSONObject("https://api.openai.com/auth");
+        if (auth != null) {
+            accountId = auth.optString("chatgpt_account_id", "");
+            if (!accountId.isEmpty()) {
+                return accountId;
+            }
+        }
+        JSONArray organizations = claims.optJSONArray("organizations");
+        if (organizations == null || organizations.length() == 0) {
+            return accountId;
+        }
+        JSONObject firstOrganization = organizations.optJSONObject(0);
+        return firstOrganization == null ? accountId : firstOrganization.optString("id", "");
+    }
+
+    /** Restores the Base64 padding that JWT segments omit. */
+    private static String pad(String segment) {
+        int remainder = segment.length() % 4;
+        if (remainder == 0) {
+            return segment;
+        }
+        StringBuilder padded = new StringBuilder(segment);
+        for (int count = remainder; count < 4; count++) {
+            padded.append('=');
+        }
+        return padded.toString();
     }
 }

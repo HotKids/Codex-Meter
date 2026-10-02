@@ -3,59 +3,59 @@ package dev.bennett.codexmeter;
 import android.content.Context;
 import android.content.Intent;
 import android.os.SystemClock;
-import java.io.OutputStream;
-import java.net.URI;
+import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+import org.json.JSONException;
 import org.json.JSONObject;
-import javax.net.ssl.HttpsURLConnection;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Lists and redeems Codex rate-limit reset credits over the {@link UsageApi} transport. */
 public final class ResetCreditApi {
-    private static final long DETAIL_FRESH_MS = 300000;
+    /** Cached credit details younger than this are trusted when choosing a credit to redeem. */
+    private static final long DETAIL_FRESH_MS = TimeUnit.MINUTES.toMillis(5);
 
     private ResetCreditApi() {
     }
 
     public static ResetCreditsSnapshot refreshAndCache(Context context) throws Exception {
-        ResetCreditsSnapshot resetCreditsSnapshotRefreshAndCacheLocked;
         synchronized (UsageApi.NETWORK_LOCK) {
             UsageApi.installCookieManager();
-            resetCreditsSnapshotRefreshAndCacheLocked = refreshAndCacheLocked(context, UsageApi.usableTokens(context));
+            return refreshAndCacheLocked(context, UsageApi.usableTokens(context));
         }
-        return resetCreditsSnapshotRefreshAndCacheLocked;
     }
 
-    static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens authTokens) throws Exception {
+    /** Fetches and caches the credit list; the caller must hold {@link UsageApi#NETWORK_LOCK}. */
+    static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens tokens)
+            throws Exception {
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "refresh", "reset_credit_refresh_started");
-        if (authTokens == null) {
-            authTokens = UsageApi.usableTokens(context);
+        if (tokens == null) {
+            tokens = UsageApi.usableTokens(context);
         }
-        Response responseRequest = request(context, "reset_credit_list", "GET",
-                AppConstants.RESET_CREDITS_URL, authTokens, null);
-        if (responseRequest.status == 401) {
+        UsageApi.Response response = requestCredits(context, tokens);
+        if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
             DiagnosticLog.warn(context, "auth", "reset_credit_token_rejected_refreshing");
-            AuthTokens authTokensRefresh = OAuthClient.refresh(context, authTokens);
-            SecureTokenStore.save(context, authTokensRefresh);
-            responseRequest = request(context, "reset_credit_list", "GET",
-                    AppConstants.RESET_CREDITS_URL, authTokensRefresh, null);
+            response = requestCredits(context, UsageApi.refreshAndSave(context, tokens));
         }
-        ensureSuccess(responseRequest, "Could not load Codex reset credits");
-        ResetCreditsSnapshot resetCreditsSnapshot = ResetCreditsParser.parse(responseRequest.body, System.currentTimeMillis());
-        if (!AppPreferences.saveResetCredits(context, resetCreditsSnapshot)) {
-            throw new Exception("Reset credits were received, but could not be saved on this device.");
+        ensureSuccess(response, "Could not load Codex reset credits");
+        ResetCreditsSnapshot snapshot =
+                ResetCreditsParser.parse(response.body, System.currentTimeMillis());
+        if (!AppPreferences.saveResetCredits(context, snapshot)) {
+            throw new Exception(
+                    "Reset credits were received, but could not be saved on this device.");
         }
-        ResetNotificationManager.onResetCreditsUpdated(context, resetCreditsSnapshot);
+        ResetNotificationManager.onResetCreditsUpdated(context, snapshot);
         notifyUpdated(context);
         DiagnosticLog.info(context, "refresh", "reset_credit_refresh_succeeded",
                 "duration_ms", SystemClock.elapsedRealtime() - started,
-                "available", resetCreditsSnapshot.availableCount);
-        return resetCreditsSnapshot;
+                "available", snapshot.availableCount);
+        return snapshot;
     }
 
     public static ResetConsumeResult consumeBestAvailable(Context context) throws Exception {
-        Context app = context.getApplicationContext() == null ? context : context.getApplicationContext();
+        Context app = context.getApplicationContext() == null
+                ? context : context.getApplicationContext();
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(app, "user", "reset_credit_use_requested");
         synchronized (UsageApi.NETWORK_LOCK) {
@@ -64,55 +64,35 @@ public final class ResetCreditApi {
             ResetCreditsSnapshot credits = AppPreferences.loadResetCredits(app);
             long now = System.currentTimeMillis();
 
-            if (credits == null || now - credits.fetchedAtMillis > DETAIL_FRESH_MS
-                    || credits.availableCount <= 0) {
+            if (needsRefresh(credits, now)) {
                 try {
                     credits = refreshAndCacheLocked(app, tokens);
                     tokens = UsageApi.usableTokens(app);
                 } catch (Exception exception) {
-                    if (credits == null || credits.availableCount <= 0) throw exception;
+                    // Still try to redeem when the credits on hand list one as available.
+                    if (!hasAvailableCredit(credits)) {
+                        throw exception;
+                    }
                 }
             }
-
-            if (credits == null || credits.availableCount <= 0) {
+            if (!hasAvailableCredit(credits)) {
                 return new ResetConsumeResult(ResetConsumeResult.NO_CREDIT, 0, "");
             }
 
-            JSONObject requestBody = new JSONObject();
-            requestBody.put("redeem_request_id", UUID.randomUUID().toString());
-            String preferredCreditId = credits.preferredCreditId(now);
-            if (!preferredCreditId.isEmpty()) {
-                requestBody.put(AppConstants.EXTRA_CREDIT_ID, preferredCreditId);
-            }
-            byte[] payload = requestBody.toString().getBytes(StandardCharsets.UTF_8);
-
-            Response response = request(app, "reset_credit_consume", "POST",
-                    AppConstants.RESET_CREDITS_CONSUME_URL, tokens, payload);
-            if (response.status == 401) {
+            byte[] payload = consumeRequestBody(credits, now);
+            UsageApi.Response response = requestConsume(app, tokens, payload);
+            if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
                 DiagnosticLog.warn(app, "auth", "reset_consume_token_rejected_refreshing");
-                tokens = OAuthClient.refresh(app, tokens);
-                SecureTokenStore.save(app, tokens);
-                response = request(app, "reset_credit_consume", "POST",
-                        AppConstants.RESET_CREDITS_CONSUME_URL, tokens, payload);
+                tokens = UsageApi.refreshAndSave(app, tokens);
+                response = requestConsume(app, tokens, payload);
             }
             ensureSuccess(response, "Could not apply the Codex reset");
 
-            JSONObject object = new JSONObject(response.body);
-            String code = object.optString("code", "");
-            int windowsReset = object.optInt("windows_reset", 0);
-            String message = "";
-
-            if (ResetConsumeResult.RESET.equals(code)) {
-                ResetNotificationManager.markUserReset(app, AppPreferences.loadSnapshot(app));
-                try {
-                    UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
-                    RefreshScheduler.scheduleAtNextReset(app, snapshot);
-                    ResetAlertScheduler.scheduleFromSnapshot(app, snapshot);
-                } catch (Exception exception) {
-                    message = "The reset succeeded, but the new usage values could not be loaded yet.";
-                    AppPreferences.setLastError(app, UsageApi.safeMessage(exception));
-                }
-            }
+            JSONObject result = new JSONObject(response.body);
+            String code = result.optString("code", "");
+            int windowsReset = result.optInt("windows_reset", 0);
+            String refreshWarning = ResetConsumeResult.RESET.equals(code)
+                    ? reloadUsageAfterReset(app) : "";
 
             try {
                 refreshAndCacheLocked(app, UsageApi.usableTokens(app));
@@ -125,82 +105,81 @@ public final class ResetCreditApi {
                     "result", code,
                     "windows_reset", windowsReset,
                     "duration_ms", SystemClock.elapsedRealtime() - started);
-            return new ResetConsumeResult(code, windowsReset, message);
+            return new ResetConsumeResult(code, windowsReset, refreshWarning);
         }
     }
 
-    private static Response request(Context context, String operation, String str, String str2,
-            AuthTokens authTokens, byte[] bArr) throws Exception {
-        HttpsURLConnection httpsURLConnection = (HttpsURLConnection) URI.create(str2).toURL().openConnection();
-        long started = SystemClock.elapsedRealtime();
-        DiagnosticLog.info(context, "network", "request_started",
-                "operation", operation,
-                "method", str,
-                "url", DiagnosticSanitizer.safeUrl(str2),
-                "request_bytes", bArr == null ? 0 : bArr.length);
+    private static boolean needsRefresh(ResetCreditsSnapshot credits, long now) {
+        return credits == null || now - credits.fetchedAtMillis > DETAIL_FRESH_MS
+                || credits.availableCount <= 0;
+    }
+
+    private static boolean hasAvailableCredit(ResetCreditsSnapshot credits) {
+        return credits != null && credits.availableCount > 0;
+    }
+
+    private static byte[] consumeRequestBody(ResetCreditsSnapshot credits, long now)
+            throws JSONException {
+        JSONObject request = new JSONObject();
+        request.put("redeem_request_id", UUID.randomUUID().toString());
+        String creditId = credits.preferredCreditId(now);
+        if (!creditId.isEmpty()) {
+            request.put("credit_id", creditId);
+        }
+        return request.toString().getBytes(StandardCharsets.UTF_8);
+    }
+
+    /**
+     * Records the user-initiated reset, then reloads usage and its schedules. Returns a warning
+     * for the result message when the new usage values could not be loaded.
+     */
+    private static String reloadUsageAfterReset(Context app) {
+        ResetNotificationManager.markUserReset(app, AppPreferences.loadSnapshot(app));
         try {
-            UsageApi.applyHeaders(httpsURLConnection, authTokens);
-            httpsURLConnection.setRequestMethod(str);
-            if (bArr != null) {
-                httpsURLConnection.setDoOutput(true);
-                httpsURLConnection.setRequestProperty("Content-Type", "application/json");
-                httpsURLConnection.setFixedLengthStreamingMode(bArr.length);
-                OutputStream outputStream = httpsURLConnection.getOutputStream();
-                try {
-                    outputStream.write(bArr);
-                    if (outputStream != null) {
-                        outputStream.close();
-                    }
-                } finally {
-                }
-            }
-            int responseCode = httpsURLConnection.getResponseCode();
-            String body = OAuthClient.readBody(httpsURLConnection, responseCode);
-            DiagnosticLog.info(context, "network", "request_finished",
-                    "operation", operation,
-                    "status", responseCode,
-                    "duration_ms", SystemClock.elapsedRealtime() - started,
-                    "response_bytes",
-                    body.getBytes(StandardCharsets.UTF_8).length);
-            return new Response(responseCode, body);
+            UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
+            RefreshScheduler.scheduleAtNextReset(app, snapshot);
+            ResetAlertScheduler.scheduleFromSnapshot(app, snapshot);
+            return "";
         } catch (Exception exception) {
-            DiagnosticLog.error(context, "network", "request_failed", exception,
-                    "operation", operation,
-                    "duration_ms", SystemClock.elapsedRealtime() - started);
-            throw exception;
-        } finally {
-            httpsURLConnection.disconnect();
+            AppPreferences.setLastError(app, UsageApi.safeMessage(exception));
+            return "The reset succeeded, but the new usage values could not be loaded yet.";
         }
     }
 
-    private static void ensureSuccess(Response response, String str) throws Exception {
-        String str2;
-        if (response.status < 200 || response.status >= 300) {
-            if (response.status == 403) {
-                str2 = str + ": this account is not allowed to use reset credits.";
-            } else if (response.status == 404) {
-                str2 = str + ": the reset-credit endpoint is unavailable.";
-            } else {
-                str2 = str + " (HTTP " + response.status + ").";
-            }
-            throw new Exception(OAuthClient.readError(response.body, str2));
+    private static UsageApi.Response requestCredits(Context context, AuthTokens tokens)
+            throws Exception {
+        return UsageApi.send(context, "reset_credit_list", "GET",
+                AppConstants.RESET_CREDITS_URL, tokens, null);
+    }
+
+    private static UsageApi.Response requestConsume(Context context, AuthTokens tokens,
+            byte[] payload) throws Exception {
+        return UsageApi.send(context, "reset_credit_consume", "POST",
+                AppConstants.RESET_CREDITS_CONSUME_URL, tokens, payload);
+    }
+
+    private static void ensureSuccess(UsageApi.Response response, String failure)
+            throws Exception {
+        if (response.isSuccessful()) {
+            return;
         }
+        String fallback;
+        if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
+            fallback = failure + ": this account is not allowed to use reset credits.";
+        } else if (response.status == HttpURLConnection.HTTP_NOT_FOUND) {
+            fallback = failure + ": the reset-credit endpoint is unavailable.";
+        } else {
+            fallback = failure + " (HTTP " + response.status + ").";
+        }
+        throw new Exception(OAuthClient.readError(response.body, fallback));
     }
 
     private static void notifyUpdated(Context context) {
         try {
-            context.sendBroadcast(new Intent(AppConstants.ACTION_RESET_CREDITS_UPDATED).setPackage(context.getPackageName()), "dev.bennett.codexmeter.permission.INTERNAL");
-        } catch (RuntimeException e) {
-        }
-    }
-
-    private static final class Response {
-        final String body;
-        final int status;
-
-        Response(int i, String str) {
-            this.status = i;
-            this.body = str == null ? "" : str;
+            context.sendBroadcast(new Intent(AppConstants.ACTION_RESET_CREDITS_UPDATED)
+                    .setPackage(context.getPackageName()), AppConstants.INTERNAL_PERMISSION);
+        } catch (RuntimeException ignored) {
+            // Listeners reload the saved credits later; a failed hint is harmless.
         }
     }
 }

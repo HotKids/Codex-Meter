@@ -6,96 +6,117 @@ import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Parses the Codex usage endpoint into the phone/Wear {@link UsageSnapshot} model. */
 public final class UsageParser {
-    private static final long FIVE_HOURS = 18000;
-    private static final long WEEK = 604800;
-    private static final long MONTH = 2592000;
+    private static final long HOUR = 60 * 60;
+    private static final long DAY = 24 * HOUR;
+
+    private static final long FIVE_HOURS = 5 * HOUR;
+    private static final long FIVE_HOURS_MIN = 3 * HOUR;
+    private static final long FIVE_HOURS_MAX = 8 * HOUR;
+    private static final long WEEK = 7 * DAY;
+    private static final long WEEK_MIN = 5 * DAY;
+    private static final long WEEK_MAX = 9 * DAY;
+    private static final long MONTH = 30 * DAY;
     // Free-tier accounts report a single ~30-day Codex window; accept 10-45 days so calendar
     // months and drifting billing periods still classify while staying clear of the weekly
     // window's 9-day ceiling.
-    private static final long MONTH_MIN = 864000;
-    private static final long MONTH_MAX = 3888000;
+    private static final long MONTH_MIN = 10 * DAY;
+    private static final long MONTH_MAX = 45 * DAY;
 
     private UsageParser() {
     }
 
-    public static UsageSnapshot parse(String str, long j) throws JSONException {
-        boolean z;
-        boolean z2;
-        UsageWindow usageWindow;
-        JSONObject jSONObject = new JSONObject(str);
-        String strOptString = jSONObject.optString("plan_type", "");
-        JSONObject jSONObjectNullableObject = nullableObject(jSONObject, "rate_limit");
-        ArrayList arrayList = new ArrayList();
-        ArrayList<UsageLimit> additionalLimits = new ArrayList<>();
-        UsageWindow usageWindowFromJson = null;
-        if (jSONObjectNullableObject == null) {
-            z = true;
-            z2 = false;
-            usageWindow = null;
-        } else {
-            boolean zOptBoolean = jSONObjectNullableObject.optBoolean("allowed", true);
-            boolean zOptBoolean2 = jSONObjectNullableObject.optBoolean("limit_reached", false);
-            UsageWindow usageWindowFromJson2 = UsageWindow.fromJson(nullableObject(jSONObjectNullableObject, "primary_window"));
-            usageWindowFromJson = UsageWindow.fromJson(nullableObject(jSONObjectNullableObject, "secondary_window"));
-            if (usageWindowFromJson2 != null) {
-                arrayList.add(usageWindowFromJson2);
-            }
-            if (usageWindowFromJson != null) {
-                arrayList.add(usageWindowFromJson);
-            }
-            z = zOptBoolean;
-            z2 = zOptBoolean2;
-            usageWindow = usageWindowFromJson2;
+    public static UsageSnapshot parse(String json, long fetchedAtMillis) throws JSONException {
+        JSONObject root = new JSONObject(json);
+        JSONObject rateLimit = nullableObject(root, "rate_limit");
+        boolean allowed = true;
+        boolean limitReached = false;
+        List<UsageWindow> windows = new ArrayList<>();
+        if (rateLimit != null) {
+            allowed = rateLimit.optBoolean("allowed", true);
+            limitReached = rateLimit.optBoolean("limit_reached", false);
+            addIfPresent(windows, primaryWindow(rateLimit));
+            addIfPresent(windows, secondaryWindow(rateLimit));
         }
-        JSONArray jSONArrayOptJSONArray = jSONObject.optJSONArray("additional_rate_limits");
-        if (jSONArrayOptJSONArray != null) {
-            for (int i = 0; i < jSONArrayOptJSONArray.length(); i++) {
-                JSONObject jSONObjectOptJSONObject = jSONArrayOptJSONArray.optJSONObject(i);
-                if (jSONObjectOptJSONObject != null) {
-                    JSONObject jSONObjectNullableObject2 = nullableObject(jSONObjectOptJSONObject, "rate_limit");
-                    if (jSONObjectNullableObject2 == null) {
-                        jSONObjectNullableObject2 = jSONObjectOptJSONObject;
-                    }
-                    UsageWindow usageWindowFromJson3 = UsageWindow.fromJson(nullableObject(jSONObjectNullableObject2, "primary_window"));
-                    UsageWindow usageWindowFromJson4 = UsageWindow.fromJson(nullableObject(jSONObjectNullableObject2, "secondary_window"));
-                    if (usageWindowFromJson3 != null || usageWindowFromJson4 != null) {
-                        String name = jSONObjectOptJSONObject.optString("limit_name", "");
-                        String feature = jSONObjectOptJSONObject.optString("metered_feature", "");
-                        String id = firstNonEmpty(
-                                jSONObjectOptJSONObject.optString("limit_id", ""),
-                                name, feature, "additional");
-                        additionalLimits.add(new UsageLimit(
-                                id + "-" + i,
-                                name,
-                                feature,
-                                jSONObjectNullableObject2.optBoolean("allowed", true),
-                                jSONObjectNullableObject2.optBoolean("limit_reached", false),
-                                usageWindowFromJson3,
-                                usageWindowFromJson4));
-                    }
-                }
-            }
-        }
-        UsageWindow usageWindowNearest = nearest(arrayList, FIVE_HOURS, 10800L, 28800L);
-        UsageWindow usageWindowNearestExcluding = nearestExcluding(arrayList, WEEK, 432000L, 777600L, usageWindowNearest);
-        UsageWindow usageWindowMonthly = nearestExcluding(arrayList, MONTH, MONTH_MIN, MONTH_MAX,
-                usageWindowNearest, usageWindowNearestExcluding);
-        JSONObject jSONObjectNullableObject3 = nullableObject(jSONObject, "rate_limit_reset_credits");
-        UsageCredits usageCredits = UsageCredits.fromJson(nullableObject(jSONObject, "credits"));
+
+        UsageWindow fiveHour = nearestWindow(windows, FIVE_HOURS, FIVE_HOURS_MIN, FIVE_HOURS_MAX);
+        UsageWindow weekly = nearestWindow(windows, WEEK, WEEK_MIN, WEEK_MAX, fiveHour);
+        UsageWindow monthly = nearestWindow(windows, MONTH, MONTH_MIN, MONTH_MAX,
+                fiveHour, weekly);
+        List<UsageLimit> additionalLimits = parseAdditionalLimits(root);
+        JSONObject resetCredits = nullableObject(root, "rate_limit_reset_credits");
+        UsageCredits usageCredits = UsageCredits.fromJson(nullableObject(root, "credits"));
         return new UsageSnapshot(
-                strOptString,
-                z,
-                z2,
-                usageWindowNearest,
-                usageWindowNearestExcluding,
-                usageWindowMonthly,
+                root.optString("plan_type", ""),
+                allowed,
+                limitReached,
+                fiveHour,
+                weekly,
+                monthly,
                 additionalLimits,
                 usageCredits,
-                jSONObjectNullableObject3 == null
-                        ? -1 : jSONObjectNullableObject3.optInt("available_count", -1),
-                j);
+                resetCredits == null ? -1 : resetCredits.optInt("available_count", -1),
+                fetchedAtMillis);
+    }
+
+    private static List<UsageLimit> parseAdditionalLimits(JSONObject root) {
+        List<UsageLimit> limits = new ArrayList<>();
+        JSONArray entries = root.optJSONArray("additional_rate_limits");
+        if (entries == null) {
+            return limits;
+        }
+        for (int index = 0; index < entries.length(); index++) {
+            UsageLimit limit = parseAdditionalLimit(entries.optJSONObject(index), index);
+            if (limit != null) {
+                limits.add(limit);
+            }
+        }
+        return limits;
+    }
+
+    /**
+     * Parses one additional limit, or returns null when it has no usable window. The array
+     * index is appended to the ID so entries that share a name stay distinct.
+     */
+    private static UsageLimit parseAdditionalLimit(JSONObject entry, int index) {
+        if (entry == null) {
+            return null;
+        }
+        JSONObject rateLimit = nullableObject(entry, "rate_limit");
+        if (rateLimit == null) {
+            rateLimit = entry;
+        }
+        UsageWindow primary = primaryWindow(rateLimit);
+        UsageWindow secondary = secondaryWindow(rateLimit);
+        if (primary == null && secondary == null) {
+            return null;
+        }
+        String name = entry.optString("limit_name", "");
+        String feature = entry.optString("metered_feature", "");
+        String id = firstNonEmpty(entry.optString("limit_id", ""), name, feature, "additional");
+        return new UsageLimit(
+                id + "-" + index,
+                name,
+                feature,
+                rateLimit.optBoolean("allowed", true),
+                rateLimit.optBoolean("limit_reached", false),
+                primary,
+                secondary);
+    }
+
+    private static UsageWindow primaryWindow(JSONObject rateLimit) {
+        return UsageWindow.fromJson(nullableObject(rateLimit, "primary_window"));
+    }
+
+    private static UsageWindow secondaryWindow(JSONObject rateLimit) {
+        return UsageWindow.fromJson(nullableObject(rateLimit, "secondary_window"));
+    }
+
+    private static void addIfPresent(List<UsageWindow> windows, UsageWindow window) {
+        if (window != null) {
+            windows.add(window);
+        }
     }
 
     private static String firstNonEmpty(String... values) {
@@ -107,51 +128,28 @@ public final class UsageParser {
         return "";
     }
 
-    private static JSONObject nullableObject(JSONObject jSONObject, String str) {
-        if (jSONObject == null || jSONObject.isNull(str)) {
+    private static JSONObject nullableObject(JSONObject parent, String key) {
+        if (parent == null || parent.isNull(key)) {
             return null;
         }
-        return jSONObject.optJSONObject(str);
+        return parent.optJSONObject(key);
     }
 
-    private static UsageWindow nearest(List<UsageWindow> list, long j, long j2, long j3) {
-        UsageWindow usageWindow;
-        long j4;
-        UsageWindow usageWindow2 = null;
-        long j5 = Long.MAX_VALUE;
-        for (UsageWindow usageWindow3 : list) {
-            if (usageWindow3.windowSeconds < j2 || usageWindow3.windowSeconds > j3) {
-                long j6 = j5;
-                usageWindow = usageWindow2;
-                j4 = j6;
-            } else {
-                long jAbs = Math.abs(usageWindow3.windowSeconds - j);
-                if (jAbs < j5) {
-                    usageWindow = usageWindow3;
-                    j4 = jAbs;
-                } else {
-                    long j7 = j5;
-                    usageWindow = usageWindow2;
-                    j4 = j7;
-                }
-            }
-            usageWindow2 = usageWindow;
-            j5 = j4;
-        }
-        return usageWindow2;
-    }
-
-    private static UsageWindow nearestExcluding(List<UsageWindow> list, long target,
+    /**
+     * Returns the window whose length is closest to {@code targetSeconds} within the inclusive
+     * bounds, skipping windows already claimed by another cadence. Ties keep the earliest window.
+     */
+    private static UsageWindow nearestWindow(List<UsageWindow> windows, long targetSeconds,
             long minimumSeconds, long maximumSeconds, UsageWindow... excluded) {
         UsageWindow best = null;
         long bestDistance = Long.MAX_VALUE;
-        for (UsageWindow candidate : list) {
+        for (UsageWindow candidate : windows) {
             if (isExcluded(candidate, excluded)
                     || candidate.windowSeconds < minimumSeconds
                     || candidate.windowSeconds > maximumSeconds) {
                 continue;
             }
-            long distance = Math.abs(candidate.windowSeconds - target);
+            long distance = Math.abs(candidate.windowSeconds - targetSeconds);
             if (distance < bestDistance) {
                 best = candidate;
                 bestDistance = distance;
@@ -168,5 +166,4 @@ public final class UsageParser {
         }
         return false;
     }
-
 }

@@ -3,6 +3,8 @@ package dev.bennett.codexmeter.wear;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.util.Log;
+import com.google.android.gms.wearable.DataItem;
+import com.google.android.gms.wearable.DataMapItem;
 import com.google.android.gms.wearable.Node;
 import com.google.android.gms.wearable.PutDataMapRequest;
 import com.google.android.gms.wearable.PutDataRequest;
@@ -17,11 +19,18 @@ import dev.bennett.codexmeter.UsageSnapshot;
 import dev.bennett.codexmeter.UsagePacePreferences;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.json.JSONException;
+import org.json.JSONObject;
 
+/**
+ * Phone side of the Wear Data Layer protocol: publishes usage, settings, monitor state, and
+ * sync status as urgent data items, and applies newer settings edited on the watch.
+ */
 public final class PhoneWearSync {
     private static final String KEY_LAST_APPLIED_SETTINGS_AT = "last_applied_settings_at";
     private static final String KEY_LOCAL_SETTINGS_AT = "local_settings_at";
     private static final String KEY_PAYLOAD = "payload";
+    private static final String KEY_SENT_AT = "sent_at_millis";
     private static final String PREFS = "codex_meter_wear_sync_v1";
     private static final ThreadLocal<Boolean> SUPPRESS_SETTINGS_PUSH = new ThreadLocal<>();
     private static final String TAG = "CodexWearSync";
@@ -34,7 +43,7 @@ public final class PhoneWearSync {
         long now = System.currentTimeMillis();
         pushJson(context, WearSyncPaths.PATH_USAGE,
                 new WearUsageState(snapshot, now, WearSettingsState.SOURCE_PHONE,
-                        SecureTokenStore.isSignedIn(context)));
+                        SecureTokenStore.isSignedIn(context))::toJson);
         pushStatus(context, false, "");
     }
 
@@ -43,7 +52,7 @@ public final class PhoneWearSync {
         Context app = context.getApplicationContext();
         long now = System.currentTimeMillis();
         prefs(app).edit().putLong(KEY_LOCAL_SETTINGS_AT, now).apply();
-        pushJson(app, WearSyncPaths.PATH_SETTINGS, settingsState(app, now));
+        pushJson(app, WearSyncPaths.PATH_SETTINGS, settingsState(app, now)::toJson);
     }
 
     public static void pushMonitorState(Context context) {
@@ -58,7 +67,7 @@ public final class PhoneWearSync {
                 active ? NowBarManager.activeFocusMetric(app) : null,
                 active ? NowBarManager.postedDisplayMode(app)
                         : NowBarPreferences.getDisplayMode(app),
-                now));
+                now)::toJson);
     }
 
     public static void pushStatus(Context context, boolean refreshInProgress, String error) {
@@ -72,7 +81,7 @@ public final class PhoneWearSync {
                 snapshot == null ? 0L : snapshot.fetchedAtMillis,
                 visibleError,
                 appVersion(app),
-                System.currentTimeMillis()));
+                System.currentTimeMillis())::toJson);
     }
 
     public static void pushAll(Context context) {
@@ -84,6 +93,10 @@ public final class PhoneWearSync {
         pushStatus(app, false, AppPreferences.getLastError(app));
     }
 
+    /**
+     * Applies settings edited on the watch when they are newer than the phone's own edits.
+     * Settings pushes triggered while applying them are suppressed so nothing echoes back.
+     */
     public static boolean applyRemoteSettings(Context context, WearSettingsState remote) {
         if (context == null || remote == null
                 || WearSettingsState.SOURCE_PHONE.equals(remote.sourceNode)) {
@@ -178,23 +191,12 @@ public final class PhoneWearSync {
                 NowBarPreferences.isAcceleratedStartEnabled(context));
     }
 
-    private static void pushJson(Context context, String path, Object state) {
+    private static void pushJson(Context context, String path, JsonState state) {
         try {
-            String json;
-            if (state instanceof WearUsageState) {
-                json = ((WearUsageState) state).toJson().toString();
-            } else if (state instanceof WearSettingsState) {
-                json = ((WearSettingsState) state).toJson().toString();
-            } else if (state instanceof WearMonitorState) {
-                json = ((WearMonitorState) state).toJson().toString();
-            } else if (state instanceof WearSyncStatus) {
-                json = ((WearSyncStatus) state).toJson().toString();
-            } else {
-                return;
-            }
+            String json = state.toJson().toString();
             PutDataMapRequest map = PutDataMapRequest.create(path);
             map.getDataMap().putString(KEY_PAYLOAD, json);
-            map.getDataMap().putLong("sent_at_millis", System.currentTimeMillis());
+            map.getDataMap().putLong(KEY_SENT_AT, System.currentTimeMillis());
             PutDataRequest request = map.asPutDataRequest().setUrgent();
             Wearable.getDataClient(context.getApplicationContext())
                     .putDataItem(request)
@@ -213,9 +215,10 @@ public final class PhoneWearSync {
         }
     }
 
-    static String payloadString(com.google.android.gms.wearable.DataItem item) {
+    /** Reads the JSON payload of a data item, falling back to its raw bytes. */
+    static String payloadString(DataItem item) {
         try {
-            return com.google.android.gms.wearable.DataMapItem.fromDataItem(item)
+            return DataMapItem.fromDataItem(item)
                     .getDataMap()
                     .getString(KEY_PAYLOAD);
         } catch (RuntimeException exception) {
@@ -240,5 +243,10 @@ public final class PhoneWearSync {
 
     private static SharedPreferences prefs(Context context) {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
+    }
+
+    /** Encodes a Wear state on demand so encoding failures are logged instead of thrown. */
+    private interface JsonState {
+        JSONObject toJson() throws JSONException;
     }
 }

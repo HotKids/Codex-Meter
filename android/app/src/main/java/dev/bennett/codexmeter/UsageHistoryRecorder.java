@@ -2,7 +2,10 @@ package dev.bennett.codexmeter;
 
 import android.content.Context;
 
-/** Serializes samples through the same refresh lock used by UsageApi. */
+/**
+ * Appends usage samples to the per-window histories. UsageApi calls this while holding
+ * NETWORK_LOCK, which serializes each history's read-modify-write.
+ */
 final class UsageHistoryRecorder {
     private UsageHistoryRecorder() {
     }

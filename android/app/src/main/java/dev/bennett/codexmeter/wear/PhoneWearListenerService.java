@@ -1,5 +1,6 @@
 package dev.bennett.codexmeter.wear;
 
+import android.content.Context;
 import android.net.Uri;
 import android.util.Log;
 import com.google.android.gms.wearable.DataEvent;
@@ -14,6 +15,7 @@ import dev.bennett.codexmeter.NowBarManager;
 import dev.bennett.codexmeter.UsageApi;
 import org.json.JSONObject;
 
+/** Receives settings and commands from the trusted Codex Wear companion. */
 public final class PhoneWearListenerService extends WearableListenerService {
     private static final String TAG = "CodexWearListener";
 
@@ -81,7 +83,7 @@ public final class PhoneWearListenerService extends WearableListenerService {
     }
 
     private void refreshInBackground() {
-        final android.content.Context app = getApplicationContext();
+        final Context app = getApplicationContext();
         new Thread(() -> {
             DiagnosticLog.info(app, "wear", "wear_refresh_started");
             PhoneWearSync.pushStatus(app, true, "");

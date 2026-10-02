@@ -17,6 +17,7 @@ import java.io.OutputStream;
 import java.io.OutputStreamWriter;
 import java.nio.charset.StandardCharsets;
 import java.time.Instant;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicLong;
@@ -32,6 +33,8 @@ public final class DiagnosticLog {
     private static final String PREFERENCES = "codex_meter_diagnostic_log_v1";
     private static final int MAX_ARCHIVES = 2;
     private static final long MAX_FILE_BYTES = 1024L * 1024L;
+    private static final int EXPORT_BUFFER_BYTES = 16 * 1024;
+    private static final int MAX_STACK_FRAMES = 20;
     private static final Object FILE_LOCK = new Object();
     private static final AtomicBoolean INSTALLED = new AtomicBoolean();
     private static final AtomicLong SEQUENCE = new AtomicLong();
@@ -175,7 +178,7 @@ public final class DiagnosticLog {
                     throw new IllegalStateException("Android could not open the export file.");
                 }
                 try (BufferedOutputStream output = new BufferedOutputStream(raw)) {
-                    byte[] buffer = new byte[16 * 1024];
+                    byte[] buffer = new byte[EXPORT_BUFFER_BYTES];
                     for (File file : orderedFiles(app)) {
                         if (!file.isFile() || file.length() == 0L) {
                             continue;
@@ -201,7 +204,7 @@ public final class DiagnosticLog {
         if (bytes < 1024L * 1024L) {
             return Math.max(1L, bytes / 1024L) + " KB";
         }
-        return String.format(java.util.Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0));
+        return String.format(Locale.US, "%.1f MB", bytes / (1024.0 * 1024.0));
     }
 
     private static void write(Context context, String level, String category, String event,
@@ -295,7 +298,7 @@ public final class DiagnosticLog {
         result.put("message", safe(throwable.getMessage()));
         JSONArray stack = new JSONArray();
         StackTraceElement[] elements = throwable.getStackTrace();
-        for (int index = 0; index < elements.length && index < 20; index++) {
+        for (int index = 0; index < elements.length && index < MAX_STACK_FRAMES; index++) {
             stack.put(safe(elements[index].toString()));
         }
         result.put("stack", stack);
@@ -343,6 +346,7 @@ public final class DiagnosticLog {
         }
     }
 
+    /** Every log file, oldest first, so exports read chronologically. */
     private static File[] orderedFiles(Context app) {
         File directory = directory(app);
         return new File[] {
