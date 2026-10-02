@@ -59,16 +59,15 @@ public final class UsageApi {
             response = requestUsage(context, tokens);
         }
         if (!response.isSuccessful()) {
-            throw new Exception(OAuthClient.readError(response.body,
-                    usageFailureMessage(response.status)));
+            throw usageFailure(context, response);
         }
         UsageSnapshot snapshot = UsageParser.parse(response.body, System.currentTimeMillis());
         if (!snapshot.hasDisplayableData()) {
-            throw new Exception("OpenAI returned no recognizable Codex usage data.");
+            throw OAuthClient.userError(context, R.string.auth_error_usage_unrecognized);
         }
         UsageSnapshot previous = AppPreferences.loadSnapshot(context);
         if (!AppPreferences.saveSnapshot(context, snapshot)) {
-            throw new Exception("Usage was received, but it could not be saved on this device.");
+            throw OAuthClient.userError(context, R.string.auth_error_usage_not_saved);
         }
         UsageHistoryRecorder.record(context, snapshot);
         PhoneWearSync.pushUsage(context, snapshot);
@@ -83,14 +82,17 @@ public final class UsageApi {
         return snapshot;
     }
 
-    private static String usageFailureMessage(int status) {
-        if (status == HttpURLConnection.HTTP_FORBIDDEN) {
-            return "Codex usage access was denied for this account.";
+    private static Exception usageFailure(Context context, Response response) {
+        if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
+            return OAuthClient.responseError(context, response.body,
+                    R.string.auth_error_usage_denied);
         }
-        if (status == HttpURLConnection.HTTP_NOT_FOUND) {
-            return "The Codex usage endpoint is unavailable or has changed.";
+        if (response.status == HttpURLConnection.HTTP_NOT_FOUND) {
+            return OAuthClient.responseError(context, response.body,
+                    R.string.auth_error_usage_endpoint_unavailable);
         }
-        return "Usage refresh failed (HTTP " + status + ").";
+        return OAuthClient.responseError(context, response.body, R.string.auth_error_usage_http,
+                response.status);
     }
 
     /** A reset-credit failure must not fail the usage refresh that already succeeded. */
@@ -103,7 +105,7 @@ public final class UsageApi {
                     exception);
             ResetNotificationManager.onResetCreditSummaryUpdated(context,
                     snapshot.resetCreditsAvailable);
-            AppPreferences.setResetCreditsError(context, safeMessage(exception));
+            AppPreferences.setResetCreditsError(context, safeMessage(context, exception));
         }
     }
 
@@ -111,7 +113,7 @@ public final class UsageApi {
     static AuthTokens usableTokens(Context context) throws Exception {
         AuthTokens tokens = SecureTokenStore.load(context);
         if (tokens == null) {
-            throw new Exception("Sign in to ChatGPT first.");
+            throw OAuthClient.userError(context, R.string.auth_error_sign_in_required);
         }
         if (!tokens.shouldRefresh(System.currentTimeMillis())) {
             return tokens;
@@ -170,7 +172,7 @@ public final class UsageApi {
                 }
             }
             int status = connection.getResponseCode();
-            String body = OAuthClient.readBody(connection, status);
+            String body = OAuthClient.readBody(context, connection, status);
             DiagnosticLog.info(context, "network", "request_finished",
                     "operation", operation,
                     "status", status,
@@ -215,11 +217,14 @@ public final class UsageApi {
         cookiesInstalled = true;
     }
 
-    /** A trimmed, bounded exception message suitable for persisting as a visible error. */
-    static String safeMessage(Exception exception) {
-        String message = exception == null ? "" : exception.getMessage();
+    /**
+     * A trimmed, bounded, localized exception message suitable for persisting as a visible
+     * error, or a generic reset-credit refresh failure when the exception has none.
+     */
+    static String safeMessage(Context context, Exception exception) {
+        String message = exception == null ? "" : exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
-            return "Reset-credit refresh failed.";
+            return context.getString(R.string.auth_error_reset_credits_refresh_failed);
         }
         String trimmed = message.trim();
         return trimmed.length() > MAX_MESSAGE_LENGTH

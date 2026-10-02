@@ -1,0 +1,122 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 引导页、ChatGPT 登录、关于页面，以及用量与重置券刷新错误。 -->
+<resources>
+    <!-- 引导页。 -->
+    <string name="auth_onboarding_step_progress">第 %1$d 步，共 %2$d 步</string>
+    <string name="auth_onboarding_continue">继续</string>
+    <string name="auth_onboarding_welcome_title">认识 Codex Meter</string>
+    <string name="auth_onboarding_welcome_body">在简洁的 One UI 界面中查看 ChatGPT Codex 额度、重置时间和可用重置券。</string>
+    <string name="auth_onboarding_galaxy_title">为 Galaxy 打造的熟悉体验</string>
+    <string name="auth_onboarding_galaxy_body">便于单手操作的布局、自适应卡片、系统主题和三星锁屏小组件，全部采用应用内置的原生 One UI 组件。</string>
+    <string name="auth_onboarding_usage_title">重要信息，一眼可见</string>
+    <string name="auth_onboarding_usage_body">无需在 ChatGPT 中翻找即可了解剩余额度，还可以通过桌面小组件和受支持的 Galaxy 锁屏小组件随时查看。</string>
+    <string name="auth_onboarding_features_header">主要功能</string>
+    <string name="auth_onboarding_feature_limits_title">实时 Codex 额度</string>
+    <string name="auth_onboarding_feature_limits_summary">5 小时和每周额度，以及重置时间</string>
+    <string name="auth_onboarding_feature_widgets_title">原生 One UI 小组件</string>
+    <string name="auth_onboarding_feature_widgets_summary">在桌面和锁屏上快速查看用量</string>
+    <string name="auth_onboarding_feature_alerts_title">实用提醒</string>
+    <string name="auth_onboarding_feature_alerts_summary">额度重置或重置券到账时，可选择接收通知</string>
+    <string name="auth_onboarding_account_title">连接你的 ChatGPT 账户</string>
+    <string name="auth_onboarding_account_body">通过 OpenAI 的安全浏览器流程注册或登录。Codex Meter 永远不会接触你的密码。</string>
+    <string name="auth_onboarding_privacy_header">隐私优先</string>
+    <string name="auth_onboarding_privacy_encrypted_title">在本机加密保存</string>
+    <string name="auth_onboarding_privacy_encrypted_summary">会话令牌受 Android Keystore 保护</string>
+    <string name="auth_onboarding_privacy_analytics_title">不含统计分析 SDK</string>
+    <string name="auth_onboarding_privacy_analytics_summary">你的账户和用量数据不会经过 Codex Meter 服务器</string>
+    <string name="auth_onboarding_sign_in_start">使用 ChatGPT 注册或登录</string>
+    <string name="auth_onboarding_sign_in_continue">继续使用 ChatGPT 登录</string>
+    <string name="auth_onboarding_not_now">暂不</string>
+    <string name="auth_onboarding_done_signed_in_title">一切就绪</string>
+    <string name="auth_onboarding_done_signed_in_body">你的 ChatGPT 账户已连接。打开应用时，Codex Meter 会加载最新额度。</string>
+    <string name="auth_onboarding_done_signed_out_title">设置完成</string>
+    <string name="auth_onboarding_done_signed_out_body">之后可以在 Codex Meter 首页连接 ChatGPT。</string>
+    <string name="auth_onboarding_account_connected">已连接 ChatGPT</string>
+    <string name="auth_onboarding_account_connected_summary">安全登录已完成</string>
+    <string name="auth_onboarding_account_skipped">不登录，继续使用</string>
+    <string name="auth_onboarding_account_skipped_summary">准备好后随时可以登录</string>
+    <string name="auth_onboarding_open_app">打开 Codex Meter</string>
+    <string name="auth_onboarding_status_did_not_complete">登录未完成，你可以放心重试。</string>
+    <string name="auth_onboarding_status_try_again">登录未完成，请重试。</string>
+    <string name="auth_onboarding_status_updates_unavailable">无法接收登录状态更新：%1$s</string>
+    <string name="auth_onboarding_status_browser_open">已在浏览器中打开安全的 ChatGPT 登录页面。</string>
+    <string name="auth_onboarding_status_preparing">正在准备安全的 ChatGPT 登录…</string>
+    <string name="auth_onboarding_status_resuming">正在继续安全的 ChatGPT 登录…</string>
+    <string name="auth_onboarding_status_start_failed">无法开始登录：%1$s</string>
+    <string name="auth_onboarding_status_no_browser">没有可用于完成登录的浏览器。</string>
+
+    <!-- 浏览器登录服务：通知、结果消息和失败原因。 -->
+    <string name="auth_sign_in_notification_title">Codex Meter 登录</string>
+    <string name="auth_sign_in_notification_cancel">取消</string>
+    <string name="auth_sign_in_preparing">正在准备安全登录…</string>
+    <string name="auth_sign_in_complete_in_browser">请在浏览器中完成登录</string>
+    <string name="auth_sign_in_securing_session">正在安全保存你的 ChatGPT 会话…</string>
+    <string name="auth_sign_in_loading_usage">正在加载 Codex 用量…</string>
+    <string name="auth_sign_in_cancelled">登录已取消。</string>
+    <string name="auth_sign_in_already_signed_in">已经登录。</string>
+    <string name="auth_sign_in_succeeded">登录成功。</string>
+    <string name="auth_sign_in_succeeded_usage_pending">已登录。可以在应用中刷新用量。</string>
+    <string name="auth_sign_in_failed">无法完成登录。</string>
+    <string name="auth_sign_in_failed_reason">登录失败：%1$s</string>
+    <string name="auth_sign_in_failed_no_code">未返回授权码，登录失败。</string>
+    <string name="auth_sign_in_timed_out">登录超时，请在应用中重新开始。</string>
+    <string name="auth_sign_in_port_unavailable">无法打开本机 OAuth 回调端口（1455 或 1457）。</string>
+    <string name="auth_sign_in_callback_empty">浏览器回调为空。</string>
+    <string name="auth_widget_update_failed">小组件更新失败：%1$s</string>
+
+    <!-- 登录跳转后在浏览器中显示的页面。 -->
+    <!-- 此译文的 BCP 47 语言标记，用作页面的 <html lang>。 -->
+    <string name="auth_browser_html_lang">zh-CN</string>
+    <string name="auth_browser_success_eyebrow">登录完成</string>
+    <string name="auth_browser_success_title">账户已连接</string>
+    <string name="auth_browser_success_message">你的 ChatGPT 账户已连接，正在返回 Codex Meter…</string>
+    <string name="auth_browser_success_action">打开 Codex Meter</string>
+    <string name="auth_browser_success_hint">正在自动返回应用…</string>
+    <string name="auth_browser_failure_eyebrow">登录需要处理</string>
+    <string name="auth_browser_failure_title">请再试一次</string>
+    <string name="auth_browser_failure_action">返回 Codex Meter</string>
+    <string name="auth_browser_failure_hint">请返回应用重新开始安全登录。</string>
+    <string name="auth_browser_not_found">未找到</string>
+    <string name="auth_browser_state_mismatch">登录状态不匹配。请返回 Codex Meter 重试。</string>
+    <string name="auth_browser_missing_code">授权响应中没有授权码。</string>
+
+    <!-- 令牌、用量和重置券请求失败（显示在首页、提示消息和小组件上）。 -->
+    <string name="auth_error_sign_in_required">请先登录 ChatGPT。</string>
+    <string name="auth_error_authentication_http">身份验证失败（HTTP %1$d）。</string>
+    <string name="auth_error_incomplete_credentials">授权服务器返回的凭据不完整。</string>
+    <string name="auth_error_credentials_not_saved">无法保存加密的登录凭据。</string>
+    <string name="auth_error_response_too_large">服务器响应过大。</string>
+    <string name="auth_error_usage_denied">此账户无权访问 Codex 用量。</string>
+    <string name="auth_error_usage_endpoint_unavailable">Codex 用量接口不可用或已变更。</string>
+    <string name="auth_error_usage_http">用量刷新失败（HTTP %1$d）。</string>
+    <string name="auth_error_usage_unrecognized">OpenAI 未返回可识别的 Codex 用量数据。</string>
+    <string name="auth_error_usage_not_saved">已收到用量数据，但无法保存到此设备。</string>
+    <string name="auth_error_usage_not_cached">无法缓存最新的用量数据。</string>
+    <string name="auth_error_usage_refresh_failed">用量刷新失败。</string>
+    <string name="auth_error_reset_credits_refresh_failed">重置券刷新失败。</string>
+    <string name="auth_error_reset_credits_not_saved">已收到重置券数据，但无法保存到此设备。</string>
+    <string name="auth_error_reset_credits_not_cached">无法缓存 Codex 重置券。</string>
+    <string name="auth_error_reset_credits_load_denied">无法加载 Codex 重置券：此账户不能使用重置券。</string>
+    <string name="auth_error_reset_credits_load_unavailable">无法加载 Codex 重置券：重置券接口不可用。</string>
+    <string name="auth_error_reset_credits_load_http">无法加载 Codex 重置券（HTTP %1$d）。</string>
+    <string name="auth_error_reset_apply_denied">无法使用 Codex 重置：此账户不能使用重置券。</string>
+    <string name="auth_error_reset_apply_unavailable">无法使用 Codex 重置：重置券接口不可用。</string>
+    <string name="auth_error_reset_apply_http">无法使用 Codex 重置（HTTP %1$d）。</string>
+    <string name="auth_reset_usage_reload_failed">重置成功，但暂时无法加载新的用量数据。</string>
+    <string name="auth_error_scheduler_declined">Android 拒绝了后台刷新请求。</string>
+    <string name="auth_error_scheduler_unavailable">Android 后台任务调度器不可用。</string>
+    <string name="auth_error_scheduler_failed">后台刷新：%1$s</string>
+
+    <!-- 关于。 -->
+    <string name="auth_about_app_info">应用信息</string>
+    <string name="auth_about_credits">致谢</string>
+    <string name="auth_about_benit_summary">应用作者，AI 爱好者</string>
+    <string name="auth_about_tjg_summary">应用与图标设计师</string>
+    <string name="auth_about_dependencies">依赖项</string>
+    <string name="auth_about_oneui_summary">让本应用如此美观的组件库。</string>
+    <string name="auth_about_openai_summary">没有它，本应用几乎毫无用处。</string>
+    <string name="auth_about_diagnostics_unlocked">已解锁诊断功能。</string>
+    <plurals name="auth_about_diagnostics_taps_remaining">
+        <item quantity="other">再点按 %1$d 次即可解锁诊断功能。</item>
+    </plurals>
+</resources>

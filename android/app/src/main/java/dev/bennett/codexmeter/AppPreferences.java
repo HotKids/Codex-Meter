@@ -123,7 +123,7 @@ public final class AppPreferences {
                     .remove(KEY_ERROR_AT)
                     .commit();
         } catch (Exception e) {
-            setLastError(context, "Could not cache the latest usage response.");
+            setLastError(context, context.getString(R.string.auth_error_usage_not_cached));
             return false;
         }
     }
@@ -259,7 +259,8 @@ public final class AppPreferences {
                     .remove(KEY_RESET_ERROR_AT)
                     .commit();
         } catch (Exception e) {
-            setResetCreditsError(context, "Could not cache Codex reset credits.");
+            setResetCreditsError(context,
+                    context.getString(R.string.auth_error_reset_credits_not_cached));
             return false;
         }
     }

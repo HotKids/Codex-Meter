@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_config_cancel">取消</string>
+    <string name="widget_config_save">保存</string>
+    <string name="widget_background">背景</string>
+    <string name="widget_opacity">不透明度</string>
+    <string name="widget_next_reset">距离下次用量重置的剩余时间</string>
+    <string name="widget_reset_credits">可用的 Codex 重置券</string>
+    <string name="five_hour">5 小时</string>
+    <string name="lock_widget_bars_square_description">适用于受支持三星锁屏的紧凑型横向 Codex 额度条</string>
+    <string name="lock_widget_bars_square_name">Codex · 条形 · 方形</string>
+    <string name="lock_widget_bars_wide_description">适用于受支持三星锁屏的两条横向 Codex 额度条</string>
+    <string name="lock_widget_bars_wide_name">Codex · 条形 · 宽幅</string>
+    <string name="lock_widget_dials_square_description">适用于受支持三星锁屏的紧凑型 Codex 额度仪表盘</string>
+    <string name="lock_widget_dials_square_name">Codex · 仪表盘 · 方形</string>
+    <string name="lock_widget_dials_wide_description">适用于受支持三星锁屏的两个 Codex 额度仪表盘</string>
+    <string name="lock_widget_dials_wide_name">Codex · 仪表盘 · 宽幅</string>
+    <string name="lock_widget_five_hour_description">适用于三星锁屏和息屏显示的 Codex 5 小时额度仪表盘</string>
+    <string name="lock_widget_five_hour_name">Codex · 5 小时</string>
+    <string name="lock_widget_graphic_preview_description">Codex 用量预览</string>
+    <string name="lock_widget_rings_square_description">适用于受支持三星锁屏的紧凑型 Codex 额度圆环</string>
+    <string name="lock_widget_rings_square_name">Codex · 圆环 · 方形</string>
+    <string name="lock_widget_rings_wide_description">适用于受支持三星锁屏的两个 Codex 额度圆环</string>
+    <string name="lock_widget_rings_wide_name">Codex · 圆环 · 宽幅</string>
+    <string name="lock_widget_square_description">适用于受支持三星锁屏的方形数字小组件，显示 Codex 5 小时和每周额度</string>
+    <string name="lock_widget_square_name">Codex · 数字 · 方形</string>
+    <string name="lock_widget_wide_description">适用于受支持三星锁屏的宽幅数字小组件，显示 Codex 5 小时和每周额度</string>
+    <string name="lock_widget_wide_name">Codex · 数字 · 宽幅</string>
+    <string name="lock_widget_weekly_description">适用于三星锁屏和息屏显示的 Codex 每周额度仪表盘</string>
+    <string name="lock_widget_weekly_name">Codex · 每周</string>
+    <string name="oauth_channel_description">仅在通过浏览器完成登录时显示</string>
+    <string name="oauth_channel_name">ChatGPT 登录</string>
+    <string name="refresh">刷新</string>
+    <string name="refreshing">正在刷新…</string>
+    <string name="update_downloading">正在下载校验和与 APK…</string>
+    <string name="update_opening_installer">校验通过。正在打开 Android 安装确认…</string>
+    <string name="update_waiting_for_installer">正在等待 Android 安装确认。</string>
+    <string name="weekly">每周</string>
+    <string name="widget_description">显示 5 小时、每周和模型额度的 Codex 用量卡片，单行尺寸显示为仪表盘</string>
+    <string name="widget_name">Codex 用量</string>
+    <string name="about_version">版本 %1$s</string>
+    <string name="account_avatar">账户头像</string>
+</resources>

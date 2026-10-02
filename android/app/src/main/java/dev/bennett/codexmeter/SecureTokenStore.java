@@ -41,7 +41,7 @@ public final class SecureTokenStore {
             blob.put(BLOB_IV, Base64.getEncoder().encodeToString(cipher.getIV()));
             blob.put(BLOB_CIPHERTEXT, Base64.getEncoder().encodeToString(ciphertext));
             if (!prefs(context).edit().putString(KEY_BLOB, blob.toString()).commit()) {
-                throw new Exception("Could not persist encrypted credentials.");
+                throw OAuthClient.userError(context, R.string.auth_error_credentials_not_saved);
             }
         }
     }

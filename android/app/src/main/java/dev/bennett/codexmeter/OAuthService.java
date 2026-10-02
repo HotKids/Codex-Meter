@@ -69,18 +69,19 @@ public final class OAuthService extends Service {
         DiagnosticLog.info(this, "auth", "oauth_service_command",
                 "action", action == null ? "" : action);
         if (ACTION_CANCEL.equals(action) || ACTION_CANCEL_SILENT.equals(action)) {
-            cancelFlow("Sign-in cancelled.", ACTION_CANCEL.equals(action));
+            cancelFlow(getString(R.string.auth_sign_in_cancelled), ACTION_CANCEL.equals(action));
             return START_NOT_STICKY;
         }
         if (SecureTokenStore.isSignedIn(this)) {
             AppPreferences.setOAuthPending(this, false, "");
-            broadcastResult(true, "Already signed in.");
+            broadcastResult(true, getString(R.string.auth_sign_in_already_signed_in));
             finishService();
             return START_NOT_STICKY;
         }
         if (running.compareAndSet(false, true)) {
             cancelled = false;
-            startForegroundCompat(buildNotification("Preparing secure sign-in…", null));
+            startForegroundCompat(buildNotification(getString(R.string.auth_sign_in_preparing),
+                    null));
             executor.execute(this::runFlow);
         } else {
             // A flow is already waiting; hand its authorization URL to the new caller.
@@ -115,26 +116,26 @@ public final class OAuthService extends Service {
             String redirectUri = "http://localhost:" + port + CALLBACK_PATH;
             String authUrl = buildAuthorizeUrl(redirectUri, pkce);
             AppPreferences.setOAuthPending(this, true, authUrl);
-            updateNotification("Complete sign-in in your browser", authUrl);
+            updateNotification(getString(R.string.auth_sign_in_complete_in_browser), authUrl);
             broadcastReady(authUrl);
 
             while (!cancelled) {
                 try {
                     browser = serverSocket.accept();
                 } catch (SocketTimeoutException timeout) {
-                    throw new Exception("Sign-in timed out. Start again from the app.");
+                    throw OAuthClient.userError(this, R.string.auth_sign_in_timed_out);
                 }
                 browser.setSoTimeout(BROWSER_READ_TIMEOUT_MS);
                 Callback callback = readCallback(browser);
                 if (!CALLBACK_PATH.equals(callback.path)) {
-                    rejectRequest(browser, 404, "Not found");
+                    rejectRequest(browser, 404, getString(R.string.auth_browser_not_found));
                     browser = null;
                     continue;
                 }
                 if (!secureEquals(pkce.state, callback.parameters.get("state"))) {
                     DiagnosticLog.warn(this, "auth", "oauth_callback_state_mismatch");
-                    rejectRequest(browser, 400, "The sign-in state did not match. "
-                            + "Return to Codex Meter and try again.");
+                    rejectRequest(browser, 400,
+                            getString(R.string.auth_browser_state_mismatch));
                     browser = null;
                     continue;
                 }
@@ -145,18 +146,17 @@ public final class OAuthService extends Service {
                             ? error : description;
                     rejectRequest(browser, 400, message);
                     browser = null;
-                    throw new Exception("Sign-in failed: " + message);
+                    throw OAuthClient.userError(this, R.string.auth_sign_in_failed_reason,
+                            message);
                 }
                 String code = callback.parameters.get("code");
                 if (code == null || code.isEmpty()) {
-                    rejectRequest(browser, 400,
-                            "The authorization response did not include a code.");
+                    rejectRequest(browser, 400, getString(R.string.auth_browser_missing_code));
                     browser = null;
-                    throw new Exception(
-                            "Sign-in failed because no authorization code was returned.");
+                    throw OAuthClient.userError(this, R.string.auth_sign_in_failed_no_code);
                 }
 
-                updateNotification("Securing your ChatGPT session…", null);
+                updateNotification(getString(R.string.auth_sign_in_securing_session), null);
                 AuthTokens tokens = OAuthClient.exchangeCode(this, code, redirectUri,
                         pkce.verifier);
                 SecureTokenStore.save(this, tokens);
@@ -168,16 +168,16 @@ public final class OAuthService extends Service {
                 // exchange into a misleading browser error page.
                 try {
                     writeBrowser(browser, 200,
-                            "Your ChatGPT account is connected. Returning to Codex Meter…", true);
+                            getString(R.string.auth_browser_success_message), true);
                 } catch (Exception ignored) {
                     // The user may have closed the browser after authorization. Authentication
                     // remains valid and the application still receives the result broadcast.
                 }
                 closeQuietly(browser);
                 browser = null;
-                broadcastResult(true, "Signed in successfully.");
+                broadcastResult(true, getString(R.string.auth_sign_in_succeeded));
 
-                updateNotification("Loading Codex usage…", null);
+                updateNotification(getString(R.string.auth_sign_in_loading_usage), null);
                 performPostAuthenticationSetup();
                 DiagnosticLog.info(this, "auth", "oauth_flow_succeeded",
                         "duration_ms", SystemClock.elapsedRealtime() - started);
@@ -193,7 +193,7 @@ public final class OAuthService extends Service {
                 // show a valid success state, and let manual refresh recover later.
                 AppPreferences.setOAuthPending(this, false, "");
                 AppPreferences.setLastError(this, cleanMessage(exception));
-                broadcastResult(true, "Signed in. Usage can be refreshed from the app.");
+                broadcastResult(true, getString(R.string.auth_sign_in_succeeded_usage_pending));
                 safeWidgetUpdate();
                 finishService();
                 return;
@@ -245,7 +245,10 @@ public final class OAuthService extends Service {
                 last = exception;
             }
         }
-        throw new Exception("Could not open the local OAuth callback port (1455 or 1457).", last);
+        OAuthClient.UserFacingException failure =
+                OAuthClient.userError(this, R.string.auth_sign_in_port_unavailable);
+        failure.initCause(last);
+        throw failure;
     }
 
     private static String buildAuthorizeUrl(String redirectUri, Pkce pkce) throws Exception {
@@ -264,12 +267,12 @@ public final class OAuthService extends Service {
     }
 
     /** Reads the browser's request line and query; non-GET requests yield an empty path. */
-    private static Callback readCallback(Socket socket) throws Exception {
+    private Callback readCallback(Socket socket) throws Exception {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 socket.getInputStream(), StandardCharsets.US_ASCII));
         String requestLine = reader.readLine();
         if (requestLine == null) {
-            throw new Exception("The browser callback was empty.");
+            throw OAuthClient.userError(this, R.string.auth_sign_in_callback_empty);
         }
         String headerLine;
         while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
@@ -301,15 +304,15 @@ public final class OAuthService extends Service {
     }
 
     /** Answers a request that cannot complete sign-in with an error page and closes it. */
-    private static void rejectRequest(Socket socket, int status, String message)
-            throws Exception {
+    private void rejectRequest(Socket socket, int status, String message) throws Exception {
         writeBrowser(socket, status, message, false);
         closeQuietly(socket);
     }
 
-    private static void writeBrowser(Socket socket, int status, String message, boolean success)
+    private void writeBrowser(Socket socket, int status, String message, boolean success)
             throws Exception {
-        String html = OAuthBrowserPage.render(message, success, AppConstants.APP_LINK);
+        String html = OAuthBrowserPage.render(browserCopy(success), message, success,
+                AppConstants.APP_LINK);
         byte[] body = html.getBytes(StandardCharsets.UTF_8);
         String reason = status >= 200 && status < 300 ? "OK" : "Error";
         ByteArrayOutputStream response = new ByteArrayOutputStream(body.length + 256);
@@ -325,6 +328,20 @@ public final class OAuthService extends Service {
 
     private static void writeAscii(ByteArrayOutputStream output, String text) throws Exception {
         output.write(text.getBytes(StandardCharsets.US_ASCII));
+    }
+
+    /** The browser page's text in the app's language. */
+    private OAuthBrowserPage.Copy browserCopy(boolean success) {
+        return new OAuthBrowserPage.Copy(
+                getString(R.string.auth_browser_html_lang),
+                getString(success ? R.string.auth_browser_success_eyebrow
+                        : R.string.auth_browser_failure_eyebrow),
+                getString(success ? R.string.auth_browser_success_title
+                        : R.string.auth_browser_failure_title),
+                getString(success ? R.string.auth_browser_success_action
+                        : R.string.auth_browser_failure_action),
+                getString(success ? R.string.auth_browser_success_hint
+                        : R.string.auth_browser_failure_hint));
     }
 
     private void cancelFlow(String message, boolean broadcast) {
@@ -373,7 +390,8 @@ public final class OAuthService extends Service {
         try {
             WidgetRenderer.updateAll(this);
         } catch (RuntimeException exception) {
-            AppPreferences.setLastError(this, "Widget update: " + widgetErrorMessage(exception));
+            AppPreferences.setLastError(this, getString(R.string.auth_widget_update_failed,
+                    widgetErrorMessage(exception)));
         }
     }
 
@@ -423,10 +441,11 @@ public final class OAuthService extends Service {
         PendingIntent cancel = PendingIntent.getService(this, REQUEST_CANCEL, cancelIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Action cancelAction = new Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_oui_close), "Cancel", cancel).build();
+                Icon.createWithResource(this, R.drawable.ic_oui_close),
+                getString(R.string.auth_sign_in_notification_cancel), cancel).build();
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_oui_notification)
-                .setContentTitle("Codex Meter sign-in")
+                .setContentTitle(getString(R.string.auth_sign_in_notification_title))
                 .setContentText(text)
                 .setContentIntent(open)
                 .addAction(cancelAction)
@@ -457,16 +476,17 @@ public final class OAuthService extends Service {
                 actual.getBytes(StandardCharsets.UTF_8));
     }
 
-    private static String cleanMessage(Exception exception) {
-        String message = exception.getMessage();
+    /** The failure's localized message, bounded, or a generic sign-in failure. */
+    private String cleanMessage(Exception exception) {
+        String message = exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
-            return "Sign-in could not be completed.";
+            return getString(R.string.auth_sign_in_failed);
         }
         return truncate(message, MAX_ERROR_LENGTH);
     }
 
     private static String widgetErrorMessage(RuntimeException exception) {
-        String message = exception.getMessage();
+        String message = exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             return exception.getClass().getSimpleName();
         }

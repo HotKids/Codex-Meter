@@ -38,12 +38,13 @@ public final class ResetCreditApi {
             DiagnosticLog.warn(context, "auth", "reset_credit_token_rejected_refreshing");
             response = requestCredits(context, UsageApi.refreshAndSave(context, tokens));
         }
-        ensureSuccess(response, "Could not load Codex reset credits");
+        ensureSuccess(context, response, R.string.auth_error_reset_credits_load_denied,
+                R.string.auth_error_reset_credits_load_unavailable,
+                R.string.auth_error_reset_credits_load_http);
         ResetCreditsSnapshot snapshot =
                 ResetCreditsParser.parse(response.body, System.currentTimeMillis());
         if (!AppPreferences.saveResetCredits(context, snapshot)) {
-            throw new Exception(
-                    "Reset credits were received, but could not be saved on this device.");
+            throw OAuthClient.userError(context, R.string.auth_error_reset_credits_not_saved);
         }
         ResetNotificationManager.onResetCreditsUpdated(context, snapshot);
         notifyUpdated(context);
@@ -86,7 +87,9 @@ public final class ResetCreditApi {
                 tokens = UsageApi.refreshAndSave(app, tokens);
                 response = requestConsume(app, tokens, payload);
             }
-            ensureSuccess(response, "Could not apply the Codex reset");
+            ensureSuccess(app, response, R.string.auth_error_reset_apply_denied,
+                    R.string.auth_error_reset_apply_unavailable,
+                    R.string.auth_error_reset_apply_http);
 
             JSONObject result = new JSONObject(response.body);
             String code = result.optString("code", "");
@@ -97,7 +100,7 @@ public final class ResetCreditApi {
             try {
                 refreshAndCacheLocked(app, UsageApi.usableTokens(app));
             } catch (Exception exception) {
-                AppPreferences.setResetCreditsError(app, UsageApi.safeMessage(exception));
+                AppPreferences.setResetCreditsError(app, UsageApi.safeMessage(app, exception));
             }
             WidgetRenderer.updateAll(app);
             notifyUpdated(app);
@@ -141,8 +144,8 @@ public final class ResetCreditApi {
             ResetAlertScheduler.scheduleFromSnapshot(app, snapshot);
             return "";
         } catch (Exception exception) {
-            AppPreferences.setLastError(app, UsageApi.safeMessage(exception));
-            return "The reset succeeded, but the new usage values could not be loaded yet.";
+            AppPreferences.setLastError(app, UsageApi.safeMessage(app, exception));
+            return app.getString(R.string.auth_reset_usage_reload_failed);
         }
     }
 
@@ -158,20 +161,22 @@ public final class ResetCreditApi {
                 AppConstants.RESET_CREDITS_CONSUME_URL, tokens, payload);
     }
 
-    private static void ensureSuccess(UsageApi.Response response, String failure)
-            throws Exception {
+    /**
+     * Throws the server's error for an unsuccessful response, or else the failure text for a
+     * forbidden (403), missing (404) or other HTTP status (formatted with the status code).
+     */
+    private static void ensureSuccess(Context context, UsageApi.Response response,
+            int forbiddenRes, int notFoundRes, int httpStatusRes) throws Exception {
         if (response.isSuccessful()) {
             return;
         }
-        String fallback;
         if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
-            fallback = failure + ": this account is not allowed to use reset credits.";
-        } else if (response.status == HttpURLConnection.HTTP_NOT_FOUND) {
-            fallback = failure + ": the reset-credit endpoint is unavailable.";
-        } else {
-            fallback = failure + " (HTTP " + response.status + ").";
+            throw OAuthClient.responseError(context, response.body, forbiddenRes);
         }
-        throw new Exception(OAuthClient.readError(response.body, fallback));
+        if (response.status == HttpURLConnection.HTTP_NOT_FOUND) {
+            throw OAuthClient.responseError(context, response.body, notFoundRes);
+        }
+        throw OAuthClient.responseError(context, response.body, httpStatusRes, response.status);
     }
 
     private static void notifyUpdated(Context context) {

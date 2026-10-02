@@ -232,7 +232,7 @@ public final class RefreshScheduler {
                 "reason", reason,
                 "result", result);
         AppPreferences.setSchedulerError(context,
-                "Android declined the background refresh request.");
+                context.getString(R.string.auth_error_scheduler_declined));
         return false;
     }
 
@@ -251,7 +251,7 @@ public final class RefreshScheduler {
 
     private static void reportSchedulerUnavailable(Context context) {
         AppPreferences.setSchedulerError(context,
-                "Android's background scheduler is unavailable.");
+                context.getString(R.string.auth_error_scheduler_unavailable));
     }
 
     private static Context appContext(Context context) {
@@ -263,11 +263,12 @@ public final class RefreshScheduler {
     }
 
     private static boolean failed(Context context, RuntimeException exception) {
-        String message = exception.getMessage();
+        String message = exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             message = exception.getClass().getSimpleName();
         }
-        AppPreferences.setSchedulerError(context, "Background refresh: " + message);
+        AppPreferences.setSchedulerError(context,
+                context.getString(R.string.auth_error_scheduler_failed, message));
         DiagnosticLog.error(context, "scheduler", "scheduler_failed", exception);
         return false;
     }

@@ -66,7 +66,7 @@ public final class AboutActivity extends AppCompatActivity {
         menu.add(Menu.NONE, MENU_GITHUB, 0, "GitHub")
                 .setIcon(R.drawable.ic_github_24)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, MENU_APP_INFO, 1, "App info")
+        menu.add(Menu.NONE, MENU_APP_INFO, 1, R.string.auth_about_app_info)
                 .setIcon(R.drawable.ic_oui_info_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
@@ -97,23 +97,25 @@ public final class AboutActivity extends AppCompatActivity {
 
     private void buildContent(LinearLayout content) {
         content.addView(buildAppCard());
-        content.addView(sectionTitle("Credits"));
+        content.addView(sectionTitle(getString(R.string.auth_about_credits)));
         RoundedLinearLayout credits = Ui.cardGroup(this, dark);
-        credits.addView(personRow("BenIt Buhner", "App creator and AI geek",
+        credits.addView(personRow(getString(R.string.about_benit_title),
+                getString(R.string.auth_about_benit_summary),
                 R.drawable.benit_github_avatar, false, "https://github.com/BenItBuhner"));
-        credits.addView(personRow("That Josh Guy", "App and Icon designer",
+        credits.addView(personRow(getString(R.string.auth_about_tjg_title),
+                getString(R.string.auth_about_tjg_summary),
                 R.drawable.codex_profile_avatar, true, "https://tjg.gg"));
         content.addView(credits);
 
-        content.addView(sectionTitle("Dependencies"));
+        content.addView(sectionTitle(getString(R.string.auth_about_dependencies)));
         RoundedLinearLayout dependencies = Ui.cardGroup(this, dark);
-        CardItemView oneUi = Ui.actionRow(this, "One UI Design Library",
-                "The library that makes this app so pretty.",
+        CardItemView oneUi = Ui.actionRow(this, getString(R.string.about_oneui_title),
+                getString(R.string.auth_about_oneui_summary),
                 R.drawable.ic_oui_theme,
                 view -> openUrl("https://github.com/tribalfs/oneui-design"));
         dependencies.addView(oneUi);
-        CardItemView openAi = Ui.actionRow(this, "OpenAI API",
-                "This app would be pretty useless without it.",
+        CardItemView openAi = Ui.actionRow(this, getString(R.string.auth_about_openai_title),
+                getString(R.string.auth_about_openai_summary),
                 R.drawable.ic_openai_figma,
                 view -> openUrl("https://openai.com"));
         openAi.setIconSize(Ui.dp(this, 24));
@@ -132,7 +134,7 @@ public final class AboutActivity extends AppCompatActivity {
         card.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
         LinearLayout text = new LinearLayout(this);
         text.setOrientation(LinearLayout.VERTICAL);
-        text.addView(Ui.text(this, "Codex Meter", 18, Ui.mainText(dark)));
+        text.addView(Ui.text(this, getString(R.string.app_name), 18, Ui.mainText(dark)));
         text.addView(Ui.text(this, versionLabel(), 14, Ui.secondaryText(dark)));
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1);
         textParams.setMargins(Ui.dp(this, 20), 0, 0, 0);
@@ -145,12 +147,14 @@ public final class AboutActivity extends AppCompatActivity {
         versionTaps++;
         int remaining = DIAGNOSTIC_TAPS - versionTaps;
         if (remaining <= 0) {
-            Toast.makeText(this, "Diagnostics unlocked.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, R.string.auth_about_diagnostics_unlocked, Toast.LENGTH_SHORT)
+                    .show();
             startActivity(SettingsActivity.diagnosticsIntent(this));
             versionTaps = 0;
         } else if (remaining <= DIAGNOSTIC_HINT_TAPS) {
-            Toast.makeText(this, remaining + " more tap" + (remaining == 1 ? "" : "s")
-                    + " for diagnostics.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, getResources().getQuantityString(
+                    R.plurals.auth_about_diagnostics_taps_remaining, remaining, remaining),
+                    Toast.LENGTH_SHORT).show();
         }
     }
 
