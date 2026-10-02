@@ -36,7 +36,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         setResult(0);
         this.appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
         if (this.appWidgetId == 0) {
-            Toast.makeText(this, AppText.get(R.string.phone_no_lock_screen_widget_was_selected_a20e3), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "No lock-screen widget was selected.", Toast.LENGTH_LONG).show();
             finish();
         } else {
             this.dark = Ui.isDark(this);
@@ -51,7 +51,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
     }
 
     private void build() {
-        Ui.ConfigPage page = Ui.installConfigPage(this, AppText.get(R.string.phone_lock_screen_widget_5ffe6));
+        Ui.ConfigPage page = Ui.installConfigPage(this, "Lock-screen widget");
         LinearLayout linearLayout = page.content;
         page.preview.setBackgroundColor(Ui.controlSurface(this, this.dark));
         this.preview = new ImageView(this);
@@ -71,10 +71,10 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
             this.selectedMeters.add(WidgetMeters.FIVE_HOUR);
         }
 
-        linearLayout.addView(Ui.separator(this, AppText.get(R.string.phone_meters_6ad42)));
+        linearLayout.addView(Ui.separator(this, "Meters"));
         RoundedLinearLayout metersCard = Ui.seslCard(this, this.dark);
         this.metersHint = Ui.text(this,
-                AppText.get(R.string.phone_lock_widgets_show_up_to_2_meters_extra_selection_8dbec),
+                "Lock widgets show up to 2 meters. Extra selections are ignored.",
                 13.0f, Ui.secondaryText(this.dark));
         this.metersHint.setPadding(0, 0, 0, Ui.dp(this, 8));
         metersCard.addView(this.metersHint);
@@ -101,7 +101,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         for (String key : ordered) {
             SwitchCompat toggle = new SwitchCompat(this);
             toggle.setChecked(this.selectedMeters.contains(key));
-            metersCard.addView(buildSwitchRow(PhoneMeterLabels.config(LockWidgetConfigActivity.this, key, snapshot), toggle,
+            metersCard.addView(buildSwitchRow(WidgetMeters.configLabel(key, snapshot), toggle,
                     !first));
             first = false;
             toggle.setOnCheckedChangeListener((button, checked) -> {
@@ -121,19 +121,19 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         }
         linearLayout.addView(metersCard);
 
-        linearLayout.addView(Ui.separator(this, AppText.get(R.string.phone_content_4f9be)));
+        linearLayout.addView(Ui.separator(this, "Content"));
         RoundedLinearLayout contentCard = Ui.seslCard(this, this.dark);
-        this.showCountdown = Ui.checkbox(this, AppText.get(R.string.phone_show_live_time_until_reset_8055a), saved.showCountdown,
+        this.showCountdown = Ui.checkbox(this, "Show live time until reset", saved.showCountdown,
                 this.dark);
-        this.showResetCredits = Ui.checkbox(this, AppText.get(R.string.phone_show_reset_credit_count_e3e98), saved.showResetCredits,
+        this.showResetCredits = Ui.checkbox(this, "Show reset-credit count", saved.showResetCredits,
                 this.dark);
-        this.showResetAction = Ui.checkbox(this, AppText.get(R.string.phone_tap_tile_to_open_use_reset_confirmation_189b4),
+        this.showResetAction = Ui.checkbox(this, "Tap tile to open Use reset confirmation",
                 saved.showResetAction, this.dark);
         contentCard.addView(this.showCountdown);
         contentCard.addView(this.showResetCredits);
         contentCard.addView(this.showResetAction);
         TextView textViewText = Ui.text(this,
-                AppText.get(R.string.phone_a_reset_is_never_consumed_directly_from_the_lock_eb2b4),
+                "A reset is never consumed directly from the lock screen. The tile opens a confirmation screen first.",
                 12.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(-1, -2);
         layoutParams3.setMargins(0, Ui.dp(this, 12.0f), 0, 0);
@@ -179,9 +179,11 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         }
         int selected = this.selectedMeters.size();
         int capacity = WidgetMeters.lockSlotCapacity();
-        String message = getString(R.string.widget_capacity, capacity);
+        String message = "Lock widgets show up to " + capacity + " meters.";
         if (selected > capacity) {
-            message += " " + getString(R.string.widget_extra_hidden, selected - capacity);
+            message += " " + (selected - capacity)
+                    + " extra selection" + (selected - capacity == 1 ? " is" : "s are")
+                    + " ignored until you deselect others.";
         }
         this.metersHint.setText(message);
     }
@@ -266,7 +268,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         SamsungLockWidgetSupport.updateById(this, this.appWidgetId);
         setResult(RESULT_OK, new Intent().putExtra(
                 AppWidgetManager.EXTRA_APPWIDGET_ID, this.appWidgetId));
-        Toast.makeText(this, AppText.get(R.string.phone_lock_screen_widget_updated_d26d4), Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, "Lock-screen widget updated.", Toast.LENGTH_SHORT).show();
         finish();
     }
 }

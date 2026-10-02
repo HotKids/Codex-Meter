@@ -1,0 +1,28 @@
+# Xcode
+DerivedData/
+build/
+ci-gallery/
+GalleryResults.xcresult
+*.xcuserstate
+**/xcuserdata/
+*.moved-aside
+*.hmap
+*.ipa
+*.dSYM.zip
+*.dSYM
+timeline.xctimeline
+playground.xcworkspace
+
+# Swift Package Manager
+.build/
+.swiftpm/
+
+# macOS
+.DS_Store
+**/.DS_Store
+
+# Local signing / secrets
+*.p12
+*.mobileprovision
+.env
+.env.*

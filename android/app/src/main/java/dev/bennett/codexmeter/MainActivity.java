@@ -67,9 +67,9 @@ public final class MainActivity extends AppCompatActivity {
                 String stringExtra2 = intent.getStringExtra(AppConstants.EXTRA_MESSAGE);
                 MainActivity mainActivity = MainActivity.this;
                 if (stringExtra2 == null) {
-                    stringExtra2 = booleanExtra ? AppText.get(R.string.phone_signed_in_aeca5) : AppText.get(R.string.phone_sign_in_failed_49b78);
+                    stringExtra2 = booleanExtra ? "Signed in." : "Sign-in failed.";
                 }
-                Toast.makeText(mainActivity, stringExtra2, Toast.LENGTH_LONG).show();
+                Toast.makeText(mainActivity, stringExtra2, 1).show();
                 PhoneWearSync.pushAll(MainActivity.this);
                 MainActivity.this.rebuild();
                 return;
@@ -112,10 +112,10 @@ public final class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, MENU_REORDER, 0, AppText.get(R.string.phone_edit_dashboard_fbfce))
+        menu.add(Menu.NONE, MENU_REORDER, 0, "Edit dashboard")
                 .setIcon(R.drawable.ic_oui_edit_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, MENU_SETTINGS, 1, AppText.get(R.string.phone_settings_c7f73))
+        menu.add(Menu.NONE, MENU_SETTINGS, 1, "Settings")
                 .setIcon(R.drawable.ic_oui_settings_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
@@ -175,10 +175,9 @@ public final class MainActivity extends AppCompatActivity {
         intentFilter.addAction(AppConstants.ACTION_RELEASES_UPDATED);
         try {
             if (Build.VERSION.SDK_INT >= 33) {
-                registerReceiver(this.authReceiver, intentFilter, AppConstants.INTERNAL_PERMISSION,
-                        null, android.content.Context.RECEIVER_NOT_EXPORTED);
+                registerReceiver(this.authReceiver, intentFilter, "dev.bennett.codexmeter.permission.INTERNAL", null, 4);
             } else {
-                registerReceiver(this.authReceiver, intentFilter, "me.pipi.usage.permission.INTERNAL", null);
+                registerReceiver(this.authReceiver, intentFilter, "dev.bennett.codexmeter.permission.INTERNAL", null);
             }
             this.receiverRegistered = true;
         } catch (RuntimeException e) {
@@ -289,14 +288,15 @@ public final class MainActivity extends AppCompatActivity {
             boolean signedIn = SecureTokenStore.isSignedIn(this);
             if (!signedIn) {
                 Button signIn = Ui.nativePrimaryButton(this,
-                        AppPreferences.isOAuthPending(this) ? AppText.get(R.string.phone_continue_sign_in_cd141) : AppText.get(R.string.phone_sign_in_with_chatgpt_fe0b3));
+                        AppPreferences.isOAuthPending(this) ? "Continue sign-in" : "Sign in with ChatGPT");
                 signIn.setOnClickListener(view -> startOrContinueSignIn());
                 this.content.addView(signIn, new LinearLayout.LayoutParams(-1, Ui.dp(this, 60)));
                 Ui.addSpacer(this.content, 20);
             }
             if (signedIn && dashboard.getChildCount() == 0) {
                 TextView empty = Ui.text(this,
-                        AppText.get(R.string.phone_no_dashboard_items_are_available_refresh_usage_o_e50b5),
+                        "No dashboard items are available. Refresh usage or choose items in "
+                                + "Settings → Refresh & usage.",
                         14.0f, Ui.secondaryText(this.dark));
                 empty.setGravity(Gravity.CENTER);
                 this.content.addView(empty, new LinearLayout.LayoutParams(-1, -2));
@@ -309,22 +309,25 @@ public final class MainActivity extends AppCompatActivity {
                 UpdatePreferences.installedVersion(this));
         LinearLayout card = Ui.card(this, this.dark);
         TextView title = Ui.text(this, returnToStable
-                        ? AppText.get(R.string.phone_return_to_codex_meter_399f2) + release.version
-                        : "Codex Meter " + release.version + AppText.get(R.string.phone_is_ready_8563a), 18,
+                        ? "Return to Codex Meter " + release.version
+                        : "Codex Meter " + release.version + " is ready", 18,
                 Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView summary = Ui.text(this,
                 returnToStable
-                        ? AppText.get(R.string.phone_you_are_back_on_the_stable_channel_the_stable_ap_42787)
+                        ? "You are back on the stable channel. The stable APK installs in place "
+                        + "over this alpha build after checksum verification."
                         : release.prerelease
-                        ? AppText.get(R.string.phone_a_signed_alpha_release_is_available_the_apk_will_46f46)
-                        : AppText.get(R.string.phone_a_signed_github_release_is_available_the_apk_wil_5d4a8),
+                        ? "A signed alpha release is available. The APK will be checksum-verified "
+                        + "before Android asks you to approve installation."
+                        : "A signed GitHub release is available. The APK will be checksum-verified "
+                        + "before Android asks you to approve installation.",
                 13, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(-1, -2);
         summaryParams.setMargins(0, Ui.dp(this, 7), 0, Ui.dp(this, 14));
         card.addView(summary, summaryParams);
-        Button update = Ui.nativePrimaryButton(this, AppText.get(R.string.phone_review_update_32c9e));
+        Button update = Ui.nativePrimaryButton(this, "Review update");
         update.setOnClickListener(view -> startActivity(new Intent(this, UpdateActivity.class)
                 .putExtra(UpdateActivity.EXTRA_VERSION, release.version)));
         card.addView(update, new LinearLayout.LayoutParams(-1, Ui.dp(this, 60)));
@@ -332,7 +335,7 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     private void addHeader() {
-        TextView textViewText = Ui.text(this, AppText.get(R.string.phone_your_codex_allowance_at_a_glance_2e89e), 15.0f, Ui.secondaryText(this.dark));
+        TextView textViewText = Ui.text(this, "Your Codex allowance at a glance.", 15.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
         layoutParams.setMargins(Ui.dp(this, 4.0f), Ui.dp(this, 4.0f), 0, Ui.dp(this, 2.0f));
         this.content.addView(textViewText, layoutParams);
@@ -396,15 +399,15 @@ public final class MainActivity extends AppCompatActivity {
                 AppPreferences.getDashboardOrder(this), available)) {
             if (DashboardSections.FIVE_HOUR.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        AppText.get(R.string.five_hour), snapshot, snapshot.fiveHour, inverted));
+                        "5-hour", snapshot, snapshot.fiveHour, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.WEEKLY.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        AppText.get(R.string.weekly), snapshot, snapshot.weekly, inverted));
+                        "Weekly", snapshot, snapshot.weekly, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.MONTHLY.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        AppText.get(R.string.phone_monthly_d31ed), snapshot, snapshot.monthly, inverted));
+                        "Monthly", snapshot, snapshot.monthly, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.USAGE_CREDITS.equals(key)) {
                 addDashboardCard(column, buildUsageCreditsCard(snapshot.usageCredits));
@@ -467,13 +470,13 @@ public final class MainActivity extends AppCompatActivity {
         card.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 12));
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
         long now = System.currentTimeMillis();
-        TextView title = Ui.text(this, AppText.get(R.string.phone_usage_history_b2a35), 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, "Usage history", 18, Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(-1, -2);
         titleParams.setMargins(Ui.dp(this, 10), 0, Ui.dp(this, 10), 0);
         card.addView(title, titleParams);
         TextView detail = Ui.text(this,
-                AppText.get(R.string.phone_on_device_burn_trends_improve_estimates_as_sampl_77785),
+                "On-device burn trends improve estimates as samples accumulate.",
                 12, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(-1, -2);
         detailParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 4), Ui.dp(this, 10), Ui.dp(this, 4));
@@ -485,7 +488,7 @@ public final class MainActivity extends AppCompatActivity {
         UsageWindow fiveWindow = snapshot == null ? null : snapshot.fiveHour;
         if (fiveWindow != null && snapshot.fetchedAtMillis > 0L) {
             UsageBurnChartView fiveChart = new UsageBurnChartView(this);
-            fiveChart.setData(AppText.get(R.string.five_hour), fiveWindow,
+            fiveChart.setData("5-hour", fiveWindow,
                     AppPreferences.loadUsageHistory(this, UsageHistory.FIVE_HOUR),
                     snapshot.fetchedAtMillis,
                     UsagePacePreferences.assess(this, snapshot, fiveWindow, now));
@@ -496,7 +499,7 @@ public final class MainActivity extends AppCompatActivity {
         UsageWindow weeklyWindow = snapshot == null ? null : snapshot.weekly;
         if (weeklyWindow != null && snapshot.fetchedAtMillis > 0L) {
             UsageBurnChartView weeklyChart = new UsageBurnChartView(this);
-            weeklyChart.setData(AppText.get(R.string.weekly), weeklyWindow,
+            weeklyChart.setData("Weekly", weeklyWindow,
                     AppPreferences.loadUsageHistory(this, UsageHistory.WEEKLY),
                     snapshot.fetchedAtMillis,
                     UsagePacePreferences.assess(this, snapshot, weeklyWindow, now));
@@ -507,7 +510,7 @@ public final class MainActivity extends AppCompatActivity {
         UsageWindow monthlyWindow = snapshot == null ? null : snapshot.monthly;
         if (monthlyWindow != null && snapshot.fetchedAtMillis > 0L) {
             UsageBurnChartView monthlyChart = new UsageBurnChartView(this);
-            monthlyChart.setData(AppText.get(R.string.phone_monthly_d31ed), monthlyWindow,
+            monthlyChart.setData("Monthly", monthlyWindow,
                     AppPreferences.loadUsageHistory(this, UsageHistory.MONTHLY),
                     snapshot.fetchedAtMillis,
                     UsagePacePreferences.assess(this, snapshot, monthlyWindow, now));
@@ -517,7 +520,7 @@ public final class MainActivity extends AppCompatActivity {
 
         if (!hasCharts) {
             TextView waiting = Ui.text(this,
-                    AppText.get(R.string.phone_charts_appear_once_openai_reports_your_5_hour_we_1c189),
+                    "Charts appear once OpenAI reports your 5-hour, weekly, or monthly usage windows.",
                     12, Ui.secondaryText(this.dark));
             LinearLayout.LayoutParams waitingParams = new LinearLayout.LayoutParams(-1, -2);
             waitingParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 8),
@@ -525,7 +528,7 @@ public final class MainActivity extends AppCompatActivity {
             card.addView(waiting, waitingParams);
         }
 
-        Button open = Ui.button(this, AppText.get(R.string.phone_view_history_dd8f3), false, this.dark);
+        Button open = Ui.button(this, "View history", false, this.dark);
         open.setOnClickListener(view -> Ui.startSecondaryActivity(this, UsageHistoryActivity.class));
         LinearLayout.LayoutParams openParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 54));
         openParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 4), Ui.dp(this, 10), 0);
@@ -535,7 +538,7 @@ public final class MainActivity extends AppCompatActivity {
 
     private LinearLayout buildUsageCreditsCard(UsageCredits credits) {
         LinearLayout card = Ui.card(this, this.dark);
-        TextView title = Ui.text(this, AppText.get(R.string.phone_usage_credits_5e681), 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, "Usage credits", 18, Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         card.addView(buildIconDetailRow(R.drawable.ic_oui_credit_card_outline,
@@ -572,16 +575,16 @@ public final class MainActivity extends AppCompatActivity {
 
     private static String usageCreditBalance(UsageCredits credits) {
         if (credits.unlimited) {
-            return AppText.get(R.string.phone_unlimited_b8bef);
+            return "Unlimited";
         }
         if (credits.balance.isEmpty()) {
-            return credits.hasCredits ? AppText.get(R.string.phone_credits_available_aa473) : AppText.get(R.string.phone_no_purchased_credits_4db9c);
+            return credits.hasCredits ? "Credits available" : "No purchased credits";
         }
         try {
             BigDecimal amount = new BigDecimal(credits.balance.replace(",", ""));
             NumberFormat format = NumberFormat.getNumberInstance(Locale.getDefault());
             format.setMaximumFractionDigits(2);
-            return format.format(amount) + AppText.get(R.string.phone_credits_72992);
+            return format.format(amount) + " credits";
         } catch (NumberFormatException ignored) {
             return credits.balance;
         }
@@ -589,18 +592,18 @@ public final class MainActivity extends AppCompatActivity {
 
     private static String usageCreditsSummary(UsageCredits credits) {
         if (credits.unlimited) {
-            return AppText.get(R.string.phone_usage_credit_balance_is_not_capped_32663);
+            return "Usage-credit balance is not capped";
         }
         if (credits.balance.isEmpty() && !credits.hasCredits) {
-            return AppText.get(R.string.phone_purchase_credits_in_chatgpt_codex_6402e);
+            return "Purchase credits in ChatGPT Codex";
         }
-        return AppText.get(R.string.phone_purchased_codex_usage_credit_balance_e38cb);
+        return "Purchased Codex usage-credit balance";
     }
 
     private static String cadenceLabel(UsageWindow window) {
         long seconds = window.windowSeconds;
         if (seconds >= 432_000L && seconds <= 777_600L) {
-            return AppText.get(R.string.weekly);
+            return "Weekly";
         }
         if (seconds >= 10_800L && seconds <= 28_800L) {
             long hours = Math.max(1L, Math.round(seconds / 3600.0d));
@@ -614,15 +617,15 @@ public final class MainActivity extends AppCompatActivity {
             long hours = seconds / 3_600L;
             return hours + "-hour";
         }
-        return AppText.get(R.string.phone_usage_0bb18);
+        return "Usage";
     }
 
     private static String limitTitle(UsageLimit limit) {
         if (limit.limitReached) {
-            return limit.displayName() + AppText.get(R.string.phone_limit_reached_fe877);
+            return limit.displayName() + " (limit reached)";
         }
         if (!limit.allowed) {
-            return limit.displayName() + AppText.get(R.string.phone_unavailable_dfe39);
+            return limit.displayName() + " (unavailable)";
         }
         return limit.displayName();
     }
@@ -641,11 +644,11 @@ public final class MainActivity extends AppCompatActivity {
         account.addView(avatar, new LinearLayout.LayoutParams(Ui.dp(this, 44.0f), Ui.dp(this, 44.0f)));
         LinearLayout identity = new LinearLayout(this);
         identity.setOrientation(LinearLayout.VERTICAL);
-        String titleText = signedIn ? AppText.get(R.string.phone_chatgpt_account_b7b4f) : AppText.get(R.string.phone_not_connected_8b02f);
+        String titleText = signedIn ? "ChatGPT account" : "Not connected";
         TextView title = Ui.text(this, titleText, 18.0f, Ui.mainText(this.dark));
         title.setSingleLine(true);
         identity.addView(title);
-        TextView subtitle = Ui.text(this, signedIn && !tokens.email.isEmpty() ? tokens.email : (signedIn ? AppText.get(R.string.phone_connected_c2f9b) : AppText.get(R.string.phone_sign_in_to_view_your_usage_912b6)), 14.0f, Ui.secondaryText(this.dark));
+        TextView subtitle = Ui.text(this, signedIn && !tokens.email.isEmpty() ? tokens.email : (signedIn ? "Connected" : "Sign in to view your usage"), 14.0f, Ui.secondaryText(this.dark));
         subtitle.setSingleLine(true);
         subtitle.setEllipsize(android.text.TextUtils.TruncateAt.END);
         identity.addView(subtitle);
@@ -671,7 +674,7 @@ public final class MainActivity extends AppCompatActivity {
 
         LinearLayout linearLayoutHorizontal = Ui.horizontal(this, 16);
         if (!signedIn) {
-            Button button = Ui.button(this, AppPreferences.isOAuthPending(this) ? AppText.get(R.string.phone_continue_sign_in_cd141) : AppText.get(R.string.phone_sign_in_with_chatgpt_fe0b3), true, this.dark);
+            Button button = Ui.button(this, AppPreferences.isOAuthPending(this) ? "Continue sign-in" : "Sign in with ChatGPT", true, this.dark);
             button.setOnClickListener(new View.OnClickListener() { // from class: dev.bennett.codexmeter.MainActivity.3
                 @Override // android.view.View.OnClickListener
                 public void onClick(View view) {
@@ -680,7 +683,7 @@ public final class MainActivity extends AppCompatActivity {
             });
             linearLayoutHorizontal.addView(button, new LinearLayout.LayoutParams(0, Ui.dp(this, 50.0f), 1.0f));
         } else {
-            final Button button2 = Ui.button(this, AppText.get(R.string.refresh), true, this.dark);
+            final Button button2 = Ui.button(this, "Refresh", true, this.dark);
             button2.setCompoundDrawables(null, null, null, null);
             button2.setOnClickListener(new View.OnClickListener() { // from class: dev.bennett.codexmeter.MainActivity.4
                 @Override // android.view.View.OnClickListener
@@ -689,7 +692,7 @@ public final class MainActivity extends AppCompatActivity {
                 }
             });
             linearLayoutHorizontal.addView(button2, new LinearLayout.LayoutParams(0, Ui.dp(this, 60.0f), 1.0f));
-            Button button3 = Ui.button(this, AppText.get(R.string.phone_sign_out_dc164), false, this.dark);
+            Button button3 = Ui.button(this, "Sign out", false, this.dark);
             button3.setCompoundDrawables(null, null, null, null);
             LinearLayout.LayoutParams layoutParams4 = new LinearLayout.LayoutParams(0, Ui.dp(this, 60.0f), 1.0f);
             layoutParams4.setMargins(Ui.dp(this, 10.0f), 0, 0, 0);
@@ -708,7 +711,7 @@ public final class MainActivity extends AppCompatActivity {
     private void addUsageRow(LinearLayout linearLayout, String str, UsageWindow usageWindow) {
         LinearLayout linearLayoutHorizontal = Ui.horizontal(this, 80);
         linearLayoutHorizontal.addView(Ui.text(this, str, 13.0f, Ui.secondaryText(this.dark)), new LinearLayout.LayoutParams(0, -2, 1.0f));
-        TextView textViewText = Ui.text(this, usageWindow == null ? AppText.get(R.string.phone_unavailable_2c9c1) : usageWindow.remainingPercent() + AppText.get(R.string.phone_left_51473), 20.0f, Ui.mainText(this.dark));
+        TextView textViewText = Ui.text(this, usageWindow == null ? "Unavailable" : usageWindow.remainingPercent() + "% left", 20.0f, Ui.mainText(this.dark));
         textViewText.setTypeface(Ui.mediumTypeface(this));
         linearLayoutHorizontal.addView(textViewText);
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
@@ -717,7 +720,7 @@ public final class MainActivity extends AppCompatActivity {
         ProgressBar progressBarProgress = Ui.progress(this, this.dark);
         progressBarProgress.setProgress(usageWindow == null ? 0 : usageWindow.remainingPercent());
         linearLayout.addView(progressBarProgress);
-        View viewText = Ui.text(this, usageWindow == null ? AppText.get(R.string.phone_reset_time_unavailable_5c303) : UsageFormat.reset(this, usageWindow, "both", System.currentTimeMillis()), 11.0f, Ui.secondaryText(this.dark));
+        View viewText = Ui.text(this, usageWindow == null ? "Reset time unavailable" : UsageFormat.reset(this, usageWindow, "both", System.currentTimeMillis()), 11.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-1, -2);
         layoutParams2.setMargins(0, Ui.dp(this, 5.0f), 0, Ui.dp(this, 13.0f));
         linearLayout.addView(viewText, layoutParams2);
@@ -731,7 +734,7 @@ public final class MainActivity extends AppCompatActivity {
         long nextExpiry = credits == null ? 0L : credits.nextExpiryMillis(now);
 
         LinearLayout card = Ui.card(this, this.dark);
-        TextView title = Ui.text(this, AppText.get(R.string.phone_reset_credits_ef7c0), 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, "Reset credits", 18, Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         card.addView(buildIconDetailRow(R.drawable.ic_oui_battery,
@@ -741,7 +744,7 @@ public final class MainActivity extends AppCompatActivity {
         if (signedIn) {
             card.setOnClickListener(view -> openResetCredits());
             Button button = Ui.nativePrimaryButton(this,
-                    available > 0 ? AppText.get(R.string.phone_use_1_reset_9f6ed) : AppText.get(R.string.phone_no_resets_available_d6246));
+                    available > 0 ? "Use 1 reset" : "No resets available");
             button.setEnabled(available > 0);
             button.setOnClickListener(view -> openResetCredits());
             LinearLayout.LayoutParams buttonParams =
@@ -754,30 +757,30 @@ public final class MainActivity extends AppCompatActivity {
 
     private static String resetCreditsTitle(boolean signedIn, int available) {
         if (!signedIn) {
-            return AppText.get(R.string.phone_reset_credits_ef7c0);
+            return "Reset credits";
         }
         if (available <= 0) {
-            return AppText.get(R.string.phone_no_resets_available_d6246);
+            return "No resets available";
         }
         if (available == 1) {
-            return AppText.get(R.string.phone_1_reset_available_6972a);
+            return "1 reset available";
         }
-        return available + AppText.get(R.string.phone_resets_available_0480d);
+        return available + " resets available";
     }
 
     private String resetCreditsSummary(boolean signedIn, int available, long nextExpiry,
             long now) {
         if (!signedIn) {
-            return AppText.get(R.string.phone_sign_in_to_view_reset_credits_8ac91);
+            return "Sign in to view reset credits";
         }
         if (nextExpiry > 0L) {
-            return AppText.get(R.string.phone_next_expires_fe980) + UsageFormat.absolute(this, nextExpiry, now)
+            return "Next expires " + UsageFormat.absolute(this, nextExpiry, now)
                     + " · " + UsageFormat.relative(nextExpiry, now);
         }
         if (available > 0) {
-            return AppText.get(R.string.phone_expiration_details_unavailable_cdd05);
+            return "Expiration details unavailable";
         }
-        return AppText.get(R.string.phone_earn_credits_from_chatgpt_codex_75980);
+        return "Earn credits from ChatGPT Codex";
     }
 
     private void openResetCredits() {
@@ -802,19 +805,19 @@ public final class MainActivity extends AppCompatActivity {
         LinearLayout linearLayoutCard = Ui.card(this, this.dark);
         int length = AppWidgetManager.getInstance(this).getAppWidgetIds(new ComponentName(this, (Class<?>) CodexUsageWidget.class)).length + SamsungLockWidgetSupport.countAll(this);
         if (length == 0) {
-            str = AppText.get(R.string.phone_add_codex_meter_widgets_47493);
+            str = "Add Codex Meter widgets";
         } else {
-            str = length + AppText.get(R.string.phone_widget_d02d8) + AppText.nounSuffix(length) + AppText.get(R.string.phone_active_f7ea7);
+            str = length + " widget" + (length == 1 ? "" : "s") + " active";
         }
         TextView textViewText = Ui.text(this, str, 16.0f, Ui.mainText(this.dark));
         textViewText.setTypeface(Ui.mediumTypeface(this));
         linearLayoutCard.addView(textViewText);
-        View viewText = Ui.text(this, AppText.get(R.string.phone_home_and_galaxy_lock_screen_widgets_use_two_batt_6f20b), 13.0f, Ui.secondaryText(this.dark));
+        View viewText = Ui.text(this, "Home and Galaxy lock-screen widgets use two battery-style dials for 5-hour and weekly usage remaining, with One UI Home handling the native frame and blur.", 13.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
         layoutParams.setMargins(0, Ui.dp(this, 7.0f), 0, Ui.dp(this, 15.0f));
         linearLayoutCard.addView(viewText, layoutParams);
         LinearLayout linearLayoutHorizontal = Ui.horizontal(this, 16);
-        Button button = Ui.button(this, AppText.get(R.string.phone_add_widget_dd441), true, this.dark);
+        Button button = Ui.button(this, "Add widget", true, this.dark);
         button.setOnClickListener(new View.OnClickListener() { // from class: dev.bennett.codexmeter.MainActivity.7
             @Override // android.view.View.OnClickListener
             public void onClick(View view) {
@@ -822,7 +825,7 @@ public final class MainActivity extends AppCompatActivity {
             }
         });
         linearLayoutHorizontal.addView(button, new LinearLayout.LayoutParams(0, Ui.dp(this, 50.0f), 1.0f));
-        Button button2 = Ui.button(this, AppText.get(R.string.phone_customize_239dc), false, this.dark);
+        Button button2 = Ui.button(this, "Customize", false, this.dark);
         LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(0, Ui.dp(this, 50.0f), 1.0f);
         layoutParams2.setMargins(Ui.dp(this, 10.0f), 0, 0, 0);
         linearLayoutHorizontal.addView(button2, layoutParams2);
@@ -838,10 +841,10 @@ public final class MainActivity extends AppCompatActivity {
 
     private LinearLayout buildOperationCard() {
         LinearLayout linearLayoutCard = Ui.card(this, this.dark);
-        TextView textViewText = Ui.text(this, AppText.get(R.string.phone_automatic_refresh_every_b7f6a) + AppPreferences.getRefreshMinutes(this) + AppText.get(R.string.phone_minutes_ae098), 15.0f, Ui.mainText(this.dark));
+        TextView textViewText = Ui.text(this, "Automatic refresh every " + AppPreferences.getRefreshMinutes(this) + " minutes", 15.0f, Ui.mainText(this.dark));
         textViewText.setTypeface(Ui.mediumTypeface(this));
         linearLayoutCard.addView(textViewText);
-        TextView textViewText2 = Ui.text(this, AppText.get(R.string.phone_manual_refreshes_run_immediately_scheduled_work_52ff0), 13.0f, Ui.secondaryText(this.dark));
+        TextView textViewText2 = Ui.text(this, "Manual refreshes run immediately. Scheduled work follows Android battery and network policy, and another update is requested after the next known reset. Cached values remain visible offline.", 13.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
         layoutParams.setMargins(0, Ui.dp(this, 7.0f), 0, 0);
         linearLayoutCard.addView(textViewText2, layoutParams);
@@ -867,15 +870,15 @@ public final class MainActivity extends AppCompatActivity {
         try {
             startForegroundService(new Intent(this, (Class<?>) OAuthService.class).setAction(OAuthService.ACTION_START));
             if (AppPreferences.isOAuthPending(this)) {
-                str = AppText.get(R.string.phone_resuming_secure_openai_sign_in_be89b);
+                str = "Resuming secure OpenAI sign-in…";
             } else {
-                str = AppText.get(R.string.phone_opening_secure_openai_sign_in_54fbf);
+                str = "Opening secure OpenAI sign-in…";
             }
-            Toast.makeText(this, str, Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, str, 0).show();
         } catch (RuntimeException e) {
             DiagnosticLog.error(this, "auth", "sign_in_service_start_failed", e);
             AppPreferences.setOAuthPending(this, false, "");
-            Toast.makeText(this, AppText.get(R.string.phone_could_not_start_sign_in_6a67c) + safeMessage(e), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Could not start sign-in: " + safeMessage(e), 1).show();
         }
     }
 
@@ -885,7 +888,7 @@ public final class MainActivity extends AppCompatActivity {
             try {
                 startActivity(new Intent("android.intent.action.VIEW", Uri.parse(str)));
             } catch (RuntimeException e) {
-                Toast.makeText(this, AppText.get(R.string.phone_no_browser_is_available_to_complete_sign_in_bb2d8), Toast.LENGTH_LONG).show();
+                Toast.makeText(this, "No browser is available to complete sign-in.", 1).show();
             }
         }
     }
@@ -906,7 +909,7 @@ public final class MainActivity extends AppCompatActivity {
                         public void run() {
                             DiagnosticLog.info(applicationContext, "user",
                                     "manual_refresh_finished", "source", "button");
-                            Toast.makeText(MainActivity.this, AppText.get(R.string.phone_usage_updated_1cbd8), Toast.LENGTH_SHORT).show();
+                            Toast.makeText(MainActivity.this, "Usage updated.", 0).show();
                             MainActivity.this.rebuild();
                         }
                     });
@@ -918,7 +921,7 @@ public final class MainActivity extends AppCompatActivity {
                     MainActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.MainActivity.9.2
                         @Override // java.lang.Runnable
                         public void run() {
-                            Toast.makeText(MainActivity.this, MainActivity.safeMessage(e), Toast.LENGTH_LONG).show();
+                            Toast.makeText(MainActivity.this, MainActivity.safeMessage(e), 1).show();
                             MainActivity.this.rebuild();
                         }
                     });
@@ -933,7 +936,7 @@ public final class MainActivity extends AppCompatActivity {
             DiagnosticLog.warn(this, "user", "manual_refresh_rejected",
                     "source", "pull", "reason", "signed_out");
             this.swipeRefresh.setRefreshing(false);
-            Toast.makeText(this, AppText.get(R.string.phone_sign_in_from_settings_to_refresh_usage_ae0fd), Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, "Sign in from Settings to refresh usage.", Toast.LENGTH_SHORT).show();
             Ui.startSecondaryActivity(this, SettingsActivity.class);
             return;
         }
@@ -963,7 +966,7 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     public void confirmSignOut() {
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle(AppText.get(R.string.phone_sign_out_b1155)).setMessage(AppText.get(R.string.phone_this_removes_encrypted_chatgpt_tokens_and_cached_2d2b6)).setNegativeButton(AppText.get(R.string.widget_config_cancel), (DialogInterface.OnClickListener) null).setPositiveButton(AppText.get(R.string.phone_sign_out_dc164), new DialogInterface.OnClickListener() { // from class: dev.bennett.codexmeter.MainActivity.10
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Sign out?").setMessage("This removes encrypted ChatGPT tokens and cached usage from this device.").setNegativeButton("Cancel", (DialogInterface.OnClickListener) null).setPositiveButton("Sign out", new DialogInterface.OnClickListener() { // from class: dev.bennett.codexmeter.MainActivity.10
             @Override // android.content.DialogInterface.OnClickListener
             public void onClick(DialogInterface dialogInterface, int i) {
                 MainActivity.this.signOut();
@@ -996,9 +999,9 @@ public final class MainActivity extends AppCompatActivity {
         ComponentName componentName = new ComponentName(this, (Class<?>) CodexUsageWidget.class);
         if (appWidgetManager.isRequestPinAppWidgetSupported()) {
             appWidgetManager.requestPinAppWidget(componentName, null, null);
-            Toast.makeText(this, AppText.get(R.string.phone_choose_a_size_and_place_the_widget_on_your_home_5645c), Toast.LENGTH_LONG).show();
+            Toast.makeText(this, "Choose a size and place the widget on your home screen.", 1).show();
         } else {
-            AlertDialog dialog = new AlertDialog.Builder(this).setTitle(AppText.get(R.string.phone_add_from_your_launcher_ecf8d)).setMessage(AppText.get(R.string.phone_long_press_an_empty_area_of_the_home_screen_open_05d28)).setPositiveButton(AppText.get(R.string.phone_ok_9ce3b), (DialogInterface.OnClickListener) null).create();
+            AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Add from your launcher").setMessage("Long-press an empty area of the home screen, open Widgets, then choose Codex Meter.").setPositiveButton("OK", (DialogInterface.OnClickListener) null).create();
             dialog.show();
         }
     }
@@ -1006,7 +1009,7 @@ public final class MainActivity extends AppCompatActivity {
     public static String safeMessage(Exception exc) {
         String message = exc.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            return AppText.get(R.string.phone_the_operation_failed_8a630);
+            return "The operation failed.";
         }
         return message.length() > 240 ? message.substring(0, 240) : message;
     }

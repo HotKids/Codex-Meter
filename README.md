@@ -1,48 +1,16 @@
 # Codex Meter
 
 Codex Meter is an unofficial open-source client for viewing the Codex allowance
-attached to a signed-in ChatGPT account. This repository contains the Android
-phone app and its frozen Wear OS companion:
+attached to a signed-in ChatGPT account. This repository is a **monorepo**:
 
 | Path | Platform | Notes |
 |------|----------|--------|
 | Repository root | Shared | Docs, license, changelog, CI, convenience script wrappers |
 | [`android/`](android/) | **Android** | Phone app + Wear companion: One UI dashboard, home widgets, Samsung lock/AOD, notifications, optional live usage monitor |
+| [`ios/`](ios/) | **iPhone / iPad** | Native SwiftUI + WidgetKit client with portable 2.8.0 behavior (meters, monthly Free-tier windows, history analytics, diagnostics, widgets) |
 
-There is no backend. The Android app talks to ChatGPT/Codex endpoints directly
-and stores credentials only on-device.
-
-Wear OS is retained in its current state. Its code, resources, dependencies,
-and version are frozen until the maintainer explicitly resumes development.
-
-## Phone fork changes
-
-The phone installs as `me.pipi.usage` and checks updates from
-`HotKids/Codex-Meter`. It includes Simplified Chinese resources with English
-fallback, the existing blue allowance-ring launcher icon, and an adaptive home
-widget. The app retains its original One UI dashboard, settings pages, and navigation.
-
-Home widgets follow the [AI-Usage](https://github.com/StarYunLee/Scripting)
-Small and Medium layouts, including plan badges, reset metadata, progress bars,
-watermarks and refresh timestamps. Only **2×1** keeps the upstream native arc
-dials and English copy. The editor selects **1–4 actual usage windows**: small
-widgets show the first two, medium widgets show up to four. Available windows
-include five-hour, weekly/monthly, and model-specific limits returned by the API.
-Reset time and available reset credits appear as metadata, not quota windows.
-Legacy helper selections migrate while explicit quota selections are retained.
-
-Tap a widget to open the original app dashboard; tap its timestamp to request
-refresh. These changes are limited to widgets. The app retains its existing icon,
-original wave allowance cards, dashboard editor, history, settings and navigation.
-Phone plan labels remain **Pro 10x**, including legacy `pro20x` cached identifiers.
-AI-Usage's MIT license is bundled in `android/app/src/main/assets/AI-Usage-LICENSE.txt`.
-
-Wear OS remains unchanged. Its original package ID differs from the renamed
-phone, so the two apps cannot pair through Google's Data Layer.
-
-This fork can receive ordinary Git commits and pushes without opening a pull
-request to the original project. Keeping the fork relationship allows later
-upstream updates to be fetched and merged manually.
+There is no shared backend. Each platform talks to ChatGPT/Codex endpoints
+directly and stores credentials only on-device.
 
 ## Android — Version 2.8.0
 
@@ -66,7 +34,7 @@ Users can choose silent, notification-sound, or alarm-sound alerts for the five-
 
 The app includes:
 
-- AI-Usage home widgets with 1–4 selectable quota windows; 2×1 keeps the original English arc dials.
+- Responsive home-screen widgets with ring, four-dial, and battery-list layouts, plus Adaptive / Dials / Progress bars layout preference and drag-reorderable meter slots (Codex 5-hour/weekly, next reset, reset credits).
 - Both-window, five-hour-only, and weekly-only configurations (legacy metric mode; meters checklist supersedes this when customized).
 - Optional reset-credit inventory, expiration, and redemption controls.
 - Transparent through opaque backgrounds, including a Background off toggle and three One UI-style opacity steps.
@@ -114,6 +82,20 @@ From the repository root:
 ```
 
 Or from `android/` directly. `build.sh` assembles the release APKs with Gradle and signs them with a local development key under `android/.local-signing/`. Those locally signed APKs will not install over the distributed release build. Artifacts land in `android/dist/`.
+
+### iOS
+
+See [`ios/README.md`](ios/README.md). Requires Xcode 26+ and iOS/iPadOS 26+.
+The iOS client now carries portable Android 2.8.0 behavior: Free-tier monthly
+windows, scrubbable usage-history analytics with customize, and opt-in
+diagnostic log export.
+
+```bash
+cd ios
+swift test --package-path CodexMeterCore
+xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeter \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
 
 ## Releases
 

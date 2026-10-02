@@ -6,25 +6,18 @@ public final class OAuthBrowserPage {
     }
 
     public static String render(String message, boolean success, String appLink) {
-        return render(message, success, appLink, "en",
-                success ? "You’re connected" : "Let’s try that again",
-                success ? "SIGN-IN COMPLETE" : "SIGN-IN NEEDS ATTENTION",
-                success ? "Open Codex Meter" : "Back to Codex Meter",
-                success ? "Returning to the app automatically…" : "Return to the app to restart secure sign-in.");
-    }
-
-    /** The phone supplies translated copy while this renderer stays independent of Android. */
-    public static String render(String message, boolean success, String appLink, String language,
-            String title, String eyebrow, String action, String hint) {
         String safeMessage = htmlEscape(message);
         String safeLink = htmlEscape(appLink);
         String scriptLink = javascriptString(appLink);
+        String title = success ? "You’re connected" : "Let’s try that again";
+        String eyebrow = success ? "SIGN-IN COMPLETE" : "SIGN-IN NEEDS ATTENTION";
+        String action = success ? "Open Codex Meter" : "Back to Codex Meter";
         String symbol = success ? "&#10003;" : "!";
         String autoReturn = success
                 ? "<script>setTimeout(function(){window.location.href='" + scriptLink
                     + "';},700);</script>"
                 : "";
-        return "<!doctype html><html lang=\"" + htmlEscape(language) + "\"><head>"
+        return "<!doctype html><html lang=\"en\"><head>"
                 + "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<meta name=\"color-scheme\" content=\"light dark\"><title>Codex Meter</title>"
                 + "<style>"
@@ -49,9 +42,10 @@ public final class OAuthBrowserPage {
                 + "@keyframes in{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}}"
                 + "</style></head><body><main class=\"card\">"
                 + "<div class=\"mark\" aria-hidden=\"true\">" + symbol + "</div>"
-                + "<div class=\"eyebrow\">" + htmlEscape(eyebrow) + "</div><h1>" + htmlEscape(title) + "</h1>"
+                + "<div class=\"eyebrow\">" + eyebrow + "</div><h1>" + title + "</h1>"
                 + "<p>" + safeMessage + "</p><a class=\"button\" href=\"" + safeLink + "\">"
-                + htmlEscape(action) + "</a><div class=\"hint\">" + htmlEscape(hint)
+                + action + "</a><div class=\"hint\">"
+                + (success ? "Returning to the app automatically…" : "Return to the app to restart secure sign-in.")
                 + "</div></main>" + autoReturn + "</body></html>";
     }
 

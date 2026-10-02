@@ -3,381 +3,436 @@ package dev.bennett.codexmeter;
 import android.annotation.SuppressLint;
 import android.appwidget.AppWidgetManager;
 import android.content.Intent;
-import android.content.SharedPreferences;
 import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.MotionEvent;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.AdapterView;
 import android.widget.FrameLayout;
-import android.widget.ImageView;
 import android.widget.LinearLayout;
+import android.widget.ImageView;
 import android.widget.RemoteViews;
 import android.widget.Spinner;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.SeslSeekBar;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
 import dev.oneuiproject.oneui.widget.CardItemView;
+import dev.oneuiproject.oneui.widget.RadioItemView;
+import dev.oneuiproject.oneui.widget.RadioItemViewGroup;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.LinkedHashSet;
 import java.util.List;
 
-/** Single-account AI-Usage settings, with the upstream Android 2×1 dial exception. */
 public final class WidgetConfigActivity extends AppCompatActivity {
+    private Spinner accentSpinner;
+    private CardItemView accentRow;
     private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private boolean dark;
-    private WidgetOptions savedAppearance;
-    private Spinner referenceStyleSpinner;
-    private Spinner refreshSpinner;
-    private Spinner previewSpinner;
-    private Spinner themeSpinner;
-    private Spinner accentSpinner;
+    private Spinner displaySpinner;
+    private CardItemView displayRow;
+    private Spinner styleSpinner;
+    private CardItemView styleRow;
+    private SeslSeekBar opacitySlider;
     private SwitchCompat backgroundSwitch;
-    private CardItemView referenceStyleRow;
-    private CardItemView refreshRow;
-    private CardItemView previewRow;
-    private CardItemView themeRow;
-    private CardItemView accentRow;
-    private TextView accountSummary;
-    private TextView metersHint;
+    private SwitchCompat percentSymbolSwitch;
+    private View opacityControl;
+    private View backgroundRow;
     private FrameLayout previewContainer;
+    private Bundle widgetSize = new Bundle();
+    private Spinner themeSpinner;
+    private CardItemView themeRow;
+    private TextView metersHint;
     private RecyclerView metersList;
     private MeterAdapter meterAdapter;
-    private ItemTouchHelper meterTouchHelper;
-    private UsageSnapshot snapshot;
-    private WidgetUsageSnapshot widgetSnapshot;
     private final List<String> meterOrder = new ArrayList<>();
     private final LinkedHashSet<String> selectedMeters = new LinkedHashSet<>();
-    // Preserve unsaved choices independently of refreshed API data.
-    private String requestedSelection;
-    private boolean selectionEdited;
-    private SharedPreferences observedPreferences;
-    private SharedPreferences observedWindows;
-    private SharedPreferences observedRefresh;
-    private final SharedPreferences.OnSharedPreferenceChangeListener snapshotListener = (prefs, key) -> {
-        if (key == null || "last_snapshot".equals(key) || "reset_credits_snapshot".equals(key)
-                || "last_error".equals(key)) runOnUiThread(this::reloadSnapshot);
-    };
-    private final SharedPreferences.OnSharedPreferenceChangeListener windowsListener = (prefs, key) -> {
-        if (key == null || key.equals(WidgetUsageStore.key(this))) runOnUiThread(this::reloadSnapshot);
-    };
-    private final SharedPreferences.OnSharedPreferenceChangeListener refreshListener = (prefs, key) -> {
-        if (key == null || "error".equals(key) || "failed_at".equals(key)) runOnUiThread(this::renderPreview);
-    };
+    private String tapAction = WidgetOptions.TAP_OPEN_APP;
+    private final int tapOpenId = View.generateViewId();
+    private final int tapRefreshId = View.generateViewId();
+    private final int tapResetId = View.generateViewId();
 
-    @Override protected void onCreate(Bundle state) {
+    @Override
+    @SuppressLint("RestrictedApi")
+    protected void onCreate(Bundle state) {
         Ui.applySelectedTheme(this);
         super.onCreate(state);
         setResult(RESULT_CANCELED);
-        appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+        this.appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
                 AppWidgetManager.INVALID_APPWIDGET_ID);
-        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            Toast.makeText(this, R.string.phone_no_widget_was_selected_85c04, Toast.LENGTH_LONG).show();
+        if (this.appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            Toast.makeText(this, "No widget was selected.", Toast.LENGTH_LONG).show();
             finish();
             return;
         }
-        dark = Ui.isDark(this);
-        savedAppearance = AppPreferences.loadWidgetOptions(this, appWidgetId);
-        snapshot = AppPreferences.loadSnapshot(this);
-        widgetSnapshot = loadWidgetSnapshot();
-        requestedSelection = state == null ? savedAppearance.visibleMeters
-                : state.getString("selection", savedAppearance.visibleMeters);
-        selectionEdited = state != null && state.getBoolean("selection_edited");
-        if (state != null && state.getStringArrayList("meter_order") != null)
-            meterOrder.addAll(state.getStringArrayList("meter_order"));
-        synchronizeWindows();
-        build(state);
-    }
-
-    @Override protected void onStart() {
-        super.onStart();
-        if (meterAdapter == null) return;
-        observedPreferences = ReferenceWidgetPreferences.preferences(this);
-        observedPreferences.registerOnSharedPreferenceChangeListener(snapshotListener);
-        observedWindows = WidgetUsageStore.prefs(this);
-        observedWindows.registerOnSharedPreferenceChangeListener(windowsListener);
-        observedRefresh = WidgetRefreshScheduler.state(this);
-        observedRefresh.registerOnSharedPreferenceChangeListener(refreshListener);
-        reloadSnapshot();
-        WidgetRefreshScheduler.requestInitial(this);
-    }
-
-    @Override protected void onResume() {
-        super.onResume();
-        if (meterAdapter != null) reloadSnapshot();
-    }
-
-    @Override protected void onStop() {
-        if (observedPreferences != null) {
-            observedPreferences.unregisterOnSharedPreferenceChangeListener(snapshotListener);
-            observedPreferences = null;
+        this.dark = Ui.isDark(this);
+        try {
+            Bundle options = AppWidgetManager.getInstance(this).getAppWidgetOptions(this.appWidgetId);
+            if (options != null) {
+                this.widgetSize = new Bundle(options);
+            }
+        } catch (RuntimeException ignored) {
         }
-        if (observedWindows != null) {
-            observedWindows.unregisterOnSharedPreferenceChangeListener(windowsListener);
-            observedWindows = null;
-        }
-        if (observedRefresh != null) {
-            observedRefresh.unregisterOnSharedPreferenceChangeListener(refreshListener);
-            observedRefresh = null;
-        }
-        super.onStop();
+        build();
     }
 
-    @Override protected void onSaveInstanceState(Bundle state) {
-        super.onSaveInstanceState(state);
-        if (meterAdapter == null) return;
-        state.putString("selection", requestedSelection);
-        state.putBoolean("selection_edited", selectionEdited);
-        state.putStringArrayList("meter_order", new ArrayList<>(meterOrder));
-        state.putInt("chrome", referenceStyleSpinner.getSelectedItemPosition());
-        state.putInt("refresh", refreshSpinner.getSelectedItemPosition());
-        state.putInt("preview", previewSpinner.getSelectedItemPosition());
-        state.putInt("theme", themeSpinner.getSelectedItemPosition());
-        state.putInt("accent", accentSpinner.getSelectedItemPosition());
-        state.putBoolean("background", backgroundSwitch.isChecked());
+    @Override
+    public boolean onSupportNavigateUp() {
+        finish();
+        return true;
     }
 
-    @Override public boolean onSupportNavigateUp() { finish(); return true; }
-
-    private void build(Bundle state) {
-        Ui.ConfigPage page = Ui.installConfigPage(this, getString(R.string.phone_customize_widget_65d95));
-        previewContainer = page.preview;
+    private void build() {
+        Ui.ConfigPage page = Ui.installConfigPage(this, "Customize widget");
         LinearLayout content = page.content;
-        RoundedLinearLayout previewCard = Ui.seslRowCard(this, dark);
-        previewSpinner = spinner(R.array.reference_preview_labels, initialPreview());
-        previewRow = optionRow(previewCard, R.string.reference_preview, previewSpinner,
-                R.array.reference_preview_labels, false);
-        content.addView(previewCard);
+        this.previewContainer = page.preview;
 
-        content.addView(Ui.separator(this, getString(R.string.reference_account)));
-        RoundedLinearLayout accountCard = Ui.seslRowCard(this, dark);
-        accountSummary = Ui.text(this, "", 15, Ui.secondaryText(dark));
-        accountSummary.setPadding(Ui.dp(this, 20), Ui.dp(this, 16), Ui.dp(this, 20), Ui.dp(this, 16));
-        accountCard.addView(accountSummary);
-        content.addView(accountCard);
+        WidgetOptions saved = AppPreferences.loadWidgetOptions(this, this.appWidgetId);
+        this.tapAction = AppPreferences.getWidgetTapAction(this, this.appWidgetId);
+        UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
+        loadMeterSelection(saved, snapshot);
 
-        content.addView(Ui.separator(this, getString(R.string.reference_windows)));
-        RoundedLinearLayout windowsCard = Ui.seslRowCard(this, dark);
-        metersHint = Ui.text(this, getString(R.string.reference_window_help), 13, Ui.secondaryText(dark));
-        metersHint.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 8));
-        windowsCard.addView(metersHint);
-        metersList = new RecyclerView(this);
-        metersList.setLayoutManager(new LinearLayoutManager(this));
-        metersList.setNestedScrollingEnabled(false);
-        meterAdapter = new MeterAdapter();
-        metersList.setAdapter(meterAdapter);
-        meterTouchHelper = new ItemTouchHelper(new MeterReorderCallback());
-        meterTouchHelper.attachToRecyclerView(metersList);
-        windowsCard.addView(metersList, new LinearLayout.LayoutParams(-1, -2));
-        content.addView(windowsCard);
+        content.addView(Ui.separator(this, "Appearance"));
+        RoundedLinearLayout appearanceCard = Ui.seslRowCard(this, this.dark);
+        this.backgroundSwitch = new SwitchCompat(this);
+        this.backgroundSwitch.setChecked(saved.opacity > 0);
+        this.backgroundRow = buildSwitchRow(getString(R.string.widget_background),
+                this.backgroundSwitch, false);
+        appearanceCard.addView(this.backgroundRow);
+        View opacityDivider = new View(this);
+        opacityDivider.setBackgroundColor(Ui.divider(this.dark));
+        LinearLayout.LayoutParams opacityDividerParams =
+                new LinearLayout.LayoutParams(-1, Ui.dp(this, 1));
+        opacityDividerParams.setMargins(Ui.dp(this, 16), 0, Ui.dp(this, 16), 0);
+        appearanceCard.addView(opacityDivider, opacityDividerParams);
+        this.opacityControl = LayoutInflater.from(this).inflate(
+                R.layout.view_widget_opacity, appearanceCard, false);
+        this.opacityControl.setTag(opacityDivider);
+        appearanceCard.addView(this.opacityControl);
+        this.opacitySlider = this.opacityControl.findViewById(R.id.opacity_slider);
+        this.opacitySlider.setProgress(WidgetOptions.opacityIndex(saved.opacity));
+        this.opacitySlider.setAlpha(0.0f);
+        if (this.opacitySlider.getProgressDrawable() != null) {
+            this.opacitySlider.getProgressDrawable().setAlpha(0);
+        }
+        applyBackgroundEnabled(this.backgroundSwitch.isChecked());
 
-        content.addView(Ui.separator(this, getString(R.string.reference_style)));
-        RoundedLinearLayout styleCard = Ui.seslRowCard(this, dark);
-        referenceStyleSpinner = spinner(R.array.reference_style_labels,
-                WidgetOptions.REFERENCE_CLEAR.equals(savedAppearance.referenceStyle) ? 1 : 0);
-        referenceStyleRow = optionRow(styleCard, R.string.reference_style, referenceStyleSpinner,
-                R.array.reference_style_labels, false);
-        note(styleCard, R.string.reference_style_help);
-        content.addView(styleCard);
-
-        content.addView(Ui.separator(this, getString(R.string.reference_refresh)));
-        RoundedLinearLayout refreshCard = Ui.seslRowCard(this, dark);
-        int interval = ReferenceWidgetPreferences.refreshMinutes(this);
-        int index = 0;
-        for (int i = 0; i < ReferenceWidgetPreferences.REFRESH_MINUTES.length; i++)
-            if (ReferenceWidgetPreferences.REFRESH_MINUTES[i] == interval) index = i;
-        refreshSpinner = spinner(R.array.reference_refresh_labels, index);
-        refreshRow = optionRow(refreshCard, R.string.reference_refresh_interval, refreshSpinner,
-                R.array.reference_refresh_labels, false);
-        note(refreshCard, R.string.reference_refresh_help);
-        content.addView(refreshCard);
-
-        content.addView(Ui.separator(this, getString(R.string.phone_appearance_41def)));
-        RoundedLinearLayout appearanceCard = Ui.seslRowCard(this, dark);
-        themeSpinner = Ui.spinner(this, WidgetOptionCatalog.labels(this, WidgetOptionCatalog.THEME_LABELS), dark);
-        accentSpinner = Ui.spinner(this, WidgetOptionCatalog.labels(this, WidgetOptionCatalog.ACCENT_LABELS), dark);
-        WidgetOptionCatalog.selectString(themeSpinner, WidgetOptionCatalog.THEME_VALUES, savedAppearance.theme);
-        WidgetOptionCatalog.selectString(accentSpinner, WidgetOptionCatalog.ACCENT_VALUES, savedAppearance.accent);
-        themeRow = optionRow(appearanceCard, R.string.phone_theme_a797e, themeSpinner,
-                WidgetOptionCatalog.labels(this, WidgetOptionCatalog.THEME_LABELS), false);
-        backgroundSwitch = new SwitchCompat(this);
-        backgroundSwitch.setChecked(savedAppearance.opacity > 0);
-        LinearLayout backgroundRow = new LinearLayout(this);
-        backgroundRow.setGravity(Gravity.CENTER_VERTICAL);
-        backgroundRow.setMinimumHeight(Ui.dp(this, 64));
-        backgroundRow.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), 0);
-        backgroundRow.addView(Ui.text(this, getString(R.string.widget_background), 18, Ui.mainText(dark)),
-                new LinearLayout.LayoutParams(0, -2, 1));
-        backgroundRow.addView(backgroundSwitch);
-        backgroundRow.setOnClickListener(view -> backgroundSwitch.toggle());
-        appearanceCard.addView(backgroundRow);
-        accentRow = optionRow(appearanceCard, R.string.widget_dial_accent, accentSpinner,
-                WidgetOptionCatalog.labels(this, WidgetOptionCatalog.ACCENT_LABELS), true);
+        this.themeSpinner = Ui.spinner(this, WidgetOptionCatalog.THEME_LABELS, this.dark);
+        this.accentSpinner = Ui.spinner(this, WidgetOptionCatalog.ACCENT_LABELS, this.dark);
+        this.styleSpinner = Ui.spinner(this, WidgetOptionCatalog.STYLE_LABELS, this.dark);
+        WidgetOptionCatalog.selectString(this.themeSpinner, WidgetOptionCatalog.THEME_VALUES,
+                saved.theme);
+        WidgetOptionCatalog.selectString(this.accentSpinner, WidgetOptionCatalog.ACCENT_VALUES,
+                saved.accent);
+        WidgetOptionCatalog.selectString(this.styleSpinner, WidgetOptionCatalog.STYLE_VALUES,
+                saved.layoutPreference());
+        this.styleRow = addOptionRow(appearanceCard, "Layout", this.styleSpinner,
+                WidgetOptionCatalog.STYLE_LABELS, true);
+        this.themeRow = addOptionRow(appearanceCard, "Theme", this.themeSpinner,
+                WidgetOptionCatalog.THEME_LABELS, true);
+        this.accentRow = addOptionRow(appearanceCard, "Accent", this.accentSpinner,
+                WidgetOptionCatalog.ACCENT_LABELS, true);
         content.addView(appearanceCard);
 
-        if (state != null) {
-            restoreSelection(referenceStyleSpinner, state, "chrome");
-            restoreSelection(refreshSpinner, state, "refresh");
-            restoreSelection(previewSpinner, state, "preview");
-            restoreSelection(themeSpinner, state, "theme");
-            restoreSelection(accentSpinner, state, "accent");
-            backgroundSwitch.setChecked(state.getBoolean("background", savedAppearance.opacity > 0));
-        }
-        AdapterView.OnItemSelectedListener listener = new AdapterView.OnItemSelectedListener() {
-            @Override public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
-                updateSummaries();
+        content.addView(Ui.separator(this, "Meters"));
+        RoundedLinearLayout metersCard = Ui.seslRowCard(this, this.dark);
+        this.metersHint = Ui.text(this, "", 13, Ui.secondaryText(this.dark));
+        this.metersHint.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20),
+                Ui.dp(this, 4));
+        metersCard.addView(this.metersHint);
+        TextView reorderHint = Ui.text(this,
+                "Drag handles to choose which meters fill slots first. Empty selected meters "
+                        + "keep a blank dash on the widget.",
+                12, Ui.secondaryText(this.dark));
+        reorderHint.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), Ui.dp(this, 8));
+        metersCard.addView(reorderHint);
+        this.metersList = new RecyclerView(this);
+        this.metersList.setLayoutManager(new LinearLayoutManager(this));
+        this.metersList.setNestedScrollingEnabled(false);
+        this.meterAdapter = new MeterAdapter(snapshot);
+        this.metersList.setAdapter(this.meterAdapter);
+        ItemTouchHelper touchHelper = new ItemTouchHelper(new MeterReorderCallback());
+        touchHelper.attachToRecyclerView(this.metersList);
+        this.meterAdapter.touchHelper = touchHelper;
+        metersCard.addView(this.metersList, new LinearLayout.LayoutParams(-1, -2));
+        content.addView(metersCard);
+
+        content.addView(Ui.separator(this, "Content"));
+        RoundedLinearLayout contentCard = Ui.seslRowCard(this, this.dark);
+        this.displaySpinner = Ui.spinner(this, WidgetOptionCatalog.DISPLAY_LABELS, this.dark);
+        WidgetOptionCatalog.selectString(this.displaySpinner, WidgetOptionCatalog.DISPLAY_VALUES,
+                saved.displayMode);
+        this.displayRow = addOptionRow(contentCard, "Percentage", this.displaySpinner,
+                WidgetOptionCatalog.DISPLAY_LABELS, false);
+        View symbolDivider = new View(this);
+        symbolDivider.setBackgroundColor(Ui.divider(this.dark));
+        LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 1));
+        dividerParams.setMargins(Ui.dp(this, 16), 0, Ui.dp(this, 16), 0);
+        contentCard.addView(symbolDivider, dividerParams);
+        this.percentSymbolSwitch = new SwitchCompat(this);
+        this.percentSymbolSwitch.setChecked(saved.showPercentSymbol);
+        contentCard.addView(buildSwitchRow("Show % symbol", this.percentSymbolSwitch, false));
+        content.addView(contentCard);
+
+        content.addView(Ui.separator(this, "Widget tap action"));
+        content.addView(buildTapActionCard());
+
+        AdapterView.OnItemSelectedListener selectionListener = new AdapterView.OnItemSelectedListener() {
+            @Override
+            public void onItemSelected(AdapterView<?> parent, View view, int position, long id) {
+                updateRowSummaries();
+                updateMetersHint();
                 renderPreview();
             }
-            @Override public void onNothingSelected(AdapterView<?> parent) { }
+
+            @Override
+            public void onNothingSelected(AdapterView<?> parent) {
+            }
         };
-        for (Spinner spinner : new Spinner[]{previewSpinner, referenceStyleSpinner, refreshSpinner, themeSpinner, accentSpinner})
-            spinner.setOnItemSelectedListener(listener);
-        backgroundSwitch.setOnCheckedChangeListener((button, enabled) -> renderPreview());
+        this.styleSpinner.setOnItemSelectedListener(selectionListener);
+        this.themeSpinner.setOnItemSelectedListener(selectionListener);
+        this.accentSpinner.setOnItemSelectedListener(selectionListener);
+        this.displaySpinner.setOnItemSelectedListener(selectionListener);
+        this.percentSymbolSwitch.setOnCheckedChangeListener((button, checked) -> renderPreview());
+        this.backgroundSwitch.setOnCheckedChangeListener((button, checked) -> {
+            applyBackgroundEnabled(checked);
+            updateSliderVisuals();
+            renderPreview();
+        });
+        this.opacitySlider.setOnSeekBarChangeListener(new SeslSeekBar.OnSeekBarChangeListener() {
+            @Override
+            public void onProgressChanged(SeslSeekBar seekBar, int progress, boolean fromUser) {
+                updateSliderVisuals();
+                renderPreview();
+            }
+
+            @Override
+            public void onStartTrackingTouch(SeslSeekBar seekBar) {
+            }
+
+            @Override
+            public void onStopTrackingTouch(SeslSeekBar seekBar) {
+            }
+        });
         page.cancel.setOnClickListener(view -> finish());
         page.save.setOnClickListener(view -> save());
-        updateSummaries();
+        updateSliderVisuals();
+        updateRowSummaries();
+        updateMetersHint();
         renderPreview();
     }
 
-    private Spinner spinner(int labels, int index) {
-        Spinner spinner = Ui.spinner(this, getResources().getStringArray(labels), dark);
-        spinner.setSelection(index);
-        return spinner;
+    private RoundedLinearLayout buildTapActionCard() {
+        RoundedLinearLayout card = Ui.seslRowCard(this, this.dark);
+        RadioItemViewGroup group = new RadioItemViewGroup(this);
+        group.setOrientation(LinearLayout.VERTICAL);
+        group.addView(radioRow(this.tapOpenId, "Open Codex Meter", false));
+        group.addView(radioRow(this.tapRefreshId, "Refresh usage", true));
+        group.addView(radioRow(this.tapResetId, "Use reset if available", true));
+        card.addView(group);
+        group.check(tapActionId(this.tapAction));
+        group.setOnCheckedChangeListener((radioGroup, checkedId) -> {
+            if (checkedId == this.tapRefreshId) {
+                this.tapAction = WidgetOptions.TAP_REFRESH;
+            } else if (checkedId == this.tapResetId) {
+                this.tapAction = WidgetOptions.TAP_USE_RESET;
+            } else {
+                this.tapAction = WidgetOptions.TAP_OPEN_APP;
+            }
+        });
+        return card;
     }
 
-    private void restoreSelection(Spinner spinner, Bundle state, String key) {
-        spinner.setSelection(Math.max(0, Math.min(spinner.getCount() - 1,
-                state.getInt(key, spinner.getSelectedItemPosition()))));
+    private LinearLayout buildSwitchRow(String title, SwitchCompat toggle, boolean topDivider) {
+        LinearLayout row = new LinearLayout(this);
+        row.setOrientation(LinearLayout.VERTICAL);
+        if (topDivider) {
+            View divider = new View(this);
+            divider.setBackgroundColor(Ui.divider(this.dark));
+            LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 1));
+            dividerParams.setMargins(Ui.dp(this, 16), 0, Ui.dp(this, 16), 0);
+            row.addView(divider, dividerParams);
+        }
+        LinearLayout content = new LinearLayout(this);
+        content.setGravity(Gravity.CENTER_VERTICAL);
+        content.setMinimumHeight(Ui.dp(this, 64));
+        content.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), 0);
+        content.addView(Ui.text(this, title, 18, Ui.mainText(this.dark)),
+                new LinearLayout.LayoutParams(0, -2, 1));
+        content.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
+        content.setOnClickListener(view -> toggle.toggle());
+        row.addView(content, new LinearLayout.LayoutParams(-1, -2));
+        return row;
     }
 
-    private CardItemView optionRow(RoundedLinearLayout card, int title, Spinner spinner,
-            int labels, boolean divider) {
-        return optionRow(card, title, spinner, getResources().getStringArray(labels), divider);
+    private void applyBackgroundEnabled(boolean enabled) {
+        if (this.opacityControl == null) {
+            return;
+        }
+        int visibility = enabled ? View.VISIBLE : View.GONE;
+        this.opacityControl.setVisibility(visibility);
+        Object divider = this.opacityControl.getTag();
+        if (divider instanceof View) {
+            ((View) divider).setVisibility(visibility);
+        }
+        if (this.opacitySlider != null) {
+            this.opacitySlider.setEnabled(enabled);
+        }
     }
 
-    private CardItemView optionRow(RoundedLinearLayout card, int title, Spinner spinner,
+    private RadioItemView radioRow(int id, String title, boolean divider) {
+        RadioItemView row = new RadioItemView(this);
+        row.setId(id);
+        row.setTitle(title);
+        row.setShowTopDivider(divider);
+        return row;
+    }
+
+    private int tapActionId(String action) {
+        if (WidgetOptions.TAP_REFRESH.equals(action)) {
+            return this.tapRefreshId;
+        }
+        if (WidgetOptions.TAP_USE_RESET.equals(action)) {
+            return this.tapResetId;
+        }
+        return this.tapOpenId;
+    }
+
+    private CardItemView addOptionRow(RoundedLinearLayout card, String title, Spinner spinner,
             String[] labels, boolean divider) {
         CardItemView row = new CardItemView(this);
-        row.setTitle(getString(title));
-        row.setSummary(labels[spinner.getSelectedItemPosition()]);
+        row.setTitle(title);
+        row.setSummary(labels[Math.max(0, spinner.getSelectedItemPosition())]);
         row.setShowTopDivider(divider);
         row.setShowBottomDivider(false);
-        row.setOnClickListener(view -> OneUiChoiceDialog.show(this, getString(title), labels,
-                spinner.getSelectedItemPosition(), position -> {
-                    spinner.setSelection(position);
-                    updateSummaries();
-                    renderPreview();
-                }));
+        row.setOnClickListener(view -> OneUiChoiceDialog.show(this, title, labels,
+                spinner.getSelectedItemPosition(),
+                position -> applyPreviewSelection(spinner, position)));
         card.addView(row);
         return row;
     }
 
-    private void note(RoundedLinearLayout card, int text) {
-        TextView note = Ui.text(this, getString(text), 13, Ui.secondaryText(dark));
-        note.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), Ui.dp(this, 12));
-        card.addView(note);
-    }
-
-    private void synchronizeWindows() {
-        requestedSelection = WidgetMeters.serialize(QuotaCardOptions.effectiveWindows(
-                requestedSelection, widgetSnapshot, snapshot));
-        List<String> previous = WidgetMeters.parse(QuotaCardOptions.migrateToWindowIds(
-                WidgetMeters.serialize(meterOrder), widgetSnapshot, snapshot));
-        List<String> available = QuotaCardOptions.availableWindows(widgetSnapshot, requestedSelection, snapshot);
-        List<String> selected = QuotaCardOptions.effectiveWindows(requestedSelection, widgetSnapshot, snapshot);
-        LinkedHashSet<String> ordered = new LinkedHashSet<>();
-        // Match upstream: saved selected meters fill slots first. During a live refresh retain
-        // the current row order, including unfinished drags and temporarily missing selections.
-        if (previous.isEmpty()) ordered.addAll(selected);
-        else for (String key : previous) if (available.contains(key)) ordered.add(key);
-        ordered.addAll(selected);
-        ordered.addAll(available);
-        meterOrder.clear();
-        meterOrder.addAll(ordered);
-        selectedMeters.clear();
-        selectedMeters.addAll(selected);
-        requestedSelection = WidgetMeters.serialize(orderedSelectedMeters());
-    }
-
-    private List<String> orderedSelectedMeters() {
-        List<String> ordered = new ArrayList<>();
-        for (String key : meterOrder) if (selectedMeters.contains(key)) ordered.add(key);
-        return ordered;
-    }
-
-    private void lockMeterListScrolling() {
-        if (metersList != null && metersList.getParent() != null)
-            metersList.getParent().requestDisallowInterceptTouchEvent(true);
-    }
-
-    private WidgetUsageSnapshot loadWidgetSnapshot() {
-        WidgetUsageSnapshot complete = WidgetUsageStore.load(this);
-        return complete != null ? complete : WidgetUsageSnapshot.fromLegacy(snapshot);
-    }
-
-    private void reloadSnapshot() {
-        snapshot = AppPreferences.loadSnapshot(this);
-        widgetSnapshot = loadWidgetSnapshot();
-        // Saving unrelated settings must not replace a temporarily missing selection with fallback.
-        if (!selectionEdited) {
-            String saved = AppPreferences.loadWidgetOptions(this, appWidgetId).visibleMeters;
-            String oldOrder = QuotaCardOptions.migrateToWindowIds(requestedSelection, widgetSnapshot, snapshot);
-            String savedOrder = QuotaCardOptions.migrateToWindowIds(saved, widgetSnapshot, snapshot);
-            if (!oldOrder.equals(savedOrder)) meterOrder.clear();
-            requestedSelection = saved;
-        }
-        synchronizeWindows();
-        if (meterAdapter != null) meterAdapter.notifyDataSetChanged();
-        updateSummaries();
+    private void applyPreviewSelection(Spinner spinner, int position) {
+        spinner.setSelection(position);
+        updateRowSummaries();
+        updateMetersHint();
         renderPreview();
     }
 
     private WidgetOptions currentOptions() {
-        int opacity = backgroundSwitch.isChecked()
-                ? savedAppearance.opacity > 0 ? savedAppearance.opacity : 100 : 0;
-        return new WidgetOptions(WidgetOptions.STYLE_CARDS, WidgetOptions.DENSITY_AUTO,
+        boolean backgroundOn = this.backgroundSwitch == null || this.backgroundSwitch.isChecked();
+        int opacity = backgroundOn
+                ? WidgetOptionCatalog.OPACITY_VALUES[Math.max(0, Math.min(
+                        WidgetOptionCatalog.OPACITY_VALUES.length - 1,
+                        this.opacitySlider.getProgress()))]
+                : 0;
+        String layout = WidgetOptionCatalog.STYLE_VALUES[
+                Math.max(0, this.styleSpinner.getSelectedItemPosition())];
+        return new WidgetOptions(layout,
+                WidgetOptions.DENSITY_AUTO,
                 WidgetOptions.SURFACE_ONE_UI, WidgetOptions.GRAPHIC_AUTO,
-                WidgetOptionCatalog.THEME_VALUES[themeSpinner.getSelectedItemPosition()],
-                WidgetOptionCatalog.ACCENT_VALUES[accentSpinner.getSelectedItemPosition()], opacity,
-                WidgetOptions.RESET_HIDDEN, savedAppearance.displayMode, WidgetOptions.METRIC_BOTH,
+                WidgetOptionCatalog.THEME_VALUES[this.themeSpinner.getSelectedItemPosition()],
+                WidgetOptionCatalog.ACCENT_VALUES[this.accentSpinner.getSelectedItemPosition()],
+                opacity,
+                WidgetOptions.RESET_HIDDEN,
+                WidgetOptionCatalog.DISPLAY_VALUES[this.displaySpinner.getSelectedItemPosition()],
+                WidgetOptions.METRIC_BOTH,
                 false, false, false, false, false, false)
-                .withPercentSymbol(savedAppearance.showPercentSymbol)
-                .withReferenceStyle(referenceStyleSpinner.getSelectedItemPosition() == 1
-                        ? WidgetOptions.REFERENCE_CLEAR : WidgetOptions.REFERENCE_COLOR)
-                .withVisibleMeters(WidgetMeters.serialize(QuotaCardOptions.resolve(requestedSelection)));
+                .withPercentSymbol(this.percentSymbolSwitch == null
+                        || this.percentSymbolSwitch.isChecked())
+                .withVisibleMeters(WidgetMeters.serialize(orderedSelectedMeters()));
+    }
+
+    private void loadMeterSelection(WidgetOptions saved, UsageSnapshot snapshot) {
+        List<String> available = WidgetMeters.availableKeys(snapshot);
+        List<String> selected = WidgetMeters.resolveVisibleForWidget(
+                saved.effectiveVisibleMeters(), available, saved.metricMode);
+        this.meterOrder.clear();
+        this.selectedMeters.clear();
+        for (String key : selected) {
+            if (available.contains(key) && !this.meterOrder.contains(key)) {
+                this.meterOrder.add(key);
+                this.selectedMeters.add(key);
+            }
+        }
+        for (String key : available) {
+            if (!this.meterOrder.contains(key)) {
+                this.meterOrder.add(key);
+            }
+        }
+        if (this.selectedMeters.isEmpty() && !this.meterOrder.isEmpty()) {
+            this.selectedMeters.add(this.meterOrder.get(0));
+        }
+    }
+
+    private List<String> orderedSelectedMeters() {
+        List<String> ordered = new ArrayList<>();
+        for (String key : this.meterOrder) {
+            if (this.selectedMeters.contains(key)) {
+                ordered.add(key);
+            }
+        }
+        return ordered;
+    }
+
+    private void lockMeterListScrolling() {
+        if (this.metersList != null && this.metersList.getParent() != null) {
+            this.metersList.getParent().requestDisallowInterceptTouchEvent(true);
+        }
     }
 
     private final class MeterAdapter extends RecyclerView.Adapter<MeterHolder> {
-        @Override public MeterHolder onCreateViewHolder(ViewGroup parent, int viewType) {
+        ItemTouchHelper touchHelper;
+        private final UsageSnapshot snapshot;
+
+        MeterAdapter(UsageSnapshot snapshot) {
+            this.snapshot = snapshot;
+        }
+
+        @Override
+        public MeterHolder onCreateViewHolder(ViewGroup parent, int viewType) {
             LinearLayout row = Ui.horizontal(WidgetConfigActivity.this, Gravity.CENTER_VERTICAL);
             row.setMinimumHeight(Ui.dp(WidgetConfigActivity.this, 64));
-            row.setPadding(Ui.dp(WidgetConfigActivity.this, 20), Ui.dp(WidgetConfigActivity.this, 8),
-                    Ui.dp(WidgetConfigActivity.this, 12), Ui.dp(WidgetConfigActivity.this, 8));
+            row.setPadding(Ui.dp(WidgetConfigActivity.this, 20),
+                    Ui.dp(WidgetConfigActivity.this, 8),
+                    Ui.dp(WidgetConfigActivity.this, 12),
+                    Ui.dp(WidgetConfigActivity.this, 8));
             row.setLayoutParams(new RecyclerView.LayoutParams(-1, -2));
-            TextView title = Ui.text(WidgetConfigActivity.this, "", 17, Ui.mainText(dark));
-            row.addView(title, new LinearLayout.LayoutParams(0, -2, 1));
+
+            TextView title = Ui.text(WidgetConfigActivity.this, "", 17.0f,
+                    Ui.mainText(WidgetConfigActivity.this.dark));
+            row.addView(title, new LinearLayout.LayoutParams(0, -2, 1.0f));
+
             SwitchCompat toggle = new SwitchCompat(WidgetConfigActivity.this);
+            toggle.setContentDescription("Show on widget");
             LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(-2, -2);
-            toggleParams.setMargins(Ui.dp(WidgetConfigActivity.this, 8), 0, Ui.dp(WidgetConfigActivity.this, 4), 0);
+            toggleParams.setMargins(Ui.dp(WidgetConfigActivity.this, 8), 0,
+                    Ui.dp(WidgetConfigActivity.this, 4), 0);
             row.addView(toggle, toggleParams);
+
             ImageView handle = new ImageView(WidgetConfigActivity.this);
             handle.setImageResource(R.drawable.ic_oui_reorder);
-            handle.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(dark)));
-            handle.setContentDescription(getString(R.string.phone_reorder_33d99));
+            handle.setImageTintList(ColorStateList.valueOf(
+                    Ui.secondaryText(WidgetConfigActivity.this.dark)));
+            handle.setContentDescription("Reorder");
             int pad = Ui.dp(WidgetConfigActivity.this, 12);
             handle.setPadding(pad, pad, pad, pad);
-            row.addView(handle, new LinearLayout.LayoutParams(Ui.dp(WidgetConfigActivity.this, 48),
+            row.addView(handle, new LinearLayout.LayoutParams(
+                    Ui.dp(WidgetConfigActivity.this, 48),
                     Ui.dp(WidgetConfigActivity.this, 48)));
-            row.setOnClickListener(view -> toggle.toggle());
+
             MeterHolder holder = new MeterHolder(row, title, toggle, handle);
             bindDragHandle(holder);
             return holder;
@@ -386,183 +441,280 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         @SuppressLint("ClickableViewAccessibility")
         private void bindDragHandle(MeterHolder holder) {
             holder.handle.setOnTouchListener((view, event) -> {
-                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && meterTouchHelper != null) {
+                if (event.getActionMasked() == MotionEvent.ACTION_DOWN && touchHelper != null) {
                     lockMeterListScrolling();
-                    meterTouchHelper.startDrag(holder);
+                    touchHelper.startDrag(holder);
                     return true;
                 }
                 return false;
             });
         }
 
-        @Override public void onBindViewHolder(MeterHolder holder, int position) {
+        @Override
+        public void onBindViewHolder(MeterHolder holder, int position) {
             String key = meterOrder.get(position);
-            holder.title.setText(QuotaCardRenderer.windowLabel(WidgetConfigActivity.this, key, widgetSnapshot, snapshot));
-            holder.toggle.setContentDescription(holder.title.getText());
+            holder.title.setText(WidgetMeters.configLabel(key, snapshot));
             holder.toggle.setOnCheckedChangeListener(null);
-            holder.toggle.setChecked(selectedMeters.contains(key));
-            holder.title.setAlpha(selectedMeters.contains(key) ? 1f : .45f);
+            boolean visible = selectedMeters.contains(key);
+            holder.toggle.setChecked(visible);
+            applyRowVisibility(holder, visible);
             holder.toggle.setOnCheckedChangeListener((button, checked) -> {
-                if (holder.restoring) return;
-                int index = holder.getBindingAdapterPosition();
-                if (index < 0 || index >= meterOrder.size()) return;
-                String rowKey = meterOrder.get(index);
-                if (!checked && selectedMeters.contains(rowKey) && selectedMeters.size() == 1) {
-                    holder.restoring = true;
-                    button.setChecked(true);
-                    holder.restoring = false;
-                    Toast.makeText(WidgetConfigActivity.this, R.string.card_selection_minimum, Toast.LENGTH_SHORT).show();
+                int pos = holder.getBindingAdapterPosition();
+                if (pos < 0 || pos >= meterOrder.size()) {
                     return;
                 }
-                if (checked) selectedMeters.add(rowKey); else selectedMeters.remove(rowKey);
-                holder.title.setAlpha(checked ? 1f : .45f);
-                requestedSelection = WidgetMeters.serialize(orderedSelectedMeters());
-                selectionEdited = true;
+                String rowKey = meterOrder.get(pos);
+                if (checked) {
+                    selectedMeters.add(rowKey);
+                } else {
+                    selectedMeters.remove(rowKey);
+                    if (selectedMeters.isEmpty()) {
+                        selectedMeters.add(rowKey);
+                        button.setChecked(true);
+                        return;
+                    }
+                }
+                applyRowVisibility(holder, button.isChecked());
+                updateMetersHint();
                 renderPreview();
             });
         }
-        @Override public int getItemCount() { return meterOrder.size(); }
+
+        private void applyRowVisibility(MeterHolder holder, boolean visible) {
+            float alpha = visible ? 1.0f : 0.45f;
+            holder.title.setAlpha(alpha);
+        }
+
+        @Override
+        public int getItemCount() {
+            return meterOrder.size();
+        }
     }
 
     private static final class MeterHolder extends RecyclerView.ViewHolder {
         final TextView title;
         final SwitchCompat toggle;
         final ImageView handle;
-        boolean restoring;
+
         MeterHolder(View row, TextView title, SwitchCompat toggle, ImageView handle) {
-            super(row); this.title = title; this.toggle = toggle; this.handle = handle;
+            super(row);
+            this.title = title;
+            this.toggle = toggle;
+            this.handle = handle;
         }
     }
 
     private final class MeterReorderCallback extends ItemTouchHelper.Callback {
-        @Override public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder holder) {
+        @Override
+        public int getMovementFlags(RecyclerView recyclerView, RecyclerView.ViewHolder holder) {
             return makeMovementFlags(ItemTouchHelper.UP | ItemTouchHelper.DOWN, 0);
         }
-        @Override public boolean isLongPressDragEnabled() { return true; }
-        @Override public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder from,
+
+        @Override
+        public boolean isLongPressDragEnabled() {
+            return true;
+        }
+
+        @Override
+        public boolean onMove(RecyclerView recyclerView, RecyclerView.ViewHolder from,
                 RecyclerView.ViewHolder to) {
             int fromPosition = from.getBindingAdapterPosition();
             int toPosition = to.getBindingAdapterPosition();
-            if (fromPosition < 0 || toPosition < 0 || fromPosition >= meterOrder.size()
-                    || toPosition >= meterOrder.size()) return false;
+            if (fromPosition < 0 || toPosition < 0) {
+                return false;
+            }
             if (fromPosition < toPosition) {
-                for (int i = fromPosition; i < toPosition; i++) Collections.swap(meterOrder, i, i + 1);
+                for (int i = fromPosition; i < toPosition; i++) {
+                    Collections.swap(meterOrder, i, i + 1);
+                }
             } else {
-                for (int i = fromPosition; i > toPosition; i--) Collections.swap(meterOrder, i, i - 1);
+                for (int i = fromPosition; i > toPosition; i--) {
+                    Collections.swap(meterOrder, i, i - 1);
+                }
             }
             recyclerView.getAdapter().notifyItemMoved(fromPosition, toPosition);
-            requestedSelection = WidgetMeters.serialize(orderedSelectedMeters());
-            selectionEdited = true;
-            updateSummaries();
+            updateMetersHint();
             renderPreview();
             return true;
         }
-        @Override public void onSelectedChanged(RecyclerView.ViewHolder holder, int actionState) {
+
+        @Override
+        public void onSelectedChanged(RecyclerView.ViewHolder holder, int actionState) {
             super.onSelectedChanged(holder, actionState);
             if (actionState == ItemTouchHelper.ACTION_STATE_DRAG && holder != null) {
                 lockMeterListScrolling();
-                holder.itemView.setAlpha(.85f);
+                holder.itemView.setAlpha(0.85f);
                 holder.itemView.setElevation(Ui.dp(holder.itemView.getContext(), 4));
             }
         }
-        @Override public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder holder) {
+
+        @Override
+        public void clearView(RecyclerView recyclerView, RecyclerView.ViewHolder holder) {
             super.clearView(recyclerView, holder);
-            holder.itemView.setAlpha(1f);
-            holder.itemView.setElevation(0f);
-            updateSummaries();
+            holder.itemView.setAlpha(1.0f);
+            holder.itemView.setElevation(0.0f);
+            updateMetersHint();
             renderPreview();
         }
-        @Override public void onSwiped(RecyclerView.ViewHolder holder, int direction) { }
+
+        @Override
+        public void onSwiped(RecyclerView.ViewHolder holder, int direction) {
+        }
     }
 
-    private void updateSummaries() {
-        if (referenceStyleRow == null) return;
-        referenceStyleRow.setSummary(getResources().getStringArray(R.array.reference_style_labels)[referenceStyleSpinner.getSelectedItemPosition()]);
-        refreshRow.setSummary(getResources().getStringArray(R.array.reference_refresh_labels)[refreshSpinner.getSelectedItemPosition()]);
-        previewRow.setSummary(getResources().getStringArray(R.array.reference_preview_labels)[previewSpinner.getSelectedItemPosition()]);
-        themeRow.setSummary(WidgetOptionCatalog.labels(this, WidgetOptionCatalog.THEME_LABELS)[themeSpinner.getSelectedItemPosition()]);
-        accentRow.setSummary(WidgetOptionCatalog.labels(this, WidgetOptionCatalog.ACCENT_LABELS)[accentSpinner.getSelectedItemPosition()]);
-        accentRow.setVisibility(previewSpinner.getSelectedItemPosition() == 0 ? View.VISIBLE : View.GONE);
-        accountSummary.setText(widgetSnapshot == null ? getString(R.string.reference_bound_account)
-                : getString(R.string.reference_bound_plan, UsageFormat.planLabel(widgetSnapshot.planType)));
-        metersHint.setText(getString(meterOrder.isEmpty() ? R.string.reference_no_windows : R.string.reference_window_help));
+    private void updateRowSummaries() {
+        if (this.themeRow == null) {
+            return;
+        }
+        if (this.styleRow != null) {
+            this.styleRow.setSummary(WidgetOptionCatalog.STYLE_LABELS[
+                    this.styleSpinner.getSelectedItemPosition()]);
+        }
+        this.themeRow.setSummary(WidgetOptionCatalog.THEME_LABELS[
+                this.themeSpinner.getSelectedItemPosition()]);
+        this.accentRow.setSummary(WidgetOptionCatalog.ACCENT_LABELS[
+                this.accentSpinner.getSelectedItemPosition()]);
+        this.displayRow.setSummary(WidgetOptionCatalog.DISPLAY_LABELS[
+                this.displaySpinner.getSelectedItemPosition()]);
     }
 
-    private int initialPreview() {
-        Bundle size = AppWidgetManager.getInstance(this).getAppWidgetOptions(appWidgetId);
-        int width = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 158);
-        int height = size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 158);
-        if (QuotaCardRenderer.usesDials(size, width, height)) return 0;
-        return width >= 240 ? 2 : 1;
-    }
-
-    private Bundle previewSize() {
-        int family = previewSpinner.getSelectedItemPosition();
-        int width = family == 0 ? 180 : family == 2 ? 338 : 158;
-        int height = family == 0 ? 100 : 158;
-        Bundle size = new Bundle();
-        size.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, width);
-        size.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, width);
-        size.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, height);
-        size.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height);
-        size.putInt("semAppWidgetColumnSpan", family == 2 ? 4 : 2);
-        size.putInt("semAppWidgetRowSpan", family == 0 ? 1 : 2);
-        return size;
+    private void updateMetersHint() {
+        if (this.metersHint == null) {
+            return;
+        }
+        WidgetOptions options = currentOptions();
+        int height = positiveOption("appWidgetMinHeight", "appWidgetMaxHeight", 70);
+        int width = positiveOption("appWidgetMinWidth", "appWidgetMaxWidth", 110);
+        int rows = this.widgetSize.getInt("semAppWidgetRowSpan", 0);
+        int columns = this.widgetSize.getInt("semAppWidgetColumnSpan", 0);
+        String visual = WidgetMeters.resolveHomeVisualStyle(options.layoutPreference(),
+                options.singleMetric(), rows, columns, height, width);
+        int capacity = WidgetMeters.slotCapacity(visual, height);
+        int selected = this.selectedMeters.size();
+        String message = "This size shows up to " + capacity + " meter"
+                + (capacity == 1 ? "" : "s") + ".";
+        if (selected > capacity) {
+            message += " " + (selected - capacity) + " extra selection"
+                    + (selected - capacity == 1 ? " is" : "s are")
+                    + " saved and appear when the widget is larger.";
+        }
+        this.metersHint.setText(message);
     }
 
     private void renderPreview() {
-        if (previewContainer == null || themeSpinner == null) return;
-        previewContainer.post(() -> {
-            if (isFinishing() || isDestroyed()) return;
+        if (this.previewContainer == null || this.opacitySlider == null) {
+            return;
+        }
+        this.previewContainer.post(() -> {
             try {
-                Bundle size = previewSize();
-                RemoteViews remote = WidgetRenderer.buildPreview(this, appWidgetId, currentOptions(), size);
+                Bundle latestSize = AppWidgetManager.getInstance(this)
+                        .getAppWidgetOptions(this.appWidgetId);
+                if (latestSize != null && !latestSize.isEmpty()) {
+                    this.widgetSize = new Bundle(latestSize);
+                }
+                WidgetOptions options = currentOptions();
+                RemoteViews remote = WidgetRenderer.buildPreview(this, this.appWidgetId, options,
+                        this.widgetSize);
                 FrameLayout surface = new FrameLayout(this);
+                surface.setClipToOutline(true);
+                GradientDrawable background = new GradientDrawable();
+                boolean previewDark = WidgetOptions.THEME_DARK.equals(options.theme)
+                        || (!WidgetOptions.THEME_LIGHT.equals(options.theme) && this.dark);
+                int alpha = Math.round(options.opacity * 2.55f);
+                background.setColor(previewDark ? Color.argb(alpha, 0, 0, 0)
+                        : Color.argb(alpha, 255, 255, 255));
+                background.setCornerRadius(Ui.dp(this, 28.0f));
+                surface.setBackground(background);
+                // Use the application inflater so AppCompat does not substitute its ImageView;
+                // RemoteViews reflection is intentionally restricted to framework widgets.
                 View widget = remote.apply(getApplicationContext(), surface);
-                disablePreviewActions(widget);
+                widget.setClickable(false);
                 surface.addView(widget, new FrameLayout.LayoutParams(-1, -1));
-                int width = Ui.dp(this, size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH));
-                int height = Ui.dp(this, size.getInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT));
-                int inset = Ui.dp(this, 14);
-                int maxWidth = previewContainer.getWidth() > 0 ? previewContainer.getWidth() - 2 * inset : width;
-                int maxHeight = previewContainer.getHeight() > 0 ? previewContainer.getHeight() - 2 * inset : height;
-                float scale = Math.min(1, Math.min(maxWidth / (float) width, maxHeight / (float) height));
-                surface.setScaleX(scale); surface.setScaleY(scale);
-                previewContainer.removeAllViews();
+                surface.setOnClickListener(view -> { });
+
+                int inset = Ui.dp(this, 14.0f);
+                int maxWidth = Math.max(1, this.previewContainer.getWidth() - (2 * inset));
+                int maxHeight = Math.max(1, this.previewContainer.getHeight() - (2 * inset));
+                float aspect = previewAspectRatio();
+                int columns = this.widgetSize.getInt("semAppWidgetColumnSpan", 0);
+                int width = columns > 0
+                        ? Math.max(1, Math.round(maxWidth * (Math.min(4, columns) / 4.0f)))
+                        : maxWidth;
+                int height = Math.max(1, Math.round(width / aspect));
+                if (height > maxHeight) {
+                    height = maxHeight;
+                    width = Math.max(1, Math.round(height * aspect));
+                }
+                FrameLayout.LayoutParams params = new FrameLayout.LayoutParams(width, height,
+                        Gravity.CENTER);
+                this.previewContainer.removeAllViews();
                 ImageView backdrop = new ImageView(this);
                 backdrop.setImageResource(R.drawable.codex_meter_icon_bg);
                 backdrop.setScaleType(ImageView.ScaleType.CENTER_CROP);
                 backdrop.setContentDescription(null);
-                previewContainer.addView(backdrop, new FrameLayout.LayoutParams(-1, -1));
-                previewContainer.addView(surface, new FrameLayout.LayoutParams(width, height, Gravity.CENTER));
-            } catch (RuntimeException error) {
-                Log.w("CodexMeterPreview", "Unable to render widget preview", error);
+                this.previewContainer.addView(backdrop, new FrameLayout.LayoutParams(-1, -1));
+                this.previewContainer.addView(surface, params);
+            } catch (RuntimeException exception) {
+                Log.w("CodexMeterPreview", "Unable to render widget preview", exception);
             }
         });
     }
 
-    private static void disablePreviewActions(View view) {
-        view.setOnClickListener(null);
-        view.setClickable(false);
-        if (view instanceof ViewGroup) {
-            ViewGroup group = (ViewGroup) view;
-            for (int i = 0; i < group.getChildCount(); i++) disablePreviewActions(group.getChildAt(i));
+    private float previewAspectRatio() {
+        int optionWidth = positiveOption("appWidgetMinWidth", "appWidgetMaxWidth", 0);
+        int optionHeight = positiveOption("appWidgetMinHeight", "appWidgetMaxHeight", 0);
+        if (optionWidth > 0 && optionHeight > 0) {
+            return Math.max(0.45f, Math.min(5.0f, optionWidth / (float) optionHeight));
         }
+        int columns = this.widgetSize.getInt("semAppWidgetColumnSpan", 0);
+        int rows = this.widgetSize.getInt("semAppWidgetRowSpan", 0);
+        if (columns > 0 && rows > 0) {
+            return columns / (float) rows;
+        }
+        int width = positiveOption("appWidgetMinWidth", "appWidgetMaxWidth", 220);
+        int height = positiveOption("appWidgetMinHeight", "appWidgetMaxHeight", 70);
+        return Math.max(0.45f, Math.min(4.0f, width / (float) height));
+    }
+
+    private int positiveOption(String first, String second, int fallback) {
+        int value = this.widgetSize.getInt(first, 0);
+        if (value <= 0) {
+            value = this.widgetSize.getInt(second, 0);
+        }
+        return value > 0 ? value : fallback;
+    }
+
+    private void updateSliderVisuals() {
+        if (this.opacityControl == null || this.opacitySlider == null
+                || this.opacityControl.getVisibility() != View.VISIBLE) {
+            return;
+        }
+        int[] ticks = {R.id.opacity_tick_0, R.id.opacity_tick_1, R.id.opacity_tick_2};
+        int level = Math.max(0, Math.min(ticks.length - 1, this.opacitySlider.getProgress()));
+        for (int i = 0; i < ticks.length; i++) {
+            this.opacityControl.findViewById(ticks[i]).setAlpha(i == level ? 0.0f : 1.0f);
+        }
+        View thumb = this.opacityControl.findViewById(R.id.opacity_thumb_visual);
+        android.graphics.drawable.GradientDrawable thumbBackground =
+                new android.graphics.drawable.GradientDrawable();
+        thumbBackground.setShape(android.graphics.drawable.GradientDrawable.OVAL);
+        thumbBackground.setColor(dark ? 0xFF1F1F22 : 0xFFFCFCFF);
+        thumbBackground.setStroke(Ui.dp(this, 2), Ui.accent(this, dark));
+        thumb.setBackground(thumbBackground);
+        thumb.post(() -> {
+            View tick = this.opacityControl.findViewById(ticks[level]);
+            thumb.setTranslationX(tick.getX() + (tick.getWidth() / 2.0f)
+                    - (thumb.getWidth() / 2.0f));
+        });
     }
 
     private void save() {
-        WidgetOptions options = currentOptions();
-        ReferenceWidgetPreferences.save(this, appWidgetId, options,
-                ReferenceWidgetPreferences.REFRESH_MINUTES[refreshSpinner.getSelectedItemPosition()]);
-        AppPreferences.saveWidgetOptions(this, appWidgetId, options);
-        AppPreferences.saveWidgetTapAction(this, appWidgetId, WidgetOptions.TAP_OPEN_APP);
-        AppWidgetManager manager = AppWidgetManager.getInstance(this);
-        for (int id : manager.getAppWidgetIds(new android.content.ComponentName(this, CodexUsageWidget.class)))
-            WidgetRenderer.update(this, manager, id);
-        WidgetRenderer.update(this, manager, appWidgetId);
-        WidgetRefreshScheduler.schedule(this);
-        setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId));
-        Toast.makeText(this, R.string.phone_widget_updated_3d7aa, Toast.LENGTH_SHORT).show();
+        AppPreferences.saveWidgetOptions(this, this.appWidgetId, currentOptions());
+        AppPreferences.saveWidgetTapAction(this, this.appWidgetId, this.tapAction);
+        WidgetRenderer.update(this, AppWidgetManager.getInstance(this), this.appWidgetId);
+        setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                this.appWidgetId));
+        Toast.makeText(this, "Widget updated.", Toast.LENGTH_SHORT).show();
         finish();
     }
 }

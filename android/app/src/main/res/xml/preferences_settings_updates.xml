@@ -2,42 +2,42 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="@string/phone_release_channel_e0656">
+    <PreferenceCategory android:title="Release channel">
         <ListPreference
             android:entries="@array/settings_update_channel_entries"
             android:entryValues="@array/settings_update_channel_values"
             android:key="update_channel_ui"
-            android:title="@string/phone_update_channel_ae939"
+            android:title="Update channel"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_automatic_updates_1e138">
+    <PreferenceCategory android:title="Automatic updates">
         <SwitchPreferenceCompat
             android:key="automatic_update_checks_ui"
-            android:summary="@string/phone_check_signed_github_releases_on_a_schedule_9c447"
-            android:title="@string/phone_check_automatically_7cd22" />
+            android:summary="Check signed GitHub releases on a schedule"
+            android:title="Check automatically" />
         <ListPreference
             android:entries="@array/settings_update_interval_entries"
             android:entryValues="@array/settings_update_interval_values"
             android:key="update_check_interval_ui"
-            android:title="@string/phone_check_frequency_7e6eb"
+            android:title="Check frequency"
             app:useSimpleSummaryProvider="true" />
         <SwitchPreferenceCompat
             android:key="notify_update_available_ui"
-            android:summary="@string/phone_show_a_notification_with_open_and_update_actions_2cccd"
-            android:title="@string/phone_notify_when_an_update_is_available_d5971" />
+            android:summary="Show a notification with Open and Update actions"
+            android:title="Notify when an update is available" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_more_options_86c0a">
+    <PreferenceCategory android:title="More options">
         <Preference
             android:key="check_for_updates"
-            android:summary="@string/phone_check_github_now_5218a"
-            android:title="@string/phone_check_for_updates_736b9"
+            android:summary="Check GitHub now"
+            android:title="Check for updates"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="release_history"
-            android:summary="@string/phone_available_versions_and_downgrade_requirements_492f5"
-            android:title="@string/phone_release_history_5044b"
+            android:summary="Available versions and downgrade requirements"
+            android:title="Release history"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 

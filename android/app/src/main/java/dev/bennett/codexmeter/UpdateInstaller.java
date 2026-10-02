@@ -55,10 +55,10 @@ public final class UpdateInstaller {
     public static PreparedUpdate prepare(Context context, GitHubRelease release,
             ProgressListener listener) throws Exception {
         if (release == null) {
-            throw new IllegalArgumentException(AppText.get(R.string.phone_no_github_release_was_selected_c7c06));
+            throw new IllegalArgumentException("No GitHub release was selected.");
         }
         if (release.apkSize <= 0L || release.apkSize > MAX_APK_BYTES) {
-            throw new IllegalStateException(AppText.get(R.string.phone_the_release_apk_has_an_unsafe_file_size_5e27e));
+            throw new IllegalStateException("The release APK has an unsafe file size.");
         }
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "update", "update_prepare_started",
@@ -68,12 +68,12 @@ public final class UpdateInstaller {
                 release.checksumUrl, MAX_CHECKSUM_BYTES);
         String expected = ReleaseIntegrity.expectedSha256(checksumFile, release.apkName);
         if (expected.isEmpty()) {
-            throw new SecurityException(AppText.get(R.string.phone_the_release_checksum_does_not_list_167bf)
+            throw new SecurityException("The release checksum does not list "
                     + release.apkName + ".");
         }
         File directory = new File(context.getCacheDir(), "verified-updates");
         if (!directory.exists() && !directory.mkdirs()) {
-            throw new IllegalStateException(AppText.get(R.string.phone_could_not_prepare_update_storage_11231));
+            throw new IllegalStateException("Could not prepare update storage.");
         }
         File partial = new File(directory, release.apkName + ".part");
         File apk = new File(directory, release.apkName);
@@ -83,11 +83,11 @@ public final class UpdateInstaller {
             downloadFile(context, "update_apk", release.apkUrl, partial, release.apkSize,
                     listener);
             if (partial.length() != release.apkSize) {
-                throw new SecurityException(AppText.get(R.string.phone_the_apk_size_does_not_match_the_github_release_b4d3d));
+                throw new SecurityException("The APK size does not match the GitHub release.");
             }
             String actual = ReleaseIntegrity.sha256(partial);
             if (!MessageDigestSupport.constantTimeEquals(expected, actual)) {
-                throw new SecurityException(AppText.get(R.string.phone_the_downloaded_apk_failed_sha_256_verification_4a722));
+                throw new SecurityException("The downloaded APK failed SHA-256 verification.");
             }
             if (!partial.renameTo(apk)) {
                 copy(partial, apk);
@@ -111,7 +111,7 @@ public final class UpdateInstaller {
 
     public static int commit(Context context, PreparedUpdate update) throws Exception {
         if (update == null || update.apk == null || !update.apk.isFile()) {
-            throw new IllegalArgumentException(AppText.get(R.string.phone_the_verified_update_apk_is_missing_d5d34));
+            throw new IllegalArgumentException("The verified update APK is missing.");
         }
         PackageInstaller installer = context.getPackageManager().getPackageInstaller();
         PackageInstaller.SessionParams params =
@@ -172,20 +172,20 @@ public final class UpdateInstaller {
                 ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
         PackageInfo archive = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
         if (archive == null) {
-            throw new SecurityException(AppText.get(R.string.phone_android_could_not_read_the_downloaded_apk_5958d));
+            throw new SecurityException("Android could not read the downloaded APK.");
         }
         if (!context.getPackageName().equals(archive.packageName)) {
-            throw new SecurityException(AppText.get(R.string.phone_the_apk_package_name_is_not_codex_meter_668e2));
+            throw new SecurityException("The APK package name is not Codex Meter.");
         }
         ReleaseVersion expected = ReleaseVersion.parse(release.version);
         ReleaseVersion actual = ReleaseVersion.parse(archive.versionName);
         if (expected == null || actual == null || expected.compareTo(actual) != 0) {
-            throw new SecurityException(AppText.get(R.string.phone_the_apk_version_does_not_match_the_selected_rele_cfc03));
+            throw new SecurityException("The APK version does not match the selected release.");
         }
         PackageInfo installed = manager.getPackageInfo(context.getPackageName(), flags);
         if (!sameSigners(currentSigners(installed), currentSigners(archive))) {
             throw new SecurityException(
-                    AppText.get(R.string.phone_the_apk_signing_certificate_does_not_match_this_1a40f));
+                    "The APK signing certificate does not match this installation.");
         }
         long installedCode = Build.VERSION.SDK_INT >= 28
                 ? installed.getLongVersionCode() : installed.versionCode;
@@ -193,7 +193,7 @@ public final class UpdateInstaller {
                 ? archive.getLongVersionCode() : archive.versionCode;
         if (archiveCode < installedCode) {
             throw new DowngradeNotSupportedException(
-                    AppText.get(R.string.phone_android_cannot_install_an_older_version_over_the_407a3));
+                    "Android cannot install an older version over the current app.");
         }
         return new PreparedUpdate(apk, archive.versionName, archiveCode);
     }
@@ -241,7 +241,7 @@ public final class UpdateInstaller {
                 while ((read = input.read(buffer)) != -1) {
                     total += read;
                     if (total > limit) {
-                        throw new SecurityException(AppText.get(R.string.phone_the_checksum_file_is_unexpectedly_large_72717));
+                        throw new SecurityException("The checksum file is unexpectedly large.");
                     }
                     output.write(buffer, 0, read);
                 }
@@ -277,7 +277,7 @@ public final class UpdateInstaller {
             int status = requireOk(connection);
             long declared = connection.getContentLengthLong();
             if (declared > MAX_APK_BYTES || (declared > 0L && declared != expected)) {
-                throw new SecurityException(AppText.get(R.string.phone_the_apk_download_size_changed_unexpectedly_6001d));
+                throw new SecurityException("The APK download size changed unexpectedly.");
             }
             try (InputStream input = connection.getInputStream();
                     OutputStream output = new FileOutputStream(destination)) {
@@ -286,11 +286,11 @@ public final class UpdateInstaller {
                 int read;
                 while ((read = input.read(buffer)) != -1) {
                     if (Thread.currentThread().isInterrupted()) {
-                        throw new InterruptedException(AppText.get(R.string.phone_update_download_canceled_b9e8a));
+                        throw new InterruptedException("Update download canceled.");
                     }
                     total += read;
                     if (total > expected || total > MAX_APK_BYTES) {
-                        throw new SecurityException(AppText.get(R.string.phone_the_apk_download_exceeded_its_expected_size_abe99));
+                        throw new SecurityException("The APK download exceeded its expected size.");
                     }
                     output.write(buffer, 0, read);
                     if (listener != null) {
@@ -316,7 +316,7 @@ public final class UpdateInstaller {
     private static HttpURLConnection open(String value) throws Exception {
         URL url = new URL(value);
         if (!trustedDownloadUrl(url)) {
-            throw new SecurityException(AppText.get(R.string.phone_the_release_download_url_is_not_trusted_d09d6));
+            throw new SecurityException("The release download URL is not trusted.");
         }
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(20_000);
@@ -332,10 +332,10 @@ public final class UpdateInstaller {
         int status = connection.getResponseCode();
         URL finalUrl = connection.getURL();
         if (!trustedDownloadUrl(finalUrl)) {
-            throw new SecurityException(AppText.get(R.string.phone_github_redirected_the_download_to_an_untrusted_h_720ad));
+            throw new SecurityException("GitHub redirected the download to an untrusted host.");
         }
         if (status != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException(AppText.get(R.string.phone_github_download_failed_with_http_93da7) + status + ".");
+            throw new IllegalStateException("GitHub download failed with HTTP " + status + ".");
         }
         return status;
     }

@@ -31,9 +31,6 @@ public final class WidgetOptions {
     public static final String RESET_RELATIVE = "relative";
     public static final String STYLE_AUTO = "auto";
     public static final String STYLE_BARS = "bars";
-    public static final String STYLE_CARDS = "quota_cards";
-    public static final String REFERENCE_COLOR = "color";
-    public static final String REFERENCE_CLEAR = "clear";
     public static final String STYLE_DIALS = "dials";
     public static final String STYLE_MINIMAL = "minimal";
     public static final String STYLE_RINGS = "rings";
@@ -65,7 +62,6 @@ public final class WidgetOptions {
     public final boolean showPercentSymbol;
     public final String surfaceStyle;
     public final String theme;
-    public final String referenceStyle;
     /** Ordered CSV of {@link WidgetMeters} keys; empty means migrate from {@link #metricMode}. */
     public final String visibleMeters;
 
@@ -101,14 +97,6 @@ public final class WidgetOptions {
             String str6, int i, String str7, String str8, String str9, boolean z, boolean z2,
             boolean z3, boolean z4, boolean z5, boolean z6, boolean showPercentSymbol,
             String visibleMeters) {
-        this(str, str2, str3, str4, str5, str6, i, str7, str8, str9, z, z2, z3,
-                z4, z5, z6, showPercentSymbol, visibleMeters, REFERENCE_COLOR);
-    }
-
-    private WidgetOptions(String str, String str2, String str3, String str4, String str5,
-            String str6, int i, String str7, String str8, String str9, boolean z, boolean z2,
-            boolean z3, boolean z4, boolean z5, boolean z6, boolean showPercentSymbol,
-            String visibleMeters, String referenceStyle) {
         this.layout = normalizeStyle(str);
         this.density = oneOf(str2, "auto", "compact", DENSITY_COMFORTABLE) ? str2 : "auto";
         this.surfaceStyle = oneOf(str3, SURFACE_MATERIAL, SURFACE_ONE_UI) ? str3 : SURFACE_MATERIAL;
@@ -135,8 +123,6 @@ public final class WidgetOptions {
         this.showResetAction = z6;
         this.showPercentSymbol = showPercentSymbol;
         this.visibleMeters = visibleMeters == null ? "" : visibleMeters.trim();
-        this.referenceStyle = REFERENCE_CLEAR.equals(referenceStyle)
-                ? REFERENCE_CLEAR : REFERENCE_COLOR;
     }
 
     public WidgetOptions withPercentSymbol(boolean show) {
@@ -144,7 +130,7 @@ public final class WidgetOptions {
                 this.graphicScale, this.theme, this.accent, this.opacity, this.resetMode,
                 this.displayMode, this.metricMode, this.showTitle, this.showPlan,
                 this.showUpdated, this.showRefresh, this.showResetCredits,
-                this.showResetAction, show, this.visibleMeters, this.referenceStyle);
+                this.showResetAction, show, this.visibleMeters);
     }
 
     public WidgetOptions withVisibleMeters(String metersCsv) {
@@ -153,21 +139,14 @@ public final class WidgetOptions {
                 this.displayMode, this.metricMode, this.showTitle, this.showPlan,
                 this.showUpdated, this.showRefresh, this.showResetCredits,
                 this.showResetAction, this.showPercentSymbol,
-                metersCsv == null ? "" : metersCsv, this.referenceStyle);
-    }
-
-    public WidgetOptions withReferenceStyle(String style) {
-        return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
-                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
-                showUpdated, showRefresh, showResetCredits, showResetAction,
-                showPercentSymbol, visibleMeters, style);
+                metersCsv == null ? "" : metersCsv);
     }
 
     public static WidgetOptions defaults() {
-        return new WidgetOptions(STYLE_CARDS, "auto", SURFACE_ONE_UI, "auto", THEME_SYSTEM,
+        return new WidgetOptions(STYLE_AUTO, "auto", SURFACE_ONE_UI, "auto", THEME_SYSTEM,
                 ACCENT_BLUE, DEFAULT_OPACITY, RESET_HIDDEN, DISPLAY_REMAINING, "both",
                 false, false, false, false, false, false)
-                .withVisibleMeters(WidgetMeters.serialize(QuotaCardOptions.defaults()));
+                .withVisibleMeters(WidgetMeters.serialize(WidgetMeters.defaultVisible()));
     }
 
     /** Nearest allowed opacity when background is on; {@code 0} stays fully off. */
@@ -199,23 +178,13 @@ public final class WidgetOptions {
         return 1;
     }
 
-    /** Effective phone layout preference used by the editor and renderer. */
+    /** Effective auto / dials / bars preference used by the renderer. */
     public String layoutPreference() {
-        return STYLE_CARDS.equals(this.layout) ? STYLE_CARDS : WidgetMeters.layoutPreference(this.layout);
-    }
-
-    public WidgetOptions withLayout(String style) {
-        return new WidgetOptions(style, density, surfaceStyle, graphicScale, theme, accent,
-                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
-                showUpdated, showRefresh, showResetCredits, showResetAction,
-                showPercentSymbol, visibleMeters, referenceStyle);
+        return WidgetMeters.layoutPreference(this.layout);
     }
 
     /** Resolved visible-meters CSV, migrating from metric_mode when unset. */
     public String effectiveVisibleMeters() {
-        if (STYLE_CARDS.equals(layout)) {
-            return WidgetMeters.serialize(QuotaCardOptions.resolve(visibleMeters));
-        }
         return WidgetMeters.effectiveVisibleCsv(this.visibleMeters, this.metricMode);
     }
 
@@ -243,7 +212,7 @@ public final class WidgetOptions {
         }
         // Keep rings/minimal as stored values for transfer round-trips; layoutPreference()
         // maps them to adaptive auto at render time.
-        return !oneOf(str, "auto", STYLE_BARS, STYLE_RINGS, STYLE_DIALS, STYLE_MINIMAL, STYLE_CARDS)
+        return !oneOf(str, "auto", STYLE_BARS, STYLE_RINGS, STYLE_DIALS, STYLE_MINIMAL)
                 ? "auto" : str;
     }
 

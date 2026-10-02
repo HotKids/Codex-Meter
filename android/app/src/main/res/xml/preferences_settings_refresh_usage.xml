@@ -2,71 +2,71 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="@string/refresh">
+    <PreferenceCategory android:title="Refresh">
         <SwitchPreferenceCompat
             android:key="refresh_on_launch"
-            android:title="@string/phone_refresh_on_launch_449c7" />
+            android:title="Refresh on launch" />
         <ListPreference
             android:entries="@array/settings_refresh_mode_entries"
             android:entryValues="@array/settings_refresh_mode_values"
             android:key="refresh_mode_ui"
-            android:summary="@string/phone_adapts_to_remaining_usage_app_attention_reset_ti_2537b"
-            android:title="@string/phone_refresh_mode_e32b3" />
+            android:summary="Adapts to remaining usage, app attention, reset timing, and recent failures"
+            android:title="Refresh mode" />
         <ListPreference
             android:entries="@array/settings_refresh_entries"
             android:entryValues="@array/settings_refresh_values"
             android:key="refresh_interval_ui"
-            android:title="@string/phone_manual_interval_c2276"
+            android:title="Manual interval"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_dashboard_d87f4">
+    <PreferenceCategory android:title="Dashboard">
         <Preference
             android:key="dashboard_reorder_ui"
             android:summary="Arrange usage cards and choose which ones appear"
-            android:title="@string/phone_edit_dashboard_fbfce" />
+            android:title="Edit dashboard" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_five_hour"
-            android:summary="@string/phone_shown_only_when_openai_returns_this_window_2664a"
-            android:title="@string/phone_5_hour_limit_7f567" />
+            android:summary="Shown only when OpenAI returns this window"
+            android:title="5-hour limit" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_weekly"
-            android:summary="@string/phone_shown_only_when_openai_returns_this_window_2664a"
-            android:title="@string/phone_weekly_limit_7aaf6" />
+            android:summary="Shown only when OpenAI returns this window"
+            android:title="Weekly limit" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_additional_limits"
-            android:summary="@string/phone_model_specific_limits_such_as_gpt_5_3_codex_spar_5e67d"
-            android:title="@string/phone_additional_limits_e3392" />
+            android:summary="Model-specific limits such as GPT-5.3-Codex-Spark"
+            android:title="Additional limits" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_usage_credits"
-            android:summary="@string/phone_hidden_automatically_at_a_zero_or_negative_balan_cc782"
-            android:title="@string/phone_usage_credit_balance_60e2c" />
+            android:summary="Hidden automatically at a zero or negative balance"
+            android:title="Usage-credit balance" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_usage_history"
-            android:summary="@string/phone_shown_only_when_a_5_hour_or_weekly_window_is_ava_d2bcc"
-            android:title="@string/phone_usage_history_b2a35" />
+            android:summary="Shown only when a 5-hour or weekly window is available"
+            android:title="Usage history" />
         <SwitchPreferenceCompat
             android:defaultValue="true"
             android:key="dashboard_reset_credits"
-            android:summary="@string/phone_hidden_automatically_when_no_resets_are_availabl_9c7f7"
-            android:title="@string/phone_reset_credits_ef7c0" />
+            android:summary="Hidden automatically when no resets are available"
+            android:title="Reset credits" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_usage_estimates_9486f">
+    <PreferenceCategory android:title="Usage estimates">
         <SwitchPreferenceCompat
             android:key="usage_pace_enabled_ui"
-            android:summary="@string/phone_project_how_long_the_current_allowance_may_last_e8d6a"
-            android:title="@string/phone_estimated_usage_time_05db0" />
+            android:summary="Project how long the current allowance may last"
+            android:title="Estimated usage time" />
         <ListPreference
             android:entries="@array/usage_pace_sensitivity_entries"
             android:entryValues="@array/usage_pace_sensitivity_values"
             android:key="usage_pace_sensitivity_ui"
-            android:title="@string/phone_warning_sensitivity_07e98"
+            android:title="Warning sensitivity"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 

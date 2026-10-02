@@ -1,20 +1,16 @@
 # Contributing
 
-This repository contains the Android phone app and its frozen Wear OS companion:
+This repository is a monorepo:
 
 - Shared docs and release notes live at the repository root (`README.md`,
   `CHANGELOG.md`, `LICENSE`, `AGENTS.md`).
 - **Android** lives under [`android/`](android/) (Gradle, `app/`, `shared/`,
   `wear/`, `tests/`).
+- **iOS** lives under [`ios/`](ios/).
 
-Keep Android changes under `android/`. Prefer focused commits and
+Keep platform-specific changes in the matching tree. Prefer focused commits and
 update tests with behavior changes. Do not commit credentials, tokens, or
 generated build artifacts.
-
-Wear OS is frozen: leave `android/wear/` code, resources, dependencies, and version
-unchanged, and preserve the shared phone-to-watch behavior. Building and validating
-the existing companion is allowed. Release steps that change Wear OS require an
-explicit maintainer request to resume that work.
 
 ## Android local setup
 
@@ -72,3 +68,16 @@ add a `## 2.8.0-alpha.1` section to `CHANGELOG.md`, then tag `v2.8.0-alpha.1`.
 Promoting to stable: merge `alpha` into `main`, drop the suffix, bump
 `versionCode`, consolidate the alpha changelog sections under the stable version,
 then tag as usual.
+
+## iOS local setup
+
+Install Xcode 26 or newer. From `ios/`:
+
+```bash
+swift test --package-path CodexMeterCore
+xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeter \
+  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
+```
+
+See [`ios/README.md`](ios/README.md) for device signing, App Groups, and release
+checklist notes.

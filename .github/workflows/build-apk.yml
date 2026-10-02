@@ -4,7 +4,6 @@ on:
   pull_request:
     branches: [main, alpha]
   push:
-    branches: [main, alpha]
     tags: ['v*']
   workflow_dispatch:
 
@@ -104,17 +103,6 @@ jobs:
         run: |
           set -euo pipefail
           ./run-tests.sh
-          ./gradlew :app:testDebugUnitTest --console=plain
-
-      - name: Upload phone regression reports
-        if: always()
-        uses: actions/upload-artifact@v7
-        with:
-          name: phone-regression-reports
-          path: |
-            android/app/build/reports/tests/
-            android/app/build/reports/widget-previews/
-          if-no-files-found: ignore
 
       - name: Run Android lint
         shell: bash

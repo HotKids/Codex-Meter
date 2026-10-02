@@ -21,7 +21,7 @@ public final class WidgetPreviewView extends View {
         this.cardRect = new RectF();
         this.options = WidgetOptions.defaults();
         setMinimumHeight(Ui.dp(context, 250.0f));
-        setLayerType(View.LAYER_TYPE_SOFTWARE, null);
+        setLayerType(1, null);
     }
 
     public void setOptions(WidgetOptions widgetOptions) {
@@ -109,7 +109,7 @@ public final class WidgetPreviewView extends View {
             drawResetCredits(canvas, f3, f4, f8 - (this.options.showUpdated ? 18.0f * f : 0.0f), iRgb2, iArgb2, iAccentColor, zPreviewDark);
         }
         if (this.options.showUpdated) {
-            text(canvas, AppText.get(R.string.widget_sample_updated), f3, f8, 10.0f * f, iArgb2, Paint.Align.LEFT, false);
+            text(canvas, "Updated just now", f3, f8, 10.0f * f, iArgb2, Paint.Align.LEFT, false);
         }
     }
 
@@ -117,10 +117,10 @@ public final class WidgetPreviewView extends View {
         float f5 = getResources().getDisplayMetrics().density;
         if (this.options.singleMetric()) {
             boolean zShowsFiveHour = this.options.showsFiveHour();
-            drawBarRow(canvas, zShowsFiveHour ? AppText.get(R.string.five_hour) : AppText.get(R.string.weekly), zShowsFiveHour ? 73 : 44, f, Math.max(0.0f, ((f4 - f2) - Math.min(f4 - f2, 78.0f * f5)) / 2.0f) + f2 + (5.0f * f5), f3, i, i2, i3, i4, i5, zShowsFiveHour ? AppText.get(R.string.phone_resets_today_at_5_36_pm_39f79) : AppText.get(R.string.phone_resets_friday_at_12_36_pm_59189));
+            drawBarRow(canvas, zShowsFiveHour ? "5-hour" : "Weekly", zShowsFiveHour ? 73 : 44, f, Math.max(0.0f, ((f4 - f2) - Math.min(f4 - f2, 78.0f * f5)) / 2.0f) + f2 + (5.0f * f5), f3, i, i2, i3, i4, i5, zShowsFiveHour ? "Resets today at 5:36 PM" : "Resets Friday at 12:36 PM");
         } else {
-            drawBarRow(canvas, AppText.get(R.string.five_hour), 73, f, f2 + (5.0f * f5), f3, i, i2, i3, i4, i5, AppText.get(R.string.phone_resets_today_at_5_36_pm_39f79));
-            drawBarRow(canvas, AppText.get(R.string.weekly), 44, f, ((f4 - f2) / 2.0f) + f2 + (1.0f * f5), f3, i, i2, i3, i4, i5, AppText.get(R.string.phone_resets_friday_at_12_36_pm_59189));
+            drawBarRow(canvas, "5-hour", 73, f, f2 + (5.0f * f5), f3, i, i2, i3, i4, i5, "Resets today at 5:36 PM");
+            drawBarRow(canvas, "Weekly", 44, f, ((f4 - f2) / 2.0f) + f2 + (1.0f * f5), f3, i, i2, i3, i4, i5, "Resets Friday at 12:36 PM");
         }
     }
 
@@ -144,18 +144,18 @@ public final class WidgetPreviewView extends View {
         if (this.options.singleMetric()) {
             boolean zShowsFiveHour = this.options.showsFiveHour();
             float f6 = ((f4 - f2) / 2.0f) + f2 + (3.0f * f5);
-            drawMinimalRow(canvas, zShowsFiveHour ? "5h" : AppText.get(R.string.widget_sample_week_short), zShowsFiveHour ? 73 : 44, f, f6, f3, i, i2, i4, i5);
+            drawMinimalRow(canvas, zShowsFiveHour ? "5h" : "Week", zShowsFiveHour ? 73 : 44, f, f6, f3, i, i2, i4, i5);
             if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
-                text(canvas, zShowsFiveHour ? AppText.get(R.string.phone_resets_in_2h_14m_0851b) : AppText.get(R.string.phone_resets_in_4d_3d99d), f, Math.min(f4 - (2.0f * f5), (24.0f * f5) + f6), 10.0f * f5, i3, Paint.Align.LEFT, false);
+                text(canvas, zShowsFiveHour ? "Resets in 2h 14m" : "Resets in 4d", f, Math.min(f4 - (2.0f * f5), (24.0f * f5) + f6), 10.0f * f5, i3, Paint.Align.LEFT, false);
                 return;
             }
             return;
         }
         float fMax = f2 + Math.max(31.0f * f5, (f4 - f2) * 0.34f);
         drawMinimalRow(canvas, "5h", 73, f, fMax, f3, i, i2, i4, i5);
-        drawMinimalRow(canvas, AppText.get(R.string.widget_sample_week_short), 44, f, fMax + (43.0f * f5), f3, i, i2, i4, i5);
+        drawMinimalRow(canvas, "Week", 44, f, fMax + (43.0f * f5), f3, i, i2, i4, i5);
         if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
-            text(canvas, AppText.get(R.string.phone_5h_in_2h_14m_week_in_4d_3ec17), f, f4 - (3.0f * f5), 10.0f * f5, i3, Paint.Align.LEFT, false);
+            text(canvas, "5h in 2h 14m · Week in 4d", f, f4 - (3.0f * f5), 10.0f * f5, i3, Paint.Align.LEFT, false);
         }
     }
 
@@ -184,7 +184,7 @@ public final class WidgetPreviewView extends View {
             float f8 = f2 + (fMax / 2.0f);
             drawRing(canvas, f7, f8, fMax2, zShowsFiveHour ? 73 : 44, i, i4, i5);
             float f9 = f8 + fMax2 + (15.0f * f5);
-            text(canvas, zShowsFiveHour ? AppText.get(R.string.five_hour) : AppText.get(R.string.weekly), f7, f9, 11.0f * f5, i2, Paint.Align.CENTER, true);
+            text(canvas, zShowsFiveHour ? "5-hour" : "Weekly", f7, f9, 11.0f * f5, i2, Paint.Align.CENTER, true);
             if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
                 text(canvas, zShowsFiveHour ? "5:36 PM" : "Fri 12:36 PM", f7, Math.min(f4 - (2.0f * f5), (15.0f * f5) + f9), 9.0f * f5, i3, Paint.Align.CENTER, false);
                 return;
@@ -197,8 +197,8 @@ public final class WidgetPreviewView extends View {
         drawRing(canvas, f + f10, f11, fMin, 73, i, i4, i5);
         drawRing(canvas, f + (3.0f * f10), f11, fMin, 44, i, i4, i5);
         float f12 = f11 + fMin + (18.0f * f5);
-        text(canvas, AppText.get(R.string.five_hour), f + f10, f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
-        text(canvas, AppText.get(R.string.weekly), f + (3.0f * f10), f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
+        text(canvas, "5-hour", f + f10, f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
+        text(canvas, "Weekly", f + (3.0f * f10), f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
         if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
             text(canvas, "5:36 PM", f + f10, f12 + (16.0f * f5), 9.0f * f5, i3, Paint.Align.CENTER, false);
             text(canvas, "Fri 12:36 PM", f + (3.0f * f10), f12 + (16.0f * f5), 9.0f * f5, i3, Paint.Align.CENTER, false);
@@ -231,7 +231,7 @@ public final class WidgetPreviewView extends View {
             float f8 = f2 + (fMax * 0.5f);
             drawDial(canvas, f7, f8, fMax2, zShowsFiveHour ? 73 : 44, i, i4, i5);
             float f9 = (0.72f * fMax2) + f8 + (16.0f * f5);
-            text(canvas, zShowsFiveHour ? AppText.get(R.string.five_hour) : AppText.get(R.string.weekly), f7, f9, 11.0f * f5, i2, Paint.Align.CENTER, true);
+            text(canvas, zShowsFiveHour ? "5-hour" : "Weekly", f7, f9, 11.0f * f5, i2, Paint.Align.CENTER, true);
             if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
                 text(canvas, zShowsFiveHour ? "5:36 PM" : "Fri 12:36 PM", f7, Math.min(f4 - (2.0f * f5), (15.0f * f5) + f9), 9.0f * f5, i3, Paint.Align.CENTER, false);
                 return;
@@ -244,8 +244,8 @@ public final class WidgetPreviewView extends View {
         drawDial(canvas, f + f10, f11, fMin, 73, i, i4, i5);
         drawDial(canvas, f + (3.0f * f10), f11, fMin, 44, i, i4, i5);
         float f12 = (0.72f * fMin) + f11 + (18.0f * f5);
-        text(canvas, AppText.get(R.string.five_hour), f + f10, f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
-        text(canvas, AppText.get(R.string.weekly), f + (3.0f * f10), f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
+        text(canvas, "5-hour", f + f10, f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
+        text(canvas, "Weekly", f + (3.0f * f10), f12, 11.0f * f5, i2, Paint.Align.CENTER, true);
         if (!WidgetOptions.RESET_HIDDEN.equals(this.options.resetMode)) {
             text(canvas, "5:36 PM", f + f10, f4 - (3.0f * f5), 9.0f * f5, i3, Paint.Align.CENTER, false);
             text(canvas, "Fri 12:36 PM", f + (3.0f * f10), f4 - (3.0f * f5), 9.0f * f5, i3, Paint.Align.CENTER, false);
@@ -271,16 +271,16 @@ public final class WidgetPreviewView extends View {
         float f5 = f3 - (13.0f * f4);
         float f6 = this.options.showResetAction ? 78.0f * f4 : 0.0f;
         if (this.options.showResetCredits) {
-            text(canvas, AppText.get(R.string.phone_2_resets_expires_in_3d_270fd), f, f5 + (4.0f * f4), 10.0f * f4, i2, Paint.Align.LEFT, false);
+            text(canvas, "2 resets · expires in 3d", f, f5 + (4.0f * f4), 10.0f * f4, i2, Paint.Align.LEFT, false);
         }
         if (this.options.showResetAction) {
             RectF rectF = new RectF(f2 - f6, f5 - (14.0f * f4), f2, (14.0f * f4) + f5);
             this.paint.setStyle(Paint.Style.FILL);
             this.paint.setColor(z ? Color.argb(38, 255, 255, 255) : Color.argb(24, 0, 0, 0));
             canvas.drawRoundRect(rectF, 14.0f * f4, 14.0f * f4, this.paint);
-            text(canvas, AppText.get(R.string.phone_use_reset_c3295), rectF.centerX(), f5 + (4.0f * f4), 10.0f * f4, i, Paint.Align.CENTER, true);
+            text(canvas, "Use reset", rectF.centerX(), f5 + (4.0f * f4), 10.0f * f4, i, Paint.Align.CENTER, true);
             if (!this.options.showResetCredits) {
-                text(canvas, AppText.get(R.string.phone_2_resets_available_fd027), f, f5 + (4.0f * f4), 10.0f * f4, i2, Paint.Align.LEFT, false);
+                text(canvas, "2 resets available", f, f5 + (4.0f * f4), 10.0f * f4, i2, Paint.Align.LEFT, false);
             }
         }
     }
@@ -309,7 +309,7 @@ public final class WidgetPreviewView extends View {
         this.paint.setTextAlign(align);
         this.paint.setTextSize(f3);
         this.paint.setColor(i);
-        this.paint.setTypeface(Typeface.create(WidgetOptions.SURFACE_ONE_UI.equals(this.options.surfaceStyle) ? "sec" : "sans-serif", z ? Typeface.BOLD : Typeface.NORMAL));
+        this.paint.setTypeface(Typeface.create(WidgetOptions.SURFACE_ONE_UI.equals(this.options.surfaceStyle) ? "sec" : "sans-serif", z ? 1 : 0));
         canvas.drawText(str, f, f2, this.paint);
     }
 }

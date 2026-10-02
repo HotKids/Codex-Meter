@@ -93,24 +93,24 @@ public final class SettingsActivity extends AppCompatActivity {
     private static String pageTitle(String page) {
         switch (page) {
             case PAGE_APPEARANCE:
-                return AppText.get(R.string.phone_appearance_41def);
+                return "Appearance";
             case PAGE_REFRESH_USAGE:
-                return AppText.get(R.string.phone_refresh_usage_90304);
+                return "Refresh & usage";
             case PAGE_NOTIFICATIONS:
-                return AppText.get(R.string.phone_notifications_753a2);
+                return "Notifications";
             case PAGE_NOW_BAR:
                 return "Now Bar";
             case PAGE_UPDATES:
-                return AppText.get(R.string.phone_updates_c76d1);
+                return "Updates";
             case PAGE_TRANSFER:
-                return AppText.get(R.string.phone_backup_transfer_84bb2);
+                return "Backup & transfer";
             case PAGE_PRIVACY:
-                return AppText.get(R.string.phone_privacy_cf014);
+                return "Privacy";
             case PAGE_DIAGNOSTICS:
-                return AppText.get(R.string.phone_diagnostics_3af22);
+                return "Diagnostics";
             case PAGE_ROOT:
             default:
-                return AppText.get(R.string.phone_settings_c7f73);
+                return "Settings";
         }
     }
 
@@ -236,7 +236,7 @@ public final class SettingsActivity extends AppCompatActivity {
             } else if (PAGE_NOW_BAR.equals(page)) {
                 if (!NowBarManager.refreshActiveNotificationContract(requireContext())) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_could_not_refresh_the_live_notification_so_the_m_f6874),
+                            "Could not refresh the live notification, so the monitor was stopped.",
                             Toast.LENGTH_LONG).show();
                 }
                 updateNowBarSummary();
@@ -283,8 +283,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 enabled.setChecked(loggingEnabled);
                 updateDiagnosticSummary();
                 Toast.makeText(requireContext(), loggingEnabled
-                                ? AppText.get(R.string.phone_diagnostic_tracing_enabled_cf885)
-                                : AppText.get(R.string.phone_diagnostic_tracing_disabled_saved_logs_were_kept_19836),
+                                ? "Diagnostic tracing enabled."
+                                : "Diagnostic tracing disabled. Saved logs were kept.",
                         Toast.LENGTH_LONG).show();
                 return true;
             });
@@ -294,13 +294,13 @@ public final class SettingsActivity extends AppCompatActivity {
             });
             findPreference("clear_diagnostic_logs").setOnPreferenceClickListener(preference -> {
                 new AlertDialog.Builder(requireContext())
-                        .setTitle(AppText.get(R.string.phone_clear_diagnostic_logs_94f18))
-                        .setMessage(AppText.get(R.string.phone_this_permanently_deletes_all_saved_diagnostic_ev_f81cd))
-                        .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                        .setPositiveButton(AppText.get(R.string.phone_clear_719ea), (dialog, which) -> {
+                        .setTitle("Clear diagnostic logs?")
+                        .setMessage("This permanently deletes all saved diagnostic events.")
+                        .setNegativeButton("Cancel", null)
+                        .setPositiveButton("Clear", (dialog, which) -> {
                             DiagnosticLog.clear(requireContext());
                             updateDiagnosticSummary();
-                            Toast.makeText(requireContext(), AppText.get(R.string.phone_diagnostic_logs_cleared_c0d69),
+                            Toast.makeText(requireContext(), "Diagnostic logs cleared.",
                                     Toast.LENGTH_SHORT).show();
                         })
                         .show();
@@ -320,9 +320,9 @@ public final class SettingsActivity extends AppCompatActivity {
             }
             DiagnosticLog.Stats stats = DiagnosticLog.stats(requireContext());
             Preference status = findPreference("diagnostic_log_status");
-            status.setSummary((enabled ? AppText.get(R.string.phone_tracing_on_c020c) : AppText.get(R.string.phone_tracing_off_307f8))
+            status.setSummary((enabled ? "Tracing on" : "Tracing off")
                     + " · " + DiagnosticLog.formatBytes(stats.bytes)
-                    + (stats.files == 1 ? AppText.get(R.string.phone_in_1_file_4657d) : AppText.get(R.string.phone_across_49521) + stats.files + AppText.get(R.string.phone_files_05211)));
+                    + (stats.files == 1 ? " in 1 file" : " across " + stats.files + " files"));
             findPreference("export_diagnostic_logs").setEnabled(stats.hasLogs());
             findPreference("clear_diagnostic_logs").setEnabled(stats.hasLogs());
         }
@@ -330,7 +330,7 @@ public final class SettingsActivity extends AppCompatActivity {
         private void launchDiagnosticExport() {
             DiagnosticLog.Stats stats = DiagnosticLog.stats(requireContext());
             if (!stats.hasLogs()) {
-                Toast.makeText(requireContext(), AppText.get(R.string.phone_there_are_no_diagnostic_logs_to_export_e2c87),
+                Toast.makeText(requireContext(), "There are no diagnostic logs to export.",
                         Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -345,7 +345,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 DiagnosticLog.error(requireContext(), "diagnostics", "export_picker_failed",
                         exception);
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_no_file_picker_is_available_to_export_diagnostic_0e364),
+                        "No file picker is available to export diagnostic logs.",
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -355,12 +355,12 @@ public final class SettingsActivity extends AppCompatActivity {
                 DiagnosticLog.export(requireContext(), uri);
                 updateDiagnosticSummary();
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_diagnostic_logs_exported_review_the_file_before_ef6af),
+                        "Diagnostic logs exported. Review the file before sharing it.",
                         Toast.LENGTH_LONG).show();
             } catch (Exception exception) {
                 DiagnosticLog.error(requireContext(), "diagnostics", "export_failed", exception);
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_could_not_export_diagnostic_logs_1dd99) + MainActivity.safeMessage(exception),
+                        "Could not export diagnostic logs: " + MainActivity.safeMessage(exception),
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -369,64 +369,64 @@ public final class SettingsActivity extends AppCompatActivity {
             if (!PAGE_ROOT.equals(page) || getContext() == null) return;
             String theme = AppPreferences.getAppTheme(requireContext());
             String themeLabel = WidgetOptions.THEME_SYSTEM.equals(theme)
-                    ? AppText.get(R.string.phone_system_default_9d8d3)
-                    : WidgetOptions.THEME_DARK.equals(theme) ? AppText.get(R.string.phone_dark_ae1ef) : AppText.get(R.string.phone_light_a36ef);
-            findPreference("settings_appearance").setSummary(themeLabel + AppText.get(R.string.phone_material_you_58dac)
+                    ? "System default"
+                    : WidgetOptions.THEME_DARK.equals(theme) ? "Dark" : "Light";
+            findPreference("settings_appearance").setSummary(themeLabel + " · Material You "
                     + (AppPreferences.isMaterialYouEnabled(requireContext()) ? "on" : "off"));
 
             int refreshMinutes = AppPreferences.getAutomaticRefresh(requireContext())
                     ? RefreshScheduler.effectiveRefreshMinutes(requireContext())
                     : AppPreferences.getRefreshMinutes(requireContext());
             String refreshLabel = refreshMinutes < 60
-                    ? refreshMinutes + AppText.get(R.string.phone_minutes_ae098)
-                    : refreshMinutes == 60 ? AppText.get(R.string.phone_hourly_d9362) : AppText.get(R.string.phone_every_9dd38) + (refreshMinutes / 60) + AppText.get(R.string.phone_hours_81e3f);
+                    ? refreshMinutes + " minutes"
+                    : refreshMinutes == 60 ? "Hourly" : "Every " + (refreshMinutes / 60) + " hours";
             if (AppPreferences.getAutomaticRefresh(requireContext())) {
-                refreshLabel = AppText.get(R.string.phone_automatic_currently_cf569) + refreshLabel;
+                refreshLabel = "Automatic · currently " + refreshLabel;
             }
             String estimatesSummary;
             if (!UsagePacePreferences.isEnabled(requireContext())) {
-                estimatesSummary = AppText.get(R.string.phone_estimates_off_e1741);
+                estimatesSummary = "Estimates off";
             } else if (!UsagePacePreferences.areWarningsEnabled(requireContext())) {
-                estimatesSummary = AppText.get(R.string.phone_estimates_on_warnings_off_5588f);
+                estimatesSummary = "Estimates on · Warnings off";
             } else {
-                estimatesSummary = AppText.get(R.string.phone_estimates_on_90bb3);
+                estimatesSummary = "Estimates on";
             }
             findPreference("settings_refresh_usage").setSummary(
                     refreshLabel + " · " + estimatesSummary);
 
             findPreference("settings_notifications").setSummary(
                     ResetAlertPreferences.enabled(requireContext())
-                            ? AppText.get(R.string.phone_on_86e1b)
+                            ? "On · "
                             + metricLabel(ResetAlertPreferences.getMetric(requireContext()))
-                            + AppText.get(R.string.phone_at_7df70) + ResetAlertPreferences.getThreshold(requireContext()) + "%"
-                            : AppText.get(R.string.phone_off_e3de5));
+                            + " at " + ResetAlertPreferences.getThreshold(requireContext()) + "%"
+                            : "Off");
 
             String nowBarSummary;
             if (NowBarManager.isActive(requireContext())) {
-                nowBarSummary = AppText.get(R.string.phone_live_monitor_active_d68de);
+                nowBarSummary = "Live monitor active";
             } else if (NowBarPreferences.isAutoStartEnabled(requireContext())) {
-                nowBarSummary = AppText.get(R.string.phone_automatic_starts_at_258d3)
+                nowBarSummary = "Automatic · starts at "
                         + NowBarPreferences.getThreshold(requireContext()) + "%";
             } else {
-                nowBarSummary = AppText.get(R.string.phone_manual_start_daa73);
+                nowBarSummary = "Manual start";
             }
             findPreference("settings_now_bar").setSummary(nowBarSummary);
 
             GitHubRelease availableUpdate = UpdatePreferences.availableUpdate(requireContext());
             String channelSuffix = UpdateChannel.isAlpha(
-                    UpdatePreferences.channel(requireContext())) ? AppText.get(R.string.phone_alpha_channel_0a216) : "";
+                    UpdatePreferences.channel(requireContext())) ? " · Alpha channel" : "";
             findPreference("settings_updates").setSummary((availableUpdate != null
-                    ? "v" + availableUpdate.version + AppText.get(R.string.phone_available_3e36f)
+                    ? "v" + availableUpdate.version + " available"
                     : UpdatePreferences.automaticChecks(requireContext())
-                    ? AppText.get(R.string.phone_automatic_f21e5) + PhoneLabels.updateLabel(
+                    ? "Automatic · " + UpdateCheckFrequency.label(
                     UpdatePreferences.checkIntervalHours(requireContext()))
-                    : AppText.get(R.string.phone_automatic_checks_off_15e8a)) + channelSuffix);
+                    : "Automatic checks off") + channelSuffix);
         }
 
         private String metricLabel(String metric) {
-            if ("five_hour".equals(metric)) return AppText.get(R.string.five_hour);
-            if ("weekly".equals(metric)) return AppText.get(R.string.weekly);
-            return AppText.get(R.string.phone_both_limits_b8c26);
+            if ("five_hour".equals(metric)) return "5-hour";
+            if ("weekly".equals(metric)) return "Weekly";
+            return "Both limits";
         }
 
         private void bindAccount() {
@@ -454,9 +454,9 @@ public final class SettingsActivity extends AppCompatActivity {
 
             AuthTokens tokens = SecureTokenStore.load(requireContext());
             UsageSnapshot snapshot = AppPreferences.loadSnapshot(requireContext());
-            title.setText(tokens == null ? AppText.get(R.string.phone_not_connected_8b02f) : AppText.get(R.string.phone_chatgpt_account_b7b4f));
-            summary.setText(tokens == null ? AppText.get(R.string.phone_sign_in_from_the_dashboard_6a097)
-                    : (tokens.email.isEmpty() ? AppText.get(R.string.phone_connected_c2f9b) : tokens.email));
+            title.setText(tokens == null ? "Not connected" : "ChatGPT account");
+            summary.setText(tokens == null ? "Sign in from the dashboard"
+                    : (tokens.email.isEmpty() ? "Connected" : tokens.email));
             if (tokens != null && snapshot != null) {
                 String label = UsageFormat.planLabel(snapshot.planType);
                 plan.setText(label.isEmpty() ? "Codex" : label);
@@ -464,7 +464,7 @@ public final class SettingsActivity extends AppCompatActivity {
             } else {
                 plan.setVisibility(View.GONE);
             }
-            action.getTitleView().setText(tokens == null ? AppText.get(R.string.phone_sign_in_with_chatgpt_fe0b3) : AppText.get(R.string.phone_sign_out_dc164));
+            action.getTitleView().setText(tokens == null ? "Sign in with ChatGPT" : "Sign out");
             action.getTitleView().setTextColor(tokens == null
                     ? Ui.accent(requireContext(), dark)
                     : (dark ? 0xFFFF6B6B : 0xFFFF3B30));
@@ -481,10 +481,10 @@ public final class SettingsActivity extends AppCompatActivity {
 
         private void confirmSignOut() {
             androidx.appcompat.app.AlertDialog dialog = new androidx.appcompat.app.AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_sign_out_b1155))
-                    .setMessage(AppText.get(R.string.phone_this_removes_encrypted_chatgpt_tokens_and_cached_2d2b6))
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_sign_out_dc164), (dialogInterface, which) -> {
+                    .setTitle("Sign out?")
+                    .setMessage("This removes encrypted ChatGPT tokens and cached usage from this device.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Sign out", (dialogInterface, which) -> {
                         AuthTokens tokens = SecureTokenStore.load(requireContext());
                         SecureTokenStore.clear(requireContext());
                         AppPreferences.clearSnapshot(requireContext());
@@ -492,7 +492,7 @@ public final class SettingsActivity extends AppCompatActivity {
                         RefreshScheduler.cancelAll(requireContext());
                         ResetAlertScheduler.cancelAll(requireContext());
                         WidgetRenderer.updateAll(requireContext());
-                        Toast.makeText(requireContext(), AppText.get(R.string.phone_signed_out_05d2a), Toast.LENGTH_SHORT).show();
+                        Toast.makeText(requireContext(), "Signed out.", Toast.LENGTH_SHORT).show();
                         requireActivity().recreate();
                         if (tokens != null) {
                             Context app = requireContext().getApplicationContext();
@@ -624,10 +624,13 @@ public final class SettingsActivity extends AppCompatActivity {
                 }
                 if (UpdateChannel.ALPHA.equals(channel)) {
                     new AlertDialog.Builder(requireContext())
-                            .setTitle(AppText.get(R.string.phone_switch_to_the_alpha_channel_f49de))
-                            .setMessage(AppText.get(R.string.phone_alpha_builds_ship_faster_with_less_testing_and_m_ac77a))
-                            .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                            .setPositiveButton(AppText.get(R.string.phone_use_alpha_c590d), (dialog, which) ->
+                            .setTitle("Switch to the alpha channel?")
+                            .setMessage("Alpha builds ship faster with less testing and may be "
+                                    + "unstable. They use the same signing key and version code "
+                                    + "as stable releases, so switching back to stable later is "
+                                    + "one in-place install with no uninstalling or data loss.")
+                            .setNegativeButton("Cancel", null)
+                            .setPositiveButton("Use alpha", (dialog, which) ->
                                     applyUpdateChannel(UpdateChannel.ALPHA))
                             .show();
                     return false;
@@ -727,10 +730,10 @@ public final class SettingsActivity extends AppCompatActivity {
                 return;
             }
             if (!UpdatePreferences.automaticChecks(requireContext())) {
-                automaticUpdatePreference.setSummary(AppText.get(R.string.phone_automatic_github_release_checks_are_off_992de));
+                automaticUpdatePreference.setSummary("Automatic GitHub release checks are off");
                 return;
             }
-            automaticUpdatePreference.setSummary(PhoneLabels.updateSummary(
+            automaticUpdatePreference.setSummary(UpdateCheckFrequency.summary(
                     UpdatePreferences.checkIntervalHours(requireContext())));
         }
 
@@ -740,7 +743,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 8603);
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_allow_notifications_then_enable_update_alerts_ag_c52f5),
+                        "Allow notifications, then enable update alerts again.",
                         Toast.LENGTH_LONG).show();
                 return false;
             }
@@ -750,7 +753,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 return true;
             }
             Toast.makeText(requireContext(),
-                    AppText.get(R.string.phone_enable_app_notifications_then_turn_on_update_ale_b7e9e),
+                    "Enable app notifications, then turn on update alerts again.",
                     Toast.LENGTH_LONG).show();
             return false;
         }
@@ -867,8 +870,8 @@ public final class SettingsActivity extends AppCompatActivity {
             testNotificationPreference.setOnPreferenceClickListener(preference -> {
                 boolean sent = ResetNotificationManager.sendTestNotification(requireContext());
                 Toast.makeText(requireContext(), sent
-                        ? AppText.get(R.string.phone_test_notification_sent_93829)
-                        : AppText.get(R.string.phone_enable_notifications_and_allow_permission_first_d59d3),
+                        ? "Test notification sent."
+                        : "Enable notifications and allow permission first.",
                         sent ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
                 return true;
             });
@@ -896,24 +899,25 @@ public final class SettingsActivity extends AppCompatActivity {
             List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(
                     requireContext());
             AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_reminder_times_ff2ab))
-                    .setNeutralButton(AppText.get(R.string.phone_add_61cc5), (dialog, which) ->
+                    .setTitle("Reminder times")
+                    .setNeutralButton("Add", (dialog, which) ->
                             showAddExpiryReminderDialog())
-                    .setNegativeButton(AppText.get(R.string.phone_done_e9b45), null);
+                    .setNegativeButton("Done", null);
             if (leadTimes.isEmpty()) {
-                builder.setMessage(AppText.get(R.string.phone_no_reminder_times_are_configured_add_one_to_choo_fb5d2));
+                builder.setMessage("No reminder times are configured. Add one to choose how "
+                        + "long before expiry Codex Meter should notify you.");
             } else {
                 String[] labels = new String[leadTimes.size()];
                 for (int i = 0; i < leadTimes.size(); i++) {
                     labels[i] = formatLeadTime(leadTimes.get(i))
-                            + AppText.get(R.string.phone_before_expiry_tap_to_remove_fc503);
+                            + " before expiry — tap to remove";
                 }
                 builder.setItems(labels, (dialog, which) -> {
                     List<Long> updated = new ArrayList<>(leadTimes);
                     long removed = updated.remove(which);
                     saveExpiryLeadTimes(updated);
                     Toast.makeText(requireContext(),
-                            formatLeadTime(removed) + AppText.get(R.string.phone_reminder_removed_1458b),
+                            formatLeadTime(removed) + " reminder removed.",
                             Toast.LENGTH_SHORT).show();
                 });
             }
@@ -927,7 +931,7 @@ public final class SettingsActivity extends AppCompatActivity {
             container.setPadding(Ui.dp(requireContext(), 24), Ui.dp(requireContext(), 8),
                     Ui.dp(requireContext(), 24), 0);
             TextView explanation = Ui.text(requireContext(),
-                    AppText.get(R.string.phone_notify_me_this_long_before_each_available_reset_8e6cf),
+                    "Notify me this long before each available reset credit expires.",
                     14.0f, Ui.secondaryText(dark));
             container.addView(explanation, new LinearLayout.LayoutParams(-1, -2));
 
@@ -935,7 +939,7 @@ public final class SettingsActivity extends AppCompatActivity {
             LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
             rowParams.setMargins(0, Ui.dp(requireContext(), 16), 0, 0);
             EditText amount = new EditText(requireContext());
-            amount.setHint(AppText.get(R.string.phone_amount_43dc8));
+            amount.setHint("Amount");
             amount.setSingleLine(true);
             amount.setTextColor(Ui.mainText(dark));
             amount.setHintTextColor(Ui.secondaryText(dark));
@@ -943,7 +947,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     | InputType.TYPE_NUMBER_FLAG_DECIMAL);
             inputRow.addView(amount, new LinearLayout.LayoutParams(0,
                     Ui.dp(requireContext(), 54), 1.0f));
-            String[] units = {AppText.get(R.string.phone_minutes_092f9), AppText.get(R.string.phone_hours_9e25a), AppText.get(R.string.phone_days_f6bb0), AppText.get(R.string.phone_weeks_7d752)};
+            String[] units = {"Minutes", "Hours", "Days", "Weeks"};
             Spinner unit = Ui.spinner(requireContext(), units, dark);
             unit.setSelection(1);
             LinearLayout.LayoutParams unitParams = new LinearLayout.LayoutParams(
@@ -953,17 +957,18 @@ public final class SettingsActivity extends AppCompatActivity {
             container.addView(inputRow, rowParams);
 
             AlertDialog dialog = new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_add_reminder_time_e5489))
+                    .setTitle("Add reminder time")
                     .setView(container)
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_add_61cc5), null)
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Add", null)
                     .create();
             dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
                     .setOnClickListener(view -> {
                         Long leadTime = parseLeadTime(amount.getText().toString(),
                                 unit.getSelectedItemPosition());
                         if (leadTime == null) {
-                            amount.setError(AppText.get(R.string.phone_enter_a_time_from_1_minute_to_1_year_in_whole_mi_5ccac));
+                            amount.setError("Enter a time from 1 minute to 1 year, "
+                                    + "in whole minutes.");
                             return;
                         }
                         List<Long> updated = new ArrayList<>(
@@ -1015,29 +1020,29 @@ public final class SettingsActivity extends AppCompatActivity {
             List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(
                     requireContext());
             if (leadTimes.isEmpty()) {
-                expiryTimesPreference.setSummary(AppText.get(R.string.phone_no_reminder_times_configured_b8da5));
+                expiryTimesPreference.setSummary("No reminder times configured");
                 return;
             }
             List<String> labels = new ArrayList<>();
             for (Long leadTime : leadTimes) labels.add(formatLeadTime(leadTime));
-            expiryTimesPreference.setSummary(String.join(", ", labels) + AppText.get(R.string.phone_before_expiry_6f388));
+            expiryTimesPreference.setSummary(String.join(", ", labels) + " before expiry");
         }
 
         private String formatLeadTime(long millis) {
             if (millis % TimeUnit.DAYS.toMillis(7) == 0L) {
                 long weeks = millis / TimeUnit.DAYS.toMillis(7);
-                return weeks + AppText.get(R.string.phone_week_a4779) + AppText.nounSuffix(weeks);
+                return weeks + " week" + (weeks == 1 ? "" : "s");
             }
             if (millis % TimeUnit.DAYS.toMillis(1) == 0L) {
                 long days = millis / TimeUnit.DAYS.toMillis(1);
-                return days + AppText.get(R.string.phone_day_80ee8) + AppText.nounSuffix(days);
+                return days + " day" + (days == 1 ? "" : "s");
             }
             if (millis % TimeUnit.HOURS.toMillis(1) == 0L) {
                 long hours = millis / TimeUnit.HOURS.toMillis(1);
-                return hours + AppText.get(R.string.phone_hour_84c59) + AppText.nounSuffix(hours);
+                return hours + " hour" + (hours == 1 ? "" : "s");
             }
             long minutes = millis / TimeUnit.MINUTES.toMillis(1);
-            return minutes + AppText.get(R.string.phone_minute_82d61) + AppText.nounSuffix(minutes);
+            return minutes + " minute" + (minutes == 1 ? "" : "s");
         }
 
         private void scheduleResetCreditExpiryReminders() {
@@ -1057,7 +1062,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 if (NowBarManager.isActive(requireContext())
                         && !NowBarManager.repostActive(requireContext())) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_could_not_refresh_this_display_mode_so_the_monit_12e82),
+                            "Could not refresh this display mode, so the monitor was stopped.",
                             Toast.LENGTH_LONG).show();
                 }
                 updateNowBarSummary();
@@ -1076,7 +1081,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 if (NowBarManager.isActive(requireContext())
                         && !NowBarManager.applyPercentModeChange(requireContext())) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_could_not_refresh_the_percentage_mode_so_the_mon_dba50),
+                            "Could not refresh the percentage mode, so the monitor was stopped.",
                             Toast.LENGTH_LONG).show();
                 }
                 updateNowBarSummary();
@@ -1098,7 +1103,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 boolean started = NowBarManager.start(requireContext());
                 if (!started) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_refresh_your_signed_in_usage_before_starting_the_0d1c6),
+                            "Refresh your signed-in usage before starting the monitor.",
                             Toast.LENGTH_LONG).show();
                 }
                 updateNowBarSummary();
@@ -1164,8 +1169,8 @@ public final class SettingsActivity extends AppCompatActivity {
                 if (!ensureNotificationPermission()) return true;
                 boolean started = NowBarManager.startPreview(requireContext());
                 Toast.makeText(requireContext(), started
-                        ? AppText.get(R.string.phone_sample_live_update_started_for_20_minutes_654f5)
-                        : AppText.get(R.string.phone_allow_notifications_first_98c03),
+                        ? "Sample Live Update started for 20 minutes."
+                        : "Allow notifications first.",
                         started ? Toast.LENGTH_SHORT : Toast.LENGTH_LONG).show();
                 updateNowBarSummary();
                 return true;
@@ -1208,19 +1213,31 @@ public final class SettingsActivity extends AppCompatActivity {
 
         private void showSamsungNowBarHelp() {
             new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_samsung_now_bar_setup_8ae6f))
-                    .setMessage(AppText.get(R.string.phone_samsung_help))
-                    .setNeutralButton(AppText.get(R.string.phone_developer_options_7ea27), (dialog, which) -> {
+                    .setTitle("Samsung Now Bar setup")
+                    .setMessage("For Android Live Updates:\n"
+                            + "1. Open Settings > About phone/tablet > Software information.\n"
+                            + "2. Tap Build number seven times and confirm your screen lock.\n"
+                            + "3. Return to Settings > Developer options.\n"
+                            + "4. Turn on Live notifications for all apps.\n"
+                            + "5. Make sure Settings > Lock screen and AOD > Now bar is enabled.\n\n"
+                            + "If “Live notifications for all apps” is missing, select Samsung "
+                            + "compatibility above. Samsung changes third-party access by model, "
+                            + "region, and firmware build even when Android and One UI versions "
+                            + "match.\n\n"
+                            + "If both modes remain ordinary notifications, that firmware or "
+                            + "device does not expose a third-party Now Bar surface. Codex Meter "
+                            + "cannot override Samsung’s system allowlist.")
+                    .setNeutralButton("Developer options", (dialog, which) -> {
                         try {
                             startActivity(new Intent(
                                     Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
                         } catch (RuntimeException exception) {
                             Toast.makeText(requireContext(),
-                                    AppText.get(R.string.phone_developer_options_are_not_available_on_this_firm_df312),
+                                    "Developer options are not available on this firmware.",
                                     Toast.LENGTH_LONG).show();
                         }
                     })
-                    .setPositiveButton(AppText.get(R.string.phone_done_e9b45), null)
+                    .setPositiveButton("Done", null)
                     .show();
         }
 
@@ -1233,7 +1250,7 @@ public final class SettingsActivity extends AppCompatActivity {
                         AppPreferences.loadSnapshot(requireContext()));
                 if (started) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_live_monitor_started_from_the_current_usage_thre_b2548),
+                            "Live monitor started from the current usage threshold.",
                             Toast.LENGTH_SHORT).show();
                 }
             }
@@ -1259,12 +1276,12 @@ public final class SettingsActivity extends AppCompatActivity {
                     != PackageManager.PERMISSION_GRANTED) {
                 requestPermissions(new String[]{"android.permission.POST_NOTIFICATIONS"}, 8602);
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_allow_notifications_then_start_the_monitor_again_9a35a), Toast.LENGTH_LONG).show();
+                        "Allow notifications, then start the monitor again.", Toast.LENGTH_LONG).show();
                 return false;
             }
             if (NowBarManager.canPostNotifications(requireContext())) return true;
             Toast.makeText(requireContext(),
-                    AppText.get(R.string.phone_enable_app_notifications_then_start_the_monitor_a9588),
+                    "Enable app notifications, then start the monitor again.",
                     Toast.LENGTH_LONG).show();
             return false;
         }
@@ -1274,27 +1291,27 @@ public final class SettingsActivity extends AppCompatActivity {
             boolean active = NowBarManager.isActive(requireContext());
             nowBarMonitorPreference.setChecked(active);
             if (active) {
-                String kind = NowBarManager.isPreview(requireContext()) ? AppText.get(R.string.phone_sample_preview_58492) : AppText.get(R.string.phone_live_monitor_2a883);
+                String kind = NowBarManager.isPreview(requireContext()) ? "Sample preview" : "Live monitor";
                 boolean samsungCompatibility = NowBarDisplayMode.SAMSUNG_COMPATIBILITY.equals(
                         NowBarManager.postedDisplayMode(requireContext()));
                 String state = samsungCompatibility
-                        ? AppText.get(R.string.phone_using_samsung_compatibility_8a9d6)
+                        ? "using Samsung compatibility"
                         : Build.VERSION.SDK_INT >= 36
                         ? (NowBarManager.isPromoted(requireContext())
-                        ? AppText.get(R.string.phone_promoted_as_a_live_update_3029e)
-                        : AppText.get(R.string.phone_active_but_not_promoted_by_the_system_2bb4c))
+                        ? "promoted as a Live Update"
+                        : "active, but not promoted by the system")
                         : "active";
-                nowBarMonitorPreference.setSummary(kind + " " + state + AppText.get(R.string.phone_ends_324fe)
+                nowBarMonitorPreference.setSummary(kind + " " + state + " · ends "
                         + UsageFormat.absolute(requireContext(), NowBarManager.activeUntil(requireContext()),
                         System.currentTimeMillis()));
             } else if (NowBarPreferences.isAutoStartEnabled(requireContext())
                     || (UsagePacePreferences.areWarningsEnabled(requireContext())
                     && NowBarPreferences.isAcceleratedStartEnabled(requireContext()))) {
                 nowBarMonitorPreference.setSummary(
-                        AppText.get(R.string.phone_waiting_for_a_low_allowance_or_accelerated_usage_3b3ec));
+                        "Waiting for a low allowance or accelerated usage trigger");
             } else {
                 nowBarMonitorPreference.setSummary(
-                        AppText.get(R.string.phone_show_remaining_codex_allowance_until_the_next_av_9775e));
+                        "Show remaining Codex allowance until the next available usage reset");
             }
             if (nowBarAutoStartPreference != null) {
                 nowBarAutoStartPreference.setChecked(
@@ -1316,23 +1333,23 @@ public final class SettingsActivity extends AppCompatActivity {
             if (nowBarPermissionPreference != null) {
                 String summary;
                 if (!NowBarManager.canPostNotifications(requireContext())) {
-                    summary = AppText.get(R.string.phone_app_or_live_monitor_notifications_disabled_tap_t_c9aa9);
+                    summary = "App or live-monitor notifications disabled · tap to enable";
                 } else if (NowBarDisplayMode.SAMSUNG_COMPATIBILITY.equals(
                         NowBarManager.postedDisplayMode(requireContext()))) {
                     summary = NowBarDisplayMode.AUTO.equals(
                             NowBarPreferences.getDisplayMode(requireContext()))
-                            ? AppText.get(R.string.phone_automatic_using_samsung_fallback_until_android_a_611de)
-                            : AppText.get(R.string.phone_samsung_compatibility_selected_firmware_support_9daaf);
+                            ? "Automatic · using Samsung fallback until Android access is allowed"
+                            : "Samsung compatibility selected · firmware support required";
                 } else if (Build.VERSION.SDK_INT < 36) {
-                    summary = AppText.get(R.string.phone_notifications_allowed_live_display_depends_on_yo_d3abc);
+                    summary = "Notifications allowed · Live display depends on your device";
                 } else if (!NowBarManager.canPostPromotedNotifications(requireContext())) {
-                    summary = AppText.get(R.string.phone_live_notifications_not_allowed_tap_to_enable_57223);
+                    summary = "Live notifications not allowed · tap to enable";
                 } else if (active && NowBarManager.isPromoted(requireContext())) {
-                    summary = AppText.get(R.string.phone_live_notification_promoted_by_android_acbc6);
+                    summary = "Live notification promoted by Android";
                 } else if (active) {
-                    summary = AppText.get(R.string.phone_access_allowed_active_notification_was_not_promo_d4c91);
+                    summary = "Access allowed · active notification was not promoted";
                 } else {
-                    summary = AppText.get(R.string.phone_live_notifications_allowed_60d4a);
+                    summary = "Live notifications allowed";
                 }
                 nowBarPermissionPreference.setSummary(summary);
             }
@@ -1376,7 +1393,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     && (Build.VERSION.SDK_INT < 33
                     || requireContext().checkSelfPermission("android.permission.POST_NOTIFICATIONS")
                     == PackageManager.PERMISSION_GRANTED);
-            permissionPreference.setSummary(allowed ? AppText.get(R.string.phone_allowed_77c7b) : AppText.get(R.string.phone_not_allowed_e0315));
+            permissionPreference.setSummary(allowed ? "Allowed" : "Not allowed");
             if (testNotificationPreference != null) {
                 testNotificationPreference.setEnabled(allowed && ResetAlertPreferences.enabled(requireContext()));
             }
@@ -1401,7 +1418,7 @@ public final class SettingsActivity extends AppCompatActivity {
                     startActivityForResult(open, REQUEST_IMPORT_TRANSFER);
                 } catch (RuntimeException exception) {
                     Toast.makeText(requireContext(),
-                            AppText.get(R.string.phone_no_file_picker_is_available_to_import_a_transfer_d3672),
+                            "No file picker is available to import a transfer file.",
                             Toast.LENGTH_LONG).show();
                 }
                 return true;
@@ -1411,41 +1428,41 @@ public final class SettingsActivity extends AppCompatActivity {
         private void showExportSectionDialog() {
             boolean signedIn = SecureTokenStore.isSignedIn(requireContext());
             String[] labels = {
-                    PhoneLabels.translate(SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_APP_SETTINGS))
-                            + "\n" + PhoneLabels.translate(SettingsTransfer.sectionSummary(
-                            SettingsTransfer.SECTION_APP_SETTINGS)),
-                    PhoneLabels.translate(SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_NOTIFICATIONS))
-                            + "\n" + PhoneLabels.translate(SettingsTransfer.sectionSummary(
-                            SettingsTransfer.SECTION_NOTIFICATIONS)),
-                    PhoneLabels.translate(SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_NOW_BAR))
-                            + "\n" + PhoneLabels.translate(SettingsTransfer.sectionSummary(
-                            SettingsTransfer.SECTION_NOW_BAR)),
-                    PhoneLabels.translate(SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_AUTHENTICATION))
+                    SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_APP_SETTINGS)
+                            + "\n" + SettingsTransfer.sectionSummary(
+                            SettingsTransfer.SECTION_APP_SETTINGS),
+                    SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_NOTIFICATIONS)
+                            + "\n" + SettingsTransfer.sectionSummary(
+                            SettingsTransfer.SECTION_NOTIFICATIONS),
+                    SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_NOW_BAR)
+                            + "\n" + SettingsTransfer.sectionSummary(
+                            SettingsTransfer.SECTION_NOW_BAR),
+                    SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_AUTHENTICATION)
                             + "\n" + (signedIn
-                            ? PhoneLabels.translate(SettingsTransfer.sectionSummary(
-                            SettingsTransfer.SECTION_AUTHENTICATION))
-                            : AppText.get(R.string.phone_sign_in_first_to_export_chatgpt_authentication_9925b))
+                            ? SettingsTransfer.sectionSummary(
+                            SettingsTransfer.SECTION_AUTHENTICATION)
+                            : "Sign in first to export ChatGPT authentication")
             };
             boolean[] checked = {true, true, true, false};
             new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_export_sections_0c67f))
+                    .setTitle("Export sections")
                     .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                         if (which == 3 && isChecked && !signedIn) {
                             checked[3] = false;
                             ((AlertDialog) dialog).getListView().setItemChecked(3, false);
                             Toast.makeText(requireContext(),
-                                    AppText.get(R.string.phone_sign_in_before_exporting_authentication_391f9),
+                                    "Sign in before exporting authentication.",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
                         checked[which] = isChecked;
                     })
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_continue_2e026), (dialog, which) -> {
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Continue", (dialog, which) -> {
                         boolean any = checked[0] || checked[1] || checked[2] || checked[3];
                         if (!any) {
                             Toast.makeText(requireContext(),
-                                    AppText.get(R.string.phone_select_at_least_one_section_to_export_2dcfc),
+                                    "Select at least one section to export.",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
@@ -1461,11 +1478,12 @@ public final class SettingsActivity extends AppCompatActivity {
         private void confirmSensitiveExport(boolean appSettings, boolean notifications,
                 boolean nowBar, boolean authentication) {
             new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_authentication_will_be_included_7305e))
-                    .setMessage(AppText.get(R.string.phone_transfer_security)
-                            + AppText.get(R.string.phone_transfer_own_device))
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_export_anyway_6dd10), (dialog, which) ->
+                    .setTitle("Authentication will be included")
+                    .setMessage(SettingsTransfer.SECURITY_WARNING
+                            + "\n\nOnly continue if you are moving Codex Meter to another device "
+                            + "you control.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Export anyway", (dialog, which) ->
                             launchExportPicker(appSettings, notifications, nowBar, authentication))
                     .show();
         }
@@ -1488,7 +1506,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 startActivityForResult(create, REQUEST_EXPORT_TRANSFER);
             } catch (RuntimeException exception) {
                 Toast.makeText(requireContext(),
-                        AppText.get(R.string.phone_no_file_picker_is_available_to_export_a_transfer_982d5),
+                        "No file picker is available to export a transfer file.",
                         Toast.LENGTH_LONG).show();
             }
         }
@@ -1500,13 +1518,13 @@ public final class SettingsActivity extends AppCompatActivity {
                         pendingExportNowBar, pendingExportAuthentication);
                 SettingsTransferStore.write(requireContext(), uri, document);
                 String message = document.hasAuthentication()
-                        ? AppText.get(R.string.phone_exported_keep_this_file_private_it_includes_chat_d3eda)
-                        : AppText.get(R.string.phone_settings_exported_22612);
+                        ? "Exported. Keep this file private — it includes ChatGPT authentication."
+                        : "Settings exported.";
                 Toast.makeText(requireContext(), message, Toast.LENGTH_LONG).show();
             } catch (Exception exception) {
                 Toast.makeText(requireContext(),
                         exception.getMessage() == null || exception.getMessage().isEmpty()
-                                ? AppText.get(R.string.phone_could_not_export_transfer_file_b27ef)
+                                ? "Could not export transfer file."
                                 : exception.getMessage(),
                         Toast.LENGTH_LONG).show();
             }
@@ -1520,7 +1538,7 @@ public final class SettingsActivity extends AppCompatActivity {
                 pendingImportDocument = null;
                 Toast.makeText(requireContext(),
                         exception.getMessage() == null || exception.getMessage().isEmpty()
-                                ? AppText.get(R.string.phone_could_not_read_transfer_file_e43b9)
+                                ? "Could not read transfer file."
                                 : exception.getMessage(),
                         Toast.LENGTH_LONG).show();
             }
@@ -1529,7 +1547,7 @@ public final class SettingsActivity extends AppCompatActivity {
         private void showImportSectionDialog(SettingsTransfer.Document document) {
             List<String> present = document.presentSections();
             if (present.isEmpty()) {
-                Toast.makeText(requireContext(), AppText.get(R.string.phone_this_transfer_file_has_no_sections_e4b48),
+                Toast.makeText(requireContext(), "This transfer file has no sections.",
                         Toast.LENGTH_LONG).show();
                 return;
             }
@@ -1538,18 +1556,18 @@ public final class SettingsActivity extends AppCompatActivity {
             for (int i = 0; i < present.size(); i++) {
                 String section = present.get(i);
                 String warning = SettingsTransfer.isAuthenticationSection(section)
-                        ? AppText.get(R.string.phone_transfer_replace_warning)
+                        ? "\nWarning: replaces ChatGPT sign-in on this device"
                         : "";
-                labels[i] = PhoneLabels.translate(SettingsTransfer.sectionTitle(section))
-                        + "\n" + PhoneLabels.translate(SettingsTransfer.sectionSummary(section)) + warning;
+                labels[i] = SettingsTransfer.sectionTitle(section)
+                        + "\n" + SettingsTransfer.sectionSummary(section) + warning;
                 checked[i] = !SettingsTransfer.isAuthenticationSection(section);
             }
             new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_import_sections_f7c9f))
+                    .setTitle("Import sections")
                     .setMultiChoiceItems(labels, checked,
                             (dialog, which, isChecked) -> checked[which] = isChecked)
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_continue_2e026), (dialog, which) -> {
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Continue", (dialog, which) -> {
                         boolean appSettings = false;
                         boolean notifications = false;
                         boolean nowBar = false;
@@ -1569,7 +1587,7 @@ public final class SettingsActivity extends AppCompatActivity {
                         }
                         if (!(appSettings || notifications || nowBar || authentication)) {
                             Toast.makeText(requireContext(),
-                                    AppText.get(R.string.phone_select_at_least_one_section_to_import_8df3b),
+                                    "Select at least one section to import.",
                                     Toast.LENGTH_LONG).show();
                             return;
                         }
@@ -1587,11 +1605,12 @@ public final class SettingsActivity extends AppCompatActivity {
                 boolean appSettings, boolean notifications, boolean nowBar,
                 boolean authentication) {
             new AlertDialog.Builder(requireContext())
-                    .setTitle(AppText.get(R.string.phone_import_authentication_fa362))
-                    .setMessage(AppText.get(R.string.phone_transfer_security)
-                            + AppText.get(R.string.phone_transfer_replace))
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                    .setPositiveButton(AppText.get(R.string.phone_import_anyway_3ee21), (dialog, which) ->
+                    .setTitle("Import authentication?")
+                    .setMessage(SettingsTransfer.SECURITY_WARNING
+                            + "\n\nThis replaces ChatGPT sign-in on this device with the tokens "
+                            + "from the file.")
+                    .setNegativeButton("Cancel", null)
+                    .setPositiveButton("Import anyway", (dialog, which) ->
                             finishImport(document, appSettings, notifications, nowBar,
                                     authentication))
                     .show();
@@ -1604,21 +1623,21 @@ public final class SettingsActivity extends AppCompatActivity {
                         requireContext(), document, appSettings, notifications, nowBar,
                         authentication);
                 pendingImportDocument = null;
-                StringBuilder message = new StringBuilder(AppText.get(R.string.phone_imported_eec56));
+                StringBuilder message = new StringBuilder("Imported ");
                 for (int i = 0; i < result.appliedSections.size(); i++) {
                     if (i > 0) message.append(", ");
-                    message.append(PhoneLabels.translate(SettingsTransfer.sectionTitle(result.appliedSections.get(i))));
+                    message.append(SettingsTransfer.sectionTitle(result.appliedSections.get(i)));
                 }
                 message.append('.');
                 if (result.authenticationImported) {
-                    message.append(AppText.get(R.string.phone_authentication_replaced_keep_the_file_private_dc559));
+                    message.append(" Authentication replaced — keep the file private.");
                 }
                 Toast.makeText(requireContext(), message.toString(), Toast.LENGTH_LONG).show();
                 requireActivity().recreate();
             } catch (Exception exception) {
                 Toast.makeText(requireContext(),
                         exception.getMessage() == null || exception.getMessage().isEmpty()
-                                ? AppText.get(R.string.phone_could_not_import_transfer_file_033ff)
+                                ? "Could not import transfer file."
                                 : exception.getMessage(),
                         Toast.LENGTH_LONG).show();
             }

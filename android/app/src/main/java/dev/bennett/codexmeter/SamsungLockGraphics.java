@@ -97,7 +97,7 @@ final class SamsungLockGraphics {
         paint.setTextSize(9.0f);
         Paint.FontMetrics metrics = paint.getFontMetrics();
         float baseline = (height / 2.0f) - ((metrics.ascent + metrics.descent) / 2.0f);
-        canvas.drawText(AppText.get(R.string.phone_sign_in_174f9), width / 2.0f, baseline, paint);
+        canvas.drawText("SIGN IN", width / 2.0f, baseline, paint);
     }
 
     private static void drawDial(Canvas canvas, Paint paint, float cx, float top, float scale,

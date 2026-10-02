@@ -4,7 +4,6 @@ import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.SharedPreferences;
 import android.security.keystore.KeyGenParameterSpec;
-import android.security.keystore.KeyProperties;
 import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.security.KeyStore;
@@ -30,7 +29,7 @@ public final class SecureTokenStore {
     public static void save(Context context, AuthTokens authTokens) throws Exception {
         synchronized (LOCK) {
             Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-            cipher.init(Cipher.ENCRYPT_MODE, getOrCreateKey());
+            cipher.init(1, getOrCreateKey());
             byte[] bArrDoFinal = cipher.doFinal(authTokens.toJson().toString().getBytes(StandardCharsets.UTF_8));
             JSONObject jSONObject = new JSONObject();
             jSONObject.put("iv", Base64.getEncoder().encodeToString(cipher.getIV()));
@@ -52,7 +51,7 @@ public final class SecureTokenStore {
                     byte[] bArrDecode = Base64.getDecoder().decode(jSONObject.getString("iv"));
                     byte[] bArrDecode2 = Base64.getDecoder().decode(jSONObject.getString("ct"));
                     Cipher cipher = Cipher.getInstance(TRANSFORMATION);
-                    cipher.init(Cipher.DECRYPT_MODE, getOrCreateKey(), new GCMParameterSpec(128, bArrDecode));
+                    cipher.init(2, getOrCreateKey(), new GCMParameterSpec(128, bArrDecode));
                     AuthTokens authTokensFromJson = AuthTokens.fromJson(new JSONObject(new String(cipher.doFinal(bArrDecode2), StandardCharsets.UTF_8)));
                     if (!authTokensFromJson.isUsable()) {
                         authTokensFromJson = null;
@@ -64,19 +63,6 @@ public final class SecureTokenStore {
             }
         }
         return authTokens;
-    }
-
-    /** Widget requests must not restore an account that was signed out while refreshing. */
-    static boolean saveIfCurrent(Context context, AuthTokens expected, AuthTokens next) throws Exception {
-        synchronized (LOCK) {
-            AuthTokens current = load(context);
-            if (current == null || expected == null
-                    || !current.accessToken.equals(expected.accessToken)
-                    || !current.refreshToken.equals(expected.refreshToken)
-                    || !current.accountId.equals(expected.accountId)) return false;
-            save(context, next);
-            return true;
-        }
     }
 
     public static boolean isSignedIn(Context context) {
@@ -105,11 +91,7 @@ public final class SecureTokenStore {
             return (SecretKey) key;
         }
         KeyGenerator keyGenerator = KeyGenerator.getInstance("AES", "AndroidKeyStore");
-        keyGenerator.init(new KeyGenParameterSpec.Builder(KEY_ALIAS,
-                KeyProperties.PURPOSE_ENCRYPT | KeyProperties.PURPOSE_DECRYPT)
-                .setBlockModes(KeyProperties.BLOCK_MODE_GCM)
-                .setEncryptionPaddings(KeyProperties.ENCRYPTION_PADDING_NONE)
-                .setRandomizedEncryptionRequired(true).build());
+        keyGenerator.init(new KeyGenParameterSpec.Builder(KEY_ALIAS, 3).setBlockModes("GCM").setEncryptionPaddings("NoPadding").setRandomizedEncryptionRequired(true).build());
         return keyGenerator.generateKey();
     }
 }

@@ -15,7 +15,6 @@ public final class WidgetUpgradeRepair {
     private static final String PREFS = "codex_meter_migrations_v1";
     private static final String KEY_CLEAN_AFTER_REPLACE = "clean_after_replace";
     private static final String KEY_REPAIRED_VERSION = "widget_repaired_version";
-    private static final String KEY_HOME_SCHEMA = "home_widget_schema";
 
     private WidgetUpgradeRepair() {
     }
@@ -27,7 +26,7 @@ public final class WidgetUpgradeRepair {
                 app.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
         long repaired = preferences.getLong(KEY_REPAIRED_VERSION, -1L);
         if (preferences.getBoolean(KEY_CLEAN_AFTER_REPLACE, false)
-                || needsRepair(preferences, version, repaired)) {
+                || version <= 0L || repaired != version) {
             schedule(app);
         }
     }
@@ -46,19 +45,13 @@ public final class WidgetUpgradeRepair {
         boolean clean = preferences.getBoolean(KEY_CLEAN_AFTER_REPLACE, false);
         long version = versionCode(app);
         long repaired = preferences.getLong(KEY_REPAIRED_VERSION, -1L);
-        if (clean || needsRepair(preferences, version, repaired)) {
+        if (clean || version <= 0L || repaired != version) {
             repair(app, version);
         }
         if (clean) {
             clearVerifiedDownloads(app);
             preferences.edit().remove(KEY_CLEAN_AFTER_REPLACE).apply();
         }
-    }
-
-    private static boolean needsRepair(android.content.SharedPreferences preferences,
-            long version, long repaired) {
-        return version <= 0L || repaired != version
-                || preferences.getInt(KEY_HOME_SCHEMA, 0) < HomeWidgetPreferences.SCHEMA_VERSION;
     }
 
     private static void schedule(Context context) {
@@ -89,8 +82,7 @@ public final class WidgetUpgradeRepair {
         WidgetRenderer.updateAll(context);
         if (version > 0L) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
-                    .edit().putLong(KEY_REPAIRED_VERSION, version)
-                    .putInt(KEY_HOME_SCHEMA, HomeWidgetPreferences.SCHEMA_VERSION).apply();
+                    .edit().putLong(KEY_REPAIRED_VERSION, version).apply();
         }
     }
 

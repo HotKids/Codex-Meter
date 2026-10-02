@@ -34,7 +34,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(state);
         dark = Ui.isDark(this);
-        content = Ui.installPage(this, AppText.get(R.string.phone_usage_history_b2a35), true).content;
+        content = Ui.installPage(this, "Usage history", true).content;
         render();
     }
 
@@ -46,7 +46,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, MENU_CUSTOMIZE, 0, AppText.get(R.string.phone_customize_239dc))
+        menu.add(Menu.NONE, MENU_CUSTOMIZE, 0, "Customize")
                 .setIcon(R.drawable.ic_oui_edit_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
@@ -67,14 +67,14 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         String[] labels = new String[keys.size()];
         boolean[] checked = new boolean[keys.size()];
         for (int i = 0; i < keys.size(); i++) {
-            labels[i] = PhoneLabels.translate(HistorySections.label(keys.get(i)));
+            labels[i] = HistorySections.label(keys.get(i));
             checked[i] = AppPreferences.isHistorySectionVisible(this, keys.get(i));
         }
         new AlertDialog.Builder(this)
-                .setTitle(AppText.get(R.string.phone_highlights_to_show_b49cc))
+                .setTitle("Highlights to show")
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) ->
                         AppPreferences.setHistorySectionVisible(this, keys.get(which), isChecked))
-                .setPositiveButton(AppText.get(R.string.phone_done_e9b45), null)
+                .setPositiveButton("Done", null)
                 .setOnDismissListener(dialog -> render())
                 .show();
     }
@@ -96,7 +96,10 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         if (visible(HistorySections.GUIDE)) {
             LinearLayout guide = Ui.card(this, dark);
             guide.addView(Ui.text(this,
-                    AppText.get(R.string.phone_the_solid_line_is_this_window_s_usage_faint_line_681ef),
+                    "The solid line is this window's usage, faint lines are previous windows, "
+                            + "the dotted diagonal is a sustainable pace, and the dashed line is "
+                            + "the projection. Drag a chart to inspect any moment. Samples are "
+                            + "recorded after each successful refresh and stay on this device.",
                     13, Ui.secondaryText(dark)));
             content.addView(guide);
             Ui.addSpacer(content, 20);
@@ -106,42 +109,44 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         boolean hasCharts = false;
         UsageWindow fiveWindow = snapshot == null ? null : snapshot.fiveHour;
         if (fiveWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addWindowSection(AppText.get(R.string.five_hour), fiveWindow, snapshot, five, pricing);
+            addWindowSection("5-hour", fiveWindow, snapshot, five, pricing);
             hasCharts = true;
         }
         UsageWindow weeklyWindow = snapshot == null ? null : snapshot.weekly;
         if (weeklyWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addWindowSection(AppText.get(R.string.weekly), weeklyWindow, snapshot, weekly, pricing);
+            addWindowSection("Weekly", weeklyWindow, snapshot, weekly, pricing);
             hasCharts = true;
         }
         UsageWindow monthlyWindow = snapshot == null ? null : snapshot.monthly;
         if (monthlyWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addWindowSection(AppText.get(R.string.phone_monthly_d31ed), monthlyWindow, snapshot, monthly, pricing);
+            addWindowSection("Monthly", monthlyWindow, snapshot, monthly, pricing);
             hasCharts = true;
         }
         if (!hasCharts) {
             LinearLayout waiting = Ui.card(this, dark);
             waiting.addView(Ui.text(this,
-                    AppText.get(R.string.phone_charts_appear_once_openai_reports_your_5_hour_we_38aa1),
+                    "Charts appear once OpenAI reports your 5-hour, weekly, or monthly usage "
+                            + "windows. Refresh usage from the dashboard to check again.",
                     13, Ui.secondaryText(dark)));
             content.addView(waiting);
             Ui.addSpacer(content, 20);
         }
 
         if (pricing != null && hasCharts) {
-            content.addView(Ui.separator(this, AppText.get(R.string.phone_estimated_value_7332c)));
+            content.addView(Ui.separator(this, "Estimated value"));
             content.addView(buildValueCard(snapshot, pricing));
             Ui.addSpacer(content, 20);
         }
 
-        Button clear = Ui.button(this, AppText.get(R.string.phone_clear_local_history_ab1b1), false, dark);
+        Button clear = Ui.button(this, "Clear local history", false, dark);
         clear.setEnabled(!five.samples.isEmpty() || !weekly.samples.isEmpty()
                 || !monthly.samples.isEmpty());
         clear.setOnClickListener(view -> new AlertDialog.Builder(this)
-                .setTitle(AppText.get(R.string.phone_clear_usage_history_03c46))
-                .setMessage(AppText.get(R.string.phone_this_removes_every_locally_stored_usage_sample_y_e3f51))
-                .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                .setPositiveButton(AppText.get(R.string.phone_clear_719ea), (dialog, which) -> {
+                .setTitle("Clear usage history?")
+                .setMessage("This removes every locally stored usage sample. Your latest "
+                        + "allowance and account sign-in stay intact.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Clear", (dialog, which) -> {
                     AppPreferences.clearUsageHistory(this);
                     render();
                 })
@@ -151,7 +156,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     private void addWindowSection(String label, UsageWindow window, UsageSnapshot snapshot,
             UsageHistory history, PlanPricing pricing) {
-        content.addView(Ui.separator(this, label + AppText.get(R.string.phone_window_3621b)));
+        content.addView(Ui.separator(this, label + " window"));
         content.addView(buildChartCard(label, window, snapshot, history, pricing));
         Ui.addSpacer(content, 12);
         LinearLayout insights = buildInsightsCard(window, snapshot, history, pricing);
@@ -181,7 +186,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         boolean showWindowRows = visible(HistorySections.WINDOW_LIST) && breakdown.size() > 1;
 
         String defaultDetail = showWindowRows
-                ? AppText.get(R.string.phone_drag_to_inspect_tap_a_window_to_compare_65b49) : AppText.get(R.string.phone_drag_to_inspect_db171);
+                ? "Drag to inspect · tap a window to compare" : "Drag to inspect";
         TextView scrubDetail = Ui.text(this, defaultDetail, 12, Ui.secondaryText(dark));
         LinearLayout.LayoutParams scrubParams = new LinearLayout.LayoutParams(-1, -2);
         scrubParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 2), Ui.dp(this, 12), Ui.dp(this, 6));
@@ -191,7 +196,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             public void onScrub(long timeMillis, double usedPercent, boolean historicalWindow) {
                 String moment = UsageFormat.absolute(UsageHistoryActivity.this, timeMillis,
                         System.currentTimeMillis());
-                String text = moment + " — " + Math.round(usedPercent) + AppText.get(R.string.phone_used_3186a);
+                String text = moment + " — " + Math.round(usedPercent) + "% used";
                 if (pricing != null) {
                     text += " · ≈ " + PlanPricing.formatUsd(
                             pricing.estimatedValueUsd(history.kind, usedPercent));
@@ -229,18 +234,18 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         for (int index = breakdown.size() - 1; index >= 0; index--) {
             UsageStats.WindowStats stats = breakdown.get(index);
             boolean current = !stats.complete;
-            String rowTitle = current ? AppText.get(R.string.phone_current_window_eaa1e)
+            String rowTitle = current ? "Current window"
                     : windowRangeLabel(stats, dayGranularity);
             StringBuilder subtitle = new StringBuilder();
-            subtitle.append(stats.finalPercent).append(AppText.get(R.string.phone_used_3186a));
+            subtitle.append(stats.finalPercent).append("% used");
             if (stats.averageBurnPercentPerHour > 0d) {
-                subtitle.append(AppText.get(R.string.phone_avg_9ef41)).append(formatRate(stats.averageBurnPercentPerHour));
+                subtitle.append(" · avg ").append(formatRate(stats.averageBurnPercentPerHour));
             }
             if (pricing != null) {
                 subtitle.append(" · ≈ ").append(PlanPricing.formatUsd(
                         pricing.estimatedValueUsd(history.kind, stats.finalPercent)));
             }
-            if (stats.exhausted) subtitle.append(AppText.get(R.string.phone_hit_limit_1530b));
+            if (stats.exhausted) subtitle.append(" · hit limit");
 
             LinearLayout row = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
             row.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
@@ -269,7 +274,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             row.setOnClickListener(view -> selections[rowIndex].run());
             row.setClickable(true);
             row.setFocusable(true);
-            row.setContentDescription(AppText.get(R.string.phone_inspect_c8810) + rowTitle + ". " + subtitle);
+            row.setContentDescription("Inspect " + rowTitle + ". " + subtitle);
         }
     }
 
@@ -278,7 +283,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         long now = System.currentTimeMillis();
         long observedAt = snapshot == null ? now : snapshot.fetchedAtMillis;
         LinearLayout card = Ui.card(this, dark);
-        TextView title = Ui.text(this, AppText.get(R.string.phone_insights_b4510), 16, Ui.mainText(dark));
+        TextView title = Ui.text(this, "Insights", 16, Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         int rows = 0;
@@ -294,13 +299,13 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                 long delta = Math.round(window.usedPercent - typical);
                 String value;
                 if (delta >= 2L) {
-                    value = delta + AppText.get(R.string.phone_pts_ahead_of_typical_7ef4e);
+                    value = delta + " pts ahead of typical";
                 } else if (delta <= -2L) {
-                    value = (-delta) + AppText.get(R.string.phone_pts_behind_typical_d88df);
+                    value = (-delta) + " pts behind typical";
                 } else {
-                    value = AppText.get(R.string.phone_on_par_with_typical_961f7);
+                    value = "On par with typical";
                 }
-                addStatRow(card, AppText.get(R.string.phone_pace_vs_previous_windows_9d955), value);
+                addStatRow(card, "Pace vs. previous windows", value);
                 rows++;
             }
         }
@@ -309,7 +314,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             UsagePace.Assessment pace = snapshot == null ? null
                     : UsagePacePreferences.assess(this, snapshot, window, now);
             if (pace != null && pace.available) {
-                addStatRow(card, AppText.get(R.string.phone_projected_exhaustion_9f0e6),
+                addStatRow(card, "Projected exhaustion",
                         UsageFormat.relative(pace.estimatedExhaustionAtMillis, now));
                 rows++;
             }
@@ -318,7 +323,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         if (visible(HistorySections.INSIGHT_AVERAGE)) {
             double averageFinal = UsageStats.averageFinalPercent(history);
             if (averageFinal >= 0d) {
-                addStatRow(card, AppText.get(R.string.phone_avg_completed_window_35558), Math.round(averageFinal) + AppText.get(R.string.phone_used_3186a));
+                addStatRow(card, "Avg. completed window", Math.round(averageFinal) + "% used");
                 rows++;
             }
         }
@@ -331,16 +336,16 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     value += " · ≈ " + PlanPricing.formatUsd(
                             pricing.windowValueUsd(history.kind) * peakBurn / 100d) + "/h";
                 }
-                addStatRow(card, AppText.get(R.string.phone_peak_burn_observed_bcc9b), value);
+                addStatRow(card, "Peak burn observed", value);
                 rows++;
             }
         }
 
         if (pricing != null) {
-            addStatRow(card, AppText.get(R.string.phone_est_value_used_this_window_3f3ec),
+            addStatRow(card, "Est. value used this window",
                     "≈ " + PlanPricing.formatUsd(pricing.estimatedValueUsd(history.kind,
                             window.usedPercent))
-                            + AppText.get(R.string.phone_of_607f2) + PlanPricing.formatUsd(
+                            + " of " + PlanPricing.formatUsd(
                                     pricing.windowValueUsd(history.kind)));
             rows++;
         }
@@ -349,26 +354,27 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     private LinearLayout buildValueCard(UsageSnapshot snapshot, PlanPricing pricing) {
         LinearLayout card = Ui.card(this, dark);
-        TextView title = Ui.text(this, UsageFormat.planLabel(snapshot.planType) + " · "
+        TextView title = Ui.text(this, pricing.planLabel + " · "
                 + PlanPricing.formatUsd(pricing.monthlyPriceUsd) + "/month", 16,
                 Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
-        addStatRow(card, AppText.get(R.string.phone_est_included_usage_a988a),
+        addStatRow(card, "Est. included usage",
                 "≈ " + PlanPricing.formatUsd(pricing.monthlyValueUsd) + "/month");
-        addStatRow(card, AppText.get(R.string.phone_weekly_allowance_0dfb0),
+        addStatRow(card, "Weekly allowance",
                 "≈ " + PlanPricing.formatUsd(pricing.weeklyValueUsd()));
-        addStatRow(card, AppText.get(R.string.phone_5_hour_allowance_059e8),
+        addStatRow(card, "5-hour allowance",
                 "≈ " + PlanPricing.formatUsd(pricing.fiveHourValueUsd()));
-        addStatRow(card, AppText.get(R.string.phone_vs_subscription_price_9e858),
-                "≈ " + Math.round(pricing.valueMultiplier()) + AppText.get(R.string.phone_x_the_monthly_cost_7a583));
+        addStatRow(card, "Vs. subscription price",
+                "≈ " + Math.round(pricing.valueMultiplier()) + "x the monthly cost");
         if (snapshot.weekly != null) {
-            addStatRow(card, AppText.get(R.string.phone_weekly_value_remaining_baeb0),
+            addStatRow(card, "Weekly value remaining",
                     "≈ " + PlanPricing.formatUsd(pricing.estimatedValueUsd(UsageHistory.WEEKLY,
                             snapshot.weekly.remainingPercent())));
         }
         TextView disclaimer = Ui.text(this,
-                AppText.get(R.string.phone_rough_community_estimates_comparing_plan_allowan_51660),
+                "Rough community estimates comparing plan allowances with API pricing; "
+                        + "not a billing statement.",
                 12, Ui.secondaryText(dark));
         LinearLayout.LayoutParams disclaimerParams = new LinearLayout.LayoutParams(-1, -2);
         disclaimerParams.setMargins(0, Ui.dp(this, 10), 0, 0);

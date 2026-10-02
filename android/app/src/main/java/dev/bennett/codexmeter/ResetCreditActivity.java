@@ -29,7 +29,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(bundle);
         this.dark = Ui.isDark(this);
-        this.content = Ui.installPage(this, AppText.get(R.string.phone_codex_reset_77be3), true).content;
+        this.content = Ui.installPage(this, "Codex reset", true).content;
         rebuild();
         refreshDetailsIfNeeded();
         if (bundle == null) {
@@ -61,19 +61,19 @@ public final class ResetCreditActivity extends AppCompatActivity {
                 : snapshot.availableCreditsByExpiry(now);
         long nextExpiry = snapshot == null ? 0L : snapshot.nextExpiryMillis(now);
 
-        this.content.addView(Ui.separator(this, AppText.get(R.string.phone_available_credits_18001)));
+        this.content.addView(Ui.separator(this, "Available credits"));
         RoundedLinearLayout summaryCard = Ui.seslRowCard(this, this.dark);
         summaryCard.addView(Ui.actionRow(
                 this,
                 available <= 0
-                        ? AppText.get(R.string.phone_no_resets_available_d6246)
-                        : (available == 1 ? AppText.get(R.string.phone_1_reset_available_6972a) : available + AppText.get(R.string.phone_resets_available_0480d)),
+                        ? "No resets available"
+                        : (available == 1 ? "1 reset available" : available + " resets available"),
                 summaryText(available, nextExpiry, now),
                 R.drawable.ic_oui_battery,
                 null));
         this.content.addView(summaryCard);
 
-        this.content.addView(Ui.separator(this, AppText.get(R.string.phone_credit_expirations_33fb9)));
+        this.content.addView(Ui.separator(this, "Credit expirations"));
         RoundedLinearLayout expirations = Ui.seslRowCard(this, this.dark);
         addCreditExpirations(expirations, availableCredits, available, now);
         this.content.addView(expirations);
@@ -88,7 +88,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
         }
 
         this.useButton = Ui.nativePrimaryButton(
-                this, available > 0 ? AppText.get(R.string.phone_use_1_reset_9f6ed) : AppText.get(R.string.phone_no_resets_available_d6246));
+                this, available > 0 ? "Use 1 reset" : "No resets available");
         this.useButton.setEnabled(available > 0 && SecureTokenStore.isSignedIn(this));
         LinearLayout.LayoutParams useButtonParams =
                 new LinearLayout.LayoutParams(-1, Ui.dp(this, 60.0f));
@@ -99,13 +99,13 @@ public final class ResetCreditActivity extends AppCompatActivity {
 
     private String summaryText(int available, long nextExpiry, long now) {
         if (nextExpiry > 0L) {
-            return AppText.get(R.string.phone_next_expires_fe980) + UsageFormat.absolute(this, nextExpiry, now)
+            return "Next expires " + UsageFormat.absolute(this, nextExpiry, now)
                     + " · " + UsageFormat.relative(nextExpiry, now);
         }
         if (available > 0) {
-            return AppText.get(R.string.phone_openai_will_choose_an_eligible_credit_8a9cf);
+            return "OpenAI will choose an eligible credit";
         }
-        return AppText.get(R.string.phone_no_reset_credit_is_currently_available_4e348);
+        return "No reset credit is currently available";
     }
 
     private void addCreditExpirations(RoundedLinearLayout card,
@@ -113,14 +113,14 @@ public final class ResetCreditActivity extends AppCompatActivity {
         for (int index = 0; index < credits.size(); index++) {
             RateLimitResetCredit credit = credits.get(index);
             String titleText = credit.title.trim().isEmpty()
-                    ? AppText.get(R.string.phone_reset_credit_4ddbc) + (index + 1) : credit.title.trim();
+                    ? "Reset credit " + (index + 1) : credit.title.trim();
             if (index == 0 && credit.expiresAtMillis > 0L) {
-                titleText = titleText + AppText.get(R.string.phone_next_7271e);
+                titleText = titleText + " · Next";
             }
             String expiryText = credit.expiresAtMillis > 0L
                     ? UsageFormat.absolute(this, credit.expiresAtMillis, nowMillis)
                             + " · " + UsageFormat.relative(credit.expiresAtMillis, nowMillis)
-                    : AppText.get(R.string.phone_expiration_unavailable_7fca0);
+                    : "Expiration unavailable";
             CardItemView row = Ui.actionRow(this, titleText, expiryText, 0, null);
             row.setShowTopDivider(index > 0);
             card.addView(row);
@@ -129,15 +129,15 @@ public final class ResetCreditActivity extends AppCompatActivity {
         int missingCount = Math.max(0, availableCount - credits.size());
         if (missingCount > 0) {
             String missingText = credits.isEmpty()
-                    ? AppText.get(R.string.phone_expiration_details_are_not_available_yet_730fc)
-                    : missingCount + AppText.get(R.string.phone_additional_credit_7b987) + AppText.nounSuffix(missingCount)
-                            + AppText.get(R.string.phone_without_expiration_details_6140f);
-            CardItemView missing = Ui.actionRow(this, AppText.get(R.string.phone_more_credits_272f4), missingText, 0, null);
+                    ? "Expiration details are not available yet"
+                    : missingCount + " additional credit" + (missingCount == 1 ? "" : "s")
+                            + " without expiration details";
+            CardItemView missing = Ui.actionRow(this, "More credits", missingText, 0, null);
             missing.setShowTopDivider(!credits.isEmpty());
             card.addView(missing);
         } else if (availableCount == 0) {
-            card.addView(Ui.actionRow(this, AppText.get(R.string.phone_no_available_credits_151c0),
-                    AppText.get(R.string.phone_earn_credits_from_chatgpt_codex_75980), 0, null));
+            card.addView(Ui.actionRow(this, "No available credits",
+                    "Earn credits from ChatGPT Codex", 0, null));
         }
     }
 
@@ -171,7 +171,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
     }
 
     public void confirmUse() {
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle(AppText.get(R.string.phone_use_one_codex_reset_65f15)).setMessage(AppText.get(R.string.phone_the_available_credit_expiring_soonest_will_be_us_4d5b8)).setNegativeButton(AppText.get(R.string.widget_config_cancel), (DialogInterface.OnClickListener) null).setPositiveButton(AppText.get(R.string.phone_use_1_reset_9f6ed), new DialogInterface.OnClickListener() { // from class: dev.bennett.codexmeter.ResetCreditActivity.5
+        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Use one Codex reset?").setMessage("The available credit expiring soonest will be used. This cannot be undone.").setNegativeButton("Cancel", (DialogInterface.OnClickListener) null).setPositiveButton("Use 1 reset", new DialogInterface.OnClickListener() { // from class: dev.bennett.codexmeter.ResetCreditActivity.5
             @Override // android.content.DialogInterface.OnClickListener
             public void onClick(DialogInterface dialogInterface, int i) {
                 ResetCreditActivity.this.consume();
@@ -199,7 +199,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
     public void consume() {
         if (this.useButton != null) {
             this.useButton.setEnabled(false);
-            this.useButton.setText(AppText.get(R.string.phone_applying_e578c));
+            this.useButton.setText("Applying…");
         }
         final Context applicationContext = getApplicationContext();
         this.executor.execute(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6
@@ -210,7 +210,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
                     ResetCreditActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6.1
                         @Override // java.lang.Runnable
                         public void run() {
-                            Toast.makeText(ResetCreditActivity.this, resetConsumeResultConsumeBestAvailable.userMessage(), Toast.LENGTH_LONG).show();
+                            Toast.makeText(ResetCreditActivity.this, resetConsumeResultConsumeBestAvailable.userMessage(), 1).show();
                             if (!resetConsumeResultConsumeBestAvailable.applied()) {
                                 ResetCreditActivity.this.rebuild();
                             } else {
@@ -226,7 +226,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
                     ResetCreditActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6.2
                         @Override // java.lang.Runnable
                         public void run() {
-                            Toast.makeText(ResetCreditActivity.this, ResetCreditActivity.safeMessage(e), Toast.LENGTH_LONG).show();
+                            Toast.makeText(ResetCreditActivity.this, ResetCreditActivity.safeMessage(e), 1).show();
                             ResetCreditActivity.this.rebuild();
                         }
                     });
@@ -238,7 +238,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
     public static String safeMessage(Exception exc) {
         String message = exc == null ? "" : exc.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            return AppText.get(R.string.phone_the_reset_could_not_be_applied_47326);
+            return "The reset could not be applied.";
         }
         String strTrim = message.trim();
         return strTrim.length() > 240 ? strTrim.substring(0, 240) : strTrim;

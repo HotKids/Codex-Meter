@@ -70,17 +70,17 @@ public final class UsageBurnChartView extends View {
         this.observedAtMillis = observedAtMillis;
         this.pace = pace;
         this.selectedWindowIndex = -1;
-        String detail = samples.size() < 2 ? AppText.get(R.string.phone_building_local_history_1d9e5)
-                : samples.size() + AppText.get(R.string.phone_local_samples_51c9d);
+        String detail = samples.size() < 2 ? "Building local history"
+                : samples.size() + " local samples";
         if (pace != null && pace.available) {
-            detail += AppText.get(R.string.phone_projected_exhaustion_353d1)
+            detail += ", projected exhaustion "
                     + UsageFormat.relative(pace.estimatedExhaustionAtMillis,
                             System.currentTimeMillis());
         }
         if (scrubEnabled) {
-            detail += AppText.get(R.string.phone_touch_and_drag_to_inspect_points_in_time_6f062);
+            detail += ". Touch and drag to inspect points in time";
         }
-        setContentDescription(this.label + AppText.get(R.string.phone_usage_burn_chart_45883) + detail + ".");
+        setContentDescription(this.label + " usage burn chart. " + detail + ".");
         invalidate();
     }
 
@@ -141,7 +141,7 @@ public final class UsageBurnChartView extends View {
         switch (event.getActionMasked()) {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
-                if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(true);
+                getParent().requestDisallowInterceptTouchEvent(true);
                 updateScrub(event.getX(), active, axis);
                 return true;
             case MotionEvent.ACTION_UP:
@@ -149,19 +149,11 @@ public final class UsageBurnChartView extends View {
                 scrubbing = false;
                 lastHapticBucket = Long.MIN_VALUE;
                 if (scrubListener != null) scrubListener.onScrubEnd();
-                if (getParent() != null) getParent().requestDisallowInterceptTouchEvent(false);
-                if (event.getActionMasked() == MotionEvent.ACTION_UP) performClick();
                 invalidate();
                 return true;
             default:
                 return super.onTouchEvent(event);
         }
-    }
-
-    @Override
-    public boolean performClick() {
-        super.performClick();
-        return true;
     }
 
     private void updateScrub(float touchX, List<UsageSample> active, long[] axis) {
@@ -211,8 +203,8 @@ public final class UsageBurnChartView extends View {
         paint.setTypeface(regularTypeface);
         paint.setTextSize(10f * density);
         paint.setColor(Ui.secondaryText(dark));
-        String sampleLabel = samples.size() < 2 ? AppText.get(R.string.phone_building_history_26daf)
-                : samples.size() + AppText.get(R.string.phone_samples_11d15);
+        String sampleLabel = samples.size() < 2 ? "Building history"
+                : samples.size() + " samples";
         canvas.drawText(sampleLabel, right - paint.measureText(sampleLabel), 20f * density, paint);
 
         paint.setStrokeWidth(1f * density);
@@ -220,14 +212,14 @@ public final class UsageBurnChartView extends View {
         canvas.drawLine(left, bottom, right, bottom, paint);
         canvas.drawLine(left, top, right, top, paint);
         if (window == null || observedAtMillis <= 0L) {
-            drawEmpty(canvas, left, top, dark, density, AppText.get(R.string.phone_waiting_for_usage_data_6df17));
+            drawEmpty(canvas, left, top, dark, density, "Waiting for usage data");
             return;
         }
         long resetAt = window.effectiveResetAtMillis(observedAtMillis);
         long duration = window.windowSeconds * 1000L;
         long startAt = resetAt - duration;
         if (resetAt <= startAt) {
-            drawEmpty(canvas, left, top, dark, density, AppText.get(R.string.phone_reset_window_unavailable_1dc0a));
+            drawEmpty(canvas, left, top, dark, density, "Reset window unavailable");
             return;
         }
 

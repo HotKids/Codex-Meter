@@ -65,12 +65,12 @@ final class SamsungLockWidgetSupport {
 
         String label() {
             if (this.metric == Metric.FIVE_HOUR) {
-                return AppText.get(R.string.phone_5_hour_tiny_d854a);
+                return "5-hour · Tiny";
             }
             if (this.metric == Metric.WEEKLY) {
-                return AppText.get(R.string.phone_weekly_tiny_b06c3);
+                return "Weekly · Tiny";
             }
-            return SamsungLockWidgetSupport.styleLabel(this.style) + " · " + (this.shape == Shape.SQUARE ? AppText.get(R.string.phone_square_82810) : AppText.get(R.string.phone_wide_9ec4d));
+            return SamsungLockWidgetSupport.styleLabel(this.style) + " · " + (this.shape == Shape.SQUARE ? "Square" : "Wide");
         }
     }
 
@@ -204,11 +204,11 @@ final class SamsungLockWidgetSupport {
             single.setImageViewBitmap(R.id.lock_graphic_image,
                     SamsungLockGraphics.renderSingle(context, metric, value, zIsSignedIn,
                             size[0], size[1]));
-            String metricName = metric == Metric.FIVE_HOUR ? AppText.get(R.string.phone_five_hour_57eda)
+            String metricName = metric == Metric.FIVE_HOUR ? "five hour"
                     : monthlyFallback ? "monthly" : "weekly";
             single.setContentDescription(R.id.lock_graphic_root, zIsSignedIn
-                    ? "Codex " + metricName + " " + value(value) + AppText.get(R.string.phone_remaining_336c4)
-                    : AppText.get(R.string.phone_codex_meter_sign_in_required_c129d));
+                    ? "Codex " + metricName + " " + value(value) + " remaining"
+                    : "Codex Meter, sign in required");
             applyOpenIntent(context, single, R.id.lock_graphic_root, i, shape, style,
                     lockWidgetOptionsLoadLockWidgetOptions, zIsSignedIn, i3);
             return single;
@@ -271,7 +271,7 @@ final class SamsungLockWidgetSupport {
         UsageLimit limit = WidgetMeters.findLimit(key, snapshot);
         UsageWindow window = limit == null ? null
                 : (WidgetMeters.isLimitPrimary(key) ? limit.primary : limit.secondary);
-        String label = PhoneMeterLabels.shortLabel(key, snapshot);
+        String label = WidgetMeters.shortLabel(key, snapshot);
         if (label.length() > 6) {
             label = label.substring(0, 6);
         }
@@ -339,7 +339,7 @@ final class SamsungLockWidgetSupport {
             remoteViews.setViewVisibility(R.id.lock_bar_primary_group, View.VISIBLE);
             remoteViews.setViewVisibility(R.id.lock_bar_secondary_group, View.GONE);
             remoteViews.setTextViewText(R.id.lock_bar_primary_label, "");
-            remoteViews.setTextViewText(R.id.lock_bar_primary_value, AppText.get(R.string.phone_sign_in_174f9));
+            remoteViews.setTextViewText(R.id.lock_bar_primary_value, "SIGN IN");
             remoteViews.setTextViewTextSize(R.id.lock_bar_primary_value, 2, shape == Shape.SQUARE ? 10.0f : 12.0f);
             remoteViews.setViewVisibility(R.id.lock_bar_primary_progress, View.GONE);
             return remoteViews;
@@ -396,7 +396,7 @@ final class SamsungLockWidgetSupport {
                 remoteViews.setViewVisibility(R.id.lock_graphic_secondary_group, View.GONE);
                 remoteViews.setViewVisibility(R.id.lock_graphic_primary_progress, View.GONE);
                 remoteViews.setViewVisibility(R.id.lock_graphic_primary_icon, View.GONE);
-                remoteViews.setTextViewText(R.id.lock_graphic_primary_value, AppText.get(R.string.phone_sign_in_174f9));
+                remoteViews.setTextViewText(R.id.lock_graphic_primary_value, "SIGN IN");
                 remoteViews.setTextViewTextSize(R.id.lock_graphic_primary_value, 2, 11.0f);
                 return remoteViews;
             }
@@ -423,14 +423,14 @@ final class SamsungLockWidgetSupport {
             if (z) {
                 strSquareGraphicText = squareGraphicText(binding, lockWidgetOptions, z2, i4);
             } else {
-                strSquareGraphicText = AppText.get(R.string.phone_sign_in_174f9);
+                strSquareGraphicText = "SIGN IN";
             }
             remoteViews.setTextViewText(R.id.lock_graphic_center_value, strSquareGraphicText);
             remoteViews.setTextViewTextSize(R.id.lock_graphic_center_value, 2, z ? squareGraphicTextSize(binding.singleMetric(), lockWidgetOptions.showCountdown, z2) : 10.0f);
         } else if (!z) {
             remoteViews.setViewVisibility(R.id.lock_graphic_primary_group, View.VISIBLE);
             remoteViews.setViewVisibility(R.id.lock_graphic_secondary_group, View.GONE);
-            remoteViews.setTextViewText(R.id.lock_graphic_primary_value, AppText.get(R.string.phone_sign_in_174f9));
+            remoteViews.setTextViewText(R.id.lock_graphic_primary_value, "SIGN IN");
             remoteViews.setTextViewText(R.id.lock_graphic_primary_label, "");
             remoteViews.setTextViewTextSize(R.id.lock_graphic_primary_value, 2, 11.0f);
         } else {
@@ -548,18 +548,18 @@ final class SamsungLockWidgetSupport {
         String target = z2 ? "reset" : "open";
         Intent intentAddFlags = new Intent(context,
                 (Class<?>) (z2 ? ResetCreditActivity.class : MainActivity.class))
-                .setAction("me.pipi.usage.action.LOCK_WIDGET_"
+                .setAction("dev.bennett.codexmeter.action.LOCK_WIDGET_"
                         + target.toUpperCase(Locale.US))
                 .setData(Uri.parse("codexmeter://widget/lock/v" + AppConstants.VERSION_CODE + "/"
                         + i2 + "/"
                         + shape.name().toLowerCase(Locale.US) + "/"
                         + style.name().toLowerCase(Locale.US)
                         + "/" + target))
-                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+                .addFlags(335544320);
         if (i2 == 0) {
             i2 = 0;
         }
-        remoteViews.setOnClickPendingIntent(i, PendingIntent.getActivity(context, 82000 + i2 + (shape.ordinal() * 1000) + (style.ordinal() * 100) + (z2 ? 50000 : 0), intentAddFlags, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
+        remoteViews.setOnClickPendingIntent(i, PendingIntent.getActivity(context, 82000 + i2 + (shape.ordinal() * 1000) + (style.ordinal() * 100) + (z2 ? 50000 : 0), intentAddFlags, 201326592));
     }
 
     private static int graphicLayout(Shape shape, Style style) {
@@ -570,7 +570,7 @@ final class SamsungLockWidgetSupport {
             LockWidgetOptions lockWidgetOptions, int i3) {
         String str;
         if (!z) {
-            return shape == Shape.SQUARE ? "SIGN\nIN" : AppText.get(R.string.phone_sign_in_174f9);
+            return shape == Shape.SQUARE ? "SIGN\nIN" : "SIGN IN";
         }
         String primaryLabel = binding.primary == null ? "5H" : binding.primary.label;
         String secondaryLabel = binding.secondary == null ? "W" : binding.secondary.label;
@@ -599,13 +599,13 @@ final class SamsungLockWidgetSupport {
     private static String contentDescription(boolean z, LockMeterBinding binding, Style style,
             LockWidgetOptions lockWidgetOptions, int i3) {
         if (!z) {
-            return AppText.get(R.string.phone_codex_meter_sign_in_required_c129d);
+            return "Codex Meter, sign in required";
         }
         StringBuilder sbAppend = new StringBuilder("Codex ").append(styleLabel(style).toLowerCase()).append(", ");
         if (binding.showPrimary) {
             String label = binding.primary == null ? "primary" : binding.primary.label;
             sbAppend.append(label).append(' ').append(value(binding.primaryRemaining))
-                    .append(AppText.get(R.string.phone_remaining_336c4));
+                    .append(" remaining");
         }
         if (binding.showPrimary && binding.showSecondary) {
             sbAppend.append(", ");
@@ -613,28 +613,28 @@ final class SamsungLockWidgetSupport {
         if (binding.showSecondary) {
             String label = binding.secondary == null ? "secondary" : binding.secondary.label;
             sbAppend.append(label).append(' ').append(value(binding.secondaryRemaining))
-                    .append(AppText.get(R.string.phone_remaining_336c4));
+                    .append(" remaining");
         }
         if (lockWidgetOptions.showCountdown) {
-            sbAppend.append(AppText.get(R.string.phone_live_reset_countdown_e389a));
+            sbAppend.append(", live reset countdown");
         }
         if (lockWidgetOptions.showResetCredits || lockWidgetOptions.showResetAction) {
-            sbAppend.append(", ").append(i3).append(AppText.get(R.string.phone_reset_credit_a1801)).append(AppText.nounSuffix(i3));
+            sbAppend.append(", ").append(i3).append(" reset credit").append(i3 == 1 ? "" : "s");
         }
         if (lockWidgetOptions.showResetAction && i3 > 0) {
-            sbAppend.append(AppText.get(R.string.phone_tap_to_open_reset_confirmation_c9f27));
+            sbAppend.append("; tap to open reset confirmation");
         }
         return sbAppend.toString();
     }
 
     public static String styleLabel(Style style) {
         if (style == Style.RINGS) {
-            return AppText.get(R.string.phone_rings_75b04);
+            return "Rings";
         }
         if (style == Style.DIALS) {
-            return AppText.get(R.string.phone_gauges_ab8b2);
+            return "Gauges";
         }
-        return style == Style.BARS ? AppText.get(R.string.phone_bars_ad5fb) : AppText.get(R.string.phone_numbers_7e538);
+        return style == Style.BARS ? "Bars" : "Numbers";
     }
 
     private static String value(int i) {

@@ -37,7 +37,7 @@ public final class UpdateActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(bundle);
         dark = Ui.isDark(this);
-        content = Ui.installPage(this, AppText.get(R.string.phone_app_update_45b5d), true).content;
+        content = Ui.installPage(this, "App update", true).content;
         String requested = getIntent().getStringExtra(EXTRA_VERSION);
         release = UpdatePreferences.findVersion(this, requested);
         boolean force = getIntent().getBooleanExtra(EXTRA_FORCE_CHECK, false);
@@ -98,7 +98,7 @@ public final class UpdateActivity extends AppCompatActivity {
     private void checkReleases(String requestedVersion) {
         operationRunning = true;
         content.removeAllViews();
-        content.addView(Ui.indeterminateLoading(this, AppText.get(R.string.phone_checking_for_updates_78948)));
+        content.addView(Ui.indeterminateLoading(this, "Checking for updates"));
         executor.execute(() -> {
             try {
                 List<GitHubRelease> releases = ReleaseUpdateClient.check(getApplicationContext());
@@ -127,7 +127,7 @@ public final class UpdateActivity extends AppCompatActivity {
         if (release == null) {
             String error = UpdatePreferences.lastError(this);
             renderError(error.isEmpty()
-                    ? AppText.get(R.string.phone_no_installable_github_releases_are_published_yet_d039a)
+                    ? "No installable GitHub releases are published yet."
                     : error);
             return;
         }
@@ -137,27 +137,29 @@ public final class UpdateActivity extends AppCompatActivity {
         boolean returnToStable = UpdateChannel.isReturnToStable(release, installedVersion);
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this,
-                comparison > 0 ? "Codex Meter " + release.version + AppText.get(R.string.phone_is_available_7b679)
+                comparison > 0 ? "Codex Meter " + release.version + " is available"
                         : comparison == 0 ? "Codex Meter " + release.version
-                        : returnToStable ? AppText.get(R.string.phone_return_to_codex_meter_399f2) + release.version
-                        : AppText.get(R.string.phone_older_release_a0253) + release.version,
+                        : returnToStable ? "Return to Codex Meter " + release.version
+                        : "Older release " + release.version,
                 20, Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         String detail;
         if (irreversible) {
             detail = ReleaseUpdatePolicy.irreversibleSummary()
-                    + AppText.get(R.string.phone_installed_b82eb) + installedVersion;
+                    + " · Installed: " + installedVersion;
         } else if (comparison > 0) {
-            detail = AppText.get(R.string.phone_installed_fac97) + installedVersion + (release.prerelease
-                    ? AppText.get(R.string.phone_verified_github_alpha_upgrade_8f3a3) : AppText.get(R.string.phone_verified_github_upgrade_306e0));
+            detail = "Installed: " + installedVersion + (release.prerelease
+                    ? " · Verified GitHub alpha upgrade" : " · Verified GitHub upgrade");
         } else if (comparison == 0) {
-            detail = AppText.get(R.string.phone_this_version_is_currently_installed_you_can_veri_bed16);
+            detail = "This version is currently installed. You can verify and reinstall it.";
         } else if (returnToStable) {
-            detail = AppText.get(R.string.phone_installed_fac97) + installedVersion + AppText.get(R.string.phone_alpha_builds_share_the_stable_version_code_so_th_812e3);
+            detail = "Installed: " + installedVersion + " · Alpha builds share the stable "
+                    + "version code, so the newest stable release installs in place without "
+                    + "uninstalling or losing data.";
         } else {
-            detail = AppText.get(R.string.phone_installed_fac97) + installedVersion
-                    + AppText.get(R.string.phone_android_requires_uninstalling_before_this_downgr_acfb8);
+            detail = "Installed: " + installedVersion
+                    + " · Android requires uninstalling before this downgrade.";
         }
         TextView summary = Ui.text(this, detail, 14,
                 irreversible ? Ui.danger(dark) : Ui.secondaryText(dark));
@@ -171,17 +173,17 @@ public final class UpdateActivity extends AppCompatActivity {
             LinearLayout.LayoutParams irreversibleParams = new LinearLayout.LayoutParams(-1, -2);
             irreversibleParams.setMargins(0, 0, 0, Ui.dp(this, 18));
             card.addView(irreversibleDetail, irreversibleParams);
-            Button github = Ui.nativePrimaryButton(this, AppText.get(R.string.phone_open_on_github_8b81a));
+            Button github = Ui.nativePrimaryButton(this, "Open on GitHub");
             github.setOnClickListener(view -> openReleasePage());
             card.addView(github, new LinearLayout.LayoutParams(-1, Ui.dp(this, 60)));
             progress = null;
             status = null;
         } else {
             Button action = Ui.nativePrimaryButton(this,
-                    returnToStable ? AppText.get(R.string.phone_return_to_stable_dcc5d)
-                            : comparison < 0 ? AppText.get(R.string.phone_download_older_apk_df551)
-                            : comparison == 0 ? AppText.get(R.string.phone_verify_and_reinstall_7aefc)
-                            : AppText.get(R.string.phone_download_and_install_0388e));
+                    returnToStable ? "Return to stable"
+                            : comparison < 0 ? "Download older APK"
+                            : comparison == 0 ? "Verify and reinstall"
+                            : "Download and install");
             action.setOnClickListener(view -> {
                 if (comparison < 0 && !returnToStable) {
                     confirmOlderDownload();
@@ -207,7 +209,7 @@ public final class UpdateActivity extends AppCompatActivity {
         content.addView(card);
 
         if (!release.notes.isEmpty()) {
-            TextView heading = Ui.text(this, AppText.get(R.string.phone_what_s_new_36970), 15, Ui.secondaryText(dark));
+            TextView heading = Ui.text(this, "What’s new", 15, Ui.secondaryText(dark));
             heading.setTypeface(Ui.mediumTypeface(this));
             LinearLayout.LayoutParams headingParams = new LinearLayout.LayoutParams(-1, -2);
             headingParams.setMargins(Ui.dp(this, 4), Ui.dp(this, 24), 0, Ui.dp(this, 10));
@@ -217,7 +219,7 @@ public final class UpdateActivity extends AppCompatActivity {
             content.addView(notesCard);
         }
 
-        Button history = Ui.button(this, AppText.get(R.string.phone_release_history_5044b), false, dark);
+        Button history = Ui.button(this, "Release history", false, dark);
         history.setOnClickListener(view ->
                 Ui.startSecondaryActivity(this, ReleaseHistoryActivity.class));
         LinearLayout.LayoutParams historyParams =
@@ -237,19 +239,19 @@ public final class UpdateActivity extends AppCompatActivity {
         startInstallPending = false;
         content.removeAllViews();
         LinearLayout card = Ui.card(this, dark);
-        TextView title = Ui.text(this, AppText.get(R.string.phone_update_check_unavailable_2aa80), 20, Ui.mainText(dark));
+        TextView title = Ui.text(this, "Update check unavailable", 20, Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, message, 14, Ui.secondaryText(dark));
         LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(-1, -2);
         detailParams.setMargins(0, Ui.dp(this, 8), 0, Ui.dp(this, 18));
         card.addView(detail, detailParams);
-        Button retry = Ui.nativePrimaryButton(this, AppText.get(R.string.phone_check_again_e1850));
+        Button retry = Ui.nativePrimaryButton(this, "Check again");
         retry.setOnClickListener(view -> checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
         card.addView(retry, new LinearLayout.LayoutParams(-1, Ui.dp(this, 60)));
         content.addView(card);
 
-        Button history = Ui.button(this, AppText.get(R.string.phone_release_history_5044b), false, dark);
+        Button history = Ui.button(this, "Release history", false, dark);
         history.setOnClickListener(view ->
                 Ui.startSecondaryActivity(this, ReleaseHistoryActivity.class));
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, Ui.dp(this, 56));
@@ -266,17 +268,18 @@ public final class UpdateActivity extends AppCompatActivity {
         if (!canInstallPackages()) {
             waitingForInstallPermission = true;
             new AlertDialog.Builder(this)
-                    .setTitle(AppText.get(R.string.phone_allow_app_installs_47f4f))
-                    .setMessage(AppText.get(R.string.phone_android_requires_permission_for_codex_meter_to_h_7e7f1))
-                    .setNegativeButton(AppText.get(R.string.widget_config_cancel), (dialog, which) ->
+                    .setTitle("Allow app installs")
+                    .setMessage("Android requires permission for Codex Meter to hand its verified "
+                            + "GitHub APK to the system installer. You still approve every update.")
+                    .setNegativeButton("Cancel", (dialog, which) ->
                             waitingForInstallPermission = false)
-                    .setPositiveButton(AppText.get(R.string.phone_open_settings_fd710), (dialog, which) -> {
+                    .setPositiveButton("Open settings", (dialog, which) -> {
                         try {
                             startActivity(new Intent(Settings.ACTION_MANAGE_UNKNOWN_APP_SOURCES,
                                     Uri.parse("package:" + getPackageName())));
                         } catch (RuntimeException exception) {
                             waitingForInstallPermission = false;
-                            Toast.makeText(this, AppText.get(R.string.phone_could_not_open_install_permission_settings_82d23),
+                            Toast.makeText(this, "Could not open install permission settings.",
                                     Toast.LENGTH_LONG).show();
                         }
                     })
@@ -340,14 +343,17 @@ public final class UpdateActivity extends AppCompatActivity {
 
     private void confirmOlderDownload() {
         new AlertDialog.Builder(this)
-                .setTitle(AppText.get(R.string.phone_downgrade_requires_uninstalling_c7971))
-                .setMessage(AppText.get(R.string.phone_android_blocks_in_place_downgrades_for_ordinary_2c884))
-                .setNegativeButton(AppText.get(R.string.widget_config_cancel), null)
-                .setPositiveButton(AppText.get(R.string.phone_open_apk_download_3d435), (dialog, which) -> {
+                .setTitle("Downgrade requires uninstalling")
+                .setMessage("Android blocks in-place downgrades for ordinary apps. Uninstalling "
+                        + "Codex Meter removes its account, settings, cached usage, and widgets. "
+                        + "The older APK will open in your browser so it remains available after "
+                        + "uninstalling.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Open APK download", (dialog, which) -> {
                     try {
                         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(release.apkUrl)));
                     } catch (RuntimeException exception) {
-                        Toast.makeText(this, AppText.get(R.string.phone_no_browser_can_open_the_apk_download_75d83),
+                        Toast.makeText(this, "No browser can open the APK download.",
                                 Toast.LENGTH_LONG).show();
                     }
                 })
@@ -362,7 +368,7 @@ public final class UpdateActivity extends AppCompatActivity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (RuntimeException exception) {
-            Toast.makeText(this, AppText.get(R.string.phone_no_browser_can_open_the_github_release_page_ed52f),
+            Toast.makeText(this, "No browser can open the GitHub release page.",
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -370,7 +376,7 @@ public final class UpdateActivity extends AppCompatActivity {
     private static String safeMessage(Exception exception) {
         String message = exception == null ? "" : exception.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            message = AppText.get(R.string.phone_the_update_could_not_be_prepared_3c971);
+            message = "The update could not be prepared.";
         }
         return message.length() <= 240 ? message : message.substring(0, 240);
     }

@@ -11,7 +11,6 @@ public final class CodexMeterApplication extends Application
     @Override
     public void onCreate() {
         super.onCreate();
-        AppText.initialize(this);
         DiagnosticLog.install(this);
         registerActivityLifecycleCallbacks(this);
         DiagnosticLog.info(this, "process", "application_started");

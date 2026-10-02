@@ -57,10 +57,6 @@ javac -encoding UTF-8 -cp "$JSON_JAR" -d "$OUT" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryReminder.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/Pkce.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/JwtClaims.java" \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/QuotaCardOptions.java" \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetUsageWindow.java" \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetUsageSnapshot.java" \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetUsageParser.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptions.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/OnboardingFlow.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/OAuthBrowserPage.java" \
@@ -91,7 +87,7 @@ grep -q 'VERSION_NAME="2.8.0"' "$ROOT/build.sh"
 WORKFLOW="$ROOT/../.github/workflows/build-apk.yml"
 grep -Fq 'release-dist/CodexMeter-Wear-$VERSION_NAME.apk' "$WORKFLOW"
 grep -Fq '"platforms;android-37.0"' "$WORKFLOW"
-grep -q 'HotKids/Codex-Meter/releases?per_page=30' "$ROOT/app/build.gradle.kts" # pragma: allowlist secret
+grep -q 'BenItBuhner/Codex-Meter/releases?per_page=30' "$ROOT/app/build.gradle.kts" # pragma: allowlist secret
 ! grep -R -q 'thatjoshguy67/Codex-Meter' \
   "$ROOT/app/src" "$ROOT/app/build.gradle.kts"
 
@@ -204,14 +200,14 @@ grep -q 'currentLongWindow' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WearGlanceFormat.java"
 grep -q 'meterWindow' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
-grep -q 'R.string.phone_hidden_automatically_when_no_resets_are_availabl_9c7f7' \
+grep -q 'Hidden automatically when no resets are available' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/DashboardReorderActivity.java"
 # Dashboard auto-hide wiring remains; blank placeholders are widget-only.
 grep -q 'snapshot.usageCredits.shouldDisplay()' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 grep -q 'shouldShowResetCreditsCard' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
-# Shared catalog remains frozen; the phone editor retains all built-ins and drag ordering.
+# Widget meter catalog excludes Spark / additional model limits; config supports drag reorder.
 grep -q 'Model-specific additional limits' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
 grep -q 'available meters exclude model-specific Spark limits' \
@@ -222,16 +218,16 @@ grep -q 'resolvedSingleUsageMetric' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
 grep -q 'ItemTouchHelper' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
-grep -q 'QuotaCardOptions.availableWindows(widgetSnapshot' \
+grep -q 'orderedSelectedMeters' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
-grep -q 'synchronizeWindows' \
+grep -q 'ic_oui_reorder' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
 
 # Reset/usage-credit dashboard cards use bold in-card titles with left-aligned icon rows,
 # matching the other dashboard cards, instead of external One UI separators or centered blocks.
-grep -Fq 'Ui.text(this, AppText.get(R.string.phone_reset_credits_ef7c0), 18' \
+grep -Fq 'Ui.text(this, "Reset credits", 18' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
-grep -Fq 'Ui.text(this, AppText.get(R.string.phone_usage_credits_5e681), 18' \
+grep -Fq 'Ui.text(this, "Usage credits", 18' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 grep -q 'buildIconDetailRow' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
@@ -241,9 +237,9 @@ grep -q 'ic_oui_credit_card_outline' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 ! grep -q 'Ui.separator' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
-grep -Fq 'Ui.separator(this, AppText.get(R.string.phone_available_credits_18001))' \
+grep -Fq 'Ui.separator(this, "Available credits")' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
-grep -Fq 'Ui.separator(this, AppText.get(R.string.phone_credit_expirations_33fb9))' \
+grep -Fq 'Ui.separator(this, "Credit expirations")' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
 ! grep -q 'ic_reset_credit_details' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
@@ -281,9 +277,9 @@ grep -q 'FIRST_IN_APP_UPDATE_VERSION = "2.3.0"' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseUpdatePolicy.java"
 grep -q 'isIrreversible' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q 'R.string.phone_open_on_github_8b81a' \
+grep -q 'Open on GitHub' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q 'R.string.phone_open_on_github_8b81a' \
+grep -q 'Open on GitHub' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseHistoryActivity.java"
 grep -q 'UpdateCheckFrequency' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseUpdateScheduler.java"
@@ -295,9 +291,9 @@ grep -q 'settings_update_interval_entries' \
   "$ROOT/app/src/main/res/values/settings_arrays.xml"
 grep -q 'EXTRA_START_INSTALL' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q 'AppText.get(R.string.phone_open_cf9b7), open' \
+grep -q '"Open", open' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateNotificationManager.java"
-grep -q 'AppText.get(R.string.phone_update_fb91e), update' \
+grep -q '"Update", update' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateNotificationManager.java"
 grep -q 'UpdateNotificationManager.onReleasesUpdated' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdatePreferences.java"
@@ -416,7 +412,7 @@ test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryReceive
 grep -q 'ResetCreditExpiryReceiver' "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'reset_credit_expiry_times_ui' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
-grep -q 'AppText.get(R.string.phone_use_reset_c3295), useReset' \
+grep -q '"Use reset", useReset' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetNotificationManager.java"
 grep -q 'EXTRA_PROMPT_USE_RESET' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
@@ -484,8 +480,8 @@ grep -q 'android:pathData="M 8.086,0.457 a 6.105,6.105 0 0,1' \
   "$ROOT/app/src/main/res/drawable/ic_codex_logo_on_accent.xml"
 grep -q 'fillType="evenOdd"' \
   "$ROOT/app/src/main/res/drawable/ic_notification.xml"
-grep -q '#435F87' "$ROOT/app/src/main/res/drawable/ic_codex_logo.xml"
-grep -q '#B5CDFA' "$ROOT/app/src/main/res/drawable/ic_codex_logo_dark.xml"
+grep -q '#FF111111' "$ROOT/app/src/main/res/drawable/ic_codex_logo.xml"
+grep -q '#FFFFFFFF' "$ROOT/app/src/main/res/drawable/ic_codex_logo_dark.xml"
 grep -q 'android.ongoingActivityNoti.' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'applySamsungCompatibility' \
@@ -555,13 +551,13 @@ grep -q 'applyPercentModeChange' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
 grep -q 'KEY_FOCUS_METRIC' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
-grep -q 'R.string.phone_samsung_help' \
+grep -q 'Live notifications for all apps' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
 
 grep -R -q '<Chronometer' "$ROOT/app/src/main/res/layout/widget_lock_"*.xml
 grep -q 'setChronometerCountDown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SamsungLockWidgetSupport.java"
 grep -q 'show_countdown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/AppPreferences.java"
-grep -q 'R.string.phone_show_live_time_until_reset_8055a' "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
+grep -q 'Show live time until reset' "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
 
 for style in rings dials bars; do
   for shape in square wide; do
@@ -591,7 +587,6 @@ grep -q 'RESET_CREDITS_CONSUME_URL' "$ROOT/app/src/main/java/dev/bennett/codexme
 grep -q 'ResetCreditActivity' "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'showResetAction' "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptions.java"
 grep -q 'OPACITY_LEVELS = {56, 88, 100}' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/QuotaCardOptions.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptions.java"
 grep -q 'widget_background' "$ROOT/app/src/main/res/values/strings.xml"
 grep -q 'backgroundSwitch' \
@@ -600,14 +595,12 @@ grep -q 'RadioItemViewGroup' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/OneUiChoiceDialog.java"
 grep -q 'OneUiChoiceDialog.show' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
-grep -q 'R.string.widget_option_metric_0, R.string.widget_option_metric_1, R.string.widget_option_metric_2' \
+grep -q '"Both windows", "5-hour only", "Weekly only"' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
-# Home widget uses the single adaptive layout; 2x1 dial routing is covered by Android tests.
-grep -q 'STYLE_LABELS = {R.string.ref_adaptive}' \
+# Home widget layout picker exposes Auto / Dials / Progress bars.
+grep -q '"Adaptive by size", "Dials", "Progress bars"' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
-grep -q 'STYLE_VALUES = {WidgetOptions.STYLE_CARDS}' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
-grep -q 'referenceStyleSpinner' \
+grep -q 'styleSpinner' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
 # Home and lock config drive the shared meter catalog for per-meter visibility.
 grep -q 'WidgetMeters' \
@@ -684,7 +677,7 @@ grep -q 'card.setMinimumHeight(Ui.dp(this, 103.0f))' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 grep -q 'onPaceSettingsChanged' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
-grep -q '!window.showsResetCountdown()' \
+grep -q '!usageWindow.showsResetCountdown()' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageFormat.java"
 ! grep -q 'resetPaint.setColor(Ui.secondaryText(dark));' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageWaveView.java"

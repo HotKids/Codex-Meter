@@ -8,21 +8,21 @@
         app:allowDividerAbove="false"
         app:allowDividerBelow="false" />
 
-    <PreferenceCategory android:title="@string/phone_general_9239e">
+    <PreferenceCategory android:title="General">
         <Preference
             android:key="settings_appearance"
-            android:title="@string/phone_appearance_41def"
+            android:title="Appearance"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="settings_refresh_usage"
-            android:title="@string/phone_refresh_usage_90304"
+            android:title="Refresh &amp; usage"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_features_fc338">
+    <PreferenceCategory android:title="Features">
         <Preference
             android:key="settings_notifications"
-            android:title="@string/phone_notifications_753a2"
+            android:title="Notifications"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="settings_now_bar"
@@ -30,20 +30,20 @@
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/phone_app_data_4d9bf">
+    <PreferenceCategory android:title="App &amp; data">
         <Preference
             android:key="settings_updates"
-            android:title="@string/phone_updates_c76d1"
+            android:title="Updates"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="settings_transfer"
-            android:summary="@string/phone_move_settings_between_devices_042d7"
-            android:title="@string/phone_backup_transfer_84bb2"
+            android:summary="Move settings between devices"
+            android:title="Backup &amp; transfer"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="settings_privacy"
-            android:summary="@string/phone_local_storage_encryption_and_network_access_8f0f7"
-            android:title="@string/phone_privacy_cf014"
+            android:summary="Local storage, encryption, and network access"
+            android:title="Privacy"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
@@ -51,7 +51,7 @@
 
     <Preference
         android:key="about_codex_meter"
-        android:title="@string/phone_about_codex_meter_a3cb5"
+        android:title="About Codex Meter"
         app:iconSpaceReserved="false" />
 
     <dev.oneuiproject.oneui.preference.InsetPreferenceCategory app:height="28dp" />

@@ -2,28 +2,15 @@
 
 ## Repository layout
 
-Codex Meter contains an Android phone app and a frozen Wear OS companion, with no backend:
+Codex Meter is a **monorepo** with native clients and no backend:
 
 | Path | Stack | Package / product |
 |------|--------|-------------------|
 | Repository root | Shared docs, license, changelog, CI entrypoints | — |
-| `android/` | Android (Gradle `:app`, `:shared`, `:wear`) | Phone `me.pipi.usage`; frozen Wear `dev.bennett.codexmeter` |
+| `android/` | Android (Gradle `:app`, `:shared`, `:wear`) | `dev.bennett.codexmeter` (+ Wear companion) |
+| `ios/` | SwiftUI / WidgetKit (Xcode) | `CodexMeter` app + widgets + `CodexMeterCore` package |
 
-The Android app talks directly to OpenAI/ChatGPT remote endpoints. Tokens stay on-device in Android Keystore.
-
-## Fork workflow
-
-- Keep the GitHub fork relationship. The maintainer prefers ordinary commits and pushes to `HotKids/Codex-Meter`, without creating pull requests unless explicitly requested.
-- The phone application ID is `me.pipi.usage`. Its Java namespace remains `dev.bennett.codexmeter`; this does not change the installed package name.
-- In-app updates target this fork so an upstream APK with the old package ID is not offered as an update.
-- The frozen Wear package cannot pair with the renamed phone through Google's Data Layer, which requires matching application IDs and signing certificates. Do not change Wear to work around this without authorization.
-
-## Wear OS freeze
-
-- Keep `android/wear/` unchanged, including code, resources, dependencies, and version.
-- Preserve the phone-to-watch protocol and shared behavior used by Wear OS.
-- Builds and validation of the existing Wear OS app are allowed.
-- Changes or release preparation affecting Wear OS require an explicit request to resume that work. This freeze takes precedence over the general release procedure below.
+Clients talk directly to OpenAI/ChatGPT remote endpoints. Tokens stay on-device (Android Keystore / iOS Keychain).
 
 ## Release channels & etiquette (Android)
 
@@ -48,6 +35,8 @@ Convenience wrappers at the repo root forward into the Android project:
 - `./build.sh` → `android/build.sh`
 - `./lint.sh` → `android/lint.sh`
 
+iOS build instructions are in `ios/README.md`.
+
 ## Cursor Cloud specific instructions (Android)
 
 ### Toolchain (pre-installed in the VM snapshot)
@@ -63,3 +52,11 @@ Convenience wrappers at the repo root forward into the Android project:
 ### Running / testing (Android)
 - `./run-tests.sh` (or `android/run-tests.sh`) compiles and runs the pure-Java core self-tests (usage-response parsing, PKCE/OAuth, JWT claims, widget options) — no Android SDK or GitHub creds required. Use this as the fast correctness check.
 - There is no Android emulator/GUI in this VM, and an APK cannot be installed/launched headlessly here. Validate changes with `run-tests.sh` and a successful `build.sh`/`lint.sh`. Signed phone + Wear APKs land in `android/dist/` and are the product artifacts.
+
+## iOS notes for agents
+
+- Work under `ios/`. Keep Android changes under `android/`. Do not flatten either tree into the repo root.
+- Prefer native SwiftUI / WidgetKit patterns; do not port Samsung One UI or Android update installers.
+- Core pure logic for the iOS app lives in `ios/CodexMeterCore`.
+- Fast checks: `swift test --package-path ios/CodexMeterCore` (from repo root) or from `ios/` as documented in `ios/README.md`.
+- Full Xcode builds need a macOS host; Linux cloud VMs typically cannot build the iOS target.
