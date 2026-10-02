@@ -12,6 +12,7 @@
     <string name="widget_card_limit">Limit</string>
     <string name="widget_card_extra_limit">Codex extra limit</string>
     <string name="widget_card_spark">Codex Spark</string>
+    <string name="widget_dial_description">%1$s, %2$s</string>
     <string name="widget_card_limit_window">%1$s %2$s</string>
     <string name="widget_card_current_usage">Current usage</string>
 

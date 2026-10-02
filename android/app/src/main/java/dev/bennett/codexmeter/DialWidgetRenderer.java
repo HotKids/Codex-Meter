@@ -59,6 +59,8 @@ final class DialWidgetRenderer {
                     views.setImageViewBitmap(FOUR_DIAL_GRAPHICS[index],
                             WidgetGraphics.compactDial(context, value, icon(key), accent, track,
                                     text, valueText(value, options), 1.0f));
+                    views.setContentDescription(FOUR_DIAL_GRAPHICS[index],
+                            description(context, key, state, value, options));
                 }
             }
         } else {
@@ -80,6 +82,8 @@ final class DialWidgetRenderer {
                 views.setTextViewText(RING_VALUES[index], valueText(value, options));
                 views.setTextColor(RING_VALUES[index], text);
                 views.setImageViewResource(RING_ICONS[index], icon(key));
+                views.setContentDescription(RING_ICONS[index],
+                        description(context, key, state, value, options));
                 views.setInt(RING_ICONS[index], "setColorFilter", text);
             }
         }
@@ -98,6 +102,14 @@ final class DialWidgetRenderer {
         }
         return WidgetOptions.DISPLAY_USED.equals(options.displayMode)
                 ? window.usedPercent : window.remainingPercent();
+    }
+
+    /** Spoken label of one dial: the window title and its value. */
+    private static String description(Context context, String key, UsageCardState state,
+            int value, WidgetOptions options) {
+        return context.getString(R.string.widget_dial_description,
+                UsageCardWindows.title(context.getResources(), key, state.snapshot),
+                valueText(value, options));
     }
 
     private static String valueText(int value, WidgetOptions options) {
