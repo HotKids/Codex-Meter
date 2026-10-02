@@ -55,11 +55,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private final List<String> windowOrder = new ArrayList<>();
     private final LinkedHashSet<String> selectedWindows = new LinkedHashSet<>();
     private int styleIndex;
-    private int themeIndex;
-    private int accentIndex;
     private String[] styleLabels;
-    private String[] themeLabels;
-    private String[] accentLabels;
 
     private FrameLayout previewContainer;
     private RecyclerView windowList;
@@ -98,13 +94,8 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         snapshot = SecureTokenStore.isSignedIn(this) ? AppPreferences.loadSnapshot(this) : null;
         loadSelection();
         styleLabels = getResources().getStringArray(R.array.widget_editor_style_labels);
-        themeLabels = getResources().getStringArray(R.array.widget_editor_theme_labels);
-        accentLabels = getResources().getStringArray(R.array.widget_editor_accent_labels);
         styleIndex = WidgetOptionCatalog.indexOf(WidgetOptionCatalog.STYLE_VALUES,
                 saved.cardStyle);
-        themeIndex = WidgetOptionCatalog.indexOf(WidgetOptionCatalog.THEME_VALUES, saved.theme);
-        accentIndex = WidgetOptionCatalog.indexOf(WidgetOptionCatalog.ACCENT_VALUES,
-                saved.accent);
 
         content.addView(Ui.separator(this, getString(R.string.widget_editor_windows)));
         content.addView(buildWindowCard());
@@ -347,8 +338,6 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         RoundedLinearLayout card = Ui.seslRowCard(this, dark);
         addChoiceRow(card, getString(R.string.widget_editor_style), styleLabels,
                 () -> styleIndex, index -> styleIndex = index, false);
-        addChoiceRow(card, getString(R.string.widget_editor_theme), themeLabels,
-                () -> themeIndex, index -> themeIndex = index, true);
 
         backgroundSwitch = new SwitchCompat(this);
         backgroundSwitch.setChecked(saved.opacity > 0);
@@ -386,9 +375,6 @@ public final class WidgetConfigActivity extends AppCompatActivity {
             public void onStopTrackingTouch(SeslSeekBar seekBar) {
             }
         });
-
-        addChoiceRow(card, getString(R.string.widget_editor_dial_accent),
-                accentLabels, () -> accentIndex, index -> accentIndex = index, true);
         return card;
     }
 
@@ -489,8 +475,8 @@ public final class WidgetConfigActivity extends AppCompatActivity {
                 : 0;
         return new WidgetOptions(saved.layout, WidgetOptions.DENSITY_AUTO,
                 WidgetOptions.SURFACE_ONE_UI, WidgetOptions.GRAPHIC_AUTO,
-                WidgetOptionCatalog.THEME_VALUES[themeIndex],
-                WidgetOptionCatalog.ACCENT_VALUES[accentIndex],
+                // Colours follow the system palette and dark mode; no per-widget override.
+                WidgetOptions.THEME_SYSTEM, WidgetOptions.ACCENT_APP,
                 opacity, WidgetOptions.RESET_HIDDEN, saved.displayMode, WidgetOptions.METRIC_BOTH,
                 false, false, false, false, false, false)
                 .withPercentSymbol(saved.showPercentSymbol)

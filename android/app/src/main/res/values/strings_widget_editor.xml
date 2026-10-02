@@ -13,26 +13,10 @@
     <string name="widget_editor_reorder">Reorder</string>
     <string name="widget_editor_appearance">Appearance</string>
     <string name="widget_editor_style">Style</string>
-    <string name="widget_editor_theme">Theme</string>
-    <string name="widget_editor_dial_accent">2×1 dial color</string>
     <string name="widget_editor_refresh_hint">Widgets update whenever Codex Meter refreshes. Tap the refresh time on a widget to refresh now.</string>
-    <string-array name="widget_editor_style_labels">
+    <!-- Style names stay in English in every language. -->
+    <string-array name="widget_editor_style_labels" translatable="false">
         <item>Color</item>
         <item>Clear</item>
-    </string-array>
-    <string-array name="widget_editor_theme_labels">
-        <item>Follow system</item>
-        <item>Dark</item>
-        <item>Light</item>
-    </string-array>
-    <string-array name="widget_editor_accent_labels">
-        <item>Mint</item>
-        <item>Blue</item>
-        <item>Amber</item>
-        <item>Violet</item>
-        <item>Rose</item>
-        <item>Cyan</item>
-        <item>Lime</item>
-        <item>Monochrome</item>
     </string-array>
 </resources>

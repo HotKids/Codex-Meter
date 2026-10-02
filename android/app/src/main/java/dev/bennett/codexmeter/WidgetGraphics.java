@@ -3,14 +3,13 @@ package dev.bennett.codexmeter;
 import android.content.Context;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
 import android.util.DisplayMetrics;
 
-/** Colours and the compact One UI dial bitmap used by the one-row home widgets. */
+/** The compact One UI dial bitmap used by the four-dial one-row home widget. */
 public final class WidgetGraphics {
     /** One UI's dial leaves a wide opening at the bottom rather than a 270-degree gauge. */
     private static final float ARC_START = 156f;
@@ -73,46 +72,6 @@ public final class WidgetGraphics {
         paint.setTextSize((text.length() > 5 ? 24f : 33f) * factor);
         canvas.drawText(text, centerX, 121f * factor, paint);
         return bitmap;
-    }
-
-    public static int accentColor(Context context, String accent, boolean dark) {
-        if (WidgetOptions.ACCENT_APP.equals(accent)) {
-            return Ui.accent(context, dark);
-        }
-        return accentColor(accent, dark);
-    }
-
-    public static int accentColor(String accent, boolean dark) {
-        if (WidgetOptions.ACCENT_BLUE.equals(accent)) {
-            return dark ? Color.rgb(92, 169, 255) : Color.rgb(3, 129, 254);
-        }
-        if (WidgetOptions.ACCENT_AMBER.equals(accent)) {
-            return Color.rgb(244, 185, 95);
-        }
-        if (WidgetOptions.ACCENT_VIOLET.equals(accent)) {
-            return Color.rgb(155, 140, 255);
-        }
-        if (WidgetOptions.ACCENT_ROSE.equals(accent)) {
-            return Color.rgb(255, 122, 162);
-        }
-        if (WidgetOptions.ACCENT_CYAN.equals(accent)) {
-            return Color.rgb(71, 200, 232);
-        }
-        if (WidgetOptions.ACCENT_LIME.equals(accent)) {
-            return Color.rgb(164, 214, 94);
-        }
-        if (WidgetOptions.ACCENT_MONO.equals(accent)) {
-            return dark ? Color.rgb(244, 247, 248) : Color.rgb(32, 35, 38);
-        }
-        return dark ? Color.rgb(66, 214, 164) : Color.rgb(20, 168, 121);
-    }
-
-    public static int trackColor(boolean dark) {
-        return dark ? Color.argb(72, 255, 255, 255) : Color.argb(48, 17, 19, 21);
-    }
-
-    public static int mainTextColor(boolean dark) {
-        return dark ? Color.WHITE : Color.rgb(17, 19, 21);
     }
 
     private static int clampPercent(int value) {

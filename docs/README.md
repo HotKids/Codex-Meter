@@ -6,7 +6,7 @@
 | 文档 | 内容 |
 |---|---|
 | [refactor.md](refactor.md) | 重构范围、保证行为不变的方法、重构中发现的上游问题 |
-| [ai-usage-widgets.md](ai-usage-widgets.md) | 首页小组件：AI-Usage 彩色样式、Material 简洁样式、编辑器、测试 |
+| [ai-usage-widgets.md](ai-usage-widgets.md) | 首页小组件：Color（AI-Usage）与 Clear（Material）样式、编辑器、测试 |
 | [usage-windows.md](usage-windows.md) | 额度周期的解析与小组件中的周期选择 |
 
 ## 1. 改动总览
@@ -44,8 +44,8 @@
   `SettingsTransfer.Problem`、`UpdatePreferences.checkIntervalLabel`。
 - 后端与登录错误使用 `OAuthClient.UserFacingException`：`getMessage()` 为英文（写入诊断日志），
   `getLocalizedMessage()` 为界面语言；界面一律显示后者。
-- 保留英文的内容：套餐名（产品名）、服务器或系统返回的错误原文、GitHub 发布说明原文、诊断日志、
-  导出文件中的安全警告。
+- 保留英文的内容：套餐名（产品名）、小组件样式名 Color / Clear、单行（2×1、4×1）圆环小组件、
+  服务器或系统返回的错误原文、GitHub 发布说明原文、诊断日志、导出文件中的安全警告。
 - 已保存的错误信息（上次错误、更新错误）保持保存时的语言，直到下一次刷新或检查。
 
 术语：用量、额度、周期、5 小时 / 每周 / 每月、剩余 / 已用、重置、重置券、登录 / 退出登录、首页、
@@ -72,6 +72,6 @@
 
 ## 5. 待确认
 
-- 简洁（Material）样式右下角的小百分比，按参考截图实现为“周期已过去的时间比例”（截图中 5 小时周期剩余
+- Clear（Material）样式右下角的小百分比，按参考截图实现为“周期已过去的时间比例”（截图中 5 小时周期剩余
   3 小时 59 分，对应 20%）；大号百分比与其他样式一致，显示剩余额度。
 - 锁屏小组件中文缩写：“5H” 保持不变，“W/MO” 改为 “周/月”，重置券 “R%d” 改为 “券%d”，未在锁屏上实际检查宽度。

@@ -72,31 +72,20 @@ final class MaterialCardRenderer {
     private static final int[] ELAPSED = {R.id.md_elapsed_0, R.id.md_elapsed_1,
             R.id.md_elapsed_2, R.id.md_elapsed_3};
 
-    /** Colour roles: night-following, light and dark resources (see widget_material_colors). */
+    /** Colour roles; each resource follows the night mode (see widget_material_colors). */
     private enum Role {
-        SURFACE(R.color.widget_material_surface, R.color.widget_material_surface_light,
-                R.color.widget_material_surface_dark),
-        PANEL(R.color.widget_material_panel, R.color.widget_material_panel_light,
-                R.color.widget_material_panel_dark),
-        TRACK(R.color.widget_material_track, R.color.widget_material_track_light,
-                R.color.widget_material_track_dark),
-        FILL(R.color.widget_material_fill, R.color.widget_material_fill_light,
-                R.color.widget_material_fill_dark),
-        TEXT(R.color.widget_material_text, R.color.widget_material_text_light,
-                R.color.widget_material_text_dark),
-        SECONDARY(R.color.widget_material_secondary, R.color.widget_material_secondary_light,
-                R.color.widget_material_secondary_dark),
-        ACCENT(R.color.widget_material_accent, R.color.widget_material_accent_light,
-                R.color.widget_material_accent_dark);
+        SURFACE(R.color.widget_material_surface),
+        PANEL(R.color.widget_material_panel),
+        TRACK(R.color.widget_material_track),
+        FILL(R.color.widget_material_fill),
+        TEXT(R.color.widget_material_text),
+        SECONDARY(R.color.widget_material_secondary),
+        ACCENT(R.color.widget_material_accent);
 
-        final int system;
-        final int light;
-        final int dark;
+        final int resource;
 
-        Role(int system, int light, int dark) {
-            this.system = system;
-            this.light = light;
-            this.dark = dark;
+        Role(int resource) {
+            this.resource = resource;
         }
     }
 
@@ -317,21 +306,13 @@ final class MaterialCardRenderer {
 
     /**
      * Applies a colour role. On Android 12+ the launcher resolves the resource, so wallpaper
-     * colours and (for the system theme) night mode stay live without a re-render.
+     * colours and night mode stay live without a re-render.
      */
     private void color(int viewId, String method, Role role) {
-        int resource;
-        if (WidgetOptions.THEME_DARK.equals(style.theme)) {
-            resource = role.dark;
-        } else if (WidgetOptions.THEME_LIGHT.equals(style.theme)) {
-            resource = role.light;
-        } else {
-            resource = role.system;
-        }
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColor(viewId, method, resource);
+            views.setColor(viewId, method, role.resource);
         } else {
-            views.setInt(viewId, method, context.getColor(resource));
+            views.setInt(viewId, method, context.getColor(role.resource));
         }
     }
 

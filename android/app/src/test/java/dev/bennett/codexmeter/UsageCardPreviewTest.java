@@ -172,7 +172,7 @@ public class UsageCardPreviewTest {
     }
 
     private static UsageCardRenderer.Style style(int opacity) {
-        return new UsageCardRenderer.Style(WidgetOptions.THEME_SYSTEM, opacity);
+        return new UsageCardRenderer.Style(opacity);
     }
 
     private static void add(PreviewSheet sheet, Context context, String label,

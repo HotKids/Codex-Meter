@@ -1,18 +1,19 @@
 package dev.bennett.codexmeter;
 
 import android.content.Context;
-import android.content.res.ColorStateList;
 import android.content.res.Configuration;
 import android.graphics.Color;
 import android.os.Build;
 import android.view.View;
 import android.widget.RemoteViews;
 import java.util.List;
+import java.util.Locale;
 
 /**
  * One-row home widgets keep upstream Codex Meter's One UI dials: two arcs on a 2x1 cell and four
  * compact dials on a wide 4x1 cell, each showing the remaining (or used) percentage of one
- * selected window.
+ * selected window. The dials stay in English whatever the app language, and their colours come
+ * from the system palette (Material You on Android 12+) and the system dark mode.
  */
 final class DialWidgetRenderer {
     /** Width (dp) from which a one-row widget shows four dials instead of two. */
@@ -39,11 +40,12 @@ final class DialWidgetRenderer {
         boolean four = widthDp >= FOUR_DIAL_MIN_WIDTH_DP;
         RemoteViews views = new RemoteViews(context.getPackageName(),
                 four ? R.layout.widget_rings_four : R.layout.widget_rings);
-        boolean dark = isDark(context, options);
+        boolean dark = isNight(context);
         applyBackground(context, views, options, dark);
-        int accent = WidgetGraphics.accentColor(context, options.accent, dark);
-        int track = WidgetGraphics.trackColor(dark);
-        int text = WidgetGraphics.mainTextColor(dark);
+        Context english = english(context);
+        int accent = context.getColor(R.color.widget_material_fill);
+        int track = context.getColor(R.color.widget_material_track);
+        int text = context.getColor(R.color.widget_material_text);
         if (four) {
             for (int index = 0; index < FOUR_DIAL_GRAPHICS.length; index++) {
                 boolean shown = index < keys.size();
@@ -60,7 +62,7 @@ final class DialWidgetRenderer {
                             WidgetGraphics.compactDial(context, value, icon(key), accent, track,
                                     text, valueText(value, options), 1.0f));
                     views.setContentDescription(FOUR_DIAL_GRAPHICS[index],
-                            description(context, key, state, value, options));
+                            description(english, key, state, value, options));
                 }
             }
         } else {
@@ -72,19 +74,25 @@ final class DialWidgetRenderer {
                 }
                 String key = keys.get(index);
                 int value = value(key, state, options);
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                    views.setColorStateList(RING_PROGRESS[index], "setProgressTintList",
-                            ColorStateList.valueOf(accent));
-                    views.setColorStateList(RING_PROGRESS[index],
-                            "setProgressBackgroundTintList", ColorStateList.valueOf(track));
-                }
                 views.setProgressBar(RING_PROGRESS[index], 100, Math.max(0, value), false);
                 views.setTextViewText(RING_VALUES[index], valueText(value, options));
-                views.setTextColor(RING_VALUES[index], text);
                 views.setImageViewResource(RING_ICONS[index], icon(key));
                 views.setContentDescription(RING_ICONS[index],
-                        description(context, key, state, value, options));
-                views.setInt(RING_ICONS[index], "setColorFilter", text);
+                        description(english, key, state, value, options));
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                    // Resolved by the launcher, so wallpaper colours and night mode stay live.
+                    views.setColorStateList(RING_PROGRESS[index], "setProgressTintList",
+                            R.color.widget_material_fill);
+                    views.setColorStateList(RING_PROGRESS[index],
+                            "setProgressBackgroundTintList", R.color.widget_material_track);
+                    views.setColor(RING_VALUES[index], "setTextColor",
+                            R.color.widget_material_text);
+                    views.setColor(RING_ICONS[index], "setColorFilter",
+                            R.color.widget_material_text);
+                } else {
+                    views.setTextColor(RING_VALUES[index], text);
+                    views.setInt(RING_ICONS[index], "setColorFilter", text);
+                }
             }
         }
         views.setOnClickPendingIntent(android.R.id.background,
@@ -104,7 +112,14 @@ final class DialWidgetRenderer {
                 ? window.usedPercent : window.remainingPercent();
     }
 
-    /** Spoken label of one dial: the window title and its value. */
+    /** The dials are deliberately English-only; this context resolves their strings. */
+    private static Context english(Context context) {
+        Configuration config = new Configuration(context.getResources().getConfiguration());
+        config.setLocale(Locale.ENGLISH);
+        return context.createConfigurationContext(config);
+    }
+
+    /** Spoken label of one dial: the window title and its value, in English. */
     private static String description(Context context, String key, UsageCardState state,
             int value, WidgetOptions options) {
         return context.getString(R.string.widget_dial_description,
@@ -126,13 +141,9 @@ final class DialWidgetRenderer {
         return fiveHour ? R.drawable.ic_oui_time : R.drawable.ic_oui_calendar_week;
     }
 
-    private static boolean isDark(Context context, WidgetOptions options) {
-        if (WidgetOptions.THEME_DARK.equals(options.theme)) {
-            return true;
-        }
-        return !WidgetOptions.THEME_LIGHT.equals(options.theme)
-                && (context.getResources().getConfiguration().uiMode
-                        & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
+    private static boolean isNight(Context context) {
+        return (context.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK) == Configuration.UI_MODE_NIGHT_YES;
     }
 
     private static void applyBackground(Context context, RemoteViews views,

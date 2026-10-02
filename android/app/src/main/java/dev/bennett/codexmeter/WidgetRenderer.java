@@ -9,6 +9,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.util.SizeF;
 import android.widget.RemoteViews;
+import androidx.annotation.RequiresApi;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -99,8 +100,7 @@ public final class WidgetRenderer {
         if (oneRow || heightDp < ONE_ROW_MAX_HEIGHT_DP) {
             return DialWidgetRenderer.build(context, appWidgetId, options, keys, state, widthDp);
         }
-        UsageCardRenderer.Style style = new UsageCardRenderer.Style(options.theme,
-                options.opacity);
+        UsageCardRenderer.Style style = new UsageCardRenderer.Style(options.opacity);
         if (options.clearCard()) {
             return MaterialCardRenderer.build(context, appWidgetId, style, keys, state, widthDp,
                     heightDp);
@@ -115,6 +115,7 @@ public final class WidgetRenderer {
                 snapshot);
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private static RemoteViews buildResponsive(Context context, int appWidgetId,
             WidgetOptions options, UsageCardState state, Bundle host) {
         Map<SizeF, RemoteViews> layouts = new LinkedHashMap<>();
@@ -159,8 +160,7 @@ public final class WidgetRenderer {
         UsageCardState signedOut = new UsageCardState(false, null, null, "",
                 System.currentTimeMillis());
         return UsageCardRenderer.build(context, appWidgetId,
-                new UsageCardRenderer.Style(WidgetOptions.THEME_SYSTEM,
-                        WidgetOptions.DEFAULT_OPACITY),
+                new UsageCardRenderer.Style(WidgetOptions.DEFAULT_OPACITY),
                 UsageCardWindows.defaultKeys(null), signedOut, DEFAULT_WIDTH_DP,
                 DEFAULT_HEIGHT_DP);
     }

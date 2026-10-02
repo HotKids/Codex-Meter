@@ -107,13 +107,14 @@ final class UsageCardRenderer {
         }
     }
 
-    /** Per-widget theme and background chosen in the widget editor (shared by both styles). */
+    /**
+     * Per-widget background chosen in the widget editor (shared by both styles). Colours always
+     * follow the system: light by day, dark at night.
+     */
     static final class Style {
-        final String theme;
         final int opacity;
 
-        Style(String theme, int opacity) {
-            this.theme = theme == null ? WidgetOptions.THEME_SYSTEM : theme;
+        Style(int opacity) {
             this.opacity = Math.max(0, Math.min(100, opacity));
         }
 
@@ -165,12 +166,6 @@ final class UsageCardRenderer {
         if (style.transparent()) {
             day = UsageCardPalette.TRANSPARENT;
             night = UsageCardPalette.TRANSPARENT;
-        } else if (WidgetOptions.THEME_LIGHT.equals(style.theme)) {
-            day = UsageCardPalette.LIGHT;
-            night = UsageCardPalette.LIGHT;
-        } else if (WidgetOptions.THEME_DARK.equals(style.theme)) {
-            day = UsageCardPalette.DARK;
-            night = UsageCardPalette.DARK;
         } else {
             day = UsageCardPalette.LIGHT;
             night = UsageCardPalette.DARK;
