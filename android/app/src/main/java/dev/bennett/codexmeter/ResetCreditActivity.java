@@ -1,38 +1,45 @@
 package dev.bennett.codexmeter;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+
 import android.app.AlertDialog;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.os.Bundle;
 import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
+import androidx.appcompat.app.AppCompatActivity;
+import dev.oneuiproject.oneui.widget.CardItemView;
+import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
-import androidx.appcompat.app.AppCompatActivity;
-import dev.oneuiproject.oneui.widget.CardItemView;
-import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
+import java.util.concurrent.TimeUnit;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Lists available Codex reset credits with their expirations and lets the user spend one. */
 public final class ResetCreditActivity extends AppCompatActivity {
+    /** Cached credit details older than this are refreshed when the page opens. */
+    private static final long DETAILS_MAX_AGE_MILLIS = TimeUnit.MINUTES.toMillis(5);
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 240;
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout content;
     private boolean dark;
-    private final ExecutorService executor = Executors.newSingleThreadExecutor();
+    /** Expiry notification that opened this page; dismissed once a reset is applied. */
     private int expiryNotificationId = -1;
     private Button useButton;
 
-    @Override // android.app.Activity
-    protected void onCreate(Bundle bundle) {
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
         Ui.applySelectedTheme(this);
-        super.onCreate(bundle);
+        super.onCreate(savedInstanceState);
         this.dark = Ui.isDark(this);
         this.content = Ui.installPage(this, "Codex reset", true).content;
         rebuild();
         refreshDetailsIfNeeded();
-        if (bundle == null) {
+        if (savedInstanceState == null) {
             maybePromptUseReset(getIntent());
         }
     }
@@ -45,13 +52,30 @@ public final class ResetCreditActivity extends AppCompatActivity {
         maybePromptUseReset(intent);
     }
 
-    @Override // android.app.Activity
+    @Override
     protected void onDestroy() {
         this.executor.shutdownNow();
         super.onDestroy();
     }
 
-    public void rebuild() {
+    /** "No resets available", "1 reset available", or "N resets available". */
+    static String availableResetsLabel(int available) {
+        if (available <= 0) {
+            return "No resets available";
+        }
+        if (available == 1) {
+            return "1 reset available";
+        }
+        return available + " resets available";
+    }
+
+    /** Absolute expiry time followed by the relative countdown, e.g. "Fri 10:00 · in 2d". */
+    static String expiryText(Context context, long expiresAtMillis, long nowMillis) {
+        return UsageFormat.absolute(context, expiresAtMillis, nowMillis)
+                + " · " + UsageFormat.relative(expiresAtMillis, nowMillis);
+    }
+
+    private void rebuild() {
         this.content.removeAllViews();
         ResetCreditsSnapshot snapshot = AppPreferences.loadResetCredits(this);
         int available = snapshot == null ? 0 : snapshot.availableCount;
@@ -63,14 +87,8 @@ public final class ResetCreditActivity extends AppCompatActivity {
 
         this.content.addView(Ui.separator(this, "Available credits"));
         RoundedLinearLayout summaryCard = Ui.seslRowCard(this, this.dark);
-        summaryCard.addView(Ui.actionRow(
-                this,
-                available <= 0
-                        ? "No resets available"
-                        : (available == 1 ? "1 reset available" : available + " resets available"),
-                summaryText(available, nextExpiry, now),
-                R.drawable.ic_oui_battery,
-                null));
+        summaryCard.addView(Ui.actionRow(this, availableResetsLabel(available),
+                summaryText(available, nextExpiry, now), R.drawable.ic_oui_battery, null));
         this.content.addView(summaryCard);
 
         this.content.addView(Ui.separator(this, "Credit expirations"));
@@ -78,29 +96,13 @@ public final class ResetCreditActivity extends AppCompatActivity {
         addCreditExpirations(expirations, availableCredits, available, now);
         this.content.addView(expirations);
 
-        String visibleResetCreditsError = AppPreferences.getVisibleResetCreditsError(this);
-        if (!visibleResetCreditsError.isEmpty()) {
-            Ui.addSpacer(this.content, 12);
-            RoundedLinearLayout errorCard = Ui.seslCard(this, this.dark);
-            errorCard.addView(Ui.text(this, visibleResetCreditsError, 13.0f,
-                    Ui.danger(this.dark)));
-            this.content.addView(errorCard);
-        }
-
-        this.useButton = Ui.nativePrimaryButton(
-                this, available > 0 ? "Use 1 reset" : "No resets available");
-        this.useButton.setEnabled(available > 0 && SecureTokenStore.isSignedIn(this));
-        LinearLayout.LayoutParams useButtonParams =
-                new LinearLayout.LayoutParams(-1, Ui.dp(this, 60.0f));
-        useButtonParams.setMargins(0, Ui.dp(this, 22.0f), 0, Ui.dp(this, 8.0f));
-        this.useButton.setOnClickListener(view -> confirmUse());
-        this.content.addView(this.useButton, useButtonParams);
+        addErrorCardIfNeeded();
+        addUseButton(available);
     }
 
     private String summaryText(int available, long nextExpiry, long now) {
         if (nextExpiry > 0L) {
-            return "Next expires " + UsageFormat.absolute(this, nextExpiry, now)
-                    + " · " + UsageFormat.relative(nextExpiry, now);
+            return "Next expires " + expiryText(this, nextExpiry, now);
         }
         if (available > 0) {
             return "OpenAI will choose an eligible credit";
@@ -108,20 +110,16 @@ public final class ResetCreditActivity extends AppCompatActivity {
         return "No reset credit is currently available";
     }
 
+    /**
+     * One row per known credit (soonest first), plus a catch-all row for credits the server
+     * counted but did not describe, or a placeholder when none are available.
+     */
     private void addCreditExpirations(RoundedLinearLayout card,
             List<RateLimitResetCredit> credits, int availableCount, long nowMillis) {
         for (int index = 0; index < credits.size(); index++) {
             RateLimitResetCredit credit = credits.get(index);
-            String titleText = credit.title.trim().isEmpty()
-                    ? "Reset credit " + (index + 1) : credit.title.trim();
-            if (index == 0 && credit.expiresAtMillis > 0L) {
-                titleText = titleText + " · Next";
-            }
-            String expiryText = credit.expiresAtMillis > 0L
-                    ? UsageFormat.absolute(this, credit.expiresAtMillis, nowMillis)
-                            + " · " + UsageFormat.relative(credit.expiresAtMillis, nowMillis)
-                    : "Expiration unavailable";
-            CardItemView row = Ui.actionRow(this, titleText, expiryText, 0, null);
+            CardItemView row = Ui.actionRow(this, creditTitle(credit, index),
+                    creditExpiryText(credit, nowMillis), 0, null);
             row.setShowTopDivider(index > 0);
             card.addView(row);
         }
@@ -141,52 +139,92 @@ public final class ResetCreditActivity extends AppCompatActivity {
         }
     }
 
-    private void refreshDetailsIfNeeded() {
-        ResetCreditsSnapshot resetCreditsSnapshotLoadResetCredits = AppPreferences.loadResetCredits(this);
-        long now = System.currentTimeMillis();
-        long jMax = resetCreditsSnapshotLoadResetCredits == null ? Long.MAX_VALUE : Math.max(0L, now - resetCreditsSnapshotLoadResetCredits.fetchedAtMillis);
-        boolean missingDetails = resetCreditsSnapshotLoadResetCredits != null
-                && resetCreditsSnapshotLoadResetCredits.availableCount > 0
-                && resetCreditsSnapshotLoadResetCredits.availableCreditsByExpiry(now).size()
-                        < resetCreditsSnapshotLoadResetCredits.availableCount;
-        if (SecureTokenStore.isSignedIn(this) && (jMax >= 300000 || missingDetails)) {
-            final Context applicationContext = getApplicationContext();
-            this.executor.execute(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.4
-                @Override // java.lang.Runnable
-                public void run() {
-                    try {
-                        ResetCreditApi.refreshAndCache(applicationContext);
-                        ResetCreditActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.4.1
-                            @Override // java.lang.Runnable
-                            public void run() {
-                                ResetCreditActivity.this.rebuild();
-                            }
-                        });
-                    } catch (Exception e) {
-                        AppPreferences.setResetCreditsError(applicationContext, ResetCreditActivity.safeMessage(e));
-                    }
-                }
-            });
+    /** The credit's own title, or "Reset credit N"; the first dated credit is marked "next". */
+    private static String creditTitle(RateLimitResetCredit credit, int index) {
+        String title = credit.title.trim().isEmpty()
+                ? "Reset credit " + (index + 1)
+                : credit.title.trim();
+        if (index == 0 && credit.expiresAtMillis > 0L) {
+            title = title + " · Next";
         }
+        return title;
     }
 
-    public void confirmUse() {
-        AlertDialog dialog = new AlertDialog.Builder(this).setTitle("Use one Codex reset?").setMessage("The available credit expiring soonest will be used. This cannot be undone.").setNegativeButton("Cancel", (DialogInterface.OnClickListener) null).setPositiveButton("Use 1 reset", new DialogInterface.OnClickListener() { // from class: dev.bennett.codexmeter.ResetCreditActivity.5
-            @Override // android.content.DialogInterface.OnClickListener
-            public void onClick(DialogInterface dialogInterface, int i) {
-                ResetCreditActivity.this.consume();
+    private String creditExpiryText(RateLimitResetCredit credit, long nowMillis) {
+        if (credit.expiresAtMillis > 0L) {
+            return expiryText(this, credit.expiresAtMillis, nowMillis);
+        }
+        return "Expiration unavailable";
+    }
+
+    private void addErrorCardIfNeeded() {
+        String error = AppPreferences.getVisibleResetCreditsError(this);
+        if (error.isEmpty()) {
+            return;
+        }
+        Ui.addSpacer(this.content, 12);
+        RoundedLinearLayout errorCard = Ui.seslCard(this, this.dark);
+        errorCard.addView(Ui.text(this, error, 13.0f, Ui.danger(this.dark)));
+        this.content.addView(errorCard);
+    }
+
+    private void addUseButton(int available) {
+        this.useButton = Ui.nativePrimaryButton(this,
+                available > 0 ? "Use 1 reset" : "No resets available");
+        this.useButton.setEnabled(available > 0 && SecureTokenStore.isSignedIn(this));
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60.0f));
+        params.setMargins(0, Ui.dp(this, 22.0f), 0, Ui.dp(this, 8.0f));
+        this.useButton.setOnClickListener(view -> confirmUse());
+        this.content.addView(this.useButton, params);
+    }
+
+    /**
+     * Refreshes credit details in the background when the cache is stale or knows about more
+     * credits than it has expiration details for.
+     */
+    private void refreshDetailsIfNeeded() {
+        ResetCreditsSnapshot snapshot = AppPreferences.loadResetCredits(this);
+        long now = System.currentTimeMillis();
+        long ageMillis = snapshot == null
+                ? Long.MAX_VALUE
+                : Math.max(0L, now - snapshot.fetchedAtMillis);
+        boolean missingDetails = snapshot != null
+                && snapshot.availableCount > 0
+                && snapshot.availableCreditsByExpiry(now).size() < snapshot.availableCount;
+        if (!SecureTokenStore.isSignedIn(this)
+                || (ageMillis < DETAILS_MAX_AGE_MILLIS && !missingDetails)) {
+            return;
+        }
+        Context app = getApplicationContext();
+        this.executor.execute(() -> {
+            try {
+                ResetCreditApi.refreshAndCache(app);
+                runOnUiThread(this::rebuild);
+            } catch (Exception e) {
+                AppPreferences.setResetCreditsError(app, safeMessage(e));
             }
-        }).create();
-        dialog.show();
+        });
     }
 
+    private void confirmUse() {
+        new AlertDialog.Builder(this)
+                .setTitle("Use one Codex reset?")
+                .setMessage("The available credit expiring soonest will be used. "
+                        + "This cannot be undone.")
+                .setNegativeButton("Cancel", null)
+                .setPositiveButton("Use 1 reset", (dialog, which) -> consume())
+                .create()
+                .show();
+    }
+
+    /** Handles the "Use reset" action from a credit-expiry notification. */
     private void maybePromptUseReset(Intent intent) {
         if (intent == null || !intent.getBooleanExtra(
                 AppConstants.EXTRA_PROMPT_USE_RESET, false)) {
             return;
         }
-        this.expiryNotificationId = intent.getIntExtra(
-                AppConstants.EXTRA_NOTIFICATION_ID, -1);
+        this.expiryNotificationId = intent.getIntExtra(AppConstants.EXTRA_NOTIFICATION_ID, -1);
         intent.removeExtra(AppConstants.EXTRA_PROMPT_USE_RESET);
         intent.removeExtra(AppConstants.EXTRA_NOTIFICATION_ID);
         ResetCreditsSnapshot snapshot = AppPreferences.loadResetCredits(this);
@@ -196,51 +234,45 @@ public final class ResetCreditActivity extends AppCompatActivity {
         }
     }
 
-    public void consume() {
+    private void consume() {
         if (this.useButton != null) {
             this.useButton.setEnabled(false);
             this.useButton.setText("Applying…");
         }
-        final Context applicationContext = getApplicationContext();
-        this.executor.execute(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6
-            @Override // java.lang.Runnable
-            public void run() {
-                try {
-                    final ResetConsumeResult resetConsumeResultConsumeBestAvailable = ResetCreditApi.consumeBestAvailable(applicationContext);
-                    ResetCreditActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6.1
-                        @Override // java.lang.Runnable
-                        public void run() {
-                            Toast.makeText(ResetCreditActivity.this, resetConsumeResultConsumeBestAvailable.userMessage(), 1).show();
-                            if (!resetConsumeResultConsumeBestAvailable.applied()) {
-                                ResetCreditActivity.this.rebuild();
-                            } else {
-                                ResetNotificationManager.dismissResetCreditExpiryNotification(
-                                        ResetCreditActivity.this,
-                                        ResetCreditActivity.this.expiryNotificationId);
-                                ResetCreditActivity.this.finish();
-                            }
-                        }
-                    });
-                } catch (Exception e) {
-                    AppPreferences.setResetCreditsError(applicationContext, ResetCreditActivity.safeMessage(e));
-                    ResetCreditActivity.this.runOnUiThread(new Runnable() { // from class: dev.bennett.codexmeter.ResetCreditActivity.6.2
-                        @Override // java.lang.Runnable
-                        public void run() {
-                            Toast.makeText(ResetCreditActivity.this, ResetCreditActivity.safeMessage(e), 1).show();
-                            ResetCreditActivity.this.rebuild();
-                        }
-                    });
-                }
+        Context app = getApplicationContext();
+        this.executor.execute(() -> {
+            try {
+                ResetConsumeResult result = ResetCreditApi.consumeBestAvailable(app);
+                runOnUiThread(() -> onConsumeFinished(result));
+            } catch (Exception e) {
+                AppPreferences.setResetCreditsError(app, safeMessage(e));
+                runOnUiThread(() -> {
+                    Toast.makeText(this, safeMessage(e), Toast.LENGTH_LONG).show();
+                    rebuild();
+                });
             }
         });
     }
 
-    public static String safeMessage(Exception exc) {
-        String message = exc == null ? "" : exc.getMessage();
+    private void onConsumeFinished(ResetConsumeResult result) {
+        Toast.makeText(this, result.userMessage(), Toast.LENGTH_LONG).show();
+        if (!result.applied()) {
+            rebuild();
+            return;
+        }
+        ResetNotificationManager.dismissResetCreditExpiryNotification(this,
+                this.expiryNotificationId);
+        finish();
+    }
+
+    private static String safeMessage(Exception exception) {
+        String message = exception == null ? "" : exception.getMessage();
         if (message == null || message.trim().isEmpty()) {
             return "The reset could not be applied.";
         }
-        String strTrim = message.trim();
-        return strTrim.length() > 240 ? strTrim.substring(0, 240) : strTrim;
+        String trimmed = message.trim();
+        return trimmed.length() > MAX_ERROR_MESSAGE_LENGTH
+                ? trimmed.substring(0, MAX_ERROR_MESSAGE_LENGTH)
+                : trimmed;
     }
 }

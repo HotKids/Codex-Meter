@@ -1,9 +1,13 @@
 package dev.bennett.codexmeter;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
+import android.content.res.Configuration;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Typeface;
@@ -12,21 +16,20 @@ import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.RippleDrawable;
 import android.os.Build;
 import android.view.Gravity;
+import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.view.Window;
 import android.view.WindowInsets;
 import android.view.WindowInsetsController;
-import android.view.LayoutInflater;
 import android.widget.ArrayAdapter;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.LinearLayout;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Spinner;
-import android.widget.SpinnerAdapter;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
@@ -34,15 +37,28 @@ import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatCheckBox;
 import androidx.appcompat.widget.AppCompatSpinner;
 import androidx.appcompat.widget.SeslProgressBar;
-import dev.oneuiproject.oneui.layout.ToolbarLayout;
 import dev.oneuiproject.oneui.ktx.ActivityKt;
+import dev.oneuiproject.oneui.layout.ToolbarLayout;
 import dev.oneuiproject.oneui.popover.PopOverOptions;
 import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import dev.oneuiproject.oneui.widget.Separator;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Shared One UI theme, palette, typography, and programmatic view factories for the phone app. */
 public final class Ui {
+    private static final String ONE_UI_FONT_FAMILY = "sec";
+    private static final float CARD_CORNER_RADIUS_DP = 28.0f;
+    private static final float POPUP_CORNER_RADIUS_DP = 18.0f;
+    /** Large enough to round any control into a pill. */
+    private static final float PILL_CORNER_RADIUS_DP = 999.0f;
+    /** Samsung devices at least this wide (tablets, unfolded foldables) open pop-overs. */
+    private static final int POP_OVER_MIN_SMALLEST_WIDTH_DP = 600;
+    private static final float ACCENT_SATURATION_SCALE = 0.72f;
+    /** Accents brighter than this get black text; darker ones get white. */
+    private static final float ON_ACCENT_LUMINANCE_THRESHOLD = 0.55f;
+    private static final int DISABLED_FILL_ALPHA = 105;
+    private static final int DISABLED_TEXT_ALPHA = 150;
+
     public static final class Page {
         public final ToolbarLayout toolbar;
         public final LinearLayout content;
@@ -73,25 +89,34 @@ public final class Ui {
     private Ui() {
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Theme and page scaffolding
+    // ---------------------------------------------------------------------------------------
+
     public static void applySelectedTheme(Activity activity) {
         String appTheme = AppPreferences.getAppTheme(activity);
         if (activity instanceof AppCompatActivity) {
-            int mode = AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
-            if (WidgetOptions.THEME_DARK.equals(appTheme)) {
-                mode = AppCompatDelegate.MODE_NIGHT_YES;
-            } else if (WidgetOptions.THEME_LIGHT.equals(appTheme)) {
-                mode = AppCompatDelegate.MODE_NIGHT_NO;
-            }
-            ((AppCompatActivity) activity).getDelegate().setLocalNightMode(mode);
+            ((AppCompatActivity) activity).getDelegate().setLocalNightMode(nightModeFor(appTheme));
         }
         activity.setTheme(AppPreferences.isMaterialYouEnabled(activity)
                 ? R.style.AppTheme_MaterialYou
                 : R.style.AppTheme);
     }
 
+    private static int nightModeFor(String appTheme) {
+        if (WidgetOptions.THEME_DARK.equals(appTheme)) {
+            return AppCompatDelegate.MODE_NIGHT_YES;
+        }
+        if (WidgetOptions.THEME_LIGHT.equals(appTheme)) {
+            return AppCompatDelegate.MODE_NIGHT_NO;
+        }
+        return AppCompatDelegate.MODE_NIGHT_FOLLOW_SYSTEM;
+    }
+
     public static Page installPage(AppCompatActivity activity, String title, boolean back) {
         ViewGroup parent = activity.findViewById(android.R.id.content);
-        View root = LayoutInflater.from(activity).inflate(R.layout.activity_oneui_dashboard, parent, false);
+        View root = LayoutInflater.from(activity)
+                .inflate(R.layout.activity_oneui_dashboard, parent, false);
         ToolbarLayout toolbar = root.findViewById(R.id.toolbar_layout);
         LinearLayout content = root.findViewById(R.id.dashboard_content);
         configureReachToolbar(toolbar, title, back);
@@ -108,11 +133,13 @@ public final class Ui {
         toolbar.setExpanded(true, false);
     }
 
-    public static void startSecondaryActivity(Activity activity, Class<? extends Activity> activityClass) {
+    /** Opens a secondary page, as a One UI pop-over on large Samsung screens. */
+    public static void startSecondaryActivity(Activity activity,
+            Class<? extends Activity> activityClass) {
         Intent intent = new Intent(activity, activityClass);
-        boolean largeOneUiDevice = Build.MANUFACTURER != null
-                && "samsung".equalsIgnoreCase(Build.MANUFACTURER)
-                && activity.getResources().getConfiguration().smallestScreenWidthDp >= 600;
+        boolean largeOneUiDevice = "samsung".equalsIgnoreCase(Build.MANUFACTURER)
+                && activity.getResources().getConfiguration().smallestScreenWidthDp
+                        >= POP_OVER_MIN_SMALLEST_WIDTH_DP;
         if (largeOneUiDevice) {
             ActivityKt.startPopOverActivity(
                     activity,
@@ -125,7 +152,8 @@ public final class Ui {
 
     public static String versionName(Context context) {
         try {
-            return context.getPackageManager().getPackageInfo(context.getPackageName(), 0).versionName;
+            return context.getPackageManager()
+                    .getPackageInfo(context.getPackageName(), 0).versionName;
         } catch (Exception ignored) {
             return "";
         }
@@ -133,7 +161,8 @@ public final class Ui {
 
     public static ConfigPage installConfigPage(AppCompatActivity activity, String title) {
         ViewGroup parent = activity.findViewById(android.R.id.content);
-        View root = LayoutInflater.from(activity).inflate(R.layout.activity_widget_settings, parent, false);
+        View root = LayoutInflater.from(activity)
+                .inflate(R.layout.activity_widget_settings, parent, false);
         ToolbarLayout toolbar = root.findViewById(R.id.widget_settings_root);
         LinearLayout content = root.findViewById(R.id.widget_settings_content);
         FrameLayout preview = root.findViewById(R.id.widget_preview_container);
@@ -146,68 +175,69 @@ public final class Ui {
         return new ConfigPage(toolbar, content, preview, cancel, save);
     }
 
+    /** Resolves the app theme preference, following the system night mode when unset. */
     public static boolean isDark(Context context) {
         String appTheme = AppPreferences.getAppTheme(context);
         if (WidgetOptions.THEME_DARK.equals(appTheme)) {
             return true;
         }
-        return !WidgetOptions.THEME_LIGHT.equals(appTheme) && (context.getResources().getConfiguration().uiMode & 48) == 32;
+        if (WidgetOptions.THEME_LIGHT.equals(appTheme)) {
+            return false;
+        }
+        int nightMode = context.getResources().getConfiguration().uiMode
+                & Configuration.UI_MODE_NIGHT_MASK;
+        return nightMode == Configuration.UI_MODE_NIGHT_YES;
     }
 
+    /** The phone app always renders One UI styling. */
     public static boolean isOneUi(Context context) {
         return true;
     }
 
     public static int pageHorizontalPadding(Context context) {
-        return dp(context, isOneUi(context) ? 24.0f : 20.0f);
+        return dp(context, 24.0f);
     }
 
     public static int pageTopPadding(Context context) {
         return dp(context, 8.0f);
     }
 
-    public static int background(Context context, boolean z) {
-        if (isOneUi(context)) {
-            return z ? Color.rgb(5, 6, 8) : Color.rgb(241, 241, 243);
-        }
-        return systemColor(context, z ? "system_neutral1_900" : "system_neutral1_10", z ? Color.rgb(18, 18, 22) : Color.rgb(249, 247, 251));
+    // ---------------------------------------------------------------------------------------
+    // Palette
+    // ---------------------------------------------------------------------------------------
+
+    public static int background(Context context, boolean dark) {
+        return dark ? Color.rgb(5, 6, 8) : Color.rgb(241, 241, 243);
     }
 
-    public static int background(boolean z) {
-        return z ? Color.rgb(18, 18, 22) : Color.rgb(249, 247, 251);
+    /** Legacy (pre-One UI) page background. */
+    public static int background(boolean dark) {
+        return dark ? Color.rgb(18, 18, 22) : Color.rgb(249, 247, 251);
     }
 
-    public static int cardColor(Context context, boolean z) {
-        if (!isOneUi(context)) {
-            return systemColor(context, z ? "system_neutral1_800" : "system_neutral1_50", z ? Color.rgb(31, 30, 36) : Color.rgb(242, 239, 246));
-        }
-        if (z) {
-            return Color.rgb(22, 24, 28);
-        }
-        return Color.rgb(252, 252, 255);
+    public static int cardColor(Context context, boolean dark) {
+        return dark ? Color.rgb(22, 24, 28) : Color.rgb(252, 252, 255);
     }
 
-    public static int card(boolean z) {
-        return z ? Color.rgb(31, 30, 36) : Color.rgb(242, 239, 246);
+    /** Legacy (pre-One UI) card surface. */
+    public static int card(boolean dark) {
+        return dark ? Color.rgb(31, 30, 36) : Color.rgb(242, 239, 246);
     }
 
-    public static int controlSurface(Context context, boolean z) {
-        if (isOneUi(context)) {
-            return z ? Color.rgb(42, 44, 50) : Color.rgb(238, 238, 241);
-        }
-        return systemColor(context, z ? "system_neutral1_700" : "system_neutral1_100", z ? Color.rgb(46, 44, 52) : Color.rgb(232, 228, 236));
+    public static int controlSurface(Context context, boolean dark) {
+        return dark ? Color.rgb(42, 44, 50) : Color.rgb(238, 238, 241);
     }
 
-    public static int mainText(boolean z) {
-        return z ? Color.rgb(248, 248, 250) : Color.BLACK;
+    public static int mainText(boolean dark) {
+        return dark ? Color.rgb(248, 248, 250) : Color.BLACK;
     }
 
-    public static int secondaryText(boolean z) {
-        return z ? Color.rgb(183, 186, 194) : Color.rgb(132, 132, 135);
+    public static int secondaryText(boolean dark) {
+        return dark ? Color.rgb(183, 186, 194) : Color.rgb(132, 132, 135);
     }
 
-    public static int divider(boolean z) {
-        return z ? Color.rgb(55, 58, 64) : Color.rgb(228, 228, 228);
+    public static int divider(boolean dark) {
+        return dark ? Color.rgb(55, 58, 64) : Color.rgb(228, 228, 228);
     }
 
     /** Official One UI Primary (#0381FE) / dark-mode accent (#5CA9FF). */
@@ -215,11 +245,11 @@ public final class Ui {
         return dark ? Color.rgb(92, 169, 255) : Color.rgb(3, 129, 254);
     }
 
-    public static int accent(Context context, boolean z) {
-        int oneUi = oneUiAccent(z);
+    public static int accent(Context context, boolean dark) {
+        int oneUi = oneUiAccent(dark);
         if (AppPreferences.isMaterialYouEnabled(context)) {
             // Material You system accents; fall back to One UI blues when unavailable.
-            return systemColor(context, z ? "system_accent1_200" : "system_accent1_600", oneUi);
+            return systemColor(context, dark ? "system_accent1_200" : "system_accent1_600", oneUi);
         }
         return oneUi;
     }
@@ -227,7 +257,7 @@ public final class Ui {
     public static int desaturatedAccent(Context context, boolean dark) {
         float[] hsv = new float[3];
         Color.colorToHSV(accent(context, dark), hsv);
-        hsv[1] *= 0.72f;
+        hsv[1] *= ACCENT_SATURATION_SCALE;
         return Color.HSVToColor(hsv);
     }
 
@@ -239,117 +269,114 @@ public final class Ui {
         return Color.rgb(230, 91, 23);
     }
 
+    /** The warning orange washed over the card color, for tracks behind warning fills. */
     public static int warningTrack(Context context, boolean dark) {
         int warning = warning(dark);
         int card = cardColor(context, dark);
-        float amount = dark ? 0.24f : 0.18f;
-        return Color.rgb(
-                Math.round(Color.red(card) + (Color.red(warning) - Color.red(card)) * amount),
-                Math.round(Color.green(card) + (Color.green(warning) - Color.green(card)) * amount),
-                Math.round(Color.blue(card) + (Color.blue(warning) - Color.blue(card)) * amount));
+        return blend(card, warning, dark ? 0.24f : 0.18f);
     }
 
-    public static int accent(boolean z) {
-        return z ? Color.rgb(117, 220, 179) : Color.rgb(0, 113, 83);
+    /** Legacy (pre-One UI) green accent. */
+    public static int accent(boolean dark) {
+        return dark ? Color.rgb(117, 220, 179) : Color.rgb(0, 113, 83);
     }
 
-    public static int onAccent(Context context, boolean z) {
-        if (isOneUi(context)) {
-            return Color.luminance(accent(context, z)) > 0.55f ? Color.BLACK : Color.WHITE;
-        }
-        if (!z) {
-            return -1;
-        }
-        return Color.rgb(0, 55, 39);
+    /** Readable text color on top of the current accent. */
+    public static int onAccent(Context context, boolean dark) {
+        return Color.luminance(accent(context, dark)) > ON_ACCENT_LUMINANCE_THRESHOLD
+                ? Color.BLACK
+                : Color.WHITE;
     }
 
-    public static int danger(boolean z) {
-        return z ? Color.rgb(255, 177, 173) : Color.rgb(190, 35, 43);
+    public static int danger(boolean dark) {
+        return dark ? Color.rgb(255, 177, 173) : Color.rgb(190, 35, 43);
     }
 
-    public static int dp(Context context, float f) {
-        return Math.round(context.getResources().getDisplayMetrics().density * f);
+    public static int dp(Context context, float dp) {
+        return Math.round(context.getResources().getDisplayMetrics().density * dp);
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Typography
+    // ---------------------------------------------------------------------------------------
 
     public static Typeface regularTypeface(Context context) {
-        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif", 0);
+        return Typeface.create(ONE_UI_FONT_FAMILY, Typeface.NORMAL);
     }
 
     public static Typeface mediumTypeface(Context context) {
-        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif-medium", 1);
+        return Typeface.create(ONE_UI_FONT_FAMILY, Typeface.BOLD);
     }
 
-    public static TextView text(Context context, String str, float f, int i) {
-        TextView textView = new TextView(context);
-        textView.setText(str);
-        textView.setTextSize(f);
-        textView.setTextColor(i);
-        textView.setTypeface(regularTypeface(context));
-        textView.setLineSpacing(0.0f, isOneUi(context) ? 1.12f : 1.14f);
-        textView.setIncludeFontPadding(false);
-        return textView;
+    public static TextView text(Context context, String text, float sizeSp, int color) {
+        TextView view = new TextView(context);
+        view.setText(text);
+        view.setTextSize(sizeSp);
+        view.setTextColor(color);
+        view.setTypeface(regularTypeface(context));
+        view.setLineSpacing(0.0f, 1.12f);
+        view.setIncludeFontPadding(false);
+        return view;
     }
 
-    public static TextView title(Context context, String str, boolean z) {
-        TextView textViewText = text(context, str, isOneUi(context) ? 42.0f : 36.0f, mainText(z));
-        textViewText.setTypeface(mediumTypeface(context));
-        textViewText.setLetterSpacing(isOneUi(context) ? -0.025f : -0.02f);
-        return textViewText;
+    public static TextView title(Context context, String title, boolean dark) {
+        TextView view = text(context, title, 42.0f, mainText(dark));
+        view.setTypeface(mediumTypeface(context));
+        view.setLetterSpacing(-0.025f);
+        return view;
     }
 
-    public static TextView sectionTitle(Context context, String str, boolean z) {
-        boolean zIsOneUi = isOneUi(context);
-        TextView textViewText = text(context, str, zIsOneUi ? 13.0f : 15.0f, zIsOneUi ? accent(context, z) : mainText(z));
-        textViewText.setTypeface(mediumTypeface(context));
-        if (zIsOneUi) {
-            textViewText.setLetterSpacing(0.01f);
-        }
-        LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, -2);
-        layoutParams.setMargins(zIsOneUi ? dp(context, 4.0f) : 0, dp(context, zIsOneUi ? 30.0f : 28.0f), 0, dp(context, zIsOneUi ? 10.0f : 11.0f));
-        textViewText.setLayoutParams(layoutParams);
-        return textViewText;
+    public static TextView sectionTitle(Context context, String title, boolean dark) {
+        TextView view = text(context, title, 13.0f, accent(context, dark));
+        view.setTypeface(mediumTypeface(context));
+        view.setLetterSpacing(0.01f);
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        params.setMargins(dp(context, 4.0f), dp(context, 30.0f), 0, dp(context, 10.0f));
+        view.setLayoutParams(params);
+        return view;
     }
 
-    public static LinearLayout card(Context context, boolean z) {
-        RoundedLinearLayout linearLayout = new RoundedLinearLayout(context);
-        linearLayout.setOrientation(1);
-        boolean zIsOneUi = isOneUi(context);
-        int i = zIsOneUi ? 22 : 20;
-        int i2 = zIsOneUi ? 20 : 19;
-        linearLayout.setPadding(dp(context, i), dp(context, i2), dp(context, i), dp(context, i2));
-        linearLayout.setBackground(shape(cardColor(context, z), dp(context, 28.0f)));
-        linearLayout.setElevation(0.0f);
-        linearLayout.setClipToOutline(true);
-        linearLayout.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
-        return linearLayout;
+    // ---------------------------------------------------------------------------------------
+    // Cards and containers
+    // ---------------------------------------------------------------------------------------
+
+    public static LinearLayout card(Context context, boolean dark) {
+        RoundedLinearLayout card = new RoundedLinearLayout(context);
+        card.setOrientation(LinearLayout.VERTICAL);
+        card.setPadding(dp(context, 22.0f), dp(context, 20.0f), dp(context, 22.0f),
+                dp(context, 20.0f));
+        card.setBackground(cardBackground(context, dark));
+        card.setElevation(0.0f);
+        card.setClipToOutline(true);
+        card.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+        return card;
     }
 
     public static RoundedLinearLayout seslCard(Context context, boolean dark) {
         RoundedLinearLayout card = new RoundedLinearLayout(context);
         card.setOrientation(LinearLayout.VERTICAL);
-        card.setPadding(dp(context, 18.0f), dp(context, 14.0f), dp(context, 18.0f), dp(context, 14.0f));
-        card.setBackground(shape(cardColor(context, dark), dp(context, 28.0f)));
+        card.setPadding(dp(context, 18.0f), dp(context, 14.0f), dp(context, 18.0f),
+                dp(context, 14.0f));
+        card.setBackground(cardBackground(context, dark));
         card.setClipToOutline(true);
-        card.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        card.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return card;
     }
 
+    /** Unpadded rounded card whose children (usually {@link CardItemView} rows) fill it. */
     public static RoundedLinearLayout cardGroup(Context context, boolean dark) {
         RoundedLinearLayout group = new RoundedLinearLayout(context);
         group.setOrientation(LinearLayout.VERTICAL);
-        group.setBackground(shape(cardColor(context, dark), dp(context, 28.0f)));
+        group.setBackground(cardBackground(context, dark));
         group.setClipToOutline(true);
-        group.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
+        group.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return group;
     }
 
+    /** Same container as {@link #cardGroup}; named for pages built from SESL row items. */
     public static RoundedLinearLayout seslRowCard(Context context, boolean dark) {
-        RoundedLinearLayout card = new RoundedLinearLayout(context);
-        card.setOrientation(LinearLayout.VERTICAL);
-        card.setBackground(shape(cardColor(context, dark), dp(context, 28.0f)));
-        card.setClipToOutline(true);
-        card.setLayoutParams(new LinearLayout.LayoutParams(-1, -2));
-        return card;
+        return cardGroup(context, dark);
     }
 
     public static Separator separator(Context context, String title) {
@@ -358,79 +385,34 @@ public final class Ui {
         return separator;
     }
 
-    public static Button button(Context context, String str, boolean z, boolean z2) {
-        int iArgb;
-        boolean zIsOneUi = isOneUi(context);
-        Button button = new AppCompatButton(context);
-        button.setText(str);
-        button.setAllCaps(false);
-        button.setTextSize(18.0f);
-        button.setTypeface(mediumTypeface(context));
-        button.setGravity(17);
-        button.setSingleLine(true);
-        button.setIncludeFontPadding(false);
-        button.setMinHeight(dp(context, 52.0f));
-        button.setMinWidth(0);
-        button.setPadding(dp(context, zIsOneUi ? 18.0f : 20.0f), dp(context, 7.0f), dp(context, zIsOneUi ? 18.0f : 20.0f), dp(context, 7.0f));
-        int iDp = dp(context, 999.0f);
-        int iAccent = z ? accent(context, z2) : controlSurface(context, z2);
-        int iOnAccent = z ? onAccent(context, z2) : mainText(z2);
-        GradientDrawable gradientDrawableShape = shape(iAccent, iDp);
-        if (z) {
-            iArgb = Color.argb(42, 255, 255, 255);
-        } else {
-            iArgb = Color.argb(z2 ? 44 : 28, Color.red(mainText(z2)), Color.green(mainText(z2)), Color.blue(mainText(z2)));
-        }
-        button.setBackground(new RippleDrawable(ColorStateList.valueOf(iArgb), gradientDrawableShape, null));
-        button.setTextColor(iOnAccent);
-        int icon = buttonIcon(str);
+    public static LinearLayout horizontal(Context context, int gravity) {
+        LinearLayout row = new LinearLayout(context);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(gravity);
+        return row;
+    }
+
+    public static void addSpacer(LinearLayout parent, int heightDp) {
+        parent.addView(new View(parent.getContext()),
+                new LinearLayout.LayoutParams(1, dp(parent.getContext(), heightDp)));
+    }
+
+    public static CardItemView actionRow(Context context, String title, String summary, int icon,
+            View.OnClickListener listener) {
+        CardItemView row = new CardItemView(context);
+        row.setTitle(title);
+        row.setSummary(summary);
         if (icon != 0) {
-            button.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
-            button.setCompoundDrawablePadding(dp(context, 8.0f));
-            button.setCompoundDrawableTintList(ColorStateList.valueOf(iOnAccent));
+            row.setIcon(context.getDrawable(icon));
         }
-        button.setElevation(0.0f);
-        button.setStateListAnimator(null);
-        return button;
-    }
-
-    public static Button nativePrimaryButton(Context context, String text) {
-        Button button = (Button) LayoutInflater.from(context).inflate(R.layout.view_oneui_primary_button, null, false);
-        button.setText(text);
-        boolean dark = isDark(context);
-        int accent = accent(context, dark);
-        int onAccent = onAccent(context, dark);
-        int disabledAccent = Color.argb(105, Color.red(accent), Color.green(accent), Color.blue(accent));
-        int disabledText = Color.argb(150, Color.red(onAccent), Color.green(onAccent), Color.blue(onAccent));
-        button.setBackgroundTintList(new ColorStateList(
-                new int[][]{new int[]{-android.R.attr.state_enabled}, new int[0]},
-                new int[]{disabledAccent, accent}));
-        button.setTextColor(new ColorStateList(
-                new int[][]{new int[]{-android.R.attr.state_enabled}, new int[0]},
-                new int[]{disabledText, onAccent}));
-        return button;
-    }
-
-    public static Button topAction(Context context, String str, boolean z) {
-        boolean zIsOneUi = isOneUi(context);
-        Button button = new AppCompatButton(context);
-        button.setText(str);
-        button.setAllCaps(false);
-        button.setTextSize(18.0f);
-        button.setTextColor(mainText(z));
-        button.setTypeface(mediumTypeface(context));
-        button.setGravity(17);
-        button.setSingleLine(true);
-        button.setIncludeFontPadding(false);
-        button.setMinHeight(0);
-        button.setMinimumHeight(0);
-        button.setMinWidth(0);
-        button.setMinimumWidth(0);
-        button.setPadding(dp(context, zIsOneUi ? 18.0f : 16.0f), 0, dp(context, zIsOneUi ? 18.0f : 16.0f), 0);
-        button.setBackground(new RippleDrawable(ColorStateList.valueOf(Color.argb(z ? 42 : 28, Color.red(mainText(z)), Color.green(mainText(z)), Color.blue(mainText(z)))), shape(zIsOneUi ? controlSurface(context, z) : cardColor(context, z), dp(context, 999.0f)), null));
-        button.setElevation(0.0f);
-        button.setStateListAnimator(null);
-        return button;
+        row.setShowTopDivider(false);
+        row.setShowBottomDivider(false);
+        if (listener != null) {
+            row.setClickable(true);
+            row.setFocusable(true);
+            row.setOnClickListener(listener);
+        }
+        return row;
     }
 
     public static GradientDrawable pillBackground(Context context, boolean dark) {
@@ -446,35 +428,139 @@ public final class Ui {
         imageView.setScaleType(ImageView.ScaleType.CENTER_CROP);
     }
 
-    public static Button backAction(Context context, boolean z) {
-        Button button = topAction(context, "", z);
+    // ---------------------------------------------------------------------------------------
+    // Buttons
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Pill button filled with the accent ({@code primary}) or the control surface. Labels that
+     * name a known action get a matching leading icon.
+     */
+    public static Button button(Context context, String label, boolean primary, boolean dark) {
+        Button button = new AppCompatButton(context);
+        button.setText(label);
+        button.setAllCaps(false);
+        button.setTextSize(18.0f);
+        button.setTypeface(mediumTypeface(context));
+        button.setGravity(Gravity.CENTER);
+        button.setSingleLine(true);
+        button.setIncludeFontPadding(false);
+        button.setMinHeight(dp(context, 52.0f));
+        button.setMinWidth(0);
+        button.setPadding(dp(context, 18.0f), dp(context, 7.0f), dp(context, 18.0f),
+                dp(context, 7.0f));
+        int fill = primary ? accent(context, dark) : controlSurface(context, dark);
+        int foreground = primary ? onAccent(context, dark) : mainText(dark);
+        int ripple = primary
+                ? Color.argb(42, 255, 255, 255)
+                : withAlpha(mainText(dark), dark ? 44 : 28);
+        button.setBackground(new RippleDrawable(ColorStateList.valueOf(ripple),
+                shape(fill, dp(context, PILL_CORNER_RADIUS_DP)), null));
+        button.setTextColor(foreground);
+        int icon = buttonIcon(label);
+        if (icon != 0) {
+            button.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
+            button.setCompoundDrawablePadding(dp(context, 8.0f));
+            button.setCompoundDrawableTintList(ColorStateList.valueOf(foreground));
+        }
+        button.setElevation(0.0f);
+        button.setStateListAnimator(null);
+        return button;
+    }
+
+    /** SESL-styled primary button tinted with the current accent, dimmed while disabled. */
+    public static Button nativePrimaryButton(Context context, String text) {
+        Button button = (Button) LayoutInflater.from(context)
+                .inflate(R.layout.view_oneui_primary_button, null, false);
+        button.setText(text);
+        boolean dark = isDark(context);
+        int accent = accent(context, dark);
+        int onAccent = onAccent(context, dark);
+        button.setBackgroundTintList(
+                enabledStateList(withAlpha(accent, DISABLED_FILL_ALPHA), accent));
+        button.setTextColor(enabledStateList(withAlpha(onAccent, DISABLED_TEXT_ALPHA), onAccent));
+        return button;
+    }
+
+    /** Borderless-looking pill used for toolbar-style actions. */
+    public static Button topAction(Context context, String label, boolean dark) {
+        Button button = new AppCompatButton(context);
+        button.setText(label);
+        button.setAllCaps(false);
+        button.setTextSize(18.0f);
+        button.setTextColor(mainText(dark));
+        button.setTypeface(mediumTypeface(context));
+        button.setGravity(Gravity.CENTER);
+        button.setSingleLine(true);
+        button.setIncludeFontPadding(false);
+        button.setMinHeight(0);
+        button.setMinimumHeight(0);
+        button.setMinWidth(0);
+        button.setMinimumWidth(0);
+        button.setPadding(dp(context, 18.0f), 0, dp(context, 18.0f), 0);
+        button.setBackground(new RippleDrawable(
+                ColorStateList.valueOf(withAlpha(mainText(dark), dark ? 42 : 28)),
+                shape(controlSurface(context, dark), dp(context, PILL_CORNER_RADIUS_DP)),
+                null));
+        button.setElevation(0.0f);
+        button.setStateListAnimator(null);
+        return button;
+    }
+
+    public static Button backAction(Context context, boolean dark) {
+        Button button = topAction(context, "", dark);
         button.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_oui_back, 0, 0, 0);
-        button.setCompoundDrawableTintList(ColorStateList.valueOf(mainText(z)));
+        button.setCompoundDrawableTintList(ColorStateList.valueOf(mainText(dark)));
         button.setPadding(dp(context, 12.0f), 0, dp(context, 12.0f), 0);
         return button;
     }
 
+    /** Picks a leading icon from keywords in the button label, or 0 for none. */
     private static int buttonIcon(String label) {
         String value = label == null ? "" : label.toLowerCase();
-        if (value.contains("refresh")) return R.drawable.ic_oui_refresh;
-        if (value.contains("sign in")) return R.drawable.ic_oui_samsung_account;
-        if (value.contains("sign out")) return R.drawable.ic_oui_app_closed;
-        if (value.contains("add widget")) return R.drawable.ic_oui_add_home;
-        if (value.contains("customize") || value.contains("settings")) return R.drawable.ic_oui_settings;
-        if (value.contains("save")) return R.drawable.ic_oui_save;
-        if (value.contains("cancel") || value.contains("discard")) return R.drawable.ic_oui_close;
-        if (value.contains("reset")) return R.drawable.ic_oui_battery;
-        if (value.contains("alarm")) return R.drawable.ic_oui_alarm;
+        if (value.contains("refresh")) {
+            return R.drawable.ic_oui_refresh;
+        }
+        if (value.contains("sign in")) {
+            return R.drawable.ic_oui_samsung_account;
+        }
+        if (value.contains("sign out")) {
+            return R.drawable.ic_oui_app_closed;
+        }
+        if (value.contains("add widget")) {
+            return R.drawable.ic_oui_add_home;
+        }
+        if (value.contains("customize") || value.contains("settings")) {
+            return R.drawable.ic_oui_settings;
+        }
+        if (value.contains("save")) {
+            return R.drawable.ic_oui_save;
+        }
+        if (value.contains("cancel") || value.contains("discard")) {
+            return R.drawable.ic_oui_close;
+        }
+        if (value.contains("reset")) {
+            return R.drawable.ic_oui_battery;
+        }
+        if (value.contains("alarm")) {
+            return R.drawable.ic_oui_alarm;
+        }
         return 0;
     }
 
-    public static ProgressBar progress(Context context, boolean z) {
-        ProgressBar progressBar = new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
+    // ---------------------------------------------------------------------------------------
+    // Progress and form controls
+    // ---------------------------------------------------------------------------------------
+
+    public static ProgressBar progress(Context context, boolean dark) {
+        ProgressBar progressBar =
+                new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
         progressBar.setMax(100);
-        progressBar.setProgressTintList(ColorStateList.valueOf(accent(context, z)));
-        progressBar.setProgressBackgroundTintList(ColorStateList.valueOf(controlSurface(context, z)));
+        progressBar.setProgressTintList(ColorStateList.valueOf(accent(context, dark)));
+        progressBar.setProgressBackgroundTintList(
+                ColorStateList.valueOf(controlSurface(context, dark)));
         progressBar.setIndeterminate(false);
-        progressBar.setLayoutParams(new LinearLayout.LayoutParams(-1, dp(context, isOneUi(context) ? 7.0f : 8.0f)));
+        progressBar.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, dp(context, 7.0f)));
         return progressBar;
     }
 
@@ -495,8 +581,7 @@ public final class Ui {
             loading.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
         }
         LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(ViewGroup.LayoutParams.WRAP_CONTENT,
-                        ViewGroup.LayoutParams.WRAP_CONTENT);
+                new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         params.gravity = Gravity.CENTER_HORIZONTAL;
         // Keep clear of ToolbarLayout's rounded top corners so the spinner is not clipped.
         params.topMargin = dp(context, 48.0f);
@@ -504,167 +589,173 @@ public final class Ui {
         return loading;
     }
 
-    public static Spinner spinner(final Context context, String[] strArr, final boolean z) {
-        final boolean zIsOneUi = isOneUi(context);
-        Spinner spinner = new AppCompatSpinner(context, 1);
-        spinner.setAdapter((SpinnerAdapter) new ArrayAdapter<String>(context, android.R.layout.simple_spinner_item, strArr) { // from class: dev.bennett.codexmeter.Ui.1
-            @Override // android.widget.ArrayAdapter, android.widget.Adapter
-            public View getView(int i, View view, ViewGroup viewGroup) {
-                return style((TextView) super.getView(i, view, viewGroup), false);
+    /** Transparent drop-down spinner: accent end-aligned value, card-colored popup rows. */
+    public static Spinner spinner(Context context, String[] items, boolean dark) {
+        Spinner spinner = new AppCompatSpinner(context, Spinner.MODE_DROPDOWN);
+        spinner.setAdapter(new ArrayAdapter<String>(context,
+                android.R.layout.simple_spinner_item, items) {
+            @Override
+            public View getView(int position, View convertView, ViewGroup parent) {
+                TextView item = (TextView) super.getView(position, convertView, parent);
+                return styleSpinnerItem(context, item, dark, false);
             }
 
-            @Override // android.widget.ArrayAdapter, android.widget.BaseAdapter, android.widget.SpinnerAdapter
-            public View getDropDownView(int i, View view, ViewGroup viewGroup) {
-                return style((TextView) super.getDropDownView(i, view, viewGroup), true);
-            }
-
-            private TextView style(TextView textView, boolean z2) {
-                textView.setTextColor((z2 || !zIsOneUi) ? Ui.mainText(z) : Ui.accent(context, z));
-                textView.setTextSize(zIsOneUi ? 14.0f : 15.0f);
-                textView.setTypeface(zIsOneUi ? Ui.mediumTypeface(context) : Ui.regularTypeface(context));
-                textView.setIncludeFontPadding(false);
-                textView.setGravity(((!zIsOneUi || z2) ? 8388611 : 8388613) | 16);
-                textView.setPadding(Ui.dp(context, z2 ? 16.0f : 10.0f), Ui.dp(context, 12.0f), Ui.dp(context, z2 ? 16.0f : 10.0f), Ui.dp(context, 12.0f));
-                if (z2) {
-                    textView.setBackgroundColor(Ui.cardColor(context, z));
-                } else {
-                    textView.setBackgroundColor(0);
-                }
-                return textView;
+            @Override
+            public View getDropDownView(int position, View convertView, ViewGroup parent) {
+                TextView item = (TextView) super.getDropDownView(position, convertView, parent);
+                return styleSpinnerItem(context, item, dark, true);
             }
         });
-        if (zIsOneUi) {
-            spinner.setBackground(new ColorDrawable(0));
-            spinner.setPopupBackgroundDrawable(shape(cardColor(context, z), dp(context, 18.0f)));
-            spinner.setPadding(0, 0, 0, 0);
-        } else {
-            spinner.setBackground(shape(controlSurface(context, z), dp(context, 20.0f)));
-            spinner.setPopupBackgroundDrawable(shape(cardColor(context, z), dp(context, 18.0f)));
-            spinner.setPadding(dp(context, 2.0f), 0, dp(context, 2.0f), 0);
-        }
+        spinner.setBackground(new ColorDrawable(Color.TRANSPARENT));
+        spinner.setPopupBackgroundDrawable(
+                shape(cardColor(context, dark), dp(context, POPUP_CORNER_RADIUS_DP)));
+        spinner.setPadding(0, 0, 0, 0);
         spinner.setElevation(0.0f);
         return spinner;
     }
 
-    public static void addLabeledSpinner(LinearLayout linearLayout, String str, Spinner spinner, boolean z) {
-        Context context = linearLayout.getContext();
-        if (isOneUi(context)) {
-            LinearLayout linearLayoutHorizontal = horizontal(context, 16);
-            linearLayoutHorizontal.setMinimumHeight(dp(context, 58.0f));
-            TextView textViewText = text(context, str, 15.0f, mainText(z));
-            textViewText.setTypeface(regularTypeface(context));
-            linearLayoutHorizontal.addView(textViewText, new LinearLayout.LayoutParams(0, -2, 1.0f));
-            linearLayoutHorizontal.addView(spinner, new LinearLayout.LayoutParams(dp(context, 168.0f), dp(context, 54.0f)));
-            linearLayout.addView(linearLayoutHorizontal, new LinearLayout.LayoutParams(-1, -2));
-            View view = new View(context);
-            view.setBackgroundColor(divider(z));
-            LinearLayout.LayoutParams layoutParams = new LinearLayout.LayoutParams(-1, 1);
-            layoutParams.setMargins(0, 0, 0, 0);
-            linearLayout.addView(view, layoutParams);
-            return;
-        }
-        TextView textViewText2 = text(context, str, 13.0f, secondaryText(z));
-        textViewText2.setTypeface(mediumTypeface(context));
-        LinearLayout.LayoutParams layoutParams2 = new LinearLayout.LayoutParams(-1, -2);
-        layoutParams2.setMargins(0, dp(context, 17.0f), 0, dp(context, 8.0f));
-        linearLayout.addView(textViewText2, layoutParams2);
-        linearLayout.addView(spinner, new LinearLayout.LayoutParams(-1, dp(context, 54.0f)));
+    private static TextView styleSpinnerItem(Context context, TextView item, boolean dark,
+            boolean dropDown) {
+        item.setTextColor(dropDown ? mainText(dark) : accent(context, dark));
+        item.setTextSize(14.0f);
+        item.setTypeface(mediumTypeface(context));
+        item.setIncludeFontPadding(false);
+        item.setGravity((dropDown ? Gravity.START : Gravity.END) | Gravity.CENTER_VERTICAL);
+        int horizontalPadding = dp(context, dropDown ? 16.0f : 10.0f);
+        int verticalPadding = dp(context, 12.0f);
+        item.setPadding(horizontalPadding, verticalPadding, horizontalPadding, verticalPadding);
+        item.setBackgroundColor(dropDown ? cardColor(context, dark) : Color.TRANSPARENT);
+        return item;
     }
 
-    public static CheckBox checkbox(Context context, String str, boolean z, boolean z2) {
+    /** Adds a "label … spinner" row followed by a hairline divider. */
+    public static void addLabeledSpinner(LinearLayout parent, String label, Spinner spinner,
+            boolean dark) {
+        Context context = parent.getContext();
+        LinearLayout row = horizontal(context, Gravity.CENTER_VERTICAL);
+        row.setMinimumHeight(dp(context, 58.0f));
+        row.addView(text(context, label, 15.0f, mainText(dark)),
+                new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
+        row.addView(spinner,
+                new LinearLayout.LayoutParams(dp(context, 168.0f), dp(context, 54.0f)));
+        parent.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
+        View rule = new View(context);
+        rule.setBackgroundColor(divider(dark));
+        parent.addView(rule, new LinearLayout.LayoutParams(MATCH_PARENT, 1));
+    }
+
+    public static CheckBox checkbox(Context context, String label, boolean checked,
+            boolean dark) {
         CheckBox checkBox = new AppCompatCheckBox(context);
-        checkBox.setText(str);
-        checkBox.setChecked(z);
-        checkBox.setTextSize(isOneUi(context) ? 15.0f : 14.0f);
-        checkBox.setTextColor(mainText(z2));
+        checkBox.setText(label);
+        checkBox.setChecked(checked);
+        checkBox.setTextSize(15.0f);
+        checkBox.setTextColor(mainText(dark));
         checkBox.setTypeface(regularTypeface(context));
-        checkBox.setButtonTintList(new ColorStateList(new int[][]{new int[]{android.R.attr.state_checked}, new int[0]}, new int[]{accent(context, z2), secondaryText(z2)}));
-        checkBox.setMinHeight(dp(context, isOneUi(context) ? 52.0f : 48.0f));
+        checkBox.setButtonTintList(new ColorStateList(
+                new int[][]{new int[]{android.R.attr.state_checked}, new int[0]},
+                new int[]{accent(context, dark), secondaryText(dark)}));
+        checkBox.setMinHeight(dp(context, 52.0f));
         checkBox.setPadding(0, dp(context, 4.0f), 0, dp(context, 4.0f));
         return checkBox;
     }
 
-    public static void configureSystemBars(Activity activity, View view, boolean z) {
+    // ---------------------------------------------------------------------------------------
+    // Window chrome
+    // ---------------------------------------------------------------------------------------
+
+    /**
+     * Paints the system bars with the page background and, on Android 11+, draws edge to edge
+     * while padding {@code root} by the system-bar insets.
+     */
+    public static void configureSystemBars(Activity activity, View root, boolean dark) {
         Window window = activity.getWindow();
-        int iBackground = background(activity, z);
+        int barColor = background(activity, dark);
         // Keep the bars tied to the selected app theme. Transparent bars can briefly expose the
         // previous activity window colour during a light/dark recreation on recent One UI builds.
-        window.setStatusBarColor(iBackground);
-        window.setNavigationBarColor(iBackground);
-        window.setBackgroundDrawable(new ColorDrawable(iBackground));
-        window.getDecorView().setBackgroundColor(iBackground);
-        if (Build.VERSION.SDK_INT >= 30) {
+        window.setStatusBarColor(barColor);
+        window.setNavigationBarColor(barColor);
+        window.setBackgroundDrawable(new ColorDrawable(barColor));
+        window.getDecorView().setBackgroundColor(barColor);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
             window.setNavigationBarContrastEnforced(false);
             window.setDecorFitsSystemWindows(false);
             WindowInsetsController insetsController = window.getInsetsController();
             if (insetsController != null) {
-                insetsController.setSystemBarsAppearance(z ? 0 : 24, 24);
+                int lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                insetsController.setSystemBarsAppearance(dark ? 0 : lightBars, lightBars);
             }
-            final int paddingLeft = view.getPaddingLeft();
-            final int paddingTop = view.getPaddingTop();
-            final int paddingRight = view.getPaddingRight();
-            final int paddingBottom = view.getPaddingBottom();
-            view.setOnApplyWindowInsetsListener(new View.OnApplyWindowInsetsListener() { // from class: dev.bennett.codexmeter.Ui.2
-                @Override // android.view.View.OnApplyWindowInsetsListener
-                public WindowInsets onApplyWindowInsets(View view2, WindowInsets windowInsets) {
-                    Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
-                    view2.setPadding(paddingLeft + insets.left, paddingTop + insets.top, paddingRight + insets.right, insets.bottom + paddingBottom);
-                    return windowInsets;
-                }
+            int paddingLeft = root.getPaddingLeft();
+            int paddingTop = root.getPaddingTop();
+            int paddingRight = root.getPaddingRight();
+            int paddingBottom = root.getPaddingBottom();
+            root.setOnApplyWindowInsetsListener((view, windowInsets) -> {
+                Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
+                view.setPadding(paddingLeft + insets.left, paddingTop + insets.top,
+                        paddingRight + insets.right, insets.bottom + paddingBottom);
+                return windowInsets;
             });
             return;
         }
-        int i = 256;
-        if (!z) {
-            i = 8464;
+        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
+        if (!dark) {
+            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
+                    | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
         }
-        window.getDecorView().setSystemUiVisibility(i);
+        window.getDecorView().setSystemUiVisibility(flags);
     }
 
-    public static LinearLayout horizontal(Context context, int i) {
-        LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(0);
-        linearLayout.setGravity(i);
-        return linearLayout;
+    // ---------------------------------------------------------------------------------------
+    // Internals
+    // ---------------------------------------------------------------------------------------
+
+    private static GradientDrawable cardBackground(Context context, boolean dark) {
+        return shape(cardColor(context, dark), dp(context, CARD_CORNER_RADIUS_DP));
     }
 
-    public static void addSpacer(LinearLayout linearLayout, int i) {
-        linearLayout.addView(new View(linearLayout.getContext()), new LinearLayout.LayoutParams(1, dp(linearLayout.getContext(), i)));
+    private static GradientDrawable shape(int color, int cornerRadius) {
+        GradientDrawable drawable = new GradientDrawable();
+        drawable.setColor(color);
+        drawable.setCornerRadius(cornerRadius);
+        return drawable;
     }
 
-    public static CardItemView actionRow(Context context, String title, String summary, int icon, View.OnClickListener listener) {
-        CardItemView row = new CardItemView(context);
-        row.setTitle(title);
-        row.setSummary(summary);
-        if (icon != 0) {
-            row.setIcon(context.getDrawable(icon));
+    private static ColorStateList enabledStateList(int disabledColor, int enabledColor) {
+        return new ColorStateList(
+                new int[][]{new int[]{-android.R.attr.state_enabled}, new int[0]},
+                new int[]{disabledColor, enabledColor});
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return Color.argb(alpha, Color.red(color), Color.green(color), Color.blue(color));
+    }
+
+    /** Linear per-channel blend from {@code from} toward {@code to}; the result is opaque. */
+    private static int blend(int from, int to, float amount) {
+        return Color.rgb(
+                blendChannel(Color.red(from), Color.red(to), amount),
+                blendChannel(Color.green(from), Color.green(to), amount),
+                blendChannel(Color.blue(from), Color.blue(to), amount));
+    }
+
+    private static int blendChannel(int from, int to, float amount) {
+        return Math.round(from + (to - from) * amount);
+    }
+
+    /** Android 12+ system palette color by resource name, or {@code fallback}. */
+    private static int systemColor(Context context, String name, int fallback) {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
+            return fallback;
         }
-        row.setShowTopDivider(false);
-        row.setShowBottomDivider(false);
-        if (listener != null) {
-            row.setClickable(true);
-            row.setFocusable(true);
-            row.setOnClickListener(listener);
+        int identifier = context.getResources().getIdentifier(name, "color", "android");
+        if (identifier == 0) {
+            return fallback;
         }
-        return row;
-    }
-
-    private static GradientDrawable shape(int i, int i2) {
-        GradientDrawable gradientDrawable = new GradientDrawable();
-        gradientDrawable.setColor(i);
-        gradientDrawable.setCornerRadius(i2);
-        return gradientDrawable;
-    }
-
-    private static int systemColor(Context context, String str, int i) {
-        int identifier;
-        if (Build.VERSION.SDK_INT >= 31 && (identifier = context.getResources().getIdentifier(str, "color", "android")) != 0) {
-            try {
-                return context.getColor(identifier);
-            } catch (RuntimeException e) {
-                return i;
-            }
+        try {
+            return context.getColor(identifier);
+        } catch (RuntimeException e) {
+            return fallback;
         }
-        return i;
     }
 }

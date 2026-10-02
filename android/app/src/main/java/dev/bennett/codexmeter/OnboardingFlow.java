@@ -8,25 +8,37 @@ public final class OnboardingFlow {
     public static final int STEP_COMPLETE = 3;
     public static final int STEP_COUNT = 4;
 
+    /** Open the dashboard normally. */
     public static final int LAUNCH_MAIN = 0;
+    /** Send the user through onboarding before the dashboard. */
     public static final int LAUNCH_ONBOARDING = 1;
+    /** Open the dashboard and mark onboarding complete (signed-in installs that predate it). */
     public static final int LAUNCH_MAIN_AND_COMPLETE = 2;
 
     private OnboardingFlow() {
     }
 
     public static int launchAction(boolean completed, boolean signedIn, boolean oauthReturn) {
-        if (completed) return LAUNCH_MAIN;
-        if (oauthReturn || !signedIn) return LAUNCH_ONBOARDING;
+        if (completed) {
+            return LAUNCH_MAIN;
+        }
+        if (oauthReturn || !signedIn) {
+            return LAUNCH_ONBOARDING;
+        }
         return LAUNCH_MAIN_AND_COMPLETE;
     }
 
     public static int initialStep(int savedStep, boolean signedIn, boolean oauthReturn) {
-        if (signedIn) return STEP_COMPLETE;
-        if (oauthReturn) return STEP_ACCOUNT;
+        if (signedIn) {
+            return STEP_COMPLETE;
+        }
+        if (oauthReturn) {
+            return STEP_ACCOUNT;
+        }
         return normalizeStep(savedStep);
     }
 
+    /** Returns {@code step} when it is a known step, otherwise the welcome step. */
     public static int normalizeStep(int step) {
         return step >= STEP_WELCOME && step < STEP_COUNT ? step : STEP_WELCOME;
     }

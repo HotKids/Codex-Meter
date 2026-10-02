@@ -1,5 +1,8 @@
 package dev.bennett.codexmeter;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import android.annotation.SuppressLint;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -27,12 +30,17 @@ import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 public final class OnboardingActivity extends AppCompatActivity {
     public static final String EXTRA_AUTH_RETURN = "oauth_return";
 
+    private static final String PAGE_TITLE = "Codex Meter";
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 180;
+
     private LinearLayout content;
     private Ui.Page page;
     private boolean dark;
     private int step;
     private boolean receiverRegistered;
+    /** True while this screen has a sign-in in flight that "Not now" must cancel. */
     private boolean oauthRequested;
+    /** Status line shown on the account step (progress, failures). */
     private String authMessage = "";
     private String lastLaunchedAuthUrl = "";
 
@@ -41,40 +49,24 @@ public final class OnboardingActivity extends AppCompatActivity {
         public void onReceive(Context context, Intent intent) {
             String action = intent == null ? null : intent.getAction();
             if (AppConstants.ACTION_OAUTH_READY.equals(action)) {
-                String url = intent.getStringExtra(AppConstants.EXTRA_AUTH_URL);
-                if (url != null && !url.isEmpty()) {
-                    authMessage = "Your secure ChatGPT sign-in is open in the browser.";
-                    render();
-                    openAuthUrl(url);
-                }
-                return;
-            }
-            if (AppConstants.ACTION_OAUTH_RESULT.equals(action)) {
-                oauthRequested = false;
-                boolean success = intent.getBooleanExtra(AppConstants.EXTRA_SUCCESS, false);
-                String message = intent.getStringExtra(AppConstants.EXTRA_MESSAGE);
-                if (success || SecureTokenStore.isSignedIn(OnboardingActivity.this)) {
-                    showStep(OnboardingFlow.STEP_COMPLETE);
-                } else {
-                    authMessage = message == null || message.trim().isEmpty()
-                            ? "Sign-in did not complete. Please try again."
-                            : message;
-                    showStep(OnboardingFlow.STEP_ACCOUNT);
-                }
+                onAuthUrlReady(intent.getStringExtra(AppConstants.EXTRA_AUTH_URL));
+            } else if (AppConstants.ACTION_OAUTH_RESULT.equals(action)) {
+                onOAuthResult(intent.getBooleanExtra(AppConstants.EXTRA_SUCCESS, false),
+                        intent.getStringExtra(AppConstants.EXTRA_MESSAGE));
             }
         }
     };
 
     @Override
-    protected void onCreate(Bundle bundle) {
+    protected void onCreate(Bundle savedInstanceState) {
         Ui.applySelectedTheme(this);
-        super.onCreate(bundle);
+        super.onCreate(savedInstanceState);
         if (AppPreferences.isOnboardingComplete(this)) {
             openMain();
             return;
         }
         this.dark = Ui.isDark(this);
-        this.page = Ui.installPage(this, "Codex Meter", false);
+        this.page = Ui.installPage(this, PAGE_TITLE, false);
         this.content = this.page.content;
         findViewById(R.id.dashboard_refresh).setEnabled(false);
         boolean oauthReturn = getIntent().getBooleanExtra(EXTRA_AUTH_RETURN, false);
@@ -92,6 +84,7 @@ public final class OnboardingActivity extends AppCompatActivity {
                 if (step > OnboardingFlow.STEP_WELCOME) {
                     goBack();
                 } else {
+                    // Let the system finish the activity from the first step.
                     setEnabled(false);
                     getOnBackPressedDispatcher().onBackPressed();
                 }
@@ -130,7 +123,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         filter.addAction(AppConstants.ACTION_OAUTH_READY);
         filter.addAction(AppConstants.ACTION_OAUTH_RESULT);
         try {
-            if (Build.VERSION.SDK_INT >= 33) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
                 registerReceiver(this.authReceiver, filter, AppConstants.INTERNAL_PERMISSION, null,
                         Context.RECEIVER_NOT_EXPORTED);
             } else {
@@ -150,6 +143,7 @@ public final class OnboardingActivity extends AppCompatActivity {
             try {
                 unregisterReceiver(this.authReceiver);
             } catch (RuntimeException ignored) {
+                // Already unregistered.
             }
             this.receiverRegistered = false;
         }
@@ -162,10 +156,33 @@ public final class OnboardingActivity extends AppCompatActivity {
         return true;
     }
 
+    private void onAuthUrlReady(String url) {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        this.authMessage = "Your secure ChatGPT sign-in is open in the browser.";
+        render();
+        openAuthUrl(url);
+    }
+
+    private void onOAuthResult(boolean success, String message) {
+        this.oauthRequested = false;
+        if (success || SecureTokenStore.isSignedIn(this)) {
+            showStep(OnboardingFlow.STEP_COMPLETE);
+            return;
+        }
+        this.authMessage = message == null || message.trim().isEmpty()
+                ? "Sign-in did not complete. Please try again."
+                : message;
+        showStep(OnboardingFlow.STEP_ACCOUNT);
+    }
+
     private void render() {
-        if (this.content == null) return;
+        if (this.content == null) {
+            return;
+        }
         this.content.removeAllViews();
-        this.page.toolbar.setTitle("Codex Meter");
+        this.page.toolbar.setTitle(PAGE_TITLE);
         this.page.toolbar.setShowNavigationButtonAsBack(this.step > OnboardingFlow.STEP_WELCOME);
 
         addProgress();
@@ -182,18 +199,21 @@ public final class OnboardingActivity extends AppCompatActivity {
         scroll.post(() -> scroll.scrollTo(0, 0));
     }
 
+    /** "STEP N OF M" label above a progress bar. */
     private void addProgress() {
         TextView label = Ui.text(this, "STEP " + (this.step + 1) + " OF "
                 + OnboardingFlow.STEP_COUNT, 12.0f, Ui.accent(this, this.dark));
         label.setTypeface(Ui.mediumTypeface(this));
         label.setLetterSpacing(0.08f);
-        LinearLayout.LayoutParams labelParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams labelParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         labelParams.setMargins(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 10));
         this.content.addView(label, labelParams);
 
         ProgressBar progress = Ui.progress(this, this.dark);
         progress.setProgress((this.step + 1) * 100 / OnboardingFlow.STEP_COUNT);
-        LinearLayout.LayoutParams progressParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 5));
+        LinearLayout.LayoutParams progressParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 5));
         progressParams.setMargins(Ui.dp(this, 14), 0, Ui.dp(this, 14), Ui.dp(this, 26));
         this.content.addView(progress, progressParams);
     }
@@ -214,7 +234,8 @@ public final class OnboardingActivity extends AppCompatActivity {
                 "Reachable layouts, responsive cards, system theming, and Samsung lock-screen "
                         + "widgets all use the app’s native One UI components.",
                 15.0f, Ui.secondaryText(this.dark));
-        LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams bodyParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         bodyParams.setMargins(0, Ui.dp(this, 10), 0, 0);
         card.addView(body, bodyParams);
         this.content.addView(card);
@@ -267,9 +288,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (!this.authMessage.isEmpty()) {
             Ui.addSpacer(this.content, 16);
             RoundedLinearLayout status = Ui.seslCard(this, this.dark);
-            TextView message = Ui.text(this, this.authMessage, 14.0f,
-                    Ui.secondaryText(this.dark));
-            status.addView(message);
+            status.addView(Ui.text(this, this.authMessage, 14.0f, Ui.secondaryText(this.dark)));
             this.content.addView(status);
         }
 
@@ -279,7 +298,8 @@ public final class OnboardingActivity extends AppCompatActivity {
         addPrimaryAction(signInLabel, this::startSignIn);
         Button later = Ui.button(this, "Not now", false, this.dark);
         later.setOnClickListener(view -> completeAndOpenMain());
-        LinearLayout.LayoutParams laterParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 54));
+        LinearLayout.LayoutParams laterParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 54));
         laterParams.setMargins(0, Ui.dp(this, 10), 0, Ui.dp(this, 8));
         this.content.addView(later, laterParams);
     }
@@ -289,7 +309,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         addIntro(signedIn ? "You’re all set" : "Setup complete",
                 signedIn
                         ? "Your ChatGPT account is connected. Codex Meter will load your latest "
-                            + "allowance as the app opens."
+                                + "allowance as the app opens."
                         : "You can connect ChatGPT later from the Codex Meter dashboard.",
                 signedIn ? R.drawable.ic_oui_samsung_account : R.drawable.ic_oui_info_outline);
 
@@ -298,24 +318,30 @@ public final class OnboardingActivity extends AppCompatActivity {
         AuthTokens tokens = SecureTokenStore.load(this);
         account.addView(Ui.actionRow(this,
                 signedIn ? "ChatGPT connected" : "Continue without an account",
-                signedIn && tokens != null && !tokens.email.isEmpty()
-                        ? tokens.email
-                        : (signedIn ? "Secure sign-in complete" : "Sign in whenever you’re ready"),
+                accountSummary(signedIn, tokens),
                 signedIn ? R.drawable.ic_oui_contact_outline : R.drawable.ic_oui_privacy,
                 null));
         this.content.addView(account);
         addPrimaryAction("Open Codex Meter", this::completeAndOpenMain);
     }
 
+    private static String accountSummary(boolean signedIn, AuthTokens tokens) {
+        if (signedIn && tokens != null && !tokens.email.isEmpty()) {
+            return tokens.email;
+        }
+        return signedIn ? "Secure sign-in complete" : "Sign in whenever you’re ready";
+    }
+
+    /** Hero card: tinted round icon, large title, and body copy. */
     private void addIntro(String titleText, String bodyText, int iconResource) {
         RoundedLinearLayout hero = Ui.seslCard(this, this.dark);
+        int accent = Ui.accent(this, this.dark);
         ImageView icon = new ImageView(this);
         icon.setImageResource(iconResource);
-        icon.setColorFilter(Ui.accent(this, this.dark));
+        icon.setColorFilter(accent);
         icon.setPadding(Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14));
         GradientDrawable iconBackground = new GradientDrawable();
         iconBackground.setShape(GradientDrawable.OVAL);
-        int accent = Ui.accent(this, this.dark);
         iconBackground.setColor(Color.argb(this.dark ? 45 : 24,
                 Color.red(accent), Color.green(accent), Color.blue(accent)));
         icon.setBackground(iconBackground);
@@ -323,13 +349,15 @@ public final class OnboardingActivity extends AppCompatActivity {
 
         TextView title = Ui.title(this, titleText, this.dark);
         title.setTextSize(34.0f);
-        LinearLayout.LayoutParams titleParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams titleParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         titleParams.setMargins(0, Ui.dp(this, 24), 0, 0);
         hero.addView(title, titleParams);
 
         TextView body = Ui.text(this, bodyText, 16.0f, Ui.secondaryText(this.dark));
         body.setLineSpacing(0.0f, 1.18f);
-        LinearLayout.LayoutParams bodyParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams bodyParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         bodyParams.setMargins(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
         hero.addView(body, bodyParams);
         this.content.addView(hero);
@@ -338,7 +366,8 @@ public final class OnboardingActivity extends AppCompatActivity {
     private void addPrimaryAction(String label, Runnable action) {
         Button button = Ui.nativePrimaryButton(this, label);
         button.setOnClickListener(view -> action.run());
-        LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(-1, Ui.dp(this, 60));
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60));
         params.setMargins(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
         this.content.addView(button, params);
     }
@@ -375,15 +404,20 @@ public final class OnboardingActivity extends AppCompatActivity {
         }
     }
 
+    /**
+     * Opens the sign-in page in the browser. A repeated URL is only relaunched while this
+     * screen has focus, so a broadcast arriving behind the browser does not reopen it.
+     */
     private void openAuthUrl(String url) {
-        if (!url.equals(this.lastLaunchedAuthUrl) || hasWindowFocus()) {
-            this.lastLaunchedAuthUrl = url;
-            try {
-                startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
-            } catch (RuntimeException exception) {
-                this.authMessage = "No browser is available to complete sign-in.";
-                render();
-            }
+        if (url.equals(this.lastLaunchedAuthUrl) && !hasWindowFocus()) {
+            return;
+        }
+        this.lastLaunchedAuthUrl = url;
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (RuntimeException exception) {
+            this.authMessage = "No browser is available to complete sign-in.";
+            render();
         }
     }
 
@@ -418,6 +452,8 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (message == null || message.trim().isEmpty()) {
             return exception.getClass().getSimpleName();
         }
-        return message.length() > 180 ? message.substring(0, 180) : message;
+        return message.length() > MAX_ERROR_MESSAGE_LENGTH
+                ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)
+                : message;
     }
 }

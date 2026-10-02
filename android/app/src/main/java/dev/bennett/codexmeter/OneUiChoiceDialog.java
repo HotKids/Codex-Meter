@@ -16,21 +16,27 @@ final class OneUiChoiceDialog {
     private OneUiChoiceDialog() {
     }
 
+    /**
+     * Shows {@code labels} as radio rows with {@code selected} (clamped to the valid range)
+     * checked. Picking a row reports its position and dismisses the dialog.
+     */
     static void show(Context context, String title, String[] labels, int selected,
             OnChoiceSelected listener) {
         RadioItemViewGroup group = new RadioItemViewGroup(context);
         group.setOrientation(LinearLayout.VERTICAL);
-        int[] ids = new int[labels.length];
+        int[] rowIds = new int[labels.length];
         for (int index = 0; index < labels.length; index++) {
             RadioItemView row = new RadioItemView(context);
-            ids[index] = View.generateViewId();
-            row.setId(ids[index]);
+            rowIds[index] = View.generateViewId();
+            row.setId(rowIds[index]);
             row.setTitle(labels[index]);
             row.setShowTopDivider(index > 0);
             group.addView(row);
         }
-        int safeSelected = Math.max(0, Math.min(labels.length - 1, selected));
-        if (ids.length > 0) group.check(ids[safeSelected]);
+        if (rowIds.length > 0) {
+            int checkedIndex = Math.max(0, Math.min(labels.length - 1, selected));
+            group.check(rowIds[checkedIndex]);
+        }
 
         AlertDialog dialog = new AlertDialog.Builder(context)
                 .setTitle(title)
@@ -38,8 +44,8 @@ final class OneUiChoiceDialog {
                 .setNegativeButton(android.R.string.cancel, null)
                 .create();
         group.setOnCheckedChangeListener((ignored, checkedId) -> {
-            for (int index = 0; index < ids.length; index++) {
-                if (ids[index] == checkedId) {
+            for (int index = 0; index < rowIds.length; index++) {
+                if (rowIds[index] == checkedId) {
                     listener.onSelected(index);
                     dialog.dismiss();
                     return;
