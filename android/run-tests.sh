@@ -87,7 +87,15 @@ grep -q 'VERSION_NAME="2.8.0"' "$ROOT/build.sh"
 WORKFLOW="$ROOT/../.github/workflows/build-apk.yml"
 grep -Fq 'release-dist/CodexMeter-Wear-$VERSION_NAME.apk' "$WORKFLOW"
 grep -Fq '"platforms;android-37.0"' "$WORKFLOW"
-grep -q 'BenItBuhner/Codex-Meter/releases?per_page=30' "$ROOT/app/build.gradle.kts" # pragma: allowlist secret
+grep -q 'HotKids/Codex-Meter/releases?per_page=30' "$ROOT/app/build.gradle.kts" # pragma: allowlist secret
+# The fork installs as me.pipi.usage; broadcasts and the internal permission follow the app ID.
+grep -q 'applicationId = "me.pipi.usage"' "$ROOT/app/build.gradle.kts"
+grep -q 'namespace = "dev.bennett.codexmeter"' "$ROOT/app/build.gradle.kts"
+grep -q 'BuildConfig.APPLICATION_ID + ".permission.INTERNAL"' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/AppConstants.java"
+grep -q '${applicationId}.permission.INTERNAL' "$ROOT/app/src/main/AndroidManifest.xml"
+! grep -R -q 'dev\.bennett\.codexmeter\.\(permission\|action\.[A-VX-Z]\)' \
+  "$ROOT/app/src/main"
 ! grep -R -q 'thatjoshguy67/Codex-Meter' \
   "$ROOT/app/src" "$ROOT/app/build.gradle.kts"
 

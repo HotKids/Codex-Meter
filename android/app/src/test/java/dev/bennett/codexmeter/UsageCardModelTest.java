@@ -138,6 +138,17 @@ public class UsageCardModelTest {
     }
 
     @Test
+    public void proPlansAreLabelledTenX() {
+        for (String plan : new String[] {"pro", "pro20x", "pro_20x", "Pro 20x", "pro10x",
+                "PRO-10X", "pro 10\u00d7"}) {
+            assertEquals(plan, "Pro 10x", UsageFormat.planLabel(plan));
+        }
+        assertEquals("Pro 5x", UsageFormat.planLabel("prolite"));
+        assertEquals("Business", UsageFormat.planLabel("business"));
+        assertEquals("", UsageFormat.planLabel("unknown"));
+    }
+
+    @Test
     public void variantFollowsSizeAndWindowCount() {
         assertEquals(UsageCardRenderer.Variant.SMALL_SINGLE,
                 UsageCardRenderer.Variant.of(false, 1));

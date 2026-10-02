@@ -22,7 +22,7 @@ public final class ResetNotificationManager {
     private static final String CHANNEL_NOTIFY = "codex_reset_notify";
     private static final String CHANNEL_SILENT = "codex_reset_silent";
     private static final String ACTION_USE_RESET_FROM_NOTIFICATION =
-            "dev.bennett.codexmeter.action.USE_RESET_FROM_NOTIFICATION";
+            AppConstants.action("USE_RESET_FROM_NOTIFICATION");
     private static final String CHANNEL_DESCRIPTION =
             "Low usage, scheduled resets, surprise refills, and reset credits";
     private static final String LABEL_FIVE_HOUR = "5-hour";

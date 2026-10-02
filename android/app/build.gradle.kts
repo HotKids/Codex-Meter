@@ -7,7 +7,7 @@ android {
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "dev.bennett.codexmeter"
+        applicationId = "me.pipi.usage"
         minSdk = 26
         targetSdk = 36
         versionCode = 30
@@ -19,7 +19,7 @@ android {
             versionName = it
         }
         val updateApiUrl = providers.gradleProperty("demoUpdateUrl").orNull
-            ?: "https://api.github.com/repos/BenItBuhner/Codex-Meter/releases?per_page=30" // pragma: allowlist secret
+            ?: "https://api.github.com/repos/HotKids/Codex-Meter/releases?per_page=30" // pragma: allowlist secret
         buildConfigField("String", "UPDATE_API_URL",
             "\"${updateApiUrl.replace("\\", "\\\\").replace("\"", "\\\"")}\"")
     }

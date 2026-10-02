@@ -8,7 +8,7 @@ import android.net.Uri;
 
 /** Tap targets shared by every home-widget layout. */
 final class WidgetActions {
-    static final String ACTION_OPEN = "dev.bennett.codexmeter.action.WIDGET_OPEN";
+    static final String ACTION_OPEN = AppConstants.action("WIDGET_OPEN");
 
     private static final int OPEN_REQUEST_BASE = 74000;
     private static final int REFRESH_REQUEST_BASE = 75000;

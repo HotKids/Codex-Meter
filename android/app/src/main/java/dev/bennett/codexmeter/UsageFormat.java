@@ -17,11 +17,16 @@ public final class UsageFormat {
     private UsageFormat() {
     }
 
+    /**
+     * Display name for a ChatGPT plan type. OpenAI's top Pro tier reports {@code pro} (older
+     * caches say {@code pro20x}); it is labelled Pro 10x. Unknown plans return an empty string.
+     */
     public static String planLabel(String plan) {
         if (plan == null || plan.trim().isEmpty()) {
             return "";
         }
-        String normalized = plan.trim().toLowerCase(Locale.US).replace("_", "").replace("-", "");
+        String normalized = plan.trim().toLowerCase(Locale.ROOT)
+                .replace("_", "").replace("-", "").replace(" ", "").replace("\u00d7", "x");
         switch (normalized) {
             case "free":
                 return "Free";
@@ -33,8 +38,17 @@ public final class UsageFormat {
             case "pro5x":
                 return "Pro 5x";
             case "pro":
+            case "pro10x":
             case "pro20x":
-                return "Pro 20x";
+                return "Pro 10x";
+            case "team":
+                return "Team";
+            case "business":
+                return "Business";
+            case "enterprise":
+                return "Enterprise";
+            case "premium":
+                return "Premium";
             default:
                 return "";
         }

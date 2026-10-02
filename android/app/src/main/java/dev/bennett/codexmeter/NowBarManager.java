@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit;
  * configured threshold (same metric/threshold pattern as low-usage notifications).
  */
 public final class NowBarManager {
-    static final String ACTION_END = "dev.bennett.codexmeter.action.NOW_BAR_END";
-    static final String ACTION_REFRESH = "dev.bennett.codexmeter.action.NOW_BAR_REFRESH";
-    static final String ACTION_STOP = "dev.bennett.codexmeter.action.NOW_BAR_STOP";
+    static final String ACTION_END = AppConstants.action("NOW_BAR_END");
+    static final String ACTION_REFRESH = AppConstants.action("NOW_BAR_REFRESH");
+    static final String ACTION_STOP = AppConstants.action("NOW_BAR_STOP");
 
     private static final String CHANNEL_ID = "codex_live_monitor_v2";
     private static final String EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing";

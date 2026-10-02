@@ -37,9 +37,10 @@ import java.util.concurrent.atomic.AtomicBoolean;
  * the redirect, exchanges the code, stores the credentials, and loads the first usage.
  */
 public final class OAuthService extends Service {
-    public static final String ACTION_START = "dev.bennett.codexmeter.oauth.START";
-    public static final String ACTION_CANCEL = "dev.bennett.codexmeter.oauth.CANCEL";
-    public static final String ACTION_CANCEL_SILENT = "dev.bennett.codexmeter.oauth.CANCEL_SILENT";
+    public static final String ACTION_START = BuildConfig.APPLICATION_ID + ".oauth.START";
+    public static final String ACTION_CANCEL = BuildConfig.APPLICATION_ID + ".oauth.CANCEL";
+    public static final String ACTION_CANCEL_SILENT =
+            BuildConfig.APPLICATION_ID + ".oauth.CANCEL_SILENT";
     private static final String CHANNEL_ID = "oauth_sign_in";
     private static final int NOTIFICATION_ID = 7301;
     private static final int REQUEST_OPEN = 7302;

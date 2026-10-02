@@ -7,22 +7,23 @@ public final class AppConstants {
     public static final int VERSION_CODE = 30;
     public static final String VERSION_NAME = "2.8.0";
 
-    public static final String ACTION_OAUTH_READY = "dev.bennett.codexmeter.action.OAUTH_READY";
-    public static final String ACTION_OAUTH_RESULT = "dev.bennett.codexmeter.action.OAUTH_RESULT";
-    public static final String ACTION_INSTALL_STATUS =
-            "dev.bennett.codexmeter.action.INSTALL_STATUS";
-    public static final String ACTION_RELEASES_UPDATED =
-            "dev.bennett.codexmeter.action.RELEASES_UPDATED";
-    public static final String ACTION_REFRESH_WIDGET =
-            "dev.bennett.codexmeter.action.REFRESH_WIDGET";
-    public static final String ACTION_RESET_ALERT = "dev.bennett.codexmeter.action.RESET_ALERT";
+    /**
+     * Broadcast actions and the internal permission are namespaced by the installed application
+     * ID rather than the Java package, so this build can sit beside an upstream install.
+     */
+    public static final String ACTION_OAUTH_READY = action("OAUTH_READY");
+    public static final String ACTION_OAUTH_RESULT = action("OAUTH_RESULT");
+    public static final String ACTION_INSTALL_STATUS = action("INSTALL_STATUS");
+    public static final String ACTION_RELEASES_UPDATED = action("RELEASES_UPDATED");
+    public static final String ACTION_REFRESH_WIDGET = action("REFRESH_WIDGET");
+    public static final String ACTION_RESET_ALERT = action("RESET_ALERT");
     public static final String ACTION_RESET_CREDIT_EXPIRY_ALERT =
-            "dev.bennett.codexmeter.action.RESET_CREDIT_EXPIRY_ALERT";
-    public static final String ACTION_RESET_CREDITS_UPDATED =
-            "dev.bennett.codexmeter.action.RESET_CREDITS_UPDATED";
-    public static final String ACTION_USAGE_UPDATED = "dev.bennett.codexmeter.action.USAGE_UPDATED";
+            action("RESET_CREDIT_EXPIRY_ALERT");
+    public static final String ACTION_RESET_CREDITS_UPDATED = action("RESET_CREDITS_UPDATED");
+    public static final String ACTION_USAGE_UPDATED = action("USAGE_UPDATED");
     /** Signature-level permission that guards the app's internal broadcasts. */
-    public static final String INTERNAL_PERMISSION = "dev.bennett.codexmeter.permission.INTERNAL";
+    public static final String INTERNAL_PERMISSION =
+            BuildConfig.APPLICATION_ID + ".permission.INTERNAL";
 
     public static final String EXTRA_AUTH_URL = "auth_url";
     public static final String EXTRA_CREDIT_ID = "credit_id";
@@ -50,6 +51,11 @@ public final class AppConstants {
     public static final String RESET_CREDITS_CONSUME_URL = RESET_CREDITS_URL + "/consume";
 
     private AppConstants() {
+    }
+
+    /** Returns {@code <applicationId>.action.<name>}. */
+    static String action(String name) {
+        return BuildConfig.APPLICATION_ID + ".action." + name;
     }
 
     public static String userAgent() {

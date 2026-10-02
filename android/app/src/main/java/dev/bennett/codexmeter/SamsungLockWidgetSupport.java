@@ -45,8 +45,8 @@ final class SamsungLockWidgetSupport {
     /** {@code AppWidgetManager.OPTION_APPWIDGET_SIZES}, which only exists on API 31+. */
     private static final String OPTION_APPWIDGET_SIZES = "appWidgetSizes";
 
-    private static final String ACTION_OPEN = "dev.bennett.codexmeter.action.LOCK_WIDGET_OPEN";
-    private static final String ACTION_RESET = "dev.bennett.codexmeter.action.LOCK_WIDGET_RESET";
+    private static final String ACTION_OPEN = AppConstants.action("LOCK_WIDGET_OPEN");
+    private static final String ACTION_RESET = AppConstants.action("LOCK_WIDGET_RESET");
     private static final String TARGET_OPEN = "open";
     private static final String TARGET_RESET = "reset";
     private static final int TAP_REQUEST_CODE_BASE = 82000;

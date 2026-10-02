@@ -386,7 +386,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     private LinearLayout buildValueCard(UsageSnapshot snapshot, PlanPricing pricing) {
         LinearLayout card = Ui.card(this, dark);
-        TextView title = Ui.text(this, pricing.planLabel + " · "
+        String plan = UsageFormat.planLabel(snapshot.planType);
+        TextView title = Ui.text(this, (plan.isEmpty() ? pricing.planLabel : plan) + " · "
                 + PlanPricing.formatUsd(pricing.monthlyPriceUsd) + "/month", 16,
                 Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
