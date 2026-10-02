@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Progress fill: the image level (0-10000) sets the visible width while keeping round ends. -->
+<scale xmlns:android="http://schemas.android.com/apk/res/android"
+    android:drawable="@drawable/widget_card_capsule"
+    android:scaleGravity="start|fill_vertical"
+    android:scaleWidth="100%" />

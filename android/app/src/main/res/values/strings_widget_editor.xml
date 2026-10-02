@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Home widget editor. -->
+<resources>
+    <string name="widget_editor_title">Customize widget</string>
+    <string name="widget_editor_no_widget">No widget was selected.</string>
+    <string name="widget_editor_saved">Widget updated.</string>
+    <string name="widget_editor_windows">Usage windows</string>
+    <string name="widget_editor_windows_hint">Choose up to 4 windows and drag the handles to order them. Small widgets show the first 2, medium widgets up to 4.</string>
+    <string name="widget_editor_windows_limit">Choose up to 4 windows.</string>
+    <string name="widget_editor_windows_minimum">Keep at least one window.</string>
+    <string name="widget_editor_window_missing">Not reported right now</string>
+    <string name="widget_editor_show">Show on widget</string>
+    <string name="widget_editor_reorder">Reorder</string>
+    <string name="widget_editor_appearance">Appearance</string>
+    <string name="widget_editor_style">Style</string>
+    <string name="widget_editor_theme">Theme</string>
+    <string name="widget_editor_dial_accent">2×1 dial color</string>
+    <string name="widget_editor_refresh_hint">Widgets update whenever Codex Meter refreshes. Tap the refresh time on a widget to refresh now.</string>
+    <string-array name="widget_editor_style_labels">
+        <item>Color</item>
+        <item>Clear</item>
+    </string-array>
+    <string-array name="widget_editor_theme_labels">
+        <item>Follow system</item>
+        <item>Dark</item>
+        <item>Light</item>
+    </string-array>
+    <string-array name="widget_editor_accent_labels">
+        <item>Mint</item>
+        <item>Blue</item>
+        <item>Amber</item>
+        <item>Violet</item>
+        <item>Rose</item>
+        <item>Cyan</item>
+        <item>Lime</item>
+        <item>Monochrome</item>
+    </string-array>
+</resources>

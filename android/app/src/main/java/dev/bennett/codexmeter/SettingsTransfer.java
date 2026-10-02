@@ -140,6 +140,7 @@ public final class SettingsTransfer {
         json.put("show_reset_credits", safe.showResetCredits);
         json.put("show_reset_action", safe.showResetAction);
         json.put("show_percent_symbol", safe.showPercentSymbol);
+        json.put("card_style", safe.cardStyle);
         return json;
     }
 
@@ -175,7 +176,8 @@ public final class SettingsTransfer {
                 booleanOr(json, "show_reset_action", fallback.showResetAction));
         return options.withPercentSymbol(
                 booleanOr(json, "show_percent_symbol", fallback.showPercentSymbol))
-                .withVisibleMeters(stringOr(json, "visible_meters", fallback.visibleMeters));
+                .withVisibleMeters(stringOr(json, "visible_meters", fallback.visibleMeters))
+                .withCardStyle(stringOr(json, "card_style", fallback.cardStyle));
     }
 
     public static JSONArray leadTimesToJson(List<Long> leadTimes) {

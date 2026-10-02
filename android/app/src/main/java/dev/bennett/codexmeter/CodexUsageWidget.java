@@ -5,40 +5,41 @@ import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.os.Bundle;
 
-/* JADX INFO: loaded from: classes.dex */
+/** The home-screen usage widget: cards above one row, upstream dials on one-row cells. */
 public final class CodexUsageWidget extends AppWidgetProvider {
-    @Override // android.appwidget.AppWidgetProvider
-    public void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] iArr) {
-        if (iArr != null) {
-            for (int i : iArr) {
-                WidgetRenderer.update(context, appWidgetManager, i);
+    @Override
+    public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
+        if (appWidgetIds != null) {
+            for (int appWidgetId : appWidgetIds) {
+                WidgetRenderer.update(context, manager, appWidgetId);
             }
         }
         RefreshScheduler.schedulePeriodic(context);
         RefreshScheduler.scheduleImmediate(context);
     }
 
-    @Override // android.appwidget.AppWidgetProvider
-    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int i, Bundle bundle) {
-        WidgetRenderer.update(context, appWidgetManager, i);
+    @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager,
+            int appWidgetId, Bundle newOptions) {
+        WidgetRenderer.update(context, manager, appWidgetId);
     }
 
-    @Override // android.appwidget.AppWidgetProvider
+    @Override
     public void onEnabled(Context context) {
         RefreshScheduler.schedulePeriodic(context);
         RefreshScheduler.scheduleImmediate(context);
     }
 
-    @Override // android.appwidget.AppWidgetProvider
+    @Override
     public void onDisabled(Context context) {
         RefreshScheduler.schedulePeriodic(context);
     }
 
-    @Override // android.appwidget.AppWidgetProvider
-    public void onDeleted(Context context, int[] iArr) {
-        if (iArr != null) {
-            for (int i : iArr) {
-                AppPreferences.deleteWidgetOptions(context, i);
+    @Override
+    public void onDeleted(Context context, int[] appWidgetIds) {
+        if (appWidgetIds != null) {
+            for (int appWidgetId : appWidgetIds) {
+                AppPreferences.deleteWidgetOptions(context, appWidgetId);
             }
         }
     }

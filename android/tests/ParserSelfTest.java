@@ -1388,7 +1388,7 @@ public final class ParserSelfTest {
         WidgetOptions safe = new WidgetOptions("invalid", "invalid", "invalid", "invalid", 13,
                 "invalid", "invalid", true, false, true);
         check(WidgetOptions.STYLE_AUTO.equals(safe.layout), "invalid style fallback");
-        check(safe.opacity == 88, "invalid opacity fallback");
+        check(safe.opacity == WidgetOptions.DEFAULT_OPACITY, "invalid opacity falls back to the default");
         check(WidgetOptions.ACCENT_MINT.equals(safe.accent), "invalid accent fallback");
         check(WidgetOptions.SURFACE_MATERIAL.equals(safe.surfaceStyle), "legacy surface fallback");
         check(WidgetOptions.GRAPHIC_AUTO.equals(safe.graphicScale), "legacy graphic fallback");
@@ -1401,8 +1401,8 @@ public final class ParserSelfTest {
         check(WidgetOptions.snapOpacity(40) == 56, "legacy 40% maps to low fill");
         check(WidgetOptions.snapOpacity(70) == 56, "legacy 70% maps to low fill");
         check(WidgetOptions.snapOpacity(94) == 100, "legacy 94% maps to full fill");
-        check(WidgetOptions.opacityIndex(0) == 1, "background-off restores medium slider");
-        check(WidgetOptions.opacityIndex(88) == 1, "default opacity is middle tick");
+        check(WidgetOptions.opacityIndex(0) == 2, "background-off restores the opaque default tick");
+        check(WidgetOptions.opacityIndex(88) == 1, "88% is the middle tick");
 
         WidgetOptions transparent = new WidgetOptions(WidgetOptions.STYLE_RINGS,
                 WidgetOptions.DENSITY_COMFORTABLE, WidgetOptions.SURFACE_ONE_UI,
@@ -1414,7 +1414,7 @@ public final class ParserSelfTest {
         check(WidgetOptions.GRAPHIC_MAX.equals(transparent.graphicScale), "maximum graphic scale");
         check(!WidgetOptions.defaults().showTitle, "widget title defaults off");
         check(WidgetOptions.defaults().opacity == WidgetOptions.DEFAULT_OPACITY,
-                "default fill uses medium opacity");
+                "new widgets default to an opaque fill");
 
         WidgetOptions low = new WidgetOptions(WidgetOptions.STYLE_RINGS,
                 WidgetOptions.DENSITY_AUTO, WidgetOptions.SURFACE_ONE_UI,

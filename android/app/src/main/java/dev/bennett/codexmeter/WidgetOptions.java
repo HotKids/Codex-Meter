@@ -14,6 +14,10 @@ public final class WidgetOptions {
     public static final String ACCENT_MONO = "mono";
     public static final String ACCENT_ROSE = "rose";
     public static final String ACCENT_VIOLET = "violet";
+    /** Usage-card chrome: gradient plan badge and severity-coloured bars. */
+    public static final String CARD_COLOR = "color";
+    /** Usage-card chrome: plain badge and monochrome outlined bars. */
+    public static final String CARD_CLEAR = "clear";
     public static final String DENSITY_AUTO = "auto";
     public static final String DENSITY_COMFORTABLE = "comfortable";
     public static final String DENSITY_COMPACT = "compact";
@@ -47,11 +51,14 @@ public final class WidgetOptions {
     public static final String TAP_USE_RESET = "use_reset";
     /** One UI 7-style discrete fill strengths when the widget background is enabled. */
     public static final int[] OPACITY_LEVELS = {56, 88, 100};
-    public static final int DEFAULT_OPACITY = 88;
+    /** Opaque by default, as the AI-Usage cards are; 56 and 88 remain selectable. */
+    public static final int DEFAULT_OPACITY = 100;
     /** Opacities accepted from storage: off, legacy four-step and drawable-aligned values. */
     private static final int[] KNOWN_OPACITIES = {0, 15, 40, 56, 70, 72, 88, 94, 100};
 
     public final String accent;
+    /** {@link #CARD_COLOR} or {@link #CARD_CLEAR}; only the usage cards read it. */
+    public final String cardStyle;
     public final String density;
     public final String displayMode;
     public final String graphicScale;
@@ -105,14 +112,15 @@ public final class WidgetOptions {
             boolean showRefresh, boolean showResetCredits, boolean showResetAction) {
         this(layout, density, surfaceStyle, graphicScale, theme, accent, opacity, resetMode,
                 displayMode, metricMode, showTitle, showPlan, showUpdated, showRefresh,
-                showResetCredits, showResetAction, true, "");
+                showResetCredits, showResetAction, true, "", CARD_COLOR);
     }
 
     private WidgetOptions(String layout, String density, String surfaceStyle,
             String graphicScale, String theme, String accent, int opacity, String resetMode,
             String displayMode, String metricMode, boolean showTitle, boolean showPlan,
             boolean showUpdated, boolean showRefresh, boolean showResetCredits,
-            boolean showResetAction, boolean showPercentSymbol, String visibleMeters) {
+            boolean showResetAction, boolean showPercentSymbol, String visibleMeters,
+            String cardStyle) {
         this.layout = normalizeStyle(layout);
         this.density = oneOf(density, DENSITY_AUTO, DENSITY_COMPACT, DENSITY_COMFORTABLE)
                 ? density : DENSITY_AUTO;
@@ -136,20 +144,32 @@ public final class WidgetOptions {
         this.showResetAction = showResetAction;
         this.showPercentSymbol = showPercentSymbol;
         this.visibleMeters = visibleMeters == null ? "" : visibleMeters.trim();
+        this.cardStyle = CARD_CLEAR.equals(cardStyle) ? CARD_CLEAR : CARD_COLOR;
     }
 
     public WidgetOptions withPercentSymbol(boolean show) {
         return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
                 opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
                 showUpdated, showRefresh, showResetCredits, showResetAction,
-                show, visibleMeters);
+                show, visibleMeters, cardStyle);
     }
 
     public WidgetOptions withVisibleMeters(String metersCsv) {
         return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
                 opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
                 showUpdated, showRefresh, showResetCredits, showResetAction,
-                showPercentSymbol, metersCsv);
+                showPercentSymbol, metersCsv, cardStyle);
+    }
+
+    public WidgetOptions withCardStyle(String style) {
+        return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
+                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
+                showUpdated, showRefresh, showResetCredits, showResetAction,
+                showPercentSymbol, visibleMeters, style);
+    }
+
+    public boolean clearCard() {
+        return CARD_CLEAR.equals(cardStyle);
     }
 
     public static WidgetOptions defaults() {
@@ -177,7 +197,7 @@ public final class WidgetOptions {
         return best;
     }
 
-    /** Slider index for a stored opacity; background-off restores the medium tick. */
+    /** Slider index for a stored opacity; background-off restores the default tick. */
     public static int opacityIndex(int opacity) {
         int snapped = snapOpacity(opacity <= 0 ? DEFAULT_OPACITY : opacity);
         for (int i = 0; i < OPACITY_LEVELS.length; i++) {

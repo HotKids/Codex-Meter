@@ -73,13 +73,14 @@ public final class AppPreferences {
     private static final String FIELD_SHOW_PERCENT_SYMBOL = "show_percent_symbol";
     private static final String FIELD_SHOW_COUNTDOWN = "show_countdown";
     private static final String FIELD_TAP_ACTION = "tap_action";
+    private static final String FIELD_CARD_STYLE = "card_style";
     /** Every field {@link #saveWidgetOptions} writes for a home-screen widget. */
     private static final String[] HOME_WIDGET_FIELDS = {
             FIELD_STYLE, FIELD_LAYOUT, FIELD_DENSITY, FIELD_SURFACE_STYLE, FIELD_GRAPHIC_SCALE,
             FIELD_THEME, FIELD_ACCENT, FIELD_OPACITY, FIELD_RESET_MODE, FIELD_DISPLAY_MODE,
             FIELD_METRIC_MODE, FIELD_VISIBLE_METERS, FIELD_SHOW_TITLE, FIELD_SHOW_PLAN,
             FIELD_SHOW_UPDATED, FIELD_SHOW_REFRESH, FIELD_SHOW_RESET_CREDITS,
-            FIELD_SHOW_RESET_ACTION, FIELD_SHOW_PERCENT_SYMBOL
+            FIELD_SHOW_RESET_ACTION, FIELD_SHOW_PERCENT_SYMBOL, FIELD_CARD_STYLE
     };
 
     // OAuth and onboarding.
@@ -578,7 +579,9 @@ public final class AppPreferences {
                 prefs.getBoolean(prefix + FIELD_SHOW_RESET_CREDITS, false),
                 prefs.getBoolean(prefix + FIELD_SHOW_RESET_ACTION, false))
                 .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, true))
-                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS, "")));
+                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS, ""))
+                .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
+                        WidgetOptions.CARD_COLOR)));
     }
 
     public static void saveDefaultWidgetOptions(Context context, WidgetOptions options) {
@@ -615,7 +618,9 @@ public final class AppPreferences {
                 .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL,
                         defaults.showPercentSymbol))
                 .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
-                        defaults.visibleMeters)));
+                        defaults.visibleMeters))
+                .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
+                        defaults.cardStyle)));
     }
 
     /** Saves a placed widget's options; its metric mode is derived from the visible meters. */
@@ -679,7 +684,8 @@ public final class AppPreferences {
                 .putBoolean(prefix + FIELD_SHOW_REFRESH, options.showRefresh)
                 .putBoolean(prefix + FIELD_SHOW_RESET_CREDITS, options.showResetCredits)
                 .putBoolean(prefix + FIELD_SHOW_RESET_ACTION, options.showResetAction)
-                .putBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, options.showPercentSymbol);
+                .putBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, options.showPercentSymbol)
+                .putString(prefix + FIELD_CARD_STYLE, options.cardStyle);
     }
 
     /**
@@ -692,7 +698,8 @@ public final class AppPreferences {
                 options.opacity, WidgetOptions.RESET_HIDDEN, options.displayMode,
                 options.metricMode, false, false, false, false, false, false)
                 .withPercentSymbol(options.showPercentSymbol)
-                .withVisibleMeters(options.visibleMeters);
+                .withVisibleMeters(options.visibleMeters)
+                .withCardStyle(options.cardStyle);
     }
 
     /** The legacy metric mode matching which of the 5-hour and weekly meters are visible. */

@@ -218,7 +218,7 @@ grep -q 'resolvedSingleUsageMetric' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
 grep -q 'ItemTouchHelper' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
-grep -q 'orderedSelectedMeters' \
+grep -q 'orderedSelection' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
 grep -q 'ic_oui_reorder' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
@@ -595,13 +595,18 @@ grep -q 'RadioItemViewGroup' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/OneUiChoiceDialog.java"
 grep -q 'OneUiChoiceDialog.show' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
-grep -q '"Both windows", "5-hour only", "Weekly only"' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
-# Home widget layout picker exposes Auto / Dials / Progress bars.
-grep -q '"Adaptive by size", "Dials", "Progress bars"' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
-grep -q 'styleSpinner' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
+# Home widgets: AI-Usage style cards above one row, upstream dials on one-row cells, and an
+# editor that picks up to four usage windows (including model limits) plus colour/clear style.
+grep -q 'UsageCardRenderer.build' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
+grep -q 'DialWidgetRenderer.build' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
+grep -q 'MAX_SELECTED = 4' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageCardWindows.java"
+grep -q 'limitPrimaryKey' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageCardWindows.java"
+grep -q 'CARD_CLEAR' "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptionCatalog.java"
+grep -q 'card_style' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransfer.java"
 # Home and lock config drive the shared meter catalog for per-meter visibility.
 grep -q 'WidgetMeters' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"
@@ -609,10 +614,8 @@ grep -q 'WidgetMeters' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
 grep -q 'selectedMeters' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
-# Renderer honors the layout preference and binds ordered meter slots.
-grep -q 'resolveHomeVisualStyle' \
-  "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
-grep -q 'resolveSlots' \
+# Renderer binds each widget's ordered window selection.
+grep -q 'selectedKeys' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
 ! grep -q 'ListPopupWindow' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetConfigActivity.java"

@@ -1,1090 +1,200 @@
 package dev.bennett.codexmeter;
 
-import android.annotation.SuppressLint;
-import android.app.PendingIntent;
 import android.appwidget.AppWidgetManager;
 import android.content.ComponentName;
 import android.content.Context;
-import android.content.Intent;
-import android.content.res.ColorStateList;
-import android.graphics.Color;
-import android.net.Uri;
+import android.content.res.Configuration;
 import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SizeF;
-import android.view.View;
 import android.widget.RemoteViews;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
+import java.util.Map;
 
-/* JADX INFO: loaded from: classes.dex */
+/**
+ * Renders home-screen widgets. One-row cells keep upstream's One UI dials; every larger cell
+ * shows the AI-Usage style usage card. On Android 12+ each size the launcher reports gets its own
+ * layout, so resizing never waits for an app refresh.
+ */
 public final class WidgetRenderer {
-    private static final int GRAPHIC_LARGE = 1;
-    private static final int GRAPHIC_MAX = 2;
-    private static final int GRAPHIC_STANDARD = 0;
-    private static final String STYLE_BATTERY_LIST = WidgetMeters.VISUAL_BATTERY_LIST;
-    private static final String STYLE_FOUR_DIALS = WidgetMeters.VISUAL_FOUR_DIALS;
-    private static final String STYLE_MICRO = "micro";
+    private static final String TAG = "CodexMeterWidget";
+    /** Hosts shorter than this (dp) are one row tall and show dials. */
+    static final float ONE_ROW_MAX_HEIGHT_DP = 100f;
+    private static final String SAMSUNG_ROW_SPAN = "semAppWidgetRowSpan";
+    private static final int MAX_RESPONSIVE_SIZES = 16;
+    /** Size buckets for launchers that do not report their exact sizes (dp). */
+    private static final SizeF[] FALLBACK_SIZES = {
+            new SizeF(110f, 60f), new SizeF(250f, 60f), new SizeF(140f, 140f),
+            new SizeF(170f, 190f), new SizeF(280f, 140f), new SizeF(330f, 190f)};
+    private static final float DEFAULT_WIDTH_DP = 170f;
+    private static final float DEFAULT_HEIGHT_DP = 170f;
+    private static final int MAX_ERROR_LENGTH = 180;
 
     private WidgetRenderer() {
     }
 
     public static void updateAll(Context context) {
-        if (context != null) {
-            if (context.getApplicationContext() != null) {
-                context = context.getApplicationContext();
+        if (context == null) {
+            return;
+        }
+        Context app = context.getApplicationContext() == null
+                ? context : context.getApplicationContext();
+        try {
+            AppWidgetManager manager = AppWidgetManager.getInstance(app);
+            int[] ids = manager.getAppWidgetIds(new ComponentName(app, CodexUsageWidget.class));
+            DiagnosticLog.info(app, "widget", "update_all_started",
+                    "home_widget_count", ids.length,
+                    "lock_widget_count", SamsungLockWidgetSupport.countAll(app));
+            for (int id : ids) {
+                update(app, manager, id);
             }
+            SamsungLockWidgetSupport.updateAll(app);
+            DiagnosticLog.info(app, "widget", "update_all_finished");
+        } catch (RuntimeException exception) {
+            DiagnosticLog.error(app, "widget", "update_all_failed", exception);
+            Log.w(TAG, "Widget update failed: " + safeMessage(exception));
+        }
+    }
+
+    public static void update(Context context, AppWidgetManager manager, int appWidgetId) {
+        if (context == null || manager == null
+                || appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            return;
+        }
+        try {
+            WidgetOptions options = AppPreferences.loadWidgetOptions(context, appWidgetId);
+            Bundle host = manager.getAppWidgetOptions(appWidgetId);
+            UsageCardState state = UsageCardState.load(context);
+            RemoteViews views = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                    ? buildResponsive(context, appWidgetId, options, state, host)
+                    : build(context, appWidgetId, options, state, currentWidth(context, host),
+                            currentHeight(context, host), oneRow(host));
+            manager.updateAppWidget(appWidgetId, views);
+        } catch (RuntimeException exception) {
+            DiagnosticLog.error(context, "widget", "render_failed", exception,
+                    "widget_id", appWidgetId);
+            Log.w(TAG, "Widget render failed: " + safeMessage(exception));
             try {
-                AppWidgetManager appWidgetManager = AppWidgetManager.getInstance(context);
-                int[] appWidgetIds = appWidgetManager.getAppWidgetIds(new ComponentName(context, (Class<?>) CodexUsageWidget.class));
-                int length = appWidgetIds.length;
-                DiagnosticLog.info(context, "widget", "update_all_started",
-                        "home_widget_count", length,
-                        "lock_widget_count", SamsungLockWidgetSupport.countAll(context));
-                for (int i = GRAPHIC_STANDARD; i < length; i += GRAPHIC_LARGE) {
-                    update(context, appWidgetManager, appWidgetIds[i]);
+                manager.updateAppWidget(appWidgetId, buildFallback(context, appWidgetId));
+            } catch (RuntimeException fallbackException) {
+                DiagnosticLog.error(context, "widget", "fallback_render_failed",
+                        fallbackException, "widget_id", appWidgetId);
+            }
+        }
+    }
+
+    /** Renders the widget for one size, as the editor preview and pre-12 hosts need. */
+    static RemoteViews buildPreview(Context context, int appWidgetId, WidgetOptions options,
+            float widthDp, float heightDp) {
+        return build(context, appWidgetId, options, UsageCardState.load(context), widthDp,
+                heightDp, heightDp < ONE_ROW_MAX_HEIGHT_DP);
+    }
+
+    static RemoteViews build(Context context, int appWidgetId, WidgetOptions options,
+            UsageCardState state, float widthDp, float heightDp, boolean oneRow) {
+        List<String> keys = selectedKeys(options, state.snapshot);
+        if (oneRow || heightDp < ONE_ROW_MAX_HEIGHT_DP) {
+            return DialWidgetRenderer.build(context, appWidgetId, options, keys, state, widthDp);
+        }
+        UsageCardRenderer.Style style = new UsageCardRenderer.Style(options.theme,
+                options.opacity, options.clearCard());
+        return UsageCardRenderer.build(context, appWidgetId, style, keys, state, widthDp,
+                heightDp);
+    }
+
+    /** The widget's saved window selection, limited to windows a card can show. */
+    static List<String> selectedKeys(WidgetOptions options, UsageSnapshot snapshot) {
+        return UsageCardWindows.resolve(WidgetMeters.parse(options.effectiveVisibleMeters()),
+                snapshot);
+    }
+
+    private static RemoteViews buildResponsive(Context context, int appWidgetId,
+            WidgetOptions options, UsageCardState state, Bundle host) {
+        Map<SizeF, RemoteViews> layouts = new LinkedHashMap<>();
+        boolean samsungOneRow = oneRow(host);
+        for (SizeF size : responsiveSizes(host)) {
+            layouts.put(size, build(context, appWidgetId, options, state, size.getWidth(),
+                    size.getHeight(), samsungOneRow));
+        }
+        return new RemoteViews(layouts);
+    }
+
+    @SuppressWarnings("deprecation") // The typed overload needs API 33; sizes exist from 31.
+    private static List<SizeF> responsiveSizes(Bundle host) {
+        List<SizeF> sizes = new ArrayList<>();
+        ArrayList<SizeF> reported = host == null ? null
+                : host.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+        if (reported != null) {
+            for (SizeF size : reported) {
+                if (size != null && size.getWidth() >= 1f && size.getHeight() >= 1f
+                        && !sizes.contains(size) && sizes.size() < MAX_RESPONSIVE_SIZES) {
+                    sizes.add(size);
                 }
-                SamsungLockWidgetSupport.updateAll(context);
-                DiagnosticLog.info(context, "widget", "update_all_finished");
-            } catch (RuntimeException e) {
-                DiagnosticLog.error(context, "widget", "update_all_failed", e);
-                Log.w("CodexMeterWidget", "Widget update failed: " + safeMessage(e));
             }
         }
-    }
-
-    public static void update(Context context, AppWidgetManager appWidgetManager, int i) {
-        RemoteViews remoteViewsBuildViews;
-        if (context != null && appWidgetManager != null && i != 0) {
-            try {
-                WidgetOptions widgetOptionsLoadWidgetOptions = AppPreferences.loadWidgetOptions(context, i);
-                Bundle appWidgetOptions = appWidgetManager.getAppWidgetOptions(i);
-                if (Build.VERSION.SDK_INT >= 31) {
-                    remoteViewsBuildViews = buildResponsiveWidget(context, i, widgetOptionsLoadWidgetOptions);
-                } else {
-                    remoteViewsBuildViews = buildViews(context, i, widgetOptionsLoadWidgetOptions,
-                            styleForSize(context, appWidgetOptions, widgetOptionsLoadWidgetOptions),
-                            appWidgetOptions);
-                }
-                appWidgetManager.updateAppWidget(i, remoteViewsBuildViews);
-            } catch (RuntimeException e) {
-                DiagnosticLog.error(context, "widget", "render_failed", e,
-                        "widget_id", i);
-                Log.w("CodexMeterWidget", "Widget render failed: " + safeMessage(e));
-                try {
-                    appWidgetManager.updateAppWidget(i, buildFallback(context, i));
-                } catch (RuntimeException e2) {
-                    DiagnosticLog.error(context, "widget", "fallback_render_failed", e2,
-                            "widget_id", i);
-                }
+        if (sizes.isEmpty()) {
+            for (SizeF size : FALLBACK_SIZES) {
+                sizes.add(size);
             }
         }
+        return sizes;
     }
 
-    @SuppressLint({"NewApi", "UseRequiresApi"})
-    private static RemoteViews buildResponsiveWidget(Context context, int i, WidgetOptions widgetOptions) {
-        LinkedHashMap<SizeF, RemoteViews> linkedHashMap = new LinkedHashMap<>();
-        boolean single = widgetOptions.singleMetric();
-        String compactStyle = preferVisualStyle(widgetOptions, WidgetMeters.VISUAL_RINGS);
-        String wideShortStyle = preferVisualStyle(widgetOptions,
-                single ? WidgetMeters.VISUAL_RINGS : WidgetMeters.VISUAL_FOUR_DIALS);
-        String tallStyle = preferVisualStyle(widgetOptions,
-                single ? WidgetMeters.VISUAL_DIALS : WidgetMeters.VISUAL_BATTERY_LIST);
-        linkedHashMap.put(new SizeF(110.0f, 60.0f),
-                buildViews(context, i, widgetOptions, compactStyle,
-                        sizeBundle(110, 70), GRAPHIC_STANDARD));
-        linkedHashMap.put(new SizeF(250.0f, 60.0f),
-                buildViews(context, i, widgetOptions, wideShortStyle,
-                        sizeBundle(250, 70), GRAPHIC_STANDARD));
-        linkedHashMap.put(new SizeF(110.0f, 130.0f),
-                buildViews(context, i, widgetOptions, tallStyle,
-                        sizeBundle(110, 156), GRAPHIC_STANDARD));
-        linkedHashMap.put(new SizeF(250.0f, 130.0f),
-                buildViews(context, i, widgetOptions, tallStyle,
-                        sizeBundle(250, 156),
-                        single ? GRAPHIC_LARGE : GRAPHIC_STANDARD));
-        return new RemoteViews(linkedHashMap);
+    /**
+     * One UI reports cell spans. A one-row placement keeps the dials even where its cells are
+     * taller than {@link #ONE_ROW_MAX_HEIGHT_DP}.
+     */
+    private static boolean oneRow(Bundle host) {
+        return host != null && host.getInt(SAMSUNG_ROW_SPAN, 0) == 1;
     }
 
-    static RemoteViews buildPreview(Context context, int appWidgetId, WidgetOptions widgetOptions,
-            Bundle appWidgetOptions) {
-        RemoteViews preview = buildViews(context, appWidgetId, widgetOptions,
-                styleForSize(context, appWidgetOptions, widgetOptions), appWidgetOptions);
-        preview.setInt(android.R.id.background, "setBackgroundColor", Color.TRANSPARENT);
-        return preview;
+    private static RemoteViews buildFallback(Context context, int appWidgetId) {
+        UsageCardState signedOut = new UsageCardState(false, null, null, "",
+                System.currentTimeMillis());
+        return UsageCardRenderer.build(context, appWidgetId,
+                new UsageCardRenderer.Style(WidgetOptions.THEME_SYSTEM,
+                        WidgetOptions.DEFAULT_OPACITY, false),
+                UsageCardWindows.defaultKeys(null), signedOut, DEFAULT_WIDTH_DP,
+                DEFAULT_HEIGHT_DP);
     }
 
-    private static String styleForSize(Context context, Bundle bundle, WidgetOptions options) {
-        int rows = option(bundle, "semAppWidgetRowSpan");
-        int columns = option(bundle, "semAppWidgetColumnSpan");
-        boolean single = options != null && options.singleMetric();
-        return WidgetMeters.resolveHomeVisualStyle(
-                options == null ? WidgetMeters.PREF_AUTO : options.layoutPreference(),
-                single, rows, columns, currentHeight(context, bundle),
-                currentWidth(context, bundle));
+    /** Portrait hosts are min width x max height; landscape hosts the reverse. */
+    private static float currentWidth(Context context, Bundle host) {
+        int min = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+        int max = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
+        int width = landscape(context) ? firstPositive(max, min) : firstPositive(min, max);
+        return width > 0 ? width : DEFAULT_WIDTH_DP;
     }
 
-    /** Applies Auto / Dials / Bars preference on top of a size-derived auto bucket style. */
-    private static String preferVisualStyle(WidgetOptions options, String autoBucketStyle) {
-        String preference = options == null
-                ? WidgetMeters.PREF_AUTO : options.layoutPreference();
-        if (WidgetMeters.PREF_BARS.equals(preference)) {
-            return WidgetMeters.VISUAL_BATTERY_LIST;
-        }
-        if (WidgetMeters.PREF_DIALS.equals(preference)
-                && WidgetMeters.VISUAL_BATTERY_LIST.equals(autoBucketStyle)) {
-            return options.singleMetric()
-                    ? WidgetMeters.VISUAL_DIALS : WidgetMeters.VISUAL_FOUR_DIALS;
-        }
-        return autoBucketStyle;
+    private static float currentHeight(Context context, Bundle host) {
+        int min = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+        int max = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+        int height = landscape(context) ? firstPositive(min, max) : firstPositive(max, min);
+        return height > 0 ? height : DEFAULT_HEIGHT_DP;
     }
 
-    private static Bundle sizeBundle(int i, int i2) {
-        Bundle bundle = new Bundle();
-        bundle.putInt("appWidgetMinWidth", i);
-        bundle.putInt("appWidgetMinHeight", i2);
-        return bundle;
+    private static boolean landscape(Context context) {
+        return context.getResources().getConfiguration().orientation
+                == Configuration.ORIENTATION_LANDSCAPE;
     }
 
-    private static RemoteViews buildViews(Context context, int i, WidgetOptions widgetOptions, String str, Bundle bundle) {
-        return buildViews(context, i, widgetOptions, str, bundle, resolveGraphicTier(context, widgetOptions, bundle));
+    private static int option(Bundle host, String key) {
+        return host == null ? 0 : host.getInt(key, 0);
     }
 
-    private static RemoteViews buildViews(Context context, int i, WidgetOptions widgetOptions, String str, Bundle bundle, int i2) {
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), layoutForStyle(str, i2));
-        boolean zChooseDark = chooseDark(context, widgetOptions);
-        WidgetState widgetStateFrom = WidgetState.from(context, widgetOptions);
-        List<MeterSlot> slots = resolveSlots(context, widgetOptions, widgetStateFrom, str, bundle);
-        applyRootAndHeader(context, remoteViews, i, widgetOptions, zChooseDark, widgetStateFrom);
-        if (STYLE_MICRO.equals(str)) {
-            renderMicro(remoteViews, widgetOptions, zChooseDark, widgetStateFrom, slots);
-        } else if (WidgetOptions.STYLE_RINGS.equals(str)) {
-            renderGraphic(context, remoteViews, widgetOptions, zChooseDark, widgetStateFrom, true, i2, slots);
-        } else if (STYLE_FOUR_DIALS.equals(str)) {
-            renderFourDials(context, remoteViews, widgetOptions, zChooseDark, slots);
-        } else if (STYLE_BATTERY_LIST.equals(str)) {
-            renderBatteryList(context, remoteViews, widgetOptions, zChooseDark, slots);
-        } else if (WidgetOptions.STYLE_DIALS.equals(str)) {
-            renderGraphic(context, remoteViews, widgetOptions, zChooseDark, widgetStateFrom, false, i2, slots);
-        } else if (WidgetOptions.STYLE_MINIMAL.equals(str)) {
-            renderMinimal(context, remoteViews, widgetOptions, zChooseDark, widgetStateFrom, slots);
-        } else {
-            renderBars(context, remoteViews, widgetOptions, zChooseDark, widgetStateFrom, bundle, slots);
-        }
-        applySlotVisibility(remoteViews, str, slots);
-        applyResetCreditRow(context, remoteViews, i, widgetOptions, zChooseDark, str);
-        return remoteViews;
+    private static int firstPositive(int preferred, int fallback) {
+        return preferred > 0 ? preferred : fallback;
     }
 
-    private static RemoteViews buildFallback(Context context, int i) {
-        WidgetOptions widgetOptionsDefaults = WidgetOptions.defaults();
-        RemoteViews remoteViews = new RemoteViews(context.getPackageName(), R.layout.widget_compact);
-        boolean zChooseDark = chooseDark(context, widgetOptionsDefaults);
-        WidgetState widgetStateError = WidgetState.error("Open Codex Meter to recover");
-        applyRootAndHeader(context, remoteViews, i, widgetOptionsDefaults, zChooseDark, widgetStateError);
-        renderMinimal(context, remoteViews, widgetOptionsDefaults, zChooseDark, widgetStateError,
-                java.util.Collections.emptyList());
-        return remoteViews;
-    }
-
-    private static String resolveStyle(Context context, WidgetOptions widgetOptions, Bundle bundle) {
-        int iCurrentWidth = currentWidth(context, bundle);
-        int iCurrentHeight = currentHeight(context, bundle);
-        String strNormalizeStyle = WidgetOptions.normalizeStyle(widgetOptions.layout);
-        if ((iCurrentHeight <= 0 || iCurrentHeight >= 90) && (iCurrentWidth <= 0 || iCurrentWidth >= 145)) {
-            return "auto".equals(strNormalizeStyle) ? ((iCurrentHeight <= 0 || iCurrentHeight >= 140) && (iCurrentWidth <= 0 || iCurrentWidth >= 215)) ? WidgetOptions.STYLE_BARS : WidgetOptions.STYLE_MINIMAL : (iCurrentHeight <= 0 || iCurrentHeight >= 130) ? strNormalizeStyle : WidgetOptions.STYLE_MINIMAL;
-        }
-        return STYLE_MICRO;
-    }
-
-    private static int option(Bundle bundle, String str) {
-        return bundle == null ? GRAPHIC_STANDARD : bundle.getInt(str, GRAPHIC_STANDARD);
-    }
-
-    private static int currentWidth(Context context, Bundle bundle) {
-        int iOption = option(bundle, "appWidgetMinWidth");
-        int iOption2 = option(bundle, "appWidgetMaxWidth");
-        return (context == null || context.getResources().getConfiguration().orientation != GRAPHIC_MAX) ? iOption > 0 ? iOption : iOption2 : iOption2 > 0 ? iOption2 : iOption;
-    }
-
-    private static int currentHeight(Context context, Bundle bundle) {
-        int iOption = option(bundle, "appWidgetMinHeight");
-        int iOption2 = option(bundle, "appWidgetMaxHeight");
-        return (context == null || context.getResources().getConfiguration().orientation != GRAPHIC_MAX) ? iOption2 > 0 ? iOption2 : iOption : iOption > 0 ? iOption : iOption2;
-    }
-
-    private static int layoutForStyle(String str, int i) {
-        if (STYLE_BATTERY_LIST.equals(str)) {
-            return R.layout.widget_battery_list;
-        }
-        if (STYLE_FOUR_DIALS.equals(str)) {
-            return R.layout.widget_rings_four;
-        }
-        if (STYLE_MICRO.equals(str)) {
-            return R.layout.widget_micro;
-        }
-        if (WidgetOptions.STYLE_RINGS.equals(str)) {
-            // Samsung's battery widget keeps the 46dp small arc at every 2x1 host size.
-            return R.layout.widget_rings;
-        }
-        if (!WidgetOptions.STYLE_DIALS.equals(str)) {
-            return WidgetOptions.STYLE_MINIMAL.equals(str) ? R.layout.widget_compact : R.layout.widget_detailed;
-        }
-        if (i == GRAPHIC_MAX) {
-            return R.layout.widget_dials_max;
-        }
-        return i == GRAPHIC_LARGE ? R.layout.widget_dials_large : R.layout.widget_dials;
-    }
-
-    private static int resolveGraphicTier(Context context, WidgetOptions widgetOptions, Bundle bundle) {
-        int iCurrentWidth = currentWidth(context, bundle);
-        int iCurrentHeight = currentHeight(context, bundle);
-        if (widgetOptions.singleMetric() && WidgetOptions.GRAPHIC_AUTO.equals(
-                widgetOptions.graphicScale) && iCurrentWidth > 0 && iCurrentHeight > 0) {
-            if (iCurrentWidth >= 340 && iCurrentHeight >= 178) return GRAPHIC_MAX;
-            if (iCurrentWidth >= 230 && iCurrentHeight >= 130) return GRAPHIC_LARGE;
-            return GRAPHIC_STANDARD;
-        }
-        return (iCurrentWidth <= 0 || iCurrentHeight <= 0) ? (WidgetOptions.GRAPHIC_MAX.equals(widgetOptions.graphicScale) || WidgetOptions.GRAPHIC_LARGE.equals(widgetOptions.graphicScale)) ? GRAPHIC_LARGE : GRAPHIC_STANDARD : WidgetOptions.GRAPHIC_MAX.equals(widgetOptions.graphicScale) ? (iCurrentWidth < 340 || iCurrentHeight < 198) ? (iCurrentWidth < 270 || iCurrentHeight < 158) ? GRAPHIC_STANDARD : GRAPHIC_LARGE : GRAPHIC_MAX : WidgetOptions.GRAPHIC_LARGE.equals(widgetOptions.graphicScale) ? (iCurrentWidth < 400 || iCurrentHeight < 208) ? (iCurrentWidth < 290 || iCurrentHeight < 164) ? GRAPHIC_STANDARD : GRAPHIC_LARGE : GRAPHIC_MAX : (iCurrentWidth < 460 || iCurrentHeight < 220) ? (iCurrentWidth < 340 || iCurrentHeight < 178) ? GRAPHIC_STANDARD : GRAPHIC_LARGE : GRAPHIC_MAX;
-    }
-
-    private static boolean chooseDark(Context context, WidgetOptions widgetOptions) {
-        if (WidgetOptions.THEME_DARK.equals(widgetOptions.theme)) {
-            return true;
-        }
-        return !WidgetOptions.THEME_LIGHT.equals(widgetOptions.theme) && (context.getResources().getConfiguration().uiMode & 48) == 32;
-    }
-
-    private static void applyRootAndHeader(Context context, RemoteViews remoteViews, int i, WidgetOptions widgetOptions, boolean z, WidgetState widgetState) {
-        if (WidgetOptions.SURFACE_ONE_UI.equals(widgetOptions.surfaceStyle) && isSamsung(context)) {
-            int alpha = Math.round(Math.max(0, Math.min(100, widgetOptions.opacity)) * 2.55f);
-            remoteViews.setInt(android.R.id.background, "setBackgroundColor",
-                    z ? Color.argb(alpha, 0, 0, 0) : Color.argb(alpha, 255, 255, 255));
-        } else {
-            remoteViews.setInt(android.R.id.background, "setBackgroundResource",
-                    backgroundResource(context, z, widgetOptions.opacity, widgetOptions.surfaceStyle));
-        }
-        remoteViews.setTextColor(R.id.widget_title, WidgetGraphics.mainTextColor(z));
-        remoteViews.setViewVisibility(R.id.widget_title, widgetOptions.showTitle ? GRAPHIC_STANDARD : 8);
-        remoteViews.setTextColor(R.id.plan_label, mutedColor(z));
-        remoteViews.setTextViewText(R.id.plan_label, widgetState.plan);
-        remoteViews.setViewVisibility(R.id.plan_label, (!widgetOptions.showPlan || widgetState.plan.isEmpty()) ? 8 : GRAPHIC_STANDARD);
-        remoteViews.setImageViewResource(R.id.refresh_button, z ? R.drawable.ic_oui_refresh_widget_light : R.drawable.ic_oui_refresh_widget_dark);
-        remoteViews.setViewVisibility(R.id.refresh_button, widgetOptions.showRefresh ? GRAPHIC_STANDARD : 8);
-        applyIntents(context, remoteViews, i);
-    }
-
-    private static void applyIntents(Context context, RemoteViews remoteViews, int i) {
-        String tapAction = AppPreferences.getWidgetTapAction(context, i);
-        PendingIntent rootAction;
-        if (WidgetOptions.TAP_REFRESH.equals(tapAction)) {
-            rootAction = PendingIntent.getBroadcast(context, 74000 + i,
-                    new Intent(context, (Class<?>) WidgetRefreshReceiver.class)
-                            .setAction(AppConstants.ACTION_REFRESH_WIDGET)
-                            .setData(widgetUri(i, "root-refresh"))
-                            .putExtra("appWidgetId", i),
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else if (WidgetOptions.TAP_USE_RESET.equals(tapAction)) {
-            rootAction = PendingIntent.getActivity(context, 74000 + i,
-                    new Intent(context, (Class<?>) ResetCreditActivity.class)
-                            .setAction("dev.bennett.codexmeter.action.WIDGET_RESET")
-                            .setData(widgetUri(i, "root-reset"))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        } else {
-            rootAction = PendingIntent.getActivity(context, 74000 + i,
-                    new Intent(context, (Class<?>) MainActivity.class)
-                            .setAction("dev.bennett.codexmeter.action.WIDGET_OPEN")
-                            .setData(widgetUri(i, "root-open"))
-                            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
-        }
-        remoteViews.setOnClickPendingIntent(android.R.id.background, rootAction);
-        remoteViews.setOnClickPendingIntent(R.id.refresh_button,
-                PendingIntent.getBroadcast(context, 75000 + i,
-                        new Intent(context, (Class<?>) WidgetRefreshReceiver.class)
-                                .setAction(AppConstants.ACTION_REFRESH_WIDGET)
-                                .setData(widgetUri(i, "refresh"))
-                                .putExtra("appWidgetId", i),
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-        remoteViews.setOnClickPendingIntent(R.id.reset_credit_button,
-                PendingIntent.getActivity(context, 76000 + i,
-                        new Intent(context, (Class<?>) ResetCreditActivity.class)
-                                .setAction("dev.bennett.codexmeter.action.WIDGET_RESET")
-                                .setData(widgetUri(i, "reset"))
-                                .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK
-                                        | Intent.FLAG_ACTIVITY_CLEAR_TOP),
-                        PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
-    }
-
-    private static Uri widgetUri(int appWidgetId, String action) {
-        return Uri.parse("codexmeter://widget/home/v" + AppConstants.VERSION_CODE + "/"
-                + appWidgetId + "/" + action);
-    }
-
-    private static void renderBars(Context context, RemoteViews remoteViews, WidgetOptions widgetOptions, boolean z, WidgetState widgetState, Bundle bundle, List<MeterSlot> slots) {
-        boolean z2 = false;
-        int iMainTextColor = WidgetGraphics.mainTextColor(z);
-        int iSecondaryColor = secondaryColor(z);
-        int iMutedColor = mutedColor(z);
-        int iFaintColor = faintColor(z);
-        remoteViews.setTextColor(R.id.primary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.secondary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.primary_percent, iMainTextColor);
-        remoteViews.setTextColor(R.id.secondary_percent, iMainTextColor);
-        remoteViews.setTextColor(R.id.primary_reset, iMutedColor);
-        remoteViews.setTextColor(R.id.secondary_reset, iMutedColor);
-        remoteViews.setTextColor(R.id.updated_label, iFaintColor);
-        remoteViews.setImageViewResource(R.id.primary_track, z ? R.drawable.progress_track : R.drawable.progress_track_light);
-        remoteViews.setImageViewResource(R.id.secondary_track, z ? R.drawable.progress_track : R.drawable.progress_track_light);
-        int iProgressResource = progressResource(widgetOptions.accent, z);
-        remoteViews.setImageViewResource(R.id.primary_progress, iProgressResource);
-        remoteViews.setImageViewResource(R.id.secondary_progress, iProgressResource);
-        applyAppAccentFilter(context, remoteViews, widgetOptions.accent,
-                R.id.primary_progress, R.id.secondary_progress);
-        MeterSlot primary = slotAt(slots, 0);
-        MeterSlot secondary = slotAt(slots, 1);
-        remoteViews.setInt(R.id.primary_progress, "setImageLevel",
-                Math.max(GRAPHIC_STANDARD, primary == null ? 0 : primary.progress) * 100);
-        remoteViews.setInt(R.id.secondary_progress, "setImageLevel",
-                Math.max(GRAPHIC_STANDARD, secondary == null ? 0 : secondary.progress) * 100);
-        remoteViews.setTextViewText(R.id.primary_label, primary == null ? "" : primary.label);
-        remoteViews.setTextViewText(R.id.secondary_label, secondary == null ? "" : secondary.label);
-        remoteViews.setTextViewText(R.id.primary_percent, primary == null ? "—" : primary.valueText);
-        remoteViews.setTextViewText(R.id.secondary_percent, secondary == null ? "—" : secondary.valueText);
-        remoteViews.setTextViewText(R.id.primary_reset, widgetState.primaryReset);
-        remoteViews.setTextViewText(R.id.secondary_reset, widgetState.secondaryReset);
-        remoteViews.setViewVisibility(R.id.primary_reset, widgetState.primaryReset.isEmpty() ? 8 : GRAPHIC_STANDARD);
-        remoteViews.setViewVisibility(R.id.secondary_reset, widgetState.secondaryReset.isEmpty() ? 8 : GRAPHIC_STANDARD);
-        applyUpdated(remoteViews, widgetOptions, widgetState, iFaintColor);
-        int iCurrentHeight = currentHeight(context, bundle);
-        if ("compact".equals(widgetOptions.density) || ("auto".equals(widgetOptions.density) && iCurrentHeight > 0 && iCurrentHeight < 145)) {
-            z2 = true;
-        }
-        if (z2) {
-            remoteViews.setTextViewTextSize(R.id.primary_percent, GRAPHIC_MAX, 16.0f);
-            remoteViews.setTextViewTextSize(R.id.secondary_percent, GRAPHIC_MAX, 16.0f);
-            remoteViews.setTextViewTextSize(R.id.primary_reset, GRAPHIC_MAX, 9.0f);
-            remoteViews.setTextViewTextSize(R.id.secondary_reset, GRAPHIC_MAX, 9.0f);
-            return;
-        }
-        if (WidgetOptions.DENSITY_COMFORTABLE.equals(widgetOptions.density)) {
-            remoteViews.setTextViewTextSize(R.id.primary_percent, GRAPHIC_MAX, 21.0f);
-            remoteViews.setTextViewTextSize(R.id.secondary_percent, GRAPHIC_MAX, 21.0f);
-        }
-    }
-
-    private static void renderMicro(RemoteViews remoteViews, WidgetOptions widgetOptions, boolean z,
-            WidgetState widgetState, List<MeterSlot> slots) {
-        int iMainTextColor = WidgetGraphics.mainTextColor(z);
-        int iSecondaryColor = secondaryColor(z);
-        MeterSlot primary = slotAt(slots, 0);
-        MeterSlot secondary = slotAt(slots, 1);
-        remoteViews.setTextColor(R.id.primary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.secondary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.primary_percent, iMainTextColor);
-        remoteViews.setTextColor(R.id.secondary_percent, iMainTextColor);
-        remoteViews.setTextViewText(R.id.primary_label, primary == null ? "" : primary.label);
-        remoteViews.setTextViewText(R.id.secondary_label, secondary == null ? "" : secondary.label);
-        remoteViews.setTextViewText(R.id.primary_percent, primary == null ? "—" : primary.shortText);
-        remoteViews.setTextViewText(R.id.secondary_percent, secondary == null ? "—" : secondary.shortText);
-        remoteViews.setViewVisibility(R.id.primary_reset, 8);
-        remoteViews.setViewVisibility(R.id.secondary_reset, 8);
-        remoteViews.setViewVisibility(R.id.updated_label, 8);
-    }
-
-    private static void renderMinimal(Context context, RemoteViews remoteViews, WidgetOptions widgetOptions, boolean z, WidgetState widgetState, List<MeterSlot> slots) {
-        String str;
-        int i = R.drawable.progress_track_light;
-        int iMainTextColor = WidgetGraphics.mainTextColor(z);
-        int iSecondaryColor = secondaryColor(z);
-        int iMutedColor = mutedColor(z);
-        int iFaintColor = faintColor(z);
-        MeterSlot primary = slotAt(slots, 0);
-        MeterSlot secondary = slotAt(slots, 1);
-        remoteViews.setTextColor(R.id.primary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.secondary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.primary_percent, iMainTextColor);
-        remoteViews.setTextColor(R.id.secondary_percent, iMainTextColor);
-        remoteViews.setTextColor(R.id.primary_reset, iMutedColor);
-        remoteViews.setTextColor(R.id.updated_label, iFaintColor);
-        remoteViews.setImageViewResource(R.id.primary_track, z ? R.drawable.progress_track : R.drawable.progress_track_light);
-        if (z) {
-            i = R.drawable.progress_track;
-        }
-        remoteViews.setImageViewResource(R.id.secondary_track, i);
-        int iProgressResource = progressResource(widgetOptions.accent, z);
-        remoteViews.setImageViewResource(R.id.primary_progress, iProgressResource);
-        remoteViews.setImageViewResource(R.id.secondary_progress, iProgressResource);
-        applyAppAccentFilter(context, remoteViews, widgetOptions.accent,
-                R.id.primary_progress, R.id.secondary_progress);
-        remoteViews.setInt(R.id.primary_progress, "setImageLevel",
-                Math.max(GRAPHIC_STANDARD, primary == null ? 0 : primary.progress) * 100);
-        remoteViews.setInt(R.id.secondary_progress, "setImageLevel",
-                Math.max(GRAPHIC_STANDARD, secondary == null ? 0 : secondary.progress) * 100);
-        remoteViews.setTextViewText(R.id.primary_label, primary == null ? "" : primary.label);
-        remoteViews.setTextViewText(R.id.secondary_label, secondary == null ? "" : secondary.label);
-        remoteViews.setTextViewText(R.id.primary_percent, primary == null ? "—" : primary.shortText);
-        remoteViews.setTextViewText(R.id.secondary_percent, secondary == null ? "—" : secondary.shortText);
-        if ("five_hour".equals(widgetOptions.metricMode)) {
-            str = widgetState.primaryShortReset.isEmpty() ? "" : "5h " + widgetState.primaryShortReset;
-        } else if ("weekly".equals(widgetOptions.metricMode)) {
-            str = widgetState.secondaryShortReset.isEmpty() ? ""
-                    : widgetState.secondaryName + " " + widgetState.secondaryShortReset;
-        } else {
-            str = widgetState.combinedReset;
-        }
-        remoteViews.setTextViewText(R.id.primary_reset, str);
-        remoteViews.setViewVisibility(R.id.primary_reset, str.isEmpty() ? 8 : GRAPHIC_STANDARD);
-        remoteViews.setViewVisibility(R.id.secondary_reset, 8);
-        applyUpdated(remoteViews, widgetOptions, widgetState, iFaintColor);
-    }
-
-    private static void renderGraphic(Context context, RemoteViews remoteViews, WidgetOptions widgetOptions, boolean z, WidgetState widgetState, boolean z2, int i, List<MeterSlot> slots) {
-        float f;
-        int iMainTextColor = WidgetGraphics.mainTextColor(z);
-        int iSecondaryColor = secondaryColor(z);
-        int iMutedColor = mutedColor(z);
-        int iFaintColor = faintColor(z);
-        int iAccentColor = WidgetGraphics.accentColor(context, widgetOptions.accent, z);
-        int iTrackColor = WidgetGraphics.trackColor(z);
-        String str = WidgetOptions.DISPLAY_USED.equals(widgetOptions.displayMode) ? WidgetOptions.DISPLAY_USED : "left";
-        if (i == GRAPHIC_MAX) {
-            f = 1.36f;
-        } else {
-            f = i == GRAPHIC_LARGE ? 1.24f : 1.0f;
-        }
-        float fMin = widgetOptions.singleMetric() ? Math.min(1.36f, f * 1.16f) : f;
-        MeterSlot primary = slotAt(slots, 0);
-        MeterSlot secondary = slotAt(slots, 1);
-        int primaryProgress = primary == null ? -1 : primary.progress;
-        int secondaryProgress = secondary == null ? -1 : secondary.progress;
-        if (z2) {
-            applyProgressColors(remoteViews, R.id.primary_samsung_progress,
-                    iAccentColor, iTrackColor);
-            applyProgressColors(remoteViews, R.id.secondary_samsung_progress,
-                    iAccentColor, iTrackColor);
-            remoteViews.setProgressBar(R.id.primary_samsung_progress, 100,
-                    Math.max(GRAPHIC_STANDARD, primaryProgress), false);
-            remoteViews.setProgressBar(R.id.secondary_samsung_progress, 100,
-                    Math.max(GRAPHIC_STANDARD, secondaryProgress), false);
-            remoteViews.setTextViewText(R.id.primary_samsung_value,
-                    primary == null ? "—" : primary.valueText);
-            remoteViews.setTextViewText(R.id.secondary_samsung_value,
-                    secondary == null ? "—" : secondary.valueText);
-            remoteViews.setTextColor(R.id.primary_samsung_value, iMainTextColor);
-            remoteViews.setTextColor(R.id.secondary_samsung_value, iMainTextColor);
-            if (primary != null) {
-                remoteViews.setImageViewResource(R.id.primary_samsung_icon, primary.iconRes);
-            }
-            if (secondary != null) {
-                remoteViews.setImageViewResource(R.id.secondary_samsung_icon, secondary.iconRes);
-            }
-            remoteViews.setInt(R.id.primary_samsung_icon, "setColorFilter", iMainTextColor);
-            remoteViews.setInt(R.id.secondary_samsung_icon, "setColorFilter", iMainTextColor);
-        } else {
-            remoteViews.setImageViewBitmap(R.id.primary_graphic,
-                    WidgetGraphics.dial(primaryProgress, iAccentColor, iTrackColor, iMainTextColor,
-                            primary == null ? "—" : primary.valueText,
-                            primary == null || primary.usage ? str : primary.label, fMin));
-            remoteViews.setImageViewBitmap(R.id.secondary_graphic,
-                    WidgetGraphics.dial(secondaryProgress, iAccentColor, iTrackColor, iMainTextColor,
-                            secondary == null ? "—" : secondary.valueText,
-                            secondary == null || secondary.usage ? str : secondary.label, fMin));
-        }
-        remoteViews.setTextColor(R.id.primary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.secondary_label, iSecondaryColor);
-        remoteViews.setTextColor(R.id.primary_reset, iMutedColor);
-        remoteViews.setTextColor(R.id.secondary_reset, iMutedColor);
-        remoteViews.setTextColor(R.id.updated_label, iFaintColor);
-        remoteViews.setTextViewText(R.id.primary_label, primary == null ? "" : primary.label);
-        remoteViews.setTextViewText(R.id.secondary_label, secondary == null ? "" : secondary.label);
-        remoteViews.setViewVisibility(R.id.primary_label, 8);
-        remoteViews.setViewVisibility(R.id.secondary_label, 8);
-        remoteViews.setTextViewText(R.id.primary_reset, widgetState.primaryShortReset);
-        remoteViews.setTextViewText(R.id.secondary_reset, widgetState.secondaryShortReset);
-        remoteViews.setViewVisibility(R.id.primary_reset, 8);
-        remoteViews.setViewVisibility(R.id.secondary_reset, 8);
-        applyUpdated(remoteViews, widgetOptions, widgetState, iFaintColor);
-    }
-
-    private static void renderFourDials(Context context, RemoteViews remoteViews,
-            WidgetOptions options, boolean dark, List<MeterSlot> slots) {
-        int accent = WidgetGraphics.accentColor(context, options.accent, dark);
-        int track = WidgetGraphics.trackColor(dark);
-        int text = WidgetGraphics.mainTextColor(dark);
-        int[] graphicIds = {
-                R.id.primary_four_graphic, R.id.secondary_four_graphic,
-                R.id.reset_time_four_graphic, R.id.reset_count_four_graphic
-        };
-        int[] sectionIds = {
-                R.id.primary_section, R.id.secondary_section, 0, 0
-        };
-        for (int index = 0; index < graphicIds.length; index++) {
-            MeterSlot slot = slotAt(slots, index);
-            if (slot == null) {
-                remoteViews.setViewVisibility(graphicIds[index], View.GONE);
-                if (sectionIds[index] != 0) {
-                    remoteViews.setViewVisibility(sectionIds[index], View.GONE);
-                }
-                continue;
-            }
-            remoteViews.setViewVisibility(graphicIds[index], View.VISIBLE);
-            if (sectionIds[index] != 0) {
-                remoteViews.setViewVisibility(sectionIds[index], View.VISIBLE);
-            }
-            remoteViews.setImageViewBitmap(graphicIds[index],
-                    WidgetGraphics.compactDial(context, slot.progress, slot.iconRes,
-                            accent, track, text, slot.valueText, 1.0f));
-        }
-    }
-
-    private static void renderBatteryList(Context context, RemoteViews remoteViews,
-            WidgetOptions options, boolean dark, List<MeterSlot> slots) {
-        int textColor = WidgetGraphics.mainTextColor(dark);
-        int accent = WidgetGraphics.accentColor(context, options.accent, dark);
-        int track = WidgetGraphics.trackColor(dark);
-        int[] sectionIds = {
-                R.id.primary_section, R.id.secondary_section,
-                R.id.reset_time_section, R.id.reset_count_section
-        };
-        int[] spacerIds = {
-                R.id.list_spacer_1, R.id.list_spacer_2, R.id.list_spacer_3
-        };
-        int[] progressIds = {
-                R.id.primary_list_progress, R.id.secondary_list_progress,
-                R.id.reset_time_list_progress, R.id.reset_count_list_progress
-        };
-        int[] valueIds = {
-                R.id.primary_list_value, R.id.secondary_list_value,
-                R.id.reset_time_list_value, R.id.reset_count_list_value
-        };
-        int[] iconIds = {
-                R.id.primary_list_icon, R.id.secondary_list_icon,
-                R.id.reset_time_list_icon, R.id.reset_count_list_icon
-        };
-        for (int index = 0; index < sectionIds.length; index++) {
-            MeterSlot slot = slotAt(slots, index);
-            if (slot == null) {
-                remoteViews.setViewVisibility(sectionIds[index], View.GONE);
-                if (index > 0) {
-                    remoteViews.setViewVisibility(spacerIds[index - 1], View.GONE);
-                }
-                continue;
-            }
-            remoteViews.setViewVisibility(sectionIds[index], View.VISIBLE);
-            if (index > 0) {
-                remoteViews.setViewVisibility(spacerIds[index - 1], View.VISIBLE);
-            }
-            applyProgressColors(remoteViews, progressIds[index], accent, track);
-            int max = slot.progressMax > 0 ? slot.progressMax : 100;
-            remoteViews.setProgressBar(progressIds[index], max,
-                    Math.max(GRAPHIC_STANDARD, slot.progress), false);
-            remoteViews.setTextViewText(valueIds[index], slot.valueText);
-            remoteViews.setTextColor(valueIds[index], textColor);
-            remoteViews.setImageViewResource(iconIds[index], slot.iconRes);
-            remoteViews.setInt(iconIds[index], "setColorFilter", Color.WHITE);
-        }
-        remoteViews.setViewVisibility(R.id.primary_label, View.GONE);
-        remoteViews.setViewVisibility(R.id.secondary_label, View.GONE);
-        remoteViews.setViewVisibility(R.id.primary_reset, View.GONE);
-        remoteViews.setViewVisibility(R.id.secondary_reset, View.GONE);
-        remoteViews.setViewVisibility(R.id.updated_label, View.GONE);
-    }
-
-    private static String percentText(int value) {
-        return value < 0 ? "—" : value + "%";
-    }
-
-    private static String dialValue(int value, boolean showPercentSymbol) {
-        if (value < 0) {
-            return "—";
-        }
-        return Integer.toString(value) + (showPercentSymbol ? "%" : "");
-    }
-
-    private static void applyProgressColors(RemoteViews views, int viewId, int accent, int track) {
-        if (Build.VERSION.SDK_INT >= 31) {
-            views.setColorStateList(viewId, "setProgressTintList",
-                    ColorStateList.valueOf(accent));
-            views.setColorStateList(viewId, "setProgressBackgroundTintList",
-                    ColorStateList.valueOf(track));
-        }
-    }
-
-    private static void applyUpdated(RemoteViews remoteViews, WidgetOptions widgetOptions, WidgetState widgetState, int i) {
-        remoteViews.setTextColor(R.id.updated_label, i);
-        remoteViews.setTextViewText(R.id.updated_label, widgetState.updated);
-        remoteViews.setViewVisibility(R.id.updated_label, (!widgetOptions.showUpdated || widgetState.updated.isEmpty()) ? 8 : GRAPHIC_STANDARD);
-    }
-
-    private static void applySlotVisibility(RemoteViews remoteViews, String style, List<MeterSlot> slots) {
-        if (STYLE_FOUR_DIALS.equals(style) || STYLE_BATTERY_LIST.equals(style)) {
-            return;
-        }
-        remoteViews.setViewVisibility(R.id.primary_section, slots.size() > 0 ? View.VISIBLE : View.GONE);
-        remoteViews.setViewVisibility(R.id.secondary_section, slots.size() > 1 ? View.VISIBLE : View.GONE);
-    }
-
-    private static MeterSlot slotAt(List<MeterSlot> slots, int index) {
-        if (slots == null || index < 0 || index >= slots.size()) {
-            return null;
-        }
-        return slots.get(index);
-    }
-
-    private static List<MeterSlot> resolveSlots(Context context, WidgetOptions options,
-            WidgetState state, String visualStyle, Bundle bundle) {
-        UsageSnapshot snapshot = SecureTokenStore.isSignedIn(context)
-                ? AppPreferences.loadSnapshot(context) : null;
-        int height = currentHeight(context, bundle);
-        int capacity = WidgetMeters.slotCapacity(visualStyle, height);
-        List<String> available = WidgetMeters.availableKeys(snapshot);
-        List<String> visible = WidgetMeters.cap(
-                WidgetMeters.resolveVisibleForWidget(options.effectiveVisibleMeters(),
-                        available, options.metricMode),
-                capacity);
-        ResetCreditsSnapshot credits = AppPreferences.loadResetCredits(context);
-        int resetCount = credits == null ? 0 : credits.availableCount;
-        ArrayList<MeterSlot> slots = new ArrayList<>();
-        for (String key : visible) {
-            MeterSlot slot = buildSlot(key, snapshot, state, options, resetCount);
-            if (slot == null) {
-                // Keep the reserved slot so a toggled-on meter never collapses away.
-                slot = blankSlot(key, snapshot);
-            }
-            slots.add(slot);
-        }
-        return slots;
-    }
-
-    private static MeterSlot blankSlot(String key, UsageSnapshot snapshot) {
-        String label = WidgetMeters.shortLabel(key, snapshot);
-        int icon = WidgetMeters.WEEKLY.equals(key)
-                || (WidgetMeters.isLimitKey(key) && !WidgetMeters.isLimitPrimary(key))
-                ? R.drawable.ic_oui_calendar_week
-                : R.drawable.ic_oui_time;
-        if (WidgetMeters.NEXT_RESET.equals(key)) {
-            icon = R.drawable.ic_oui_alarm;
-        } else if (WidgetMeters.RESET_CREDITS.equals(key)) {
-            icon = R.drawable.ic_oui_refresh;
-        }
-        return new MeterSlot(key, label, icon, -1, "—", "—", 100, true);
-    }
-
-    private static MeterSlot buildSlot(String key, UsageSnapshot snapshot, WidgetState state,
-            WidgetOptions options, int resetCount) {
-        boolean used = WidgetOptions.DISPLAY_USED.equals(options.displayMode);
-        if (WidgetMeters.FIVE_HOUR.equals(key)) {
-            return usageSlot(key, "5h", R.drawable.ic_oui_time, state.primaryValue,
-                    dialValue(state.primaryValue, options.showPercentSymbol),
-                    state.primaryShort);
-        }
-        if (WidgetMeters.WEEKLY.equals(key)) {
-            return usageSlot(key, WidgetMeters.shortLabel(key, snapshot),
-                    R.drawable.ic_oui_calendar_week, state.secondaryValue,
-                    dialValue(state.secondaryValue, options.showPercentSymbol),
-                    state.secondaryShort);
-        }
-        if (WidgetMeters.NEXT_RESET.equals(key)) {
-            return new MeterSlot(key, "Reset", R.drawable.ic_oui_alarm, state.nextResetProgress,
-                    state.nextResetText, state.nextResetText, 100, false);
-        }
-        if (WidgetMeters.RESET_CREDITS.equals(key)) {
-            int progress = Math.min(100, Math.round((Math.min(4, resetCount) / 4.0f) * 100));
-            String text = String.valueOf(resetCount);
-            return new MeterSlot(key, "Credits", R.drawable.ic_oui_refresh, progress, text, text,
-                    Math.max(4, resetCount), false);
-        }
-        UsageLimit limit = WidgetMeters.findLimit(key, snapshot);
-        if (limit != null) {
-            UsageWindow window = WidgetMeters.isLimitPrimary(key) ? limit.primary : limit.secondary;
-            int value = window == null ? -1 : (used ? window.usedPercent : window.remainingPercent());
-            String label = WidgetMeters.shortLabel(key, snapshot);
-            int icon = WidgetMeters.isLimitPrimary(key)
-                    ? R.drawable.ic_oui_time : R.drawable.ic_oui_calendar_week;
-            String text = dialValue(value, options.showPercentSymbol);
-            return usageSlot(key, label, icon, value, text, text);
-        }
-        return null;
-    }
-
-    private static MeterSlot usageSlot(String key, String label, int icon, int progress,
-            String valueText, String shortText) {
-        return new MeterSlot(key, label, icon, progress, valueText, shortText, 100, true);
-    }
-
-    private static final class MeterSlot {
-        final String key;
-        final String label;
-        final int iconRes;
-        final int progress;
-        final String valueText;
-        final String shortText;
-        final int progressMax;
-        /** True for percent-based usage windows; false for countdown/credit helpers. */
-        final boolean usage;
-
-        MeterSlot(String key, String label, int iconRes, int progress, String valueText,
-                String shortText, int progressMax, boolean usage) {
-            this.key = key;
-            this.label = label;
-            this.iconRes = iconRes;
-            this.progress = progress;
-            this.valueText = valueText;
-            this.shortText = shortText;
-            this.progressMax = progressMax;
-            this.usage = usage;
-        }
-    }
-
-    private static void applyResetCreditRow(Context context, RemoteViews remoteViews, int i, WidgetOptions widgetOptions, boolean z, String str) {
-        String str2;
-        boolean zEquals = STYLE_MICRO.equals(str) || STYLE_BATTERY_LIST.equals(str);
-        boolean z2 = widgetOptions.showResetCredits || widgetOptions.showResetAction;
-        if (zEquals || !z2) {
-            remoteViews.setViewVisibility(R.id.reset_credit_row, 8);
-            return;
-        }
-        ResetCreditsSnapshot resetCreditsSnapshotLoadResetCredits = AppPreferences.loadResetCredits(context);
-        int i2 = resetCreditsSnapshotLoadResetCredits == null ? GRAPHIC_STANDARD : resetCreditsSnapshotLoadResetCredits.availableCount;
-        long jCurrentTimeMillis = System.currentTimeMillis();
-        long jNextExpiryMillis = resetCreditsSnapshotLoadResetCredits == null ? 0L : resetCreditsSnapshotLoadResetCredits.nextExpiryMillis(jCurrentTimeMillis);
-        boolean z3 = widgetOptions.showResetCredits;
-        boolean z4 = widgetOptions.showResetAction && i2 > 0 && SecureTokenStore.isSignedIn(context);
-        if (!z3 && !z4) {
-            remoteViews.setViewVisibility(R.id.reset_credit_row, 8);
-            return;
-        }
-        remoteViews.setViewVisibility(R.id.reset_credit_row, GRAPHIC_STANDARD);
-        remoteViews.setViewVisibility(R.id.reset_credit_info, z3 ? GRAPHIC_STANDARD : 8);
-        remoteViews.setViewVisibility(R.id.reset_credit_button, z4 ? GRAPHIC_STANDARD : 8);
-        if (i2 <= 0) {
-            str2 = "No reset credits";
-        } else if (jNextExpiryMillis > 0) {
-            str2 = i2 + " reset" + (i2 == GRAPHIC_LARGE ? "" : "s") + " · expires " + UsageFormat.relative(jNextExpiryMillis, jCurrentTimeMillis);
-        } else {
-            str2 = i2 + " reset" + (i2 == GRAPHIC_LARGE ? "" : "s") + " available";
-        }
-        remoteViews.setTextViewText(R.id.reset_credit_info, str2);
-        remoteViews.setTextColor(R.id.reset_credit_info, mutedColor(z));
-        remoteViews.setTextViewText(R.id.reset_credit_button, i2 > GRAPHIC_LARGE ? "Use reset (" + i2 + ")" : "Use reset");
-        remoteViews.setTextColor(R.id.reset_credit_button, WidgetGraphics.mainTextColor(z));
-        remoteViews.setInt(R.id.reset_credit_button, "setBackgroundResource", z ? R.drawable.widget_action_dark : R.drawable.widget_action_light);
-        remoteViews.setContentDescription(R.id.reset_credit_button, "Use one Codex reset credit. " + str2);
-    }
-
-    private static int progressResource(String str, boolean z) {
-        if (WidgetOptions.ACCENT_APP.equals(str)) {
-            return R.drawable.progress_mono;
-        }
-        if (WidgetOptions.ACCENT_BLUE.equals(str)) {
-            return R.drawable.progress_blue;
-        }
-        if (WidgetOptions.ACCENT_AMBER.equals(str)) {
-            return R.drawable.progress_amber;
-        }
-        if (WidgetOptions.ACCENT_VIOLET.equals(str)) {
-            return R.drawable.progress_violet;
-        }
-        if (WidgetOptions.ACCENT_ROSE.equals(str)) {
-            return R.drawable.progress_rose;
-        }
-        if (WidgetOptions.ACCENT_CYAN.equals(str)) {
-            return R.drawable.progress_cyan;
-        }
-        if (WidgetOptions.ACCENT_LIME.equals(str)) {
-            return R.drawable.progress_lime;
-        }
-        if (WidgetOptions.ACCENT_MONO.equals(str)) {
-            return z ? R.drawable.progress_mono : R.drawable.progress_mono_dark;
-        }
-        return R.drawable.progress_mint;
-    }
-
-    private static void applyAppAccentFilter(Context context, RemoteViews views, String accent,
-            int... viewIds) {
-        if (!WidgetOptions.ACCENT_APP.equals(accent)) {
-            return;
-        }
-        int color = Ui.accent(context, Ui.isDark(context));
-        for (int viewId : viewIds) {
-            views.setInt(viewId, "setColorFilter", color);
-        }
-    }
-
-    private static int backgroundResource(Context context, boolean z, int i, String str) {
-        if (i == 0) {
-            return R.drawable.widget_bg_transparent;
-        }
-        boolean zEquals = WidgetOptions.SURFACE_ONE_UI.equals(str);
-        if (zEquals && isSamsung(context)) {
-            if (z) {
-                if (i == 56) {
-                    return R.drawable.widget_bg_samsung_dark_56;
-                }
-                if (i == 72) {
-                    return R.drawable.widget_bg_samsung_dark_72;
-                }
-                return i == 100 ? R.drawable.widget_bg_samsung_dark_100 : R.drawable.widget_bg_samsung_dark_88;
-            }
-            if (i == 56) {
-                return R.drawable.widget_bg_samsung_light_56;
-            }
-            if (i == 72) {
-                return R.drawable.widget_bg_samsung_light_72;
-            }
-            return i == 100 ? R.drawable.widget_bg_samsung_light_100 : R.drawable.widget_bg_samsung_light_88;
-        }
-        if (zEquals && z) {
-            if (i == 56) {
-                return R.drawable.widget_bg_oneui_dark_56;
-            }
-            if (i == 72) {
-                return R.drawable.widget_bg_oneui_dark_72;
-            }
-            return i == 100 ? R.drawable.widget_bg_oneui_dark_100 : R.drawable.widget_bg_oneui_dark_88;
-        }
-        if (zEquals) {
-            if (i == 56) {
-                return R.drawable.widget_bg_oneui_light_56;
-            }
-            if (i == 72) {
-                return R.drawable.widget_bg_oneui_light_72;
-            }
-            return i == 100 ? R.drawable.widget_bg_oneui_light_100 : R.drawable.widget_bg_oneui_light_88;
-        }
-        if (z) {
-            if (i == 56) {
-                return R.drawable.widget_bg_dark_56;
-            }
-            if (i == 72) {
-                return R.drawable.widget_bg_dark_72;
-            }
-            return i == 100 ? R.drawable.widget_bg_dark_100 : R.drawable.widget_bg_dark_88;
-        }
-        if (i == 56) {
-            return R.drawable.widget_bg_light_56;
-        }
-        if (i == 72) {
-            return R.drawable.widget_bg_light_72;
-        }
-        return i == 100 ? R.drawable.widget_bg_light_100 : R.drawable.widget_bg_light_88;
-    }
-
-    private static boolean isSamsung(Context context) {
-        String str = Build.MANUFACTURER;
-        String str2 = Build.BRAND;
-        return (str != null && "samsung".equalsIgnoreCase(str)) || (str2 != null && "samsung".equalsIgnoreCase(str2));
-    }
-
-    private static int secondaryColor(boolean z) {
-        return z ? Color.argb(232, 255, 255, 255) : Color.argb(232, 17, 19, 21);
-    }
-
-    private static int mutedColor(boolean z) {
-        return z ? Color.argb(165, 255, 255, 255) : Color.argb(165, 17, 19, 21);
-    }
-
-    private static int faintColor(boolean z) {
-        return z ? Color.argb(112, 255, 255, 255) : Color.argb(112, 17, 19, 21);
-    }
-
-    public static String shortReset(Context context, UsageWindow usageWindow, String str, long j) {
-        return shortReset(context, usageWindow, str, j, j);
-    }
-
-    public static String shortReset(Context context, UsageWindow usageWindow, String str,
-            long observedAtMillis, long nowMillis) {
-        if (usageWindow == null || WidgetOptions.RESET_HIDDEN.equals(str)
-                || !usageWindow.showsResetCountdown()) {
-            return "";
-        }
-        long jResetAtMillis = usageWindow.effectiveResetAtMillis(observedAtMillis);
-        if (jResetAtMillis <= 0) {
-            return "reset unavailable";
-        }
-        if (WidgetOptions.RESET_RELATIVE.equals(str)) {
-            return UsageFormat.relative(jResetAtMillis, nowMillis);
-        }
-        if ("both".equals(str)) {
-            return UsageFormat.absolute(context, jResetAtMillis, nowMillis) + " ("
-                    + UsageFormat.relative(jResetAtMillis, nowMillis) + ")";
-        }
-        return UsageFormat.absolute(context, jResetAtMillis, nowMillis)
-                .replace("today at ", "").replace("tomorrow at ", "tomorrow ");
-    }
-
-    private static String safeMessage(RuntimeException runtimeException) {
-        String message = runtimeException.getMessage();
+    private static String safeMessage(RuntimeException exception) {
+        String message = exception.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            return runtimeException.getClass().getSimpleName();
+            return exception.getClass().getSimpleName();
         }
-        return message.length() > 180 ? message.substring(GRAPHIC_STANDARD, 180) : message;
-    }
-
-    private static final class WidgetState {
-        final String combinedReset;
-        final String plan;
-        final String primaryReset;
-        final String primaryShort;
-        final String primaryShortReset;
-        final String primaryText;
-        final int primaryValue;
-        final String secondaryReset;
-        final String secondaryShort;
-        final String secondaryShortReset;
-        final String secondaryText;
-        final int secondaryValue;
-        /** "Week" or "Month" — the long-cadence window filling the secondary slot. */
-        final String secondaryName;
-        final String updated;
-        final String nextResetText;
-        final int nextResetProgress;
-
-        WidgetState(String str, int i, int i2, String str2, String str3, String str4,
-                String str5, String str6, String str7, String str8, String str9,
-                String str10, String str11, String nextResetText, int nextResetProgress) {
-            this(str, i, i2, str2, str3, str4, str5, str6, str7, str8, str9, str10, str11,
-                    nextResetText, nextResetProgress, "Week");
-        }
-
-        WidgetState(String str, int i, int i2, String str2, String str3, String str4,
-                String str5, String str6, String str7, String str8, String str9,
-                String str10, String str11, String nextResetText, int nextResetProgress,
-                String secondaryName) {
-            this.plan = str;
-            this.primaryValue = i;
-            this.secondaryValue = i2;
-            this.primaryText = str2;
-            this.secondaryText = str3;
-            this.primaryShort = str4;
-            this.secondaryShort = str5;
-            this.primaryReset = str6;
-            this.secondaryReset = str7;
-            this.primaryShortReset = str8;
-            this.secondaryShortReset = str9;
-            this.combinedReset = str10;
-            this.updated = str11;
-            this.nextResetText = nextResetText;
-            this.nextResetProgress = Math.max(0, Math.min(100, nextResetProgress));
-            this.secondaryName = secondaryName == null ? "Week" : secondaryName;
-        }
-
-        static WidgetState from(Context context, WidgetOptions widgetOptions) {
-            String str;
-            boolean zIsSignedIn = SecureTokenStore.isSignedIn(context);
-            UsageSnapshot usageSnapshotLoadSnapshot = AppPreferences.loadSnapshot(context);
-            long jCurrentTimeMillis = System.currentTimeMillis();
-            if (!zIsSignedIn) {
-                return new WidgetState("", -1, -1, "Sign in", "—", "SIGN IN", "—", "Open the app to connect ChatGPT", "", "Tap to connect", "", "Open the app to connect ChatGPT", "Tap anywhere to sign in", "—", 0);
-            }
-            if (usageSnapshotLoadSnapshot == null) {
-                String lastError = AppPreferences.getLastError(context);
-                if (lastError.isEmpty()) {
-                    lastError = "Tap refresh to load usage";
-                }
-                return new WidgetState("", -1, -1, "Loading…", "—", "…", "—", lastError, "", lastError, "", lastError, "Waiting for the first update", "—", 0);
-            }
-            boolean zEquals = WidgetOptions.DISPLAY_USED.equals(widgetOptions.displayMode);
-            // The secondary slot follows the account's long-cadence window: weekly on paid
-            // plans, monthly on the free tier.
-            UsageWindow longWindow = usageSnapshotLoadSnapshot.longWindow();
-            String secondaryName = usageSnapshotLoadSnapshot.longWindowIsMonthly()
-                    ? "Month" : "Week";
-            int iValue = value(usageSnapshotLoadSnapshot.fiveHour, zEquals);
-            int iValue2 = value(longWindow, zEquals);
-            String strPercent = UsageFormat.percent(usageSnapshotLoadSnapshot.fiveHour, widgetOptions.displayMode, false);
-            String strPercent2 = UsageFormat.percent(longWindow, widgetOptions.displayMode, false);
-            String strPercent3 = UsageFormat.percent(usageSnapshotLoadSnapshot.fiveHour, widgetOptions.displayMode, true);
-            String strPercent4 = UsageFormat.percent(longWindow, widgetOptions.displayMode, true);
-            String strReset = UsageFormat.reset(context, usageSnapshotLoadSnapshot.fiveHour,
-                    widgetOptions.resetMode, usageSnapshotLoadSnapshot.fetchedAtMillis,
-                    jCurrentTimeMillis);
-            String strReset2 = UsageFormat.reset(context, longWindow,
-                    widgetOptions.resetMode, usageSnapshotLoadSnapshot.fetchedAtMillis,
-                    jCurrentTimeMillis);
-            String strShortReset = WidgetRenderer.shortReset(context,
-                    usageSnapshotLoadSnapshot.fiveHour, widgetOptions.resetMode,
-                    usageSnapshotLoadSnapshot.fetchedAtMillis, jCurrentTimeMillis);
-            String strShortReset2 = WidgetRenderer.shortReset(context,
-                    longWindow, widgetOptions.resetMode,
-                    usageSnapshotLoadSnapshot.fetchedAtMillis, jCurrentTimeMillis);
-            if (strShortReset.isEmpty()) {
-                str = strShortReset2.isEmpty() ? "" : secondaryName + " " + strShortReset2;
-            } else {
-                str = strShortReset2.isEmpty() ? "5h " + strShortReset
-                        : "5h " + strShortReset + " · " + secondaryName + " " + strShortReset2;
-            }
-            String strUpdated = UsageFormat.updated(usageSnapshotLoadSnapshot.fetchedAtMillis, jCurrentTimeMillis);
-            String str2 = jCurrentTimeMillis - usageSnapshotLoadSnapshot.fetchedAtMillis > TimeUnit.HOURS.toMillis(6L) ? strUpdated + " · cached" : strUpdated;
-            String strPlanLabel = UsageFormat.planLabel(usageSnapshotLoadSnapshot.planType);
-            if (!AppPreferences.getLastError(context).isEmpty() && jCurrentTimeMillis - usageSnapshotLoadSnapshot.fetchedAtMillis > TimeUnit.MINUTES.toMillis(20L)) {
-                str2 = str2 + " · refresh issue";
-            }
-            ResetCountdown countdown = nextReset(usageSnapshotLoadSnapshot, jCurrentTimeMillis);
-            return new WidgetState(strPlanLabel, iValue, iValue2, strPercent, strPercent2,
-                    strPercent3, strPercent4, strReset, strReset2, strShortReset,
-                    strShortReset2, str, str2, countdown.text, countdown.progress,
-                    secondaryName);
-        }
-
-        static WidgetState error(String str) {
-            return new WidgetState("", -1, -1, "—", "—", "—", "—", str, "", str,
-                    "", str, "Open the app", "—", 0);
-        }
-
-        private static ResetCountdown nextReset(UsageSnapshot snapshot, long now) {
-            UsageWindow fiveHour = snapshot == null ? null : snapshot.fiveHour;
-            UsageWindow longWindow = snapshot == null ? null : snapshot.longWindow();
-            long fiveHourReset = (fiveHour != null && fiveHour.showsResetCountdown())
-                    ? resetAt(fiveHour, snapshot.fetchedAtMillis) : 0L;
-            long longReset = (longWindow != null && longWindow.showsResetCountdown())
-                    ? resetAt(longWindow, snapshot.fetchedAtMillis) : 0L;
-            long resetAt;
-            long windowDuration;
-            if (fiveHourReset > now && (longReset <= now || fiveHourReset <= longReset)) {
-                resetAt = fiveHourReset;
-                windowDuration = TimeUnit.HOURS.toMillis(5L);
-            } else if (longReset > now) {
-                resetAt = longReset;
-                windowDuration = Math.max(TimeUnit.DAYS.toMillis(1L),
-                        longWindow.windowSeconds * 1000L);
-            } else {
-                return new ResetCountdown("—", 0);
-            }
-            long remaining = Math.max(0L, resetAt - now);
-            int progress = (int) Math.max(0L, Math.min(100L,
-                    Math.round((remaining * 100.0d) / windowDuration)));
-            String text = UsageFormat.relative(resetAt, now);
-            if (text.startsWith("in ")) {
-                text = text.substring(3);
-            }
-            return new ResetCountdown(text, progress);
-        }
-
-        private static long resetAt(UsageWindow window, long observedAtMillis) {
-            return window == null ? 0L : window.effectiveResetAtMillis(observedAtMillis);
-        }
-
-        private static final class ResetCountdown {
-            final String text;
-            final int progress;
-
-            ResetCountdown(String text, int progress) {
-                this.text = text;
-                this.progress = progress;
-            }
-        }
-
-        private static int value(UsageWindow usageWindow, boolean z) {
-            if (usageWindow == null) {
-                return -1;
-            }
-            return z ? usageWindow.usedPercent : usageWindow.remainingPercent();
-        }
+        return message.length() > MAX_ERROR_LENGTH
+                ? message.substring(0, MAX_ERROR_LENGTH) : message;
     }
 }

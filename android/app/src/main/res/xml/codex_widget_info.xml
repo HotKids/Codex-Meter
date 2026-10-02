@@ -1,20 +1,24 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!--
+    Codex usage widget. One-row cells (2x1, 4x1) keep upstream's One UI dials; larger cells show
+    the AI-Usage style usage card. The default size is the 2x2 small card.
+-->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
     android:description="@string/widget_description"
     android:minWidth="110dp"
-    android:minHeight="70dp"
+    android:minHeight="110dp"
     android:updatePeriodMillis="0"
-    android:initialLayout="@layout/widget_rings"
+    android:initialLayout="@layout/widget_card"
     android:configure="dev.bennett.codexmeter.WidgetConfigActivity"
     android:resizeMode="vertical|horizontal"
     android:minResizeWidth="90dp"
     android:minResizeHeight="60dp"
     android:initialKeyguardLayout="@layout/widget_rings"
     android:widgetCategory="keyguard|home_screen"
-    app:previewLayoutExtraLarge="@layout/widget_battery_list"
-    app:previewLayoutExtraLargeLong="@layout/widget_battery_list"
-    app:previewLayoutLarge="@layout/widget_battery_list"
-    app:previewLayoutMedium="@layout/widget_battery_list"
+    app:previewLayoutExtraLarge="@layout/widget_card"
+    app:previewLayoutExtraLargeLong="@layout/widget_card"
+    app:previewLayoutLarge="@layout/widget_card"
+    app:previewLayoutMedium="@layout/widget_card"
     app:previewLayoutSmall="@layout/widget_rings"
     app:previewLayoutWideSmall="@layout/widget_rings_four"
     app:widgetSize="extraLargeLong|extraLarge|large|medium|wideSmall|small"

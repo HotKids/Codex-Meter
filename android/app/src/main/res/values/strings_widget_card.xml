@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Copy for the AI-Usage style home widget cards. -->
+<resources>
+    <string name="widget_card_plan_badge">Plan</string>
+    <string name="widget_card_remaining">left</string>
+
+    <!-- Window titles. -->
+    <string name="widget_card_five_hour">5-hour</string>
+    <string name="widget_card_weekly">Weekly</string>
+    <string name="widget_card_monthly">Monthly</string>
+    <string name="widget_card_days">%d-day</string>
+    <string name="widget_card_limit">Limit</string>
+    <string name="widget_card_extra_limit">Codex extra limit</string>
+    <string name="widget_card_spark">Codex Spark</string>
+    <string name="widget_card_limit_window">%1$s %2$s</string>
+    <string name="widget_card_current_usage">Current usage</string>
+
+    <!-- Durations and reset copy. -->
+    <string name="widget_card_days_hours">%1$dd %2$dh</string>
+    <string name="widget_card_hours_minutes">%1$dh %2$dm</string>
+    <string name="widget_card_minutes">%dm</string>
+    <string name="widget_card_resets_in">Resets in %s</string>
+    <string name="widget_card_reset_done">Reset</string>
+    <string name="widget_card_resetting_soon">Resetting soon</string>
+
+    <!-- Footer rows. -->
+    <string name="widget_card_reset_time">Resets in</string>
+    <string name="widget_card_refresh_time">Updated</string>
+    <string name="widget_card_refreshed_header">Updated %s</string>
+    <string name="widget_card_refreshed_value">%s</string>
+    <plurals name="widget_card_credits">
+        <item quantity="one">%d reset</item>
+        <item quantity="other">%d resets</item>
+    </plurals>
+    <string name="widget_card_next_expiry">Next expiry %s</string>
+    <string name="widget_card_expiry_unknown">Expiry unknown</string>
+    <string name="widget_card_credits_line">%1$s · %2$s</string>
+    <string name="widget_card_date_pattern">MMM d,</string>
+
+    <!-- States. -->
+    <string name="widget_card_sign_in">Open Codex Meter to sign in</string>
+    <string name="widget_card_waiting">Waiting for data</string>
+    <string name="widget_card_refresh_failed">Refresh failed</string>
+    <string name="widget_card_refresh_failed_cached">Refresh failed · showing cached data</string>
+    <string name="widget_card_stale">Data is out of date</string>
+    <string name="widget_card_refreshing">Refreshing…</string>
+
+    <!-- Launcher preview samples. -->
+    <string name="widget_card_sample_reset_short">Resets in 2h 50m</string>
+    <string name="widget_card_sample_reset_long">Resets in 2d 23h</string>
+    <string name="widget_card_sample_percent_high" translatable="false">64%</string>
+    <string name="widget_card_sample_percent_low" translatable="false">42%</string>
+    <string name="widget_card_sample_refreshed" translatable="false">14:48</string>
+</resources>

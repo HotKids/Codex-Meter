@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        Typography for the AI-Usage style home widget. Sizes and colours are applied at render
+        time (scaled to the host cell), so these styles only fix weight and line metrics.
+        WidgetCardText styles may receive a text shadow in transparent mode: the twin layout
+        widget_card_shadow.xml swaps them for the WidgetCardShadow styles. WidgetCardMeta styles
+        (footer rows, credits, errors) never carry a shadow.
+    -->
+    <style name="WidgetCardBase">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fallbackLineSpacing" tools:targetApi="28">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">#ff000000</item>
+    </style>
+
+    <style name="WidgetCardText.Bold" parent="WidgetCardBase">
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="WidgetCardText.Medium" parent="WidgetCardBase">
+        <item name="android:fontFamily">sans-serif-medium</item>
+    </style>
+
+    <style name="WidgetCardShadow.Bold" parent="WidgetCardText.Bold">
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+    <style name="WidgetCardShadow.Medium" parent="WidgetCardText.Medium">
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+
+    <style name="WidgetCardMeta.Bold" parent="WidgetCardText.Bold" />
+    <style name="WidgetCardMeta.Medium" parent="WidgetCardText.Medium" />
+</resources>

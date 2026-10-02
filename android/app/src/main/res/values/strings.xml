@@ -41,7 +41,7 @@
     <string name="update_opening_installer">Verified. Opening Android’s install confirmation…</string>
     <string name="update_waiting_for_installer">Waiting for Android’s install confirmation.</string>
     <string name="weekly">Weekly</string>
-    <string name="widget_description">Adaptive bars, rings, and dials for five-hour and weekly Codex usage</string>
+    <string name="widget_description">Codex usage cards for 5-hour, weekly and model limits, with dials on one-row cells</string>
     <string name="widget_name">Codex usage</string>
     <string name="widget_sample_compact_reset">5h resets 3:42 PM · Week resets Mon 11:00 AM</string>
     <string name="widget_sample_five_hour_short">5h</string>

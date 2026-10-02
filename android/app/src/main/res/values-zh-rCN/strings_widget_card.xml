@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- AI-Usage 风格主屏幕小组件文案。 -->
+<resources>
+    <string name="widget_card_plan_badge">套餐</string>
+    <string name="widget_card_remaining">剩余</string>
+
+    <string name="widget_card_five_hour">5 小时</string>
+    <string name="widget_card_weekly">每周</string>
+    <string name="widget_card_monthly">每月</string>
+    <string name="widget_card_days">%d 天</string>
+    <string name="widget_card_limit">限额</string>
+    <string name="widget_card_extra_limit">Codex 附加限额</string>
+    <string name="widget_card_spark">Codex Spark</string>
+    <string name="widget_card_limit_window">%1$s %2$s</string>
+    <string name="widget_card_current_usage">当前用量</string>
+
+    <string name="widget_card_days_hours">%1$d天%2$d小时</string>
+    <string name="widget_card_hours_minutes">%1$d小时%2$d分</string>
+    <string name="widget_card_minutes">%d分钟</string>
+    <string name="widget_card_resets_in">%s后重置</string>
+    <string name="widget_card_reset_done">已重置</string>
+    <string name="widget_card_resetting_soon">即将重置</string>
+
+    <string name="widget_card_reset_time">重置时间</string>
+    <string name="widget_card_refresh_time">刷新时间</string>
+    <string name="widget_card_refreshed_header">%s 刷新</string>
+    <string name="widget_card_refreshed_value">%s 刷新</string>
+    <plurals name="widget_card_credits">
+        <item quantity="other">重置%d次</item>
+    </plurals>
+    <string name="widget_card_next_expiry">最近到期 %s</string>
+    <string name="widget_card_expiry_unknown">到期时间未知</string>
+    <string name="widget_card_credits_line">%1$s · %2$s</string>
+    <string name="widget_card_date_pattern">MM月dd日</string>
+
+    <string name="widget_card_sign_in">打开 Codex Meter 登录</string>
+    <string name="widget_card_waiting">等待数据</string>
+    <string name="widget_card_refresh_failed">刷新失败</string>
+    <string name="widget_card_refresh_failed_cached">刷新失败 · 显示缓存数据</string>
+    <string name="widget_card_stale">数据较旧</string>
+    <string name="widget_card_refreshing">正在刷新…</string>
+
+    <string name="widget_card_sample_reset_short">2小时50分后重置</string>
+    <string name="widget_card_sample_reset_long">2天23小时后重置</string>
+</resources>

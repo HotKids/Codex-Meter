@@ -1,0 +1,661 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    AI-Usage style usage card (small and medium home widgets).
+
+    The reference lays every row out at an absolute y offset on a 158pt canvas, so each row sits in
+    its own full-size container ("card_pos_*") and UsageCardRenderer positions it by setting the
+    container padding for the chosen variant and host size. Rows therefore never push each other,
+    which keeps the geometry identical on every launcher. The defaults below render the two-window
+    small card at scale 1 and double as the launcher preview.
+
+    widget_card_shadow.xml is generated from this file by tools/widget-card-shadow.sh: it swaps the
+    WidgetCardText styles for WidgetCardShadow ones and is used when the widget background is off.
+    Edit this file and rerun the script; a unit test checks that the twin is up to date.
+-->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@android:id/background"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:clipChildren="true">
+
+    <ImageView
+        android:id="@+id/card_surface"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:importantForAccessibility="no"
+        android:scaleType="fitXY"
+        android:src="@drawable/widget_card_surface" />
+
+    <ImageView
+        android:id="@+id/card_watermark"
+        android:layout_width="96dp"
+        android:layout_height="96dp"
+        android:layout_gravity="bottom|end"
+        android:layout_marginEnd="-6dp"
+        android:layout_marginBottom="-6dp"
+        android:importantForAccessibility="no"
+        android:scaleType="fitCenter"
+        android:src="@drawable/ai_usage_watermark"
+        android:tint="#17232326" />
+
+    <!-- Header: plan badge, plus the refresh time on medium cards. -->
+    <FrameLayout
+        android:id="@+id/card_pos_header"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="11dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <ImageView
+                android:id="@+id/card_badge"
+                android:layout_width="wrap_content"
+                android:layout_height="17dp"
+                android:adjustViewBounds="true"
+                android:contentDescription="@string/widget_card_plan_badge"
+                android:scaleType="fitStart"
+                android:src="@drawable/ai_usage_openai" />
+
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/card_header_status"
+                style="@style/WidgetCardText.Medium"
+                android:layout_marginStart="8dp"
+                android:textSize="10dp"
+                android:visibility="gone" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Single-window hero: title, large remaining percentage and its caption. -->
+    <FrameLayout
+        android:id="@+id/card_pos_hero_title"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="36dp"
+        android:paddingEnd="12dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/card_hero_title"
+            style="@style/WidgetCardText.Bold"
+            android:textSize="14dp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_hero_value"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="55dp"
+        android:paddingEnd="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_hero_value"
+                style="@style/WidgetCardText.Bold"
+                android:textSize="32dp" />
+
+            <View
+                android:id="@+id/card_hero_spacer"
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1" />
+
+            <TextView
+                android:id="@+id/card_hero_caption"
+                style="@style/WidgetCardText.Medium"
+                android:paddingStart="8dp"
+                android:text="@string/widget_card_remaining"
+                android:textSize="12dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <!-- Window slot 0 -->
+    <FrameLayout
+        android:id="@+id/card_pos_title_0"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="38dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:id="@+id/card_title_0"
+            style="@style/WidgetCardText.Bold"
+            android:text="@string/widget_card_five_hour"
+            android:textSize="14dp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_detail_0"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="56dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_reset_0"
+                style="@style/WidgetCardText.Medium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/widget_card_sample_reset_short"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_value_0"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="4dp"
+                android:text="@string/widget_card_sample_percent_high"
+                android:textSize="12dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_line_0"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_line_title_0"
+                style="@style/WidgetCardText.Bold"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textSize="13dp" />
+
+            <TextView
+                android:id="@+id/card_line_reset_0"
+                style="@style/WidgetCardText.Medium"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_line_value_0"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="5dp"
+                android:textSize="14dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_bar_0"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="73dp"
+        android:paddingEnd="12dp">
+
+        <FrameLayout
+            android:id="@+id/card_bar_0"
+            android:layout_width="match_parent"
+            android:layout_height="6dp">
+
+            <ImageView
+                android:id="@+id/card_bar_track_0"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule"
+                android:tint="#ffc7c8cc" />
+
+            <ImageView
+                android:id="@+id/card_bar_fill_0"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_fill"
+                android:tint="#ff34c759" />
+
+            <ImageView
+                android:id="@+id/card_bar_outline_0"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_hairline"
+                android:tint="#12000000" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Window slot 1 -->
+    <FrameLayout
+        android:id="@+id/card_pos_title_1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="89dp"
+        android:paddingEnd="12dp">
+
+        <TextView
+            android:id="@+id/card_title_1"
+            style="@style/WidgetCardText.Bold"
+            android:text="@string/widget_card_weekly"
+            android:textSize="14dp" />
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_detail_1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="107dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_reset_1"
+                style="@style/WidgetCardText.Medium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:text="@string/widget_card_sample_reset_long"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_value_1"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="4dp"
+                android:text="@string/widget_card_sample_percent_low"
+                android:textSize="12dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_line_1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_line_title_1"
+                style="@style/WidgetCardText.Bold"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textSize="13dp" />
+
+            <TextView
+                android:id="@+id/card_line_reset_1"
+                style="@style/WidgetCardText.Medium"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_line_value_1"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="5dp"
+                android:textSize="14dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_bar_1"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="124dp"
+        android:paddingEnd="12dp">
+
+        <FrameLayout
+            android:id="@+id/card_bar_1"
+            android:layout_width="match_parent"
+            android:layout_height="6dp">
+
+            <ImageView
+                android:id="@+id/card_bar_track_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule"
+                android:tint="#ffc7c8cc" />
+
+            <ImageView
+                android:id="@+id/card_bar_fill_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_fill"
+                android:tint="#ffff8d28" />
+
+            <ImageView
+                android:id="@+id/card_bar_outline_1"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_hairline"
+                android:tint="#12000000" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Window slot 2 (medium list rows only) -->
+    <FrameLayout
+        android:id="@+id/card_pos_line_2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_line_title_2"
+                style="@style/WidgetCardText.Bold"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textSize="13dp" />
+
+            <TextView
+                android:id="@+id/card_line_reset_2"
+                style="@style/WidgetCardText.Medium"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_line_value_2"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="5dp"
+                android:textSize="14dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_bar_2"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:id="@+id/card_bar_2"
+            android:layout_width="match_parent"
+            android:layout_height="5.5dp">
+
+            <ImageView
+                android:id="@+id/card_bar_track_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule"
+                android:tint="#ffc7c8cc" />
+
+            <ImageView
+                android:id="@+id/card_bar_fill_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_fill"
+                android:tint="#ff34c759" />
+
+            <ImageView
+                android:id="@+id/card_bar_outline_2"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_hairline"
+                android:tint="#12000000" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Window slot 3 (medium list rows only) -->
+    <FrameLayout
+        android:id="@+id/card_pos_line_3"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_line_title_3"
+                style="@style/WidgetCardText.Bold"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:textSize="13dp" />
+
+            <TextView
+                android:id="@+id/card_line_reset_3"
+                style="@style/WidgetCardText.Medium"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_line_value_3"
+                style="@style/WidgetCardText.Bold"
+                android:paddingStart="5dp"
+                android:textSize="14dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_bar_3"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <FrameLayout
+            android:id="@+id/card_bar_3"
+            android:layout_width="match_parent"
+            android:layout_height="5.5dp">
+
+            <ImageView
+                android:id="@+id/card_bar_track_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule"
+                android:tint="#ffc7c8cc" />
+
+            <ImageView
+                android:id="@+id/card_bar_fill_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_fill"
+                android:tint="#ff34c759" />
+
+            <ImageView
+                android:id="@+id/card_bar_outline_3"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:importantForAccessibility="no"
+                android:scaleType="fitXY"
+                android:src="@drawable/widget_card_capsule_hairline"
+                android:tint="#12000000" />
+        </FrameLayout>
+    </FrameLayout>
+
+    <!-- Footer rows: reset time, reset credits and refresh time. -->
+    <FrameLayout
+        android:id="@+id/card_pos_meta_reset"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_meta_reset_label"
+                style="@style/WidgetCardMeta.Bold"
+                android:text="@string/widget_card_reset_time"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_meta_reset_value"
+                style="@style/WidgetCardMeta.Medium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_meta_credits"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingEnd="12dp"
+        android:visibility="gone">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_meta_credits_label"
+                style="@style/WidgetCardMeta.Bold"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_meta_credits_value"
+                style="@style/WidgetCardMeta.Medium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingStart="6dp"
+                android:textSize="10dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_meta_status"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="12dp"
+        android:paddingTop="136dp"
+        android:paddingEnd="12dp">
+
+        <LinearLayout
+            android:id="@+id/card_meta_status_row"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:baselineAligned="true"
+            android:orientation="horizontal">
+
+            <TextView
+                android:id="@+id/card_meta_status_label"
+                style="@style/WidgetCardMeta.Bold"
+                android:text="@string/widget_card_refresh_time"
+                android:textSize="10dp" />
+
+            <TextView
+                android:id="@+id/card_meta_status_value"
+                style="@style/WidgetCardMeta.Medium"
+                android:layout_width="0dp"
+                android:layout_weight="1"
+                android:gravity="end"
+                android:paddingStart="6dp"
+                android:text="@string/widget_card_sample_refreshed"
+                android:textSize="10dp" />
+        </LinearLayout>
+    </FrameLayout>
+
+    <FrameLayout
+        android:id="@+id/card_pos_credits_line"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/card_credits_line"
+            style="@style/WidgetCardMeta.Medium"
+            android:textSize="8dp" />
+    </FrameLayout>
+
+    <!-- Medium refresh-failure line, anchored to the bottom edge. -->
+    <FrameLayout
+        android:id="@+id/card_pos_error"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:paddingBottom="2dp"
+        android:visibility="gone">
+
+        <TextView
+            android:id="@+id/card_error"
+            style="@style/WidgetCardMeta.Medium"
+            android:layout_gravity="bottom|start"
+            android:fontFamily="sans-serif"
+            android:textColor="#ffff8d28"
+            android:textSize="8dp" />
+    </FrameLayout>
+</FrameLayout>
