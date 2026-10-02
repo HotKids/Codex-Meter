@@ -48,7 +48,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
                 AppWidgetManager.INVALID_APPWIDGET_ID);
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
-            Toast.makeText(this, "No lock-screen widget was selected.", Toast.LENGTH_LONG).show();
+            Toast.makeText(this, R.string.dashboard_lock_no_widget, Toast.LENGTH_LONG).show();
             finish();
             return;
         }
@@ -63,7 +63,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
     }
 
     private void build() {
-        Ui.ConfigPage page = Ui.installConfigPage(this, "Lock-screen widget");
+        Ui.ConfigPage page = Ui.installConfigPage(this, getString(R.string.dashboard_lock_title));
         LinearLayout content = page.content;
         buildPreview(page.preview);
 
@@ -78,9 +78,9 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
             selectedMeters.add(WidgetMeters.FIVE_HOUR);
         }
 
-        content.addView(Ui.separator(this, "Meters"));
+        content.addView(Ui.separator(this, getString(R.string.dashboard_lock_meters)));
         content.addView(buildMetersCard());
-        content.addView(Ui.separator(this, "Content"));
+        content.addView(Ui.separator(this, getString(R.string.dashboard_lock_content)));
         content.addView(buildContentCard(saved));
 
         CompoundButton.OnCheckedChangeListener previewCheckListener =
@@ -106,9 +106,8 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
 
     private RoundedLinearLayout buildMetersCard() {
         RoundedLinearLayout card = Ui.seslCard(this, dark);
-        metersHint = Ui.text(this,
-                "Lock widgets show up to 2 meters. Extra selections are ignored.",
-                13.0f, Ui.secondaryText(dark));
+        // updateMetersHint() fills in the capacity text once the selection is known.
+        metersHint = Ui.text(this, "", 13.0f, Ui.secondaryText(dark));
         metersHint.setPadding(0, 0, 0, Ui.dp(this, 8));
         card.addView(metersHint);
 
@@ -135,7 +134,8 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
             String key = ordered.get(i);
             SwitchCompat toggle = new SwitchCompat(this);
             toggle.setChecked(selectedMeters.contains(key));
-            card.addView(buildSwitchRow(WidgetMeters.configLabel(key, snapshot), toggle, i > 0));
+            card.addView(buildSwitchRow(SharedLabels.widgetMeterConfigLabel(this, key, snapshot),
+                    toggle, i > 0));
             toggle.setOnCheckedChangeListener(
                     (button, checked) -> onMeterToggled(button, key, checked));
         }
@@ -160,18 +160,16 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
 
     private RoundedLinearLayout buildContentCard(LockWidgetOptions saved) {
         RoundedLinearLayout card = Ui.seslCard(this, dark);
-        showCountdown = Ui.checkbox(this, "Show live time until reset", saved.showCountdown,
-                dark);
-        showResetCredits = Ui.checkbox(this, "Show reset-credit count", saved.showResetCredits,
-                dark);
-        showResetAction = Ui.checkbox(this, "Tap tile to open Use reset confirmation",
+        showCountdown = Ui.checkbox(this, getString(R.string.dashboard_lock_show_countdown),
+                saved.showCountdown, dark);
+        showResetCredits = Ui.checkbox(this, getString(R.string.dashboard_lock_show_credits),
+                saved.showResetCredits, dark);
+        showResetAction = Ui.checkbox(this, getString(R.string.dashboard_lock_tap_reset),
                 saved.showResetAction, dark);
         card.addView(showCountdown);
         card.addView(showResetCredits);
         card.addView(showResetAction);
-        TextView resetNote = Ui.text(this,
-                "A reset is never consumed directly from the lock screen. The tile opens a "
-                        + "confirmation screen first.",
+        TextView resetNote = Ui.text(this, getString(R.string.dashboard_lock_reset_note),
                 12.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams noteParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -208,11 +206,13 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         }
         int selected = selectedMeters.size();
         int capacity = WidgetMeters.lockSlotCapacity();
-        String message = "Lock widgets show up to " + capacity + " meters.";
+        String message = getResources().getQuantityString(
+                R.plurals.dashboard_lock_meters_capacity, capacity, capacity);
         if (selected > capacity) {
             int extra = selected - capacity;
-            message += " " + extra + " extra selection" + (extra == 1 ? " is" : "s are")
-                    + " ignored until you deselect others.";
+            message = getString(R.string.dashboard_two_sentences, message,
+                    getResources().getQuantityString(R.plurals.dashboard_lock_meters_extra,
+                            extra, extra));
         }
         metersHint.setText(message);
     }
@@ -307,7 +307,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         SamsungLockWidgetSupport.updateById(this, appWidgetId);
         setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
                 appWidgetId));
-        Toast.makeText(this, "Lock-screen widget updated.", Toast.LENGTH_SHORT).show();
+        Toast.makeText(this, R.string.dashboard_lock_saved, Toast.LENGTH_SHORT).show();
         finish();
     }
 }

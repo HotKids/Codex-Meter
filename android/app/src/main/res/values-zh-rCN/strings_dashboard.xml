@@ -1,0 +1,229 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 首页、用量历史、首页编辑与三星锁屏小组件文案。 -->
+<resources>
+    <!-- 通用格式（UsageFormat）。 -->
+    <string name="dashboard_duration_days_hours">%1$d天%2$d小时</string>
+    <string name="dashboard_duration_hours_minutes">%1$d小时%2$d分</string>
+    <string name="dashboard_duration_minutes">%1$d分钟</string>
+    <string name="dashboard_relative_in">%1$s后</string>
+    <string name="dashboard_relative_now">现在</string>
+    <string name="dashboard_time_today">今天 %1$s</string>
+    <string name="dashboard_time_tomorrow">明天 %1$s</string>
+    <string name="dashboard_time_date">%1$s %2$s</string>
+    <string name="dashboard_reset_unavailable">暂无重置时间</string>
+    <string name="dashboard_resets_relative">%1$s后重置</string>
+    <string name="dashboard_resets_now">即将重置</string>
+    <string name="dashboard_resets_absolute">%1$s 重置</string>
+    <string name="dashboard_resets_both">%1$s 重置（%2$s）</string>
+    <string name="dashboard_estimate_remaining">预计可用 %1$s</string>
+    <string name="dashboard_estimate_depleted">预计已耗尽</string>
+    <string name="dashboard_estimate_remaining_spoken">预计可用 %1$s</string>
+    <string name="dashboard_estimate_depleted_spoken">预计已耗尽</string>
+    <string name="dashboard_percent_unavailable">暂无数据</string>
+    <string name="dashboard_percent_used">已用 %1$d%%</string>
+    <string name="dashboard_percent_left">剩余 %1$d%%</string>
+    <string name="dashboard_updated_never">尚未更新</string>
+    <string name="dashboard_updated_just_now">刚刚更新</string>
+    <string name="dashboard_updated_minutes">%1$d分钟前更新</string>
+    <string name="dashboard_updated_hours">%1$d小时前更新</string>
+    <string name="dashboard_updated_days">%1$d天前更新</string>
+    <string name="dashboard_rate_per_hour">%1$s%%/小时</string>
+    <string name="dashboard_value_per_hour">%1$s/小时</string>
+    <string name="dashboard_value_per_month">%1$s/月</string>
+    <string name="dashboard_plan_price">%1$s · %2$s/月</string>
+    <string name="dashboard_two_sentences">%1$s%2$s</string>
+    <string name="dashboard_sentence_join">%1$s。%2$s</string>
+    <string name="dashboard_list_separator">，</string>
+    <string name="dashboard_loading">正在加载</string>
+
+    <!-- 首页（MainActivity）。 -->
+    <string name="dashboard_edit_title">编辑首页</string>
+    <string name="dashboard_menu_settings">设置</string>
+    <string name="dashboard_sign_in">使用 ChatGPT 登录</string>
+    <string name="dashboard_sign_in_continue">继续登录</string>
+    <string name="dashboard_empty">首页暂无可显示的项目。请刷新用量，或在“设置 → 刷新与用量”中选择项目。</string>
+    <string name="dashboard_update_return_title">返回 Codex Meter %1$s</string>
+    <string name="dashboard_update_ready_title">Codex Meter %1$s 已就绪</string>
+    <string name="dashboard_update_return_summary">你已切回稳定版渠道。校验通过后，稳定版 APK 将直接覆盖安装当前 Alpha 版。</string>
+    <string name="dashboard_update_alpha_summary">有新的已签名 Alpha 版可用。APK 会先通过校验，然后 Android 才会请你确认安装。</string>
+    <string name="dashboard_update_stable_summary">有新的已签名 GitHub 版本可用。APK 会先通过校验，然后 Android 才会请你确认安装。</string>
+    <string name="dashboard_update_review">查看更新</string>
+    <string name="dashboard_window_monthly">每月</string>
+    <string name="dashboard_usage_history">用量历史</string>
+    <string name="dashboard_history_card_detail">本机记录越多，消耗趋势的估算就越准确。</string>
+    <string name="dashboard_history_card_waiting">OpenAI 返回 5 小时、每周或每月用量周期后，即可显示图表。</string>
+    <string name="dashboard_history_view">查看历史</string>
+    <string name="dashboard_usage_credits">额外额度</string>
+    <string name="dashboard_credits_unlimited">不限量</string>
+    <string name="dashboard_credits_available">有可用额度</string>
+    <string name="dashboard_credits_none_purchased">未购买额外额度</string>
+    <string name="dashboard_credits_balance">%1$s 点</string>
+    <string name="dashboard_credits_uncapped">额外额度余额不设上限</string>
+    <string name="dashboard_credits_purchase_hint">可在 ChatGPT Codex 中购买额度</string>
+    <string name="dashboard_credits_purchased">已购买的 Codex 额外额度余额</string>
+    <string name="dashboard_cadence_hours">%1$d 小时</string>
+    <string name="dashboard_cadence_days">%1$d 天</string>
+    <string name="dashboard_cadence_usage">用量</string>
+    <string name="dashboard_limit_reached">%1$s（已达额度）</string>
+    <string name="dashboard_limit_unavailable">%1$s（不可用）</string>
+    <string name="dashboard_reset_credits">重置券</string>
+    <string name="dashboard_reset_credits_none">暂无可用重置券</string>
+    <plurals name="dashboard_reset_credits_available">
+        <item quantity="other">%d 张可用重置券</item>
+    </plurals>
+    <string name="dashboard_reset_use_one">使用 1 张重置券</string>
+    <string name="dashboard_reset_sign_in">登录后查看重置券</string>
+    <string name="dashboard_reset_next_expires">最早到期：%1$s</string>
+    <string name="dashboard_reset_expiry_unavailable">暂无到期详情</string>
+    <string name="dashboard_reset_earn">可在 ChatGPT Codex 中获得重置券</string>
+    <string name="dashboard_signed_in">已登录。</string>
+    <string name="dashboard_sign_in_failed">登录失败。</string>
+    <string name="dashboard_sign_in_resuming">正在继续安全的 OpenAI 登录…</string>
+    <string name="dashboard_sign_in_opening">正在打开安全的 OpenAI 登录…</string>
+    <string name="dashboard_sign_in_start_failed">无法启动登录：%1$s</string>
+    <string name="dashboard_sign_in_no_browser">没有可用于完成登录的浏览器。</string>
+    <string name="dashboard_refresh_sign_in_first">请先在设置中登录，再刷新用量。</string>
+    <string name="dashboard_operation_failed">操作失败。</string>
+
+    <!-- 用量波浪卡片（UsageWaveView）。 -->
+    <string name="dashboard_wave_resets_in">距离重置</string>
+    <string name="dashboard_wave_description">%1$s，剩余 %2$d%%。%3$s</string>
+    <string name="dashboard_wave_accelerated">用量加速警告</string>
+
+    <!-- 消耗图表（UsageBurnChartView）。 -->
+    <string name="dashboard_chart_building_local">正在积累本机记录</string>
+    <plurals name="dashboard_chart_local_samples">
+        <item quantity="other">%d 条本机记录</item>
+    </plurals>
+    <string name="dashboard_chart_detail_exhaustion">%1$s，预计耗尽时间：%2$s</string>
+    <string name="dashboard_chart_detail_scrub">%1$s。触摸并拖动可查看各时间点</string>
+    <string name="dashboard_chart_description">%1$s用量消耗图表。%2$s。</string>
+    <string name="dashboard_chart_building">正在积累记录</string>
+    <plurals name="dashboard_chart_samples">
+        <item quantity="other">%d 条记录</item>
+    </plurals>
+    <string name="dashboard_chart_axis_reset">重置</string>
+    <string name="dashboard_chart_waiting">等待用量数据</string>
+    <string name="dashboard_chart_reset_unavailable">暂无重置周期</string>
+
+    <!-- 用量历史（UsageHistoryActivity）。 -->
+    <string name="dashboard_history_customize">自定义</string>
+    <string name="dashboard_history_highlights_title">要显示的分析项</string>
+    <string name="dashboard_history_done">完成</string>
+    <string name="dashboard_history_guide">实线表示当前周期的用量，浅色线表示以往周期，点状斜线表示可持续的节奏，虚线表示预测。拖动图表可查看任意时刻。每次成功刷新后都会记录样本，样本仅保存在本设备上。</string>
+    <string name="dashboard_history_waiting">OpenAI 返回 5 小时、每周或每月用量周期后，即可显示图表。可在首页刷新用量后再次查看。</string>
+    <string name="dashboard_history_estimated_value">估算价值</string>
+    <string name="dashboard_history_clear">清除本机历史记录</string>
+    <string name="dashboard_history_clear_title">清除用量历史？</string>
+    <string name="dashboard_history_clear_message">这将删除本机存储的所有用量样本。最新额度和账户登录状态不受影响。</string>
+    <string name="dashboard_history_clear_confirm">清除</string>
+    <string name="dashboard_history_section_five_hour">5 小时周期</string>
+    <string name="dashboard_history_section_weekly">每周周期</string>
+    <string name="dashboard_history_section_monthly">每月周期</string>
+    <string name="dashboard_history_drag_compare">拖动查看 · 轻点周期进行比较</string>
+    <string name="dashboard_history_drag">拖动查看</string>
+    <string name="dashboard_history_scrub">%1$s — 已用 %2$d%%</string>
+    <string name="dashboard_history_scrub_value">%1$s — 已用 %2$d%% · ≈ %3$s</string>
+    <string name="dashboard_history_current_window">当前周期</string>
+    <string name="dashboard_history_inspect">查看%1$s。%2$s</string>
+    <string name="dashboard_history_average">平均 %1$s</string>
+    <string name="dashboard_history_hit_limit">已达额度</string>
+    <string name="dashboard_history_insights">用量分析</string>
+    <string name="dashboard_history_pace_vs_previous">与以往周期的节奏对比</string>
+    <string name="dashboard_history_projected_exhaustion">预计耗尽时间</string>
+    <string name="dashboard_history_avg_completed">已完成周期平均用量</string>
+    <string name="dashboard_history_peak_burn">观测到的最高消耗速度</string>
+    <string name="dashboard_history_value_used">本周期已用价值（估算）</string>
+    <string name="dashboard_history_value_of">≈ %1$s / %2$s</string>
+    <string name="dashboard_history_pace_ahead">比通常高 %1$d 个百分点</string>
+    <string name="dashboard_history_pace_behind">比通常低 %1$d 个百分点</string>
+    <string name="dashboard_history_pace_on_par">与通常持平</string>
+    <string name="dashboard_history_included_usage">套餐包含用量（估算）</string>
+    <string name="dashboard_history_weekly_allowance">每周额度</string>
+    <string name="dashboard_history_five_hour_allowance">5 小时额度</string>
+    <string name="dashboard_history_vs_price">相对订阅价格</string>
+    <string name="dashboard_history_value_multiplier">≈ 月费的 %1$d 倍</string>
+    <string name="dashboard_history_weekly_value_remaining">本周剩余价值</string>
+    <string name="dashboard_history_disclaimer">基于社区数据将套餐额度与 API 价格进行粗略比较的估算，并非账单。</string>
+
+    <!-- 用量历史分析项（HistorySections）。 -->
+    <string name="dashboard_highlight_guide">图表阅读说明</string>
+    <string name="dashboard_highlight_window_list">以往周期列表</string>
+    <string name="dashboard_highlight_pace">与通常节奏对比</string>
+    <string name="dashboard_highlight_average">已完成周期平均用量</string>
+    <string name="dashboard_highlight_peak">最高消耗速度</string>
+    <string name="dashboard_highlight_value">价值估算（美元）</string>
+
+    <!-- 首页编辑（DashboardReorderActivity、DashboardSections）。 -->
+    <string name="dashboard_edit_hint">拖动手柄可调整用量卡片的顺序，使用开关可隐藏不需要的卡片。OpenAI 为你的账户返回 GPT-5.3-Codex-Spark 等模型专属额度后，它们会自动显示在这里。</string>
+    <string name="dashboard_edit_note">更改会立即保存。额外额度余额和重置券在没有可显示的内容（为零或更少）时保持隐藏；5 小时、每周、每月和用量历史卡片仅在 OpenAI 返回相应数据时显示，与卡片位置及开关状态无关。</string>
+    <string name="dashboard_edit_show">在首页显示</string>
+    <string name="dashboard_edit_reorder">调整顺序</string>
+    <string name="dashboard_section_five_hour_title">5 小时额度</string>
+    <string name="dashboard_section_five_hour_summary">Codex 5 小时滚动周期</string>
+    <string name="dashboard_section_weekly_title">每周额度</string>
+    <string name="dashboard_section_weekly_summary">Codex 7 天滚动周期</string>
+    <string name="dashboard_section_monthly_title">每月额度</string>
+    <string name="dashboard_section_monthly_summary">Codex 约 30 天滚动周期（免费套餐）</string>
+    <string name="dashboard_section_usage_credits_title">额外额度余额</string>
+    <string name="dashboard_section_usage_credits_summary">余额为零或负数时自动隐藏</string>
+    <string name="dashboard_section_usage_history_summary">仅在有 5 小时或每周周期时显示</string>
+    <string name="dashboard_section_reset_credits_summary">没有可用重置券时自动隐藏</string>
+    <string name="dashboard_section_limit_title">附加额度</string>
+    <string name="dashboard_section_limit_summary">模型专属额度 · 自动检测</string>
+    <string name="dashboard_limit_additional_usage">附加用量</string>
+
+    <!-- 小组件显示项（WidgetMeters）。 -->
+    <string name="dashboard_meter_five_hour">Codex · 5 小时</string>
+    <string name="dashboard_meter_weekly">Codex · 每周</string>
+    <string name="dashboard_meter_monthly">Codex · 每月</string>
+    <string name="dashboard_meter_next_reset">下次重置</string>
+    <string name="dashboard_meter_limit_five_hour">%1$s · 5 小时</string>
+    <string name="dashboard_meter_limit_weekly">%1$s · 每周</string>
+    <string name="dashboard_meter_short_five_hour">5小时</string>
+    <string name="dashboard_meter_short_weekly">周</string>
+    <string name="dashboard_meter_short_monthly">月</string>
+    <string name="dashboard_meter_short_next_reset">重置</string>
+    <string name="dashboard_meter_short_reset_credits">重置券</string>
+    <string name="dashboard_meter_short_limit_five_hour">%1$s 5小时</string>
+    <string name="dashboard_meter_short_limit_weekly">%1$s 周</string>
+    <string name="dashboard_meter_short_fallback">额度</string>
+
+    <!-- 三星锁屏小组件。 -->
+    <string name="dashboard_lock_no_widget">未选择锁屏小组件。</string>
+    <string name="dashboard_lock_title">锁屏小组件</string>
+    <string name="dashboard_lock_meters">显示项目</string>
+    <string name="dashboard_lock_content">内容</string>
+    <plurals name="dashboard_lock_meters_capacity">
+        <item quantity="other">锁屏小组件最多显示 %d 项。</item>
+    </plurals>
+    <plurals name="dashboard_lock_meters_extra">
+        <item quantity="other">多选的 %d 项将被忽略，取消选择其他项后才会显示。</item>
+    </plurals>
+    <string name="dashboard_lock_show_countdown">显示实时重置倒计时</string>
+    <string name="dashboard_lock_show_credits">显示重置券数量</string>
+    <string name="dashboard_lock_tap_reset">轻点小组件打开“使用重置券”确认页面</string>
+    <string name="dashboard_lock_reset_note">不会直接在锁屏上使用重置券。轻点小组件会先打开确认页面。</string>
+    <string name="dashboard_lock_saved">锁屏小组件已更新。</string>
+    <string name="dashboard_lock_sign_in">登录</string>
+    <string name="dashboard_lock_sign_in_stacked">登录</string>
+    <string name="dashboard_lock_sign_in_required">Codex Meter，需要登录</string>
+    <string name="dashboard_lock_single_five_hour">Codex 5 小时额度剩余 %1$s</string>
+    <string name="dashboard_lock_single_weekly">Codex 每周额度剩余 %1$s</string>
+    <string name="dashboard_lock_single_monthly">Codex 每月额度剩余 %1$s</string>
+    <string name="dashboard_lock_description_style">Codex %1$s</string>
+    <string name="dashboard_lock_description_meter">%1$s 剩余 %2$s</string>
+    <string name="dashboard_lock_description_countdown">实时重置倒计时</string>
+    <plurals name="dashboard_lock_description_credits">
+        <item quantity="other">%d 张重置券</item>
+    </plurals>
+    <string name="dashboard_lock_description_tap">%1$s；轻点可打开重置确认</string>
+    <string name="dashboard_lock_style_rings">圆环</string>
+    <string name="dashboard_lock_style_gauges">仪表</string>
+    <string name="dashboard_lock_style_bars">条形</string>
+    <string name="dashboard_lock_style_numbers">数字</string>
+    <string name="dashboard_lock_face_five_hour">5H</string>
+    <string name="dashboard_lock_face_weekly">周</string>
+    <string name="dashboard_lock_face_monthly">月</string>
+    <string name="dashboard_lock_face_reset_count">券%1$d</string>
+</resources>

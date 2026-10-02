@@ -8,11 +8,17 @@ import java.util.Date;
 import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
-/** English phone/widget presentation of plans, percentages, reset times, and ages. */
+/**
+ * Phone/widget presentation of plans, percentages, reset times, and ages. Methods taking a
+ * {@link Context} return localized text; the remaining English-only overloads exist for
+ * callers that have not been localized yet.
+ */
 public final class UsageFormat {
     private static final long MINUTES_PER_HOUR = TimeUnit.HOURS.toMinutes(1);
     private static final long MINUTES_PER_DAY = TimeUnit.DAYS.toMinutes(1);
     private static final long HOURS_PER_DAY = TimeUnit.DAYS.toHours(1);
+    /** Separates an absolute time from its relative countdown, e.g. "Fri 10:00 · in 2d". */
+    private static final String TIME_SEPARATOR = " · ";
 
     private UsageFormat() {
     }
@@ -20,13 +26,14 @@ public final class UsageFormat {
     /**
      * Display name for a ChatGPT plan type. OpenAI's top Pro tier reports {@code pro} (older
      * caches say {@code pro20x}); it is labelled Pro 10x. Unknown plans return an empty string.
+     * Plan names are product names and are not translated.
      */
     public static String planLabel(String plan) {
         if (plan == null || plan.trim().isEmpty()) {
             return "";
         }
         String normalized = plan.trim().toLowerCase(Locale.ROOT)
-                .replace("_", "").replace("-", "").replace(" ", "").replace("\u00d7", "x");
+                .replace("_", "").replace("-", "").replace(" ", "").replace("×", "x");
         switch (normalized) {
             case "free":
                 return "Free";
@@ -54,16 +61,18 @@ public final class UsageFormat {
         }
     }
 
-    public static String percent(UsageWindow usageWindow, String mode, boolean compact) {
+    public static String percent(Context context, UsageWindow usageWindow, String mode,
+            boolean compact) {
         if (usageWindow == null) {
-            return compact ? "—" : "Unavailable";
+            return compact ? "—" : context.getString(R.string.dashboard_percent_unavailable);
         }
         boolean showUsed = WidgetOptions.DISPLAY_USED.equals(mode);
         int value = showUsed ? usageWindow.usedPercent : usageWindow.remainingPercent();
         if (compact) {
             return value + "%";
         }
-        return value + "% " + (showUsed ? "used" : "left");
+        return context.getString(showUsed
+                ? R.string.dashboard_percent_used : R.string.dashboard_percent_left, value);
     }
 
     public static String reset(Context context, UsageWindow usageWindow, String mode, long now) {
@@ -78,19 +87,42 @@ public final class UsageFormat {
         }
         long resetAtMillis = usageWindow.effectiveResetAtMillis(observedAtMillis);
         if (resetAtMillis <= 0) {
-            return "Reset time unavailable";
+            return context.getString(R.string.dashboard_reset_unavailable);
+        }
+        if (WidgetOptions.RESET_RELATIVE.equals(mode)) {
+            String countdown = countdown(context, resetAtMillis, nowMillis);
+            return countdown.isEmpty()
+                    ? context.getString(R.string.dashboard_resets_now)
+                    : context.getString(R.string.dashboard_resets_relative, countdown);
         }
         String absolute = absolute(context, resetAtMillis, nowMillis);
-        String relative = relative(resetAtMillis, nowMillis);
-        if (WidgetOptions.RESET_RELATIVE.equals(mode)) {
-            return "Resets " + relative;
-        }
         if (WidgetOptions.RESET_BOTH.equals(mode)) {
-            return "Resets " + absolute + " (" + relative + ")";
+            return context.getString(R.string.dashboard_resets_both, absolute,
+                    relative(context, resetAtMillis, nowMillis));
         }
-        return "Resets " + absolute;
+        return context.getString(R.string.dashboard_resets_absolute, absolute);
     }
 
+    /**
+     * Time left until the window resets as a compact duration ("2h 50m"), or an empty string
+     * when the window shows no countdown, its reset time is unknown, or under a minute remains.
+     */
+    public static String resetCountdown(Context context, UsageWindow usageWindow,
+            long observedAtMillis, long nowMillis) {
+        if (usageWindow == null || !usageWindow.showsResetCountdown()) {
+            return "";
+        }
+        long resetAtMillis = usageWindow.effectiveResetAtMillis(observedAtMillis);
+        return resetAtMillis <= 0 ? "" : countdown(context, resetAtMillis, nowMillis);
+    }
+
+    /** Compact duration until {@code targetMillis}, or "" once less than a minute remains. */
+    private static String countdown(Context context, long targetMillis, long nowMillis) {
+        long minutes = TimeUnit.MILLISECONDS.toMinutes(Math.max(0L, targetMillis - nowMillis));
+        return minutes > 0 ? compactDuration(context, targetMillis - nowMillis) : "";
+    }
+
+    /** English-only; kept for callers that have not been localized yet. */
     public static String estimatedRemaining(UsagePace.Assessment assessment) {
         if (assessment == null || !assessment.available) {
             return "";
@@ -101,9 +133,34 @@ public final class UsageFormat {
         return "Est. " + compactDuration(assessment.estimatedRemainingMillis);
     }
 
-    /** Formats a duration as "Xd Yh", "Xh Ym", or "Xm"; never below one minute. */
+    /** "Est. 1d 3h" / "Est. depleted", or "" when no estimate is available. */
+    public static String estimatedRemaining(Context context, UsagePace.Assessment assessment) {
+        return estimate(context, assessment, R.string.dashboard_estimate_remaining,
+                R.string.dashboard_estimate_depleted);
+    }
+
+    /** Spoken form of {@link #estimatedRemaining(Context, UsagePace.Assessment)}. */
+    public static String estimatedRemainingSpoken(Context context,
+            UsagePace.Assessment assessment) {
+        return estimate(context, assessment, R.string.dashboard_estimate_remaining_spoken,
+                R.string.dashboard_estimate_depleted_spoken);
+    }
+
+    private static String estimate(Context context, UsagePace.Assessment assessment,
+            int remainingRes, int depletedRes) {
+        if (assessment == null || !assessment.available) {
+            return "";
+        }
+        if (assessment.estimatedRemainingMillis <= 0L) {
+            return context.getString(depletedRes);
+        }
+        return context.getString(remainingRes,
+                compactDuration(context, assessment.estimatedRemainingMillis));
+    }
+
+    /** English-only "Xd Yh", "Xh Ym", or "Xm"; never below one minute. */
     static String compactDuration(long millis) {
-        long minutes = Math.max(1L, TimeUnit.MILLISECONDS.toMinutes(Math.max(0L, millis)));
+        long minutes = durationMinutes(millis);
         long days = minutes / MINUTES_PER_DAY;
         long hours = minutes % MINUTES_PER_DAY / MINUTES_PER_HOUR;
         if (days > 0L) {
@@ -115,22 +172,59 @@ public final class UsageFormat {
         return minutes + "m";
     }
 
+    /** Localized "Xd Yh", "Xh Ym", or "Xm"; never below one minute. */
+    static String compactDuration(Context context, long millis) {
+        long minutes = durationMinutes(millis);
+        long days = minutes / MINUTES_PER_DAY;
+        long hours = minutes % MINUTES_PER_DAY / MINUTES_PER_HOUR;
+        if (days > 0L) {
+            return context.getString(R.string.dashboard_duration_days_hours, days, hours);
+        }
+        if (hours > 0L) {
+            return context.getString(R.string.dashboard_duration_hours_minutes, hours,
+                    minutes % MINUTES_PER_HOUR);
+        }
+        return context.getString(R.string.dashboard_duration_minutes, minutes);
+    }
+
+    private static long durationMinutes(long millis) {
+        return Math.max(1L, TimeUnit.MILLISECONDS.toMinutes(Math.max(0L, millis)));
+    }
+
     /** "today at …", "tomorrow at …", or a weekday-date-time, in the device's clock style. */
     public static String absolute(Context context, long millis, long nowMillis) {
-        boolean use24Hour = DateFormat.is24HourFormat(context);
         Calendar target = calendarAt(millis);
         Calendar today = calendarAt(nowMillis);
         Calendar tomorrow = (Calendar) today.clone();
         tomorrow.add(Calendar.DAY_OF_YEAR, 1);
-        String pattern;
+        Date date = new Date(millis);
+        String time = clockTime(context, date);
         if (sameDay(target, today)) {
-            pattern = use24Hour ? "'today at' HH:mm" : "'today at' h:mm a";
-        } else if (sameDay(target, tomorrow)) {
-            pattern = use24Hour ? "'tomorrow at' HH:mm" : "'tomorrow at' h:mm a";
-        } else {
-            pattern = use24Hour ? "EEE, MMM d 'at' HH:mm" : "EEE, MMM d 'at' h:mm a";
+            return context.getString(R.string.dashboard_time_today, time);
         }
-        return new SimpleDateFormat(pattern, Locale.getDefault()).format(new Date(millis));
+        if (sameDay(target, tomorrow)) {
+            return context.getString(R.string.dashboard_time_tomorrow, time);
+        }
+        return context.getString(R.string.dashboard_time_date,
+                localizedPattern("EEEMMMd", date), time);
+    }
+
+    /** Absolute time followed by the relative countdown, e.g. "Fri, May 2 at 10:00 · in 2d". */
+    public static String absoluteAndRelative(Context context, long millis, long nowMillis) {
+        return absolute(context, millis, nowMillis) + TIME_SEPARATOR
+                + relative(context, millis, nowMillis);
+    }
+
+    /** Hours and minutes in the device's 12/24-hour clock style and the current locale. */
+    static String clockTime(Context context, Date date) {
+        return localizedPattern(DateFormat.is24HourFormat(context) ? "Hm" : "hma", date);
+    }
+
+    /** Formats {@code date} with the current locale's best pattern for {@code skeleton}. */
+    static String localizedPattern(String skeleton, Date date) {
+        Locale locale = Locale.getDefault();
+        return new SimpleDateFormat(DateFormat.getBestDateTimePattern(locale, skeleton), locale)
+                .format(date);
     }
 
     private static Calendar calendarAt(long millis) {
@@ -145,27 +239,35 @@ public final class UsageFormat {
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
     }
 
-    /** "in Xd Yh", "in Xh Ym", "in Xm", or "now" once less than a minute remains. */
+    /** English-only; kept for callers that have not been localized yet. */
     public static String relative(long targetMillis, long nowMillis) {
         long minutes = TimeUnit.MILLISECONDS.toMinutes(Math.max(0L, targetMillis - nowMillis));
         return minutes > 0 ? "in " + compactDuration(targetMillis - nowMillis) : "now";
     }
 
-    public static String updated(long observedMillis, long nowMillis) {
+    /** "in Xd Yh", "in Xh Ym", "in Xm", or "now" once less than a minute remains. */
+    public static String relative(Context context, long targetMillis, long nowMillis) {
+        String countdown = countdown(context, targetMillis, nowMillis);
+        return countdown.isEmpty()
+                ? context.getString(R.string.dashboard_relative_now)
+                : context.getString(R.string.dashboard_relative_in, countdown);
+    }
+
+    public static String updated(Context context, long observedMillis, long nowMillis) {
         if (observedMillis <= 0) {
-            return "Not updated yet";
+            return context.getString(R.string.dashboard_updated_never);
         }
         long minutes = Math.max(0L, TimeUnit.MILLISECONDS.toMinutes(nowMillis - observedMillis));
         if (minutes < 1) {
-            return "Updated just now";
+            return context.getString(R.string.dashboard_updated_just_now);
         }
         if (minutes < MINUTES_PER_HOUR) {
-            return "Updated " + minutes + "m ago";
+            return context.getString(R.string.dashboard_updated_minutes, minutes);
         }
         long hours = minutes / MINUTES_PER_HOUR;
         if (hours < HOURS_PER_DAY) {
-            return "Updated " + hours + "h ago";
+            return context.getString(R.string.dashboard_updated_hours, hours);
         }
-        return "Updated " + hours / HOURS_PER_DAY + "d ago";
+        return context.getString(R.string.dashboard_updated_days, hours / HOURS_PER_DAY);
     }
 }

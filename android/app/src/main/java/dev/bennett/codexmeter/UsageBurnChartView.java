@@ -13,11 +13,9 @@ import android.util.AttributeSet;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
-import java.text.SimpleDateFormat;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
-import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /** Compact local-history chart showing actual, sustainable, and projected quota burn. */
@@ -88,17 +86,21 @@ public final class UsageBurnChartView extends View {
         this.observedAtMillis = observedAtMillis;
         this.pace = pace;
         this.selectedWindowIndex = CURRENT_WINDOW;
-        String detail = samples.size() < 2 ? "Building local history"
-                : samples.size() + " local samples";
+        Context context = getContext();
+        String detail = samples.size() < 2
+                ? context.getString(R.string.dashboard_chart_building_local)
+                : getResources().getQuantityString(R.plurals.dashboard_chart_local_samples,
+                        samples.size(), samples.size());
         if (pace != null && pace.available) {
-            detail += ", projected exhaustion "
-                    + UsageFormat.relative(pace.estimatedExhaustionAtMillis,
-                            System.currentTimeMillis());
+            detail = context.getString(R.string.dashboard_chart_detail_exhaustion, detail,
+                    UsageFormat.relative(context, pace.estimatedExhaustionAtMillis,
+                            System.currentTimeMillis()));
         }
         if (scrubEnabled) {
-            detail += ". Touch and drag to inspect points in time";
+            detail = context.getString(R.string.dashboard_chart_detail_scrub, detail);
         }
-        setContentDescription(this.label + " usage burn chart. " + detail + ".");
+        setContentDescription(
+                context.getString(R.string.dashboard_chart_description, this.label, detail));
         invalidate();
     }
 
@@ -236,13 +238,15 @@ public final class UsageBurnChartView extends View {
         drawHeader(canvas, density, dark);
         drawFrame(canvas, density, dark);
         if (window == null || observedAtMillis <= 0L) {
-            drawEmpty(canvas, dark, density, "Waiting for usage data");
+            drawEmpty(canvas, dark, density,
+                    getContext().getString(R.string.dashboard_chart_waiting));
             return;
         }
         long resetAt = window.effectiveResetAtMillis(observedAtMillis);
         long startAt = resetAt - window.windowSeconds * 1000L;
         if (resetAt <= startAt) {
-            drawEmpty(canvas, dark, density, "Reset window unavailable");
+            drawEmpty(canvas, dark, density,
+                    getContext().getString(R.string.dashboard_chart_reset_unavailable));
             return;
         }
         drawBudgetLine(canvas, density, dark);
@@ -271,8 +275,10 @@ public final class UsageBurnChartView extends View {
         paint.setTypeface(regularTypeface);
         paint.setTextSize(10f * density);
         paint.setColor(Ui.secondaryText(dark));
-        String sampleLabel = samples.size() < 2 ? "Building history"
-                : samples.size() + " samples";
+        String sampleLabel = samples.size() < 2
+                ? getContext().getString(R.string.dashboard_chart_building)
+                : getResources().getQuantityString(R.plurals.dashboard_chart_samples,
+                        samples.size(), samples.size());
         canvas.drawText(sampleLabel, plot.right - paint.measureText(sampleLabel), baseline,
                 paint);
     }
@@ -398,7 +404,7 @@ public final class UsageBurnChartView extends View {
         paint.setColor(accent);
         canvas.drawCircle(scrubX, scrubY, 4f * density, paint);
 
-        String bubble = scrubTimeLabel() + " · " + Math.round(scrubPercent) + "%";
+        String bubble = scrubTimeLabel() + " · " + percentLabel(scrubPercent);
         paint.setTypeface(regularTypeface);
         paint.setTextSize(11f * density);
         float textWidth = paint.measureText(bubble);
@@ -414,14 +420,18 @@ public final class UsageBurnChartView extends View {
         canvas.drawText(bubble, bubbleLeft + padding, bubbleTop + 15f * density, paint);
     }
 
+    /** Scrubbed time in the device's clock style, with the weekday on multi-day windows. */
     private String scrubTimeLabel() {
         boolean multiDay = window != null && window.windowSeconds > ONE_DAY_SECONDS;
         boolean is24Hour = DateFormat.is24HourFormat(getContext());
-        String pattern = multiDay
-                ? (is24Hour ? "EEE HH:mm" : "EEE h:mm a")
-                : (is24Hour ? "HH:mm" : "h:mm a");
-        return new SimpleDateFormat(pattern, Locale.getDefault())
-                .format(new Date(scrubTimeMillis));
+        String skeleton = multiDay
+                ? (is24Hour ? "EEEHm" : "EEEhma")
+                : (is24Hour ? "Hm" : "hma");
+        return UsageFormat.localizedPattern(skeleton, new Date(scrubTimeMillis));
+    }
+
+    private static String percentLabel(double percent) {
+        return Math.round(percent) + "%";
     }
 
     private void drawAxisLabels(Canvas canvas, float density, boolean dark) {
@@ -431,7 +441,7 @@ public final class UsageBurnChartView extends View {
         paint.setTextSize(10f * density);
         paint.setColor(Ui.secondaryText(dark));
         canvas.drawText("0%", plot.left, baseline, paint);
-        String reset = "reset";
+        String reset = getContext().getString(R.string.dashboard_chart_axis_reset);
         canvas.drawText(reset, plot.right - paint.measureText(reset), baseline, paint);
     }
 

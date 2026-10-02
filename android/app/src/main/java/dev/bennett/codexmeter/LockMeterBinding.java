@@ -1,5 +1,6 @@
 package dev.bennett.codexmeter;
 
+import android.content.Context;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
@@ -9,9 +10,6 @@ import java.util.Locale;
  * always filled; the secondary one is {@code null} for single-meter widgets.
  */
 final class LockMeterBinding {
-    private static final String FIVE_HOUR_LABEL = "5H";
-    private static final String WEEKLY_LABEL = "W";
-    private static final String MONTHLY_LABEL = "MO";
     private static final int MAX_LIMIT_LABEL_LENGTH = 6;
 
     /** One meter as drawn on a lock widget face. */
@@ -36,8 +34,13 @@ final class LockMeterBinding {
     final int secondaryRemaining;
     final boolean showPrimary;
     final boolean showSecondary;
+    /** Face labels used when a slot is empty. */
+    private final String defaultPrimaryLabel;
+    private final String defaultSecondaryLabel;
 
-    private LockMeterBinding(Slot primary, Slot secondary) {
+    private LockMeterBinding(Context context, Slot primary, Slot secondary) {
+        this.defaultPrimaryLabel = context.getString(R.string.dashboard_lock_face_five_hour);
+        this.defaultSecondaryLabel = context.getString(R.string.dashboard_lock_face_weekly);
         this.primary = primary;
         this.secondary = secondary;
         this.showPrimary = primary != null;
@@ -47,7 +50,8 @@ final class LockMeterBinding {
     }
 
     /** Resolves the widget's saved meter selection against what the snapshot offers. */
-    static LockMeterBinding bind(UsageSnapshot snapshot, LockWidgetOptions options) {
+    static LockMeterBinding bind(Context context, UsageSnapshot snapshot,
+            LockWidgetOptions options) {
         List<String> available = WidgetMeters.availableKeys(snapshot);
         String metricMode = options == null ? WidgetOptions.METRIC_BOTH : options.metricMode;
         String visibleCsv = options == null ? "" : options.effectiveVisibleMeters();
@@ -62,9 +66,9 @@ final class LockMeterBinding {
         if (usageKeys.isEmpty()) {
             usageKeys.add(WidgetMeters.FIVE_HOUR);
         }
-        Slot primary = slot(usageKeys.get(0), snapshot);
-        Slot secondary = usageKeys.size() > 1 ? slot(usageKeys.get(1), snapshot) : null;
-        return new LockMeterBinding(primary, secondary);
+        Slot primary = slot(context, usageKeys.get(0), snapshot);
+        Slot secondary = usageKeys.size() > 1 ? slot(context, usageKeys.get(1), snapshot) : null;
+        return new LockMeterBinding(context, primary, secondary);
     }
 
     /** Remaining percent clamped to 0-100, or -1 when the window is unknown. */
@@ -80,11 +84,11 @@ final class LockMeterBinding {
     }
 
     String primaryLabel() {
-        return primary == null ? FIVE_HOUR_LABEL : primary.label;
+        return primary == null ? defaultPrimaryLabel : primary.label;
     }
 
     String secondaryLabel() {
-        return secondary == null ? WEEKLY_LABEL : secondary.label;
+        return secondary == null ? defaultSecondaryLabel : secondary.label;
     }
 
     UsageWindow primaryWindow() {
@@ -103,22 +107,23 @@ final class LockMeterBinding {
         return secondary == null ? R.drawable.ic_oui_calendar_week : secondary.iconRes;
     }
 
-    private static Slot slot(String key, UsageSnapshot snapshot) {
+    private static Slot slot(Context context, String key, UsageSnapshot snapshot) {
         if (WidgetMeters.FIVE_HOUR.equals(key)) {
             UsageWindow window = snapshot == null ? null : snapshot.fiveHour;
-            return new Slot(FIVE_HOUR_LABEL, remaining(window), window, R.drawable.ic_oui_time);
+            return new Slot(context.getString(R.string.dashboard_lock_face_five_hour),
+                    remaining(window), window, R.drawable.ic_oui_time);
         }
         if (WidgetMeters.WEEKLY.equals(key)) {
             UsageWindow window = WidgetMeters.meterWindow(key, snapshot);
-            String label = WidgetMeters.weeklyMeterIsMonthly(snapshot)
-                    ? MONTHLY_LABEL : WEEKLY_LABEL;
+            String label = context.getString(WidgetMeters.weeklyMeterIsMonthly(snapshot)
+                    ? R.string.dashboard_lock_face_monthly : R.string.dashboard_lock_face_weekly);
             return new Slot(label, remaining(window), window, R.drawable.ic_oui_calendar_week);
         }
         UsageLimit limit = WidgetMeters.findLimit(key, snapshot);
         boolean primaryWindow = WidgetMeters.isLimitPrimary(key);
         UsageWindow window = limit == null ? null
                 : (primaryWindow ? limit.primary : limit.secondary);
-        String label = WidgetMeters.shortLabel(key, snapshot);
+        String label = SharedLabels.widgetMeterShortLabel(context, key, snapshot);
         if (label.length() > MAX_LIMIT_LABEL_LENGTH) {
             label = label.substring(0, MAX_LIMIT_LABEL_LENGTH);
         }

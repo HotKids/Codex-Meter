@@ -42,7 +42,7 @@
                 android:id="@+id/lock_graphic_primary_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="5H"
+                android:text="@string/dashboard_lock_face_five_hour"
                 android:maxLines="1"
                 android:includeFontPadding="false"
                 android:fontFamily="sec"/>
@@ -80,7 +80,7 @@
                 android:id="@+id/lock_graphic_secondary_label"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="W"
+                android:text="@string/dashboard_lock_face_weekly"
                 android:maxLines="1"
                 android:includeFontPadding="false"
                 android:fontFamily="sec"/>

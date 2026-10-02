@@ -54,9 +54,9 @@ final class SamsungLockWidgetSupport {
 
     private static final long MIN_COUNTDOWN_MILLIS = 1000L;
     private static final String NO_VALUE = "—";
-    private static final String SIGN_IN = "SIGN IN";
-    private static final String SIGN_IN_REQUIRED = "Codex Meter, sign in required";
-    private static final String REMAINING_SUFFIX = " remaining";
+    /** Joins meters and the reset count on one line of a tile. */
+    private static final String INLINE_SEPARATOR = "  ·  ";
+    private static final String LABEL_SEPARATOR = " · ";
 
     // Enum order is part of each widget's tap request code; append new constants only.
     enum Shape {
@@ -198,7 +198,7 @@ final class SamsungLockWidgetSupport {
             return views;
         }
 
-        LockMeterBinding binding = LockMeterBinding.bind(snapshot, options);
+        LockMeterBinding binding = LockMeterBinding.bind(context, snapshot, options);
         RemoteViews views;
         int rootId;
         if (style == Style.NUMBERS) {
@@ -214,7 +214,7 @@ final class SamsungLockWidgetSupport {
         }
         applyCountdowns(views, shape, style, options, binding);
         views.setContentDescription(rootId,
-                contentDescription(signedIn, binding, style, options, resetCount));
+                contentDescription(context, signedIn, binding, style, options, resetCount));
         applyTapAction(context, views, rootId, appWidgetId, shape, style, options, signedIn,
                 resetCount);
         return views;
@@ -235,10 +235,12 @@ final class SamsungLockWidgetSupport {
         views.setImageViewBitmap(R.id.lock_graphic_image,
                 SamsungLockGraphics.renderSingle(context, metric, value, signedIn, size[0],
                         size[1]));
-        String metricName = fiveHour ? "five hour" : monthly ? "monthly" : "weekly";
+        int description = fiveHour ? R.string.dashboard_lock_single_five_hour
+                : monthly ? R.string.dashboard_lock_single_monthly
+                : R.string.dashboard_lock_single_weekly;
         views.setContentDescription(R.id.lock_graphic_root, signedIn
-                ? "Codex " + metricName + " " + percentText(value) + REMAINING_SUFFIX
-                : SIGN_IN_REQUIRED);
+                ? context.getString(description, percentText(value))
+                : context.getString(R.string.dashboard_lock_sign_in_required));
         return views;
     }
 
@@ -248,35 +250,48 @@ final class SamsungLockWidgetSupport {
         int valueId = square ? R.id.lock_square_value : R.id.lock_wide_value;
         RemoteViews views = new RemoteViews(context.getPackageName(),
                 square ? R.layout.widget_lock_square : R.layout.widget_lock_wide);
-        views.setTextViewText(valueId, numberText(signedIn, binding, shape, options, resetCount));
+        views.setTextViewText(valueId,
+                numberText(context, signedIn, binding, shape, options, resetCount));
         setTextSizeSp(views, valueId,
                 numberTextSize(shape, binding.singleMetric(), showsResetCount(options)));
         return views;
     }
 
-    private static String numberText(boolean signedIn, LockMeterBinding binding, Shape shape,
-            LockWidgetOptions options, int resetCount) {
+    private static String numberText(Context context, boolean signedIn,
+            LockMeterBinding binding, Shape shape, LockWidgetOptions options, int resetCount) {
         boolean square = shape == Shape.SQUARE;
         if (!signedIn) {
-            return square ? "SIGN\nIN" : SIGN_IN;
+            return context.getString(square
+                    ? R.string.dashboard_lock_sign_in_stacked : R.string.dashboard_lock_sign_in);
         }
         String primaryLabel = binding.primaryLabel();
         String secondaryLabel = binding.secondaryLabel();
         String text;
         if (binding.singleMetric()) {
-            text = primaryLabel + (square ? "\n" : " ") + percentText(binding.primaryRemaining);
+            text = primaryLabel + (square ? '\n' : ' ') + percentText(binding.primaryRemaining);
         } else if (square) {
-            text = primaryLabel + " " + compactText(binding.primaryRemaining) + "\n"
-                    + secondaryLabel + " " + compactText(binding.secondaryRemaining);
+            text = meter(primaryLabel, compactText(binding.primaryRemaining)) + '\n'
+                    + meter(secondaryLabel, compactText(binding.secondaryRemaining));
         } else {
-            text = primaryLabel + " " + percentText(binding.primaryRemaining) + "  ·  "
-                    + secondaryLabel + " " + percentText(binding.secondaryRemaining);
+            text = meter(primaryLabel, percentText(binding.primaryRemaining)) + INLINE_SEPARATOR
+                    + meter(secondaryLabel, percentText(binding.secondaryRemaining));
         }
         if (showsResetCount(options)) {
-            int count = Math.max(0, resetCount);
-            text += square ? "\nR" + count : "  ·  R" + count;
+            String count = resetCountText(context, resetCount);
+            text += square ? '\n' + count : INLINE_SEPARATOR + count;
         }
         return text;
+    }
+
+    /** A face label and its value, e.g. "5H 64%". */
+    private static String meter(String label, String value) {
+        return label + ' ' + value;
+    }
+
+    /** The compact reset-credit count drawn on a tile, e.g. "R2". */
+    private static String resetCountText(Context context, int resetCount) {
+        return context.getString(R.string.dashboard_lock_face_reset_count,
+                Math.max(0, resetCount));
     }
 
     private static float numberTextSize(Shape shape, boolean singleMetric,
@@ -302,7 +317,8 @@ final class SamsungLockWidgetSupport {
             views.setViewVisibility(R.id.lock_bar_primary_group, View.VISIBLE);
             views.setViewVisibility(R.id.lock_bar_secondary_group, View.GONE);
             views.setTextViewText(R.id.lock_bar_primary_label, "");
-            views.setTextViewText(R.id.lock_bar_primary_value, SIGN_IN);
+            views.setTextViewText(R.id.lock_bar_primary_value,
+                    context.getString(R.string.dashboard_lock_sign_in));
             setTextSizeSp(views, R.id.lock_bar_primary_value, square ? 10.0f : 12.0f);
             views.setViewVisibility(R.id.lock_bar_primary_progress, View.GONE);
             return views;
@@ -315,9 +331,9 @@ final class SamsungLockWidgetSupport {
         views.setViewVisibility(R.id.lock_bar_secondary_progress, visibility(showSecondary));
         // The reset count rides on the first visible label.
         boolean showResetCount = showsResetCount(options);
-        views.setTextViewText(R.id.lock_bar_primary_label, labelWithResetCount(
+        views.setTextViewText(R.id.lock_bar_primary_label, labelWithResetCount(context,
                 binding.primaryLabel(), showResetCount && showPrimary, resetCount));
-        views.setTextViewText(R.id.lock_bar_secondary_label, labelWithResetCount(
+        views.setTextViewText(R.id.lock_bar_secondary_label, labelWithResetCount(context,
                 binding.secondaryLabel(), showResetCount && !showPrimary && showSecondary,
                 resetCount));
         views.setTextViewText(R.id.lock_bar_primary_value, compactText(binding.primaryRemaining));
@@ -365,13 +381,15 @@ final class SamsungLockWidgetSupport {
                 views.setViewVisibility(R.id.lock_graphic_secondary_group, View.GONE);
                 views.setViewVisibility(R.id.lock_graphic_primary_progress, View.GONE);
                 views.setViewVisibility(R.id.lock_graphic_primary_icon, View.GONE);
-                views.setTextViewText(R.id.lock_graphic_primary_value, SIGN_IN);
+                views.setTextViewText(R.id.lock_graphic_primary_value,
+                        context.getString(R.string.dashboard_lock_sign_in));
                 setTextSizeSp(views, R.id.lock_graphic_primary_value, 11.0f);
             }
         } else if (signedIn) {
             views.setViewVisibility(R.id.lock_graphic_center_value, View.GONE);
         } else {
-            views.setTextViewText(R.id.lock_graphic_center_value, SIGN_IN);
+            views.setTextViewText(R.id.lock_graphic_center_value,
+                    context.getString(R.string.dashboard_lock_sign_in));
             setTextSizeSp(views, R.id.lock_graphic_center_value, 10.0f);
         }
         return views;
@@ -459,51 +477,50 @@ final class SamsungLockWidgetSupport {
                 intent, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE));
     }
 
-    private static String contentDescription(boolean signedIn, LockMeterBinding binding,
-            Style style, LockWidgetOptions options, int resetCount) {
+    private static String contentDescription(Context context, boolean signedIn,
+            LockMeterBinding binding, Style style, LockWidgetOptions options, int resetCount) {
         if (!signedIn) {
-            return SIGN_IN_REQUIRED;
+            return context.getString(R.string.dashboard_lock_sign_in_required);
         }
-        StringBuilder description = new StringBuilder("Codex ")
-                .append(styleLabel(style).toLowerCase())
-                .append(", ");
+        String separator = context.getString(R.string.dashboard_list_separator);
+        StringBuilder description = new StringBuilder(context.getString(
+                R.string.dashboard_lock_description_style,
+                context.getString(styleLabel(style)).toLowerCase(Locale.getDefault())));
         if (binding.showPrimary) {
-            description.append(binding.primary.label).append(' ')
-                    .append(percentText(binding.primaryRemaining))
-                    .append(REMAINING_SUFFIX);
-        }
-        if (binding.showPrimary && binding.showSecondary) {
-            description.append(", ");
+            description.append(separator).append(context.getString(
+                    R.string.dashboard_lock_description_meter, binding.primary.label,
+                    percentText(binding.primaryRemaining)));
         }
         if (binding.showSecondary) {
-            description.append(binding.secondary.label).append(' ')
-                    .append(percentText(binding.secondaryRemaining))
-                    .append(REMAINING_SUFFIX);
+            description.append(separator).append(context.getString(
+                    R.string.dashboard_lock_description_meter, binding.secondary.label,
+                    percentText(binding.secondaryRemaining)));
         }
         if (options.showCountdown) {
-            description.append(", live reset countdown");
+            description.append(separator)
+                    .append(context.getString(R.string.dashboard_lock_description_countdown));
         }
         if (showsResetCount(options)) {
-            description.append(", ").append(resetCount).append(" reset credit")
-                    .append(resetCount == 1 ? "" : "s");
+            description.append(separator).append(context.getResources().getQuantityString(
+                    R.plurals.dashboard_lock_description_credits, resetCount, resetCount));
         }
         if (options.showResetAction && resetCount > 0) {
-            description.append("; tap to open reset confirmation");
+            return context.getString(R.string.dashboard_lock_description_tap, description);
         }
         return description.toString();
     }
 
-    private static String styleLabel(Style style) {
+    private static int styleLabel(Style style) {
         if (style == Style.RINGS) {
-            return "Rings";
+            return R.string.dashboard_lock_style_rings;
         }
         if (style == Style.DIALS) {
-            return "Gauges";
+            return R.string.dashboard_lock_style_gauges;
         }
         if (style == Style.BARS) {
-            return "Bars";
+            return R.string.dashboard_lock_style_bars;
         }
-        return "Numbers";
+        return R.string.dashboard_lock_style_numbers;
     }
 
     /** The reset action also implies showing how many credits are left. */
@@ -511,9 +528,10 @@ final class SamsungLockWidgetSupport {
         return options.showResetCredits || options.showResetAction;
     }
 
-    private static String labelWithResetCount(String label, boolean showResetCount,
-            int resetCount) {
-        return showResetCount ? label + " · R" + Math.max(0, resetCount) : label;
+    private static String labelWithResetCount(Context context, String label,
+            boolean showResetCount, int resetCount) {
+        return showResetCount
+                ? label + LABEL_SEPARATOR + resetCountText(context, resetCount) : label;
     }
 
     private static String percentText(int remaining) {

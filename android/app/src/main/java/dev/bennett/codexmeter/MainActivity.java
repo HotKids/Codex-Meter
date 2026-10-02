@@ -43,7 +43,6 @@ import java.util.concurrent.TimeUnit;
 public final class MainActivity extends AppCompatActivity {
     private static final int MENU_SETTINGS = 8101;
     private static final int MENU_REORDER = 8102;
-    private static final String PAGE_TITLE = "Codex Meter";
     private static final String EXTRA_START_SIGN_IN = "start_sign_in";
     // OAuth redirects come back as codexmeter://auth/complete…
     private static final String AUTH_CALLBACK_SCHEME = "codexmeter";
@@ -59,6 +58,8 @@ public final class MainActivity extends AppCompatActivity {
     private static final long HOURLY_MIN_SECONDS = TimeUnit.HOURS.toSeconds(3);
     private static final long HOURLY_MAX_SECONDS = TimeUnit.HOURS.toSeconds(8);
     private static final int SECTION_SPACING_DP = 20;
+    /** Joins an additional limit's name and its window cadence in a card title. */
+    private static final String LABEL_SEPARATOR = " · ";
     private static final int MAX_ERROR_MESSAGE_LENGTH = 240;
     private static final int MAX_FAILURE_DETAIL_LENGTH = 200;
 
@@ -107,7 +108,7 @@ public final class MainActivity extends AppCompatActivity {
             return;
         }
         this.dark = Ui.isDark(this);
-        this.content = Ui.installPage(this, PAGE_TITLE, false).content;
+        this.content = Ui.installPage(this, getString(R.string.app_name), false).content;
         setUpSwipeRefresh();
         handleLaunchIntent(getIntent());
         WidgetUpgradeRepair.runIfNeeded(this);
@@ -118,10 +119,10 @@ public final class MainActivity extends AppCompatActivity {
 
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
-        menu.add(Menu.NONE, MENU_REORDER, 0, "Edit dashboard")
+        menu.add(Menu.NONE, MENU_REORDER, 0, R.string.dashboard_edit_title)
                 .setIcon(R.drawable.ic_oui_edit_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, MENU_SETTINGS, 1, "Settings")
+        menu.add(Menu.NONE, MENU_SETTINGS, 1, R.string.dashboard_menu_settings)
                 .setIcon(R.drawable.ic_oui_settings_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
@@ -355,17 +356,15 @@ public final class MainActivity extends AppCompatActivity {
     }
 
     private void addSignInButton() {
-        Button signIn = Ui.nativePrimaryButton(this,
-                AppPreferences.isOAuthPending(this) ? "Continue sign-in" : "Sign in with ChatGPT");
+        Button signIn = Ui.nativePrimaryButton(this, getString(AppPreferences.isOAuthPending(this)
+                ? R.string.dashboard_sign_in_continue : R.string.dashboard_sign_in));
         signIn.setOnClickListener(view -> startOrContinueSignIn());
         this.content.addView(signIn, new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60)));
         Ui.addSpacer(this.content, SECTION_SPACING_DP);
     }
 
     private void addEmptyDashboardHint() {
-        TextView empty = Ui.text(this,
-                "No dashboard items are available. Refresh usage or choose items in "
-                        + "Settings → Refresh & usage.",
+        TextView empty = Ui.text(this, getString(R.string.dashboard_empty),
                 14.0f, Ui.secondaryText(this.dark));
         empty.setGravity(Gravity.CENTER);
         this.content.addView(empty, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
@@ -385,31 +384,26 @@ public final class MainActivity extends AppCompatActivity {
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(this, 7), 0, Ui.dp(this, 14));
         card.addView(summary, summaryParams);
-        Button update = Ui.nativePrimaryButton(this, "Review update");
+        Button update = Ui.nativePrimaryButton(this, getString(R.string.dashboard_update_review));
         update.setOnClickListener(view -> startActivity(new Intent(this, UpdateActivity.class)
                 .putExtra(UpdateActivity.EXTRA_VERSION, release.version)));
         card.addView(update, new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60)));
         return card;
     }
 
-    private static String updateTitle(GitHubRelease release, boolean returnToStable) {
-        if (returnToStable) {
-            return "Return to Codex Meter " + release.version;
-        }
-        return "Codex Meter " + release.version + " is ready";
+    private String updateTitle(GitHubRelease release, boolean returnToStable) {
+        return getString(returnToStable
+                ? R.string.dashboard_update_return_title
+                : R.string.dashboard_update_ready_title, release.version);
     }
 
-    private static String updateSummary(GitHubRelease release, boolean returnToStable) {
+    private String updateSummary(GitHubRelease release, boolean returnToStable) {
         if (returnToStable) {
-            return "You are back on the stable channel. The stable APK installs in place "
-                    + "over this alpha build after checksum verification.";
+            return getString(R.string.dashboard_update_return_summary);
         }
-        if (release.prerelease) {
-            return "A signed alpha release is available. The APK will be checksum-verified "
-                    + "before Android asks you to approve installation.";
-        }
-        return "A signed GitHub release is available. The APK will be checksum-verified "
-                + "before Android asks you to approve installation.";
+        return getString(release.prerelease
+                ? R.string.dashboard_update_alpha_summary
+                : R.string.dashboard_update_stable_summary);
     }
 
     // -------------------------------------------------------------------------------------------
@@ -436,15 +430,16 @@ public final class MainActivity extends AppCompatActivity {
                 AppPreferences.getDashboardOrder(this), available)) {
             if (DashboardSections.FIVE_HOUR.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        "5-hour", snapshot, snapshot.fiveHour, inverted));
+                        getString(R.string.five_hour), snapshot, snapshot.fiveHour, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.WEEKLY.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        "Weekly", snapshot, snapshot.weekly, inverted));
+                        getString(R.string.weekly), snapshot, snapshot.weekly, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.MONTHLY.equals(key)) {
                 addDashboardCard(column, buildMetricCard(
-                        "Monthly", snapshot, snapshot.monthly, inverted));
+                        getString(R.string.dashboard_window_monthly), snapshot, snapshot.monthly,
+                        inverted));
                 inverted = !inverted;
             } else if (DashboardSections.USAGE_CREDITS.equals(key)) {
                 addDashboardCard(column, buildUsageCreditsCard(snapshot.usageCredits));
@@ -552,13 +547,14 @@ public final class MainActivity extends AppCompatActivity {
         long now = System.currentTimeMillis();
         String reset = UsageFormat.reset(this, window, WidgetOptions.RESET_RELATIVE,
                 snapshot.fetchedAtMillis, now);
+        String countdown = UsageFormat.resetCountdown(this, window, snapshot.fetchedAtMillis, now);
         UsagePace.Assessment pace = UsagePacePreferences.assess(this, snapshot, window, now);
         UsageWaveView wave = new UsageWaveView(this);
-        wave.setUsage(label, reset, UsageFormat.estimatedRemaining(pace),
+        wave.setUsage(label, reset, countdown, pace,
                 window.remainingPercent(),
                 window.windowSeconds >= DAY_SECONDS
                         ? R.drawable.ic_oui_calendar_week : R.drawable.ic_oui_time,
-                invertedWave, pace.accelerated);
+                invertedWave);
         card.addView(wave, new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 103.0f)));
         return card;
     }
@@ -568,14 +564,14 @@ public final class MainActivity extends AppCompatActivity {
         card.setPadding(Ui.dp(this, 10), Ui.dp(this, 14), Ui.dp(this, 10), Ui.dp(this, 12));
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
         long now = System.currentTimeMillis();
-        TextView title = Ui.text(this, "Usage history", 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, getString(R.string.dashboard_usage_history), 18,
+                Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         LinearLayout.LayoutParams titleParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         titleParams.setMargins(Ui.dp(this, 10), 0, Ui.dp(this, 10), 0);
         card.addView(title, titleParams);
-        TextView detail = Ui.text(this,
-                "On-device burn trends improve estimates as samples accumulate.",
+        TextView detail = Ui.text(this, getString(R.string.dashboard_history_card_detail),
                 12, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -587,25 +583,25 @@ public final class MainActivity extends AppCompatActivity {
         boolean hasCharts = false;
         UsageWindow fiveWindow = snapshot == null ? null : snapshot.fiveHour;
         if (fiveWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addBurnChart(card, "5-hour", fiveWindow, UsageHistory.FIVE_HOUR, snapshot, now);
+            addBurnChart(card, getString(R.string.five_hour), fiveWindow,
+                    UsageHistory.FIVE_HOUR, snapshot, now);
             hasCharts = true;
         }
         UsageWindow weeklyWindow = snapshot == null ? null : snapshot.weekly;
         if (weeklyWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addBurnChart(card, "Weekly", weeklyWindow, UsageHistory.WEEKLY, snapshot, now);
+            addBurnChart(card, getString(R.string.weekly), weeklyWindow,
+                    UsageHistory.WEEKLY, snapshot, now);
             hasCharts = true;
         }
         UsageWindow monthlyWindow = snapshot == null ? null : snapshot.monthly;
         if (monthlyWindow != null && snapshot.fetchedAtMillis > 0L) {
-            addBurnChart(card, "Monthly", monthlyWindow, UsageHistory.MONTHLY, snapshot,
-                    now);
+            addBurnChart(card, getString(R.string.dashboard_window_monthly), monthlyWindow,
+                    UsageHistory.MONTHLY, snapshot, now);
             hasCharts = true;
         }
 
         if (!hasCharts) {
-            TextView waiting = Ui.text(this,
-                    "Charts appear once OpenAI reports your 5-hour, weekly, or monthly "
-                            + "usage windows.",
+            TextView waiting = Ui.text(this, getString(R.string.dashboard_history_card_waiting),
                     12, Ui.secondaryText(this.dark));
             LinearLayout.LayoutParams waitingParams =
                     new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -614,7 +610,8 @@ public final class MainActivity extends AppCompatActivity {
             card.addView(waiting, waitingParams);
         }
 
-        Button open = Ui.button(this, "View history", false, this.dark);
+        Button open = Ui.button(this, getString(R.string.dashboard_history_view), false,
+                this.dark);
         open.setOnClickListener(
                 view -> Ui.startSecondaryActivity(this, UsageHistoryActivity.class));
         LinearLayout.LayoutParams openParams =
@@ -636,7 +633,8 @@ public final class MainActivity extends AppCompatActivity {
 
     private LinearLayout buildUsageCreditsCard(UsageCredits credits) {
         LinearLayout card = Ui.card(this, this.dark);
-        TextView title = Ui.text(this, "Usage credits", 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, getString(R.string.dashboard_usage_credits), 18,
+                Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         card.addView(buildIconDetailRow(R.drawable.ic_oui_credit_card_outline,
@@ -674,64 +672,67 @@ public final class MainActivity extends AppCompatActivity {
         return row;
     }
 
-    private static String usageCreditBalance(UsageCredits credits) {
+    private String usageCreditBalance(UsageCredits credits) {
         if (credits.unlimited) {
-            return "Unlimited";
+            return getString(R.string.dashboard_credits_unlimited);
         }
         if (credits.balance.isEmpty()) {
-            return credits.hasCredits ? "Credits available" : "No purchased credits";
+            return getString(credits.hasCredits
+                    ? R.string.dashboard_credits_available
+                    : R.string.dashboard_credits_none_purchased);
         }
         try {
             BigDecimal amount = new BigDecimal(credits.balance.replace(",", ""));
             NumberFormat format = NumberFormat.getNumberInstance(Locale.getDefault());
             format.setMaximumFractionDigits(2);
-            return format.format(amount) + " credits";
+            return getString(R.string.dashboard_credits_balance, format.format(amount));
         } catch (NumberFormatException ignored) {
             return credits.balance;
         }
     }
 
-    private static String usageCreditsSummary(UsageCredits credits) {
+    private String usageCreditsSummary(UsageCredits credits) {
         if (credits.unlimited) {
-            return "Usage-credit balance is not capped";
+            return getString(R.string.dashboard_credits_uncapped);
         }
         if (credits.balance.isEmpty() && !credits.hasCredits) {
-            return "Purchase credits in ChatGPT Codex";
+            return getString(R.string.dashboard_credits_purchase_hint);
         }
-        return "Purchased Codex usage-credit balance";
+        return getString(R.string.dashboard_credits_purchased);
     }
 
     /** Card title for one window of an additional limit, e.g. "GPT-5 Spark · Weekly". */
-    private static String limitWindowLabel(UsageLimit limit, UsageWindow window) {
-        return limitTitle(limit) + " · " + cadenceLabel(window);
+    private String limitWindowLabel(UsageLimit limit, UsageWindow window) {
+        return limitTitle(limit) + LABEL_SEPARATOR + cadenceLabel(window);
     }
 
-    private static String cadenceLabel(UsageWindow window) {
+    private String cadenceLabel(UsageWindow window) {
         long seconds = window.windowSeconds;
         if (seconds >= WEEKLY_MIN_SECONDS && seconds <= WEEKLY_MAX_SECONDS) {
-            return "Weekly";
+            return getString(R.string.weekly);
         }
         if (seconds >= HOURLY_MIN_SECONDS && seconds <= HOURLY_MAX_SECONDS) {
             long hours = Math.max(1L, Math.round(seconds / (double) HOUR_SECONDS));
-            return hours + "-hour";
+            return getString(R.string.dashboard_cadence_hours, hours);
         }
         if (seconds % DAY_SECONDS == 0L) {
-            return seconds / DAY_SECONDS + "-day";
+            return getString(R.string.dashboard_cadence_days, seconds / DAY_SECONDS);
         }
         if (seconds % HOUR_SECONDS == 0L) {
-            return seconds / HOUR_SECONDS + "-hour";
+            return getString(R.string.dashboard_cadence_hours, seconds / HOUR_SECONDS);
         }
-        return "Usage";
+        return getString(R.string.dashboard_cadence_usage);
     }
 
-    private static String limitTitle(UsageLimit limit) {
+    private String limitTitle(UsageLimit limit) {
+        String name = SharedLabels.limitName(this, limit);
         if (limit.limitReached) {
-            return limit.displayName() + " (limit reached)";
+            return getString(R.string.dashboard_limit_reached, name);
         }
         if (!limit.allowed) {
-            return limit.displayName() + " (unavailable)";
+            return getString(R.string.dashboard_limit_unavailable, name);
         }
-        return limit.displayName();
+        return name;
     }
 
     private LinearLayout buildResetCreditsCard() {
@@ -742,7 +743,8 @@ public final class MainActivity extends AppCompatActivity {
         long nextExpiry = credits == null ? 0L : credits.nextExpiryMillis(now);
 
         LinearLayout card = Ui.card(this, this.dark);
-        TextView title = Ui.text(this, "Reset credits", 18, Ui.mainText(this.dark));
+        TextView title = Ui.text(this, getString(R.string.dashboard_reset_credits), 18,
+                Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         card.addView(buildIconDetailRow(R.drawable.ic_oui_battery,
@@ -751,8 +753,8 @@ public final class MainActivity extends AppCompatActivity {
 
         if (signedIn) {
             card.setOnClickListener(view -> openResetCredits());
-            Button button = Ui.nativePrimaryButton(this,
-                    available > 0 ? "Use 1 reset" : "No resets available");
+            Button button = Ui.nativePrimaryButton(this, getString(available > 0
+                    ? R.string.dashboard_reset_use_one : R.string.dashboard_reset_credits_none));
             button.setEnabled(available > 0);
             button.setOnClickListener(view -> openResetCredits());
             LinearLayout.LayoutParams buttonParams =
@@ -763,25 +765,30 @@ public final class MainActivity extends AppCompatActivity {
         return card;
     }
 
-    private static String resetCreditsTitle(boolean signedIn, int available) {
+    private String resetCreditsTitle(boolean signedIn, int available) {
         if (!signedIn) {
-            return "Reset credits";
+            return getString(R.string.dashboard_reset_credits);
         }
-        return ResetCreditActivity.availableResetsLabel(available);
+        if (available <= 0) {
+            return getString(R.string.dashboard_reset_credits_none);
+        }
+        return getResources().getQuantityString(R.plurals.dashboard_reset_credits_available,
+                available, available);
     }
 
     private String resetCreditsSummary(boolean signedIn, int available, long nextExpiry,
             long now) {
         if (!signedIn) {
-            return "Sign in to view reset credits";
+            return getString(R.string.dashboard_reset_sign_in);
         }
         if (nextExpiry > 0L) {
-            return "Next expires " + ResetCreditActivity.expiryText(this, nextExpiry, now);
+            return getString(R.string.dashboard_reset_next_expires,
+                    UsageFormat.absoluteAndRelative(this, nextExpiry, now));
         }
         if (available > 0) {
-            return "Expiration details unavailable";
+            return getString(R.string.dashboard_reset_expiry_unavailable);
         }
-        return "Earn credits from ChatGPT Codex";
+        return getString(R.string.dashboard_reset_earn);
     }
 
     private void openResetCredits() {
@@ -809,7 +816,8 @@ public final class MainActivity extends AppCompatActivity {
         boolean success = intent.getBooleanExtra(AppConstants.EXTRA_SUCCESS, false);
         String message = intent.getStringExtra(AppConstants.EXTRA_MESSAGE);
         if (message == null) {
-            message = success ? "Signed in." : "Sign-in failed.";
+            message = getString(success
+                    ? R.string.dashboard_signed_in : R.string.dashboard_sign_in_failed);
         }
         Toast.makeText(this, message, Toast.LENGTH_LONG).show();
         PhoneWearSync.pushAll(this);
@@ -828,14 +836,15 @@ public final class MainActivity extends AppCompatActivity {
         try {
             startForegroundService(new Intent(this, OAuthService.class)
                     .setAction(OAuthService.ACTION_START));
-            String status = AppPreferences.isOAuthPending(this)
-                    ? "Resuming secure OpenAI sign-in…"
-                    : "Opening secure OpenAI sign-in…";
+            String status = getString(AppPreferences.isOAuthPending(this)
+                    ? R.string.dashboard_sign_in_resuming
+                    : R.string.dashboard_sign_in_opening);
             Toast.makeText(this, status, Toast.LENGTH_SHORT).show();
         } catch (RuntimeException e) {
             DiagnosticLog.error(this, "auth", "sign_in_service_start_failed", e);
             AppPreferences.setOAuthPending(this, false, "");
-            Toast.makeText(this, "Could not start sign-in: " + failureDetail(e),
+            Toast.makeText(this,
+                    getString(R.string.dashboard_sign_in_start_failed, failureDetail(e)),
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -852,7 +861,7 @@ public final class MainActivity extends AppCompatActivity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (RuntimeException e) {
-            Toast.makeText(this, "No browser is available to complete sign-in.",
+            Toast.makeText(this, R.string.dashboard_sign_in_no_browser,
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -864,7 +873,7 @@ public final class MainActivity extends AppCompatActivity {
             DiagnosticLog.warn(this, "user", "manual_refresh_rejected",
                     "source", "pull", "reason", "signed_out");
             this.swipeRefresh.setRefreshing(false);
-            Toast.makeText(this, "Sign in from Settings to refresh usage.",
+            Toast.makeText(this, R.string.dashboard_refresh_sign_in_first,
                     Toast.LENGTH_SHORT).show();
             Ui.startSecondaryActivity(this, SettingsActivity.class);
             return;
@@ -881,22 +890,34 @@ public final class MainActivity extends AppCompatActivity {
                 });
             } catch (Exception e) {
                 DiagnosticLog.error(app, "user", "manual_refresh_failed", e, "source", "pull");
-                AppPreferences.setLastError(app, safeMessage(e));
+                AppPreferences.setLastError(app, safeMessage(app, e));
                 WidgetRenderer.updateAll(app);
                 runOnUiThread(() -> {
                     this.swipeRefresh.setRefreshing(false);
-                    Toast.makeText(this, safeMessage(e), Toast.LENGTH_LONG).show();
+                    Toast.makeText(this, safeMessage(this, e), Toast.LENGTH_LONG).show();
                     rebuild();
                 });
             }
         });
     }
 
-    /** User-facing error text: the exception message capped in length, or a generic failure. */
+    /**
+     * English-only {@link #safeMessage(Context, Exception)}; kept for callers that have not
+     * been localized yet.
+     */
     public static String safeMessage(Exception exc) {
+        return cappedMessage(exc, "The operation failed.");
+    }
+
+    /** User-facing error text: the exception message capped in length, or a generic failure. */
+    public static String safeMessage(Context context, Exception exc) {
+        return cappedMessage(exc, context.getString(R.string.dashboard_operation_failed));
+    }
+
+    private static String cappedMessage(Exception exc, String fallback) {
         String message = exc.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            return "The operation failed.";
+            return fallback;
         }
         return message.length() > MAX_ERROR_MESSAGE_LENGTH
                 ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)

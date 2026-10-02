@@ -18,7 +18,6 @@ public final class UsageWaveView extends View {
     private static final long NORMAL_WAVE_DURATION_MS = 2400L;
     private static final long WARNING_WAVE_DURATION_MS = 950L;
     private static final String FONT_FAMILY = "sec";
-    private static final String RESETS_IN_PREFIX = "Resets in ";
 
     // Wave edge shape: segment count, horizontal swing, and the phase span top-to-bottom.
     private static final int NORMAL_WAVE_STEPS = 28;
@@ -71,40 +70,54 @@ public final class UsageWaveView extends View {
         setImportantForAccessibility(IMPORTANT_FOR_ACCESSIBILITY_YES);
     }
 
-    public void setUsage(String label, String reset, String paceEstimate, int remainingPercent,
-            int iconRes, boolean invertedWave, boolean acceleratedWarning) {
+    /**
+     * @param reset full reset sentence, e.g. "Resets in 2h 50m"; spoken and, when there is no
+     *     {@code countdown}, drawn as is
+     * @param countdown time left until the reset, e.g. "2h 50m", or "" when there is none; drawn
+     *     on its own line below a "Resets in" heading
+     * @param paceAssessment usage-life estimate and accelerated-usage warning for the window
+     */
+    public void setUsage(String label, String reset, String countdown,
+            UsagePace.Assessment paceAssessment, int remainingPercent, int iconRes,
+            boolean invertedWave) {
+        Context context = getContext();
         title = label;
         percent = Math.max(0, Math.min(100, remainingPercent));
-        pace = paceEstimate == null ? "" : paceEstimate;
-        warning = acceleratedWarning;
+        pace = UsageFormat.estimatedRemaining(context, paceAssessment);
+        warning = paceAssessment != null && paceAssessment.accelerated;
         if (animator != null) {
             animator.setDuration(waveDurationMillis());
         }
         phaseOffset = invertedWave ? (float) Math.PI : 0f;
-        splitResetText(reset);
-        icon = AppCompatResources.getDrawable(getContext(), iconRes);
-        setContentDescription(accessibilityDescription(label, reset));
+        splitResetText(reset, countdown);
+        icon = AppCompatResources.getDrawable(context, iconRes);
+        setContentDescription(accessibilityDescription(label, reset,
+                UsageFormat.estimatedRemainingSpoken(context, paceAssessment)));
         invalidate();
     }
 
-    /** Breaks "Resets in …" onto two lines; any other reset text stays on the first line. */
-    private void splitResetText(String reset) {
-        if (reset != null && reset.startsWith(RESETS_IN_PREFIX)) {
-            resetTop = "Resets in";
-            resetBottom = reset.substring(RESETS_IN_PREFIX.length());
+    /** Puts a countdown below a "Resets in" heading; any other reset text stays on one line. */
+    private void splitResetText(String reset, String countdown) {
+        if (countdown != null && !countdown.isEmpty()) {
+            resetTop = getContext().getString(R.string.dashboard_wave_resets_in);
+            resetBottom = countdown;
         } else {
             resetTop = reset == null ? "" : reset;
             resetBottom = "";
         }
     }
 
-    private String accessibilityDescription(String label, String reset) {
-        String description = label + ", " + percent + " percent. " + reset;
-        if (!pace.isEmpty()) {
-            description += ". " + pace.replace("Est.", "Estimated");
+    private String accessibilityDescription(String label, String reset, String spokenPace) {
+        Context context = getContext();
+        String description = context.getString(R.string.dashboard_wave_description, label,
+                percent, reset == null ? "" : reset);
+        if (!spokenPace.isEmpty()) {
+            description = context.getString(R.string.dashboard_sentence_join, description,
+                    spokenPace);
         }
         if (warning) {
-            description += ". Accelerated usage warning";
+            description = context.getString(R.string.dashboard_sentence_join, description,
+                    context.getString(R.string.dashboard_wave_accelerated));
         }
         return description;
     }

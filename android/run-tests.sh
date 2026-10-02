@@ -166,9 +166,11 @@ grep -q 'history_section_overrides' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferStore.java"
 # The old always-on explainer card and sample-count summary row must stay gone.
 ! grep -q 'Burn trends' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageHistoryActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageHistoryActivity.java" \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 ! grep -q 'completed window count' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageHistoryActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageHistoryActivity.java" \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 
 # Usage-history charts must be gated on real usage data instead of blank placeholders.
 grep -q 'fiveWindow != null && snapshot.fetchedAtMillis > 0L' \
@@ -208,7 +210,11 @@ grep -q 'currentLongWindow' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WearGlanceFormat.java"
 grep -q 'meterWindow' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
-grep -q 'Hidden automatically when no resets are available' \
+grep -q '<string name="dashboard_section_reset_credits_summary">Hidden automatically when no resets are available</string>' \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
+grep -q 'R.string.dashboard_section_reset_credits_summary' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SharedLabels.java"
+grep -q 'SharedLabels.dashboardSectionSummary' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/DashboardReorderActivity.java"
 # Dashboard auto-hide wiring remains; blank placeholders are widget-only.
 grep -q 'snapshot.usageCredits.shouldDisplay()' \
@@ -233,10 +239,14 @@ grep -q 'ic_oui_reorder' \
 
 # Reset/usage-credit dashboard cards use bold in-card titles with left-aligned icon rows,
 # matching the other dashboard cards, instead of external One UI separators or centered blocks.
-grep -Fq 'Ui.text(this, "Reset credits", 18' \
+grep -Fq 'Ui.text(this, getString(R.string.dashboard_reset_credits), 18' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
-grep -Fq 'Ui.text(this, "Usage credits", 18' \
+grep -Fq '<string name="dashboard_reset_credits">Reset credits</string>' \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
+grep -Fq 'Ui.text(this, getString(R.string.dashboard_usage_credits), 18' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
+grep -Fq '<string name="dashboard_usage_credits">Usage credits</string>' \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 grep -q 'buildIconDetailRow' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 grep -q 'ic_oui_battery' \
@@ -565,7 +575,9 @@ grep -q 'Live notifications for all apps' \
 grep -R -q '<Chronometer' "$ROOT/app/src/main/res/layout/widget_lock_"*.xml
 grep -q 'setChronometerCountDown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SamsungLockWidgetSupport.java"
 grep -q 'show_countdown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/AppPreferences.java"
-grep -q 'Show live time until reset' "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
+grep -q 'R.string.dashboard_lock_show_countdown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/LockWidgetConfigActivity.java"
+grep -q '<string name="dashboard_lock_show_countdown">Show live time until reset</string>' \
+  "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 
 for style in rings dials bars; do
   for shape in square wide; do
