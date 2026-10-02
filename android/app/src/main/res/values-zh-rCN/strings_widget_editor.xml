@@ -4,7 +4,7 @@
     <string name="widget_editor_no_widget">未选择小组件。</string>
     <string name="widget_editor_saved">小组件已更新。</string>
     <string name="widget_editor_windows">显示内容</string>
-    <string name="widget_editor_windows_hint">最多选择 4 个额度窗口，拖动手柄调整顺序。小号小组件显示前 2 项，中号最多显示 4 项。</string>
+    <string name="widget_editor_windows_hint">最多选择 4 项额度，拖动手柄调整顺序。小尺寸显示前 2 项，宽尺寸最多显示 4 项。</string>
     <string name="widget_editor_windows_limit">最多选择 4 项。</string>
     <string name="widget_editor_windows_minimum">至少保留 1 项。</string>
     <string name="widget_editor_window_missing">当前未返回该额度</string>

@@ -8,8 +8,8 @@
     <string name="widget_card_weekly">每周</string>
     <string name="widget_card_monthly">每月</string>
     <string name="widget_card_days">%d 天</string>
-    <string name="widget_card_limit">限额</string>
-    <string name="widget_card_extra_limit">Codex 附加限额</string>
+    <string name="widget_card_limit">额度</string>
+    <string name="widget_card_extra_limit">Codex 附加额度</string>
     <string name="widget_card_spark">Codex Spark</string>
     <string name="widget_dial_description">%1$s，%2$s</string>
     <string name="widget_card_limit_window">%1$s %2$s</string>
