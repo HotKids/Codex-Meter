@@ -25,8 +25,10 @@ public final class UpdateNotificationManager {
             return;
         }
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
-                "App updates", NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setDescription("Alerts when a signed Codex Meter release is available");
+                context.getString(R.string.updates_notification_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription(
+                context.getString(R.string.updates_notification_channel_description));
         channel.enableVibration(true);
         manager.createNotificationChannel(channel);
     }
@@ -76,13 +78,13 @@ public final class UpdateNotificationManager {
         String title;
         String text;
         if (returnToStable) {
-            title = "Return to Codex Meter " + release.version;
-            text = "The stable release installs in place over this alpha build.";
+            title = context.getString(R.string.updates_return_to_version_title, release.version);
+            text = context.getString(R.string.updates_notification_return_to_stable_text);
         } else {
-            title = "Codex Meter " + release.version + " is available";
-            text = release.prerelease
-                    ? "A signed alpha release is ready to install."
-                    : "A signed GitHub release is ready to install.";
+            title = context.getString(R.string.updates_version_available_title, release.version);
+            text = context.getString(release.prerelease
+                    ? R.string.updates_notification_alpha_text
+                    : R.string.updates_notification_stable_text);
         }
         PendingIntent open = activityPending(context, OPEN_REQUEST_CODE,
                 updateIntent(context, release.version, false));
@@ -95,9 +97,11 @@ public final class UpdateNotificationManager {
                 .setStyle(new Notification.BigTextStyle().bigText(text))
                 .setContentIntent(open)
                 .addAction(new Notification.Action.Builder(R.drawable.ic_notification,
-                        "Open", open).build())
+                        context.getString(R.string.updates_notification_action_open), open)
+                        .build())
                 .addAction(new Notification.Action.Builder(R.drawable.ic_notification,
-                        "Update", update).build())
+                        context.getString(R.string.updates_notification_action_update), update)
+                        .build())
                 .setAutoCancel(true)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)

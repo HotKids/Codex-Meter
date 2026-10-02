@@ -55,6 +55,10 @@ public final class UpdateCheckFrequency {
         }
     }
 
+    /**
+     * English name of an interval. Screens show {@code UpdatePreferences.checkIntervalLabel},
+     * which maps the same normalized hours to string resources.
+     */
     public static String label(int hours) {
         switch (normalize(hours)) {
             case HOURLY:
@@ -71,6 +75,11 @@ public final class UpdateCheckFrequency {
         }
     }
 
+    /**
+     * English summary of the automatic-checks switch. Screens show
+     * {@code UpdatePreferences.checkIntervalSummary}, which maps the same normalized hours to
+     * string resources.
+     */
     public static String summary(int hours) {
         return "Check signed GitHub releases " + label(hours).toLowerCase();
     }

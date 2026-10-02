@@ -285,10 +285,17 @@ grep -q 'FIRST_IN_APP_UPDATE_VERSION = "2.3.0"' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseUpdatePolicy.java"
 grep -q 'isIrreversible' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q 'Open on GitHub' \
+grep -q 'R.string.updates_open_on_github' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q 'Open on GitHub' \
+grep -q 'R.string.updates_open_on_github' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseHistoryActivity.java"
+grep -q '<string name="updates_open_on_github">Open on GitHub</string>' \
+  "$ROOT/app/src/main/res/values/strings_updates.xml"
+# Irreversible-release copy shown on screen keeps the wording ReleaseUpdatePolicy self-tests.
+grep -Fq 'Irreversible · Manual GitHub update required' \
+  "$ROOT/app/src/main/res/values/strings_updates.xml"
+grep -q 'R.string.updates_irreversible_detail' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
 grep -q 'UpdateCheckFrequency' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ReleaseUpdateScheduler.java"
 grep -q 'notify_update_available_ui' \
@@ -299,10 +306,14 @@ grep -q 'settings_update_interval_entries' \
   "$ROOT/app/src/main/res/values/settings_arrays.xml"
 grep -q 'EXTRA_START_INSTALL' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateActivity.java"
-grep -q '"Open", open' \
+grep -q 'R.string.updates_notification_action_open), open' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateNotificationManager.java"
-grep -q '"Update", update' \
+grep -q 'R.string.updates_notification_action_update), update' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdateNotificationManager.java"
+grep -q '<string name="updates_notification_action_open">Open</string>' \
+  "$ROOT/app/src/main/res/values/strings_updates.xml"
+grep -q '<string name="updates_notification_action_update">Update</string>' \
+  "$ROOT/app/src/main/res/values/strings_updates.xml"
 grep -q 'UpdateNotificationManager.onReleasesUpdated' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UpdatePreferences.java"
 grep -q 'testUpdateCheckFrequency' "$ROOT/tests/ParserSelfTest.java"
