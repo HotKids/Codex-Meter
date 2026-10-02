@@ -520,7 +520,6 @@ public final class Ui {
         return button;
     }
 
-    /** Picks a leading icon from keywords in the button label, or 0 for none. */
     // ---------------------------------------------------------------------------------------
     // Progress and form controls
     // ---------------------------------------------------------------------------------------
