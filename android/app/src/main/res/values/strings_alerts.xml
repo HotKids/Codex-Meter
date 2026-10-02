@@ -1,0 +1,261 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Alerts: usage and reset-credit notifications, reset credits page, Now Bar live monitor,
+     and the Notifications / Now Bar settings pages. -->
+<resources>
+    <!-- Usage window names. -->
+    <string name="alerts_window_five_hour">5-hour</string>
+    <string name="alerts_window_weekly">Weekly</string>
+    <string name="alerts_window_monthly">Monthly</string>
+
+    <!-- Dialog buttons. -->
+    <string name="alerts_add">Add</string>
+    <string name="alerts_cancel">Cancel</string>
+    <string name="alerts_done">Done</string>
+
+    <!-- Usage alert notification channels. -->
+    <string name="alerts_channel_alerts_name">Codex usage alerts</string>
+    <string name="alerts_channel_alarms_name">Codex usage alarms</string>
+    <string name="alerts_channel_description">Low usage, scheduled resets, surprise refills, and reset credits</string>
+
+    <!-- Scheduled reset notifications. -->
+    <string name="alerts_reset_five_hour_title">Codex 5-hour usage reset</string>
+    <string name="alerts_reset_five_hour_text">Your 5-hour allowance should be available again. Refreshing usage now.</string>
+    <string name="alerts_reset_weekly_title">Codex Weekly usage reset</string>
+    <string name="alerts_reset_weekly_text">Your Weekly allowance should be available again. Refreshing usage now.</string>
+    <string name="alerts_reset_monthly_title">Codex Monthly usage reset</string>
+    <string name="alerts_reset_monthly_text">Your Monthly allowance should be available again. Refreshing usage now.</string>
+
+    <!-- Low usage notifications; the argument is the remaining percentage. -->
+    <string name="alerts_low_five_hour_title">5-hour Codex usage is low</string>
+    <string name="alerts_low_five_hour_text">%1$d%% remaining in the current 5-hour window.</string>
+    <string name="alerts_low_weekly_title">Weekly Codex usage is low</string>
+    <string name="alerts_low_weekly_text">%1$d%% remaining in the current weekly window.</string>
+    <string name="alerts_low_monthly_title">Monthly Codex usage is low</string>
+    <string name="alerts_low_monthly_text">%1$d%% remaining in the current monthly window.</string>
+
+    <!-- Surprise refill notifications. -->
+    <string name="alerts_refill_multiple_title">Surprise Codex refill</string>
+    <string name="alerts_refill_multiple_text" formatted="false">Your Codex allowances jumped to 100% before their scheduled resets. Enjoy the bonus capacity.</string>
+    <string name="alerts_refill_five_hour_title">Surprise 5-hour Codex refill</string>
+    <string name="alerts_refill_five_hour_text" formatted="false">Your 5-hour allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
+    <string name="alerts_refill_weekly_title">Surprise weekly Codex refill</string>
+    <string name="alerts_refill_weekly_text" formatted="false">Your weekly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
+    <string name="alerts_refill_monthly_title">Surprise monthly Codex refill</string>
+    <string name="alerts_refill_monthly_text" formatted="false">Your monthly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
+
+    <!-- New reset credit notifications; quantity is the number added, %2$d the new total. -->
+    <plurals name="alerts_reset_credits_added_title">
+        <item quantity="one">Codex reset credit added</item>
+        <item quantity="other">Codex reset credits added</item>
+    </plurals>
+    <plurals name="alerts_reset_credits_added_text">
+        <item quantity="one">One Codex reset credit was added. You now have %2$d.</item>
+        <item quantity="other">%1$d Codex reset credits were added. You now have %2$d.</item>
+    </plurals>
+
+    <!-- Reset credit expiry reminder: %1$s is the expiry time, %2$s the countdown. -->
+    <string name="alerts_reset_credit_expiry_title">Codex reset credit expires soon</string>
+    <string name="alerts_reset_credit_expiry_text">One reset credit expires %1$s (%2$s). Use it before it expires.</string>
+    <string name="alerts_use_reset_action">Use reset</string>
+
+    <!-- Test notification. -->
+    <string name="alerts_test_title">Codex Meter notifications are working</string>
+    <string name="alerts_test_text">Low usage, scheduled resets, surprise refills, and reset-credit alerts are ready.</string>
+
+    <!-- Reset credits page. -->
+    <string name="alerts_reset_credits_page_title">Codex reset</string>
+    <string name="alerts_reset_credits_section_available">Available credits</string>
+    <string name="alerts_reset_credits_section_expirations">Credit expirations</string>
+    <string name="alerts_reset_credits_none_available">No resets available</string>
+    <plurals name="alerts_reset_credits_available">
+        <item quantity="one">%d reset available</item>
+        <item quantity="other">%d resets available</item>
+    </plurals>
+    <!-- %1$s is the absolute expiry time, %2$s the countdown. -->
+    <string name="alerts_reset_credit_expiry_time">%1$s · %2$s</string>
+    <string name="alerts_reset_credits_next_expires">Next expires %1$s</string>
+    <string name="alerts_reset_credits_openai_chooses">OpenAI will choose an eligible credit</string>
+    <string name="alerts_reset_credits_none_summary">No reset credit is currently available</string>
+    <string name="alerts_reset_credits_expiration_pending">Expiration details are not available yet</string>
+    <plurals name="alerts_reset_credits_missing_details">
+        <item quantity="one">%d additional credit without expiration details</item>
+        <item quantity="other">%d additional credits without expiration details</item>
+    </plurals>
+    <string name="alerts_reset_credits_more">More credits</string>
+    <string name="alerts_reset_credits_none_title">No available credits</string>
+    <string name="alerts_reset_credits_earn">Earn credits from ChatGPT Codex</string>
+    <string name="alerts_reset_credit_numbered">Reset credit %1$d</string>
+    <string name="alerts_reset_credit_next">%1$s · Next</string>
+    <string name="alerts_reset_credit_expiration_unavailable">Expiration unavailable</string>
+    <string name="alerts_reset_credits_use_one">Use 1 reset</string>
+    <string name="alerts_reset_credits_confirm_title">Use one Codex reset?</string>
+    <string name="alerts_reset_credits_confirm_message">The available credit expiring soonest will be used. This cannot be undone.</string>
+    <string name="alerts_reset_credits_applying">Applying…</string>
+    <string name="alerts_reset_credits_apply_failed">The reset could not be applied.</string>
+
+    <!-- Result of using a reset credit. -->
+    <plurals name="alerts_reset_result_windows">
+        <item quantity="one">Reset applied to %d usage window.</item>
+        <item quantity="other">Reset applied to %d usage windows.</item>
+    </plurals>
+    <string name="alerts_reset_result_applied">Codex usage reset applied.</string>
+    <!-- %1$s is the result, %2$s a warning that usage could not be reloaded. -->
+    <string name="alerts_reset_result_with_warning">%1$s %2$s</string>
+    <string name="alerts_reset_result_nothing">There is no used Codex allowance to reset right now.</string>
+    <string name="alerts_reset_result_no_credit">No reset credit is currently available.</string>
+    <string name="alerts_reset_result_already_redeemed">That reset request was already redeemed.</string>
+    <string name="alerts_reset_result_unknown">OpenAI returned an unrecognized reset result.</string>
+
+    <!-- Now Bar live monitor notification. -->
+    <string name="alerts_now_bar_channel_name">Codex live monitor</string>
+    <string name="alerts_now_bar_channel_description">Codex allowance monitor that ends at the next reset; may start from Settings or when remaining usage hits your threshold</string>
+    <string name="alerts_now_bar_title">Codex usage</string>
+    <string name="alerts_now_bar_stop">Stop</string>
+    <string name="alerts_now_bar_refresh">Refresh</string>
+    <string name="alerts_now_bar_samsung_description">Codex usage limits</string>
+    <string name="alerts_now_bar_preview_subtext">Now Bar preview</string>
+    <string name="alerts_now_bar_until_reset_subtext">Until the next usage reset</string>
+    <string name="alerts_now_bar_both_windows">Both usage windows</string>
+    <string name="alerts_now_bar_five_hour_window">5-hour window</string>
+    <string name="alerts_now_bar_weekly_window">Weekly window</string>
+    <string name="alerts_now_bar_monthly_window">Monthly window</string>
+    <string name="alerts_now_bar_window_unavailable">Usage window unavailable</string>
+    <!-- Short markers in front of the focused weekly / monthly value: "W 60%". -->
+    <string name="alerts_now_bar_marker_weekly">W</string>
+    <string name="alerts_now_bar_marker_monthly">M</string>
+
+    <!-- Now Bar copy rules (NowBarText). The English must render exactly like NowBarCopy. -->
+    <string name="alerts_now_bar_percent">%1$d%%</string>
+    <string name="alerts_now_bar_duration_days_hours">%1$dd %2$dh</string>
+    <string name="alerts_now_bar_duration_days">%1$dd</string>
+    <string name="alerts_now_bar_duration_hours_minutes">%1$dh %2$dm</string>
+    <string name="alerts_now_bar_duration_hours">%1$dh</string>
+    <string name="alerts_now_bar_duration_minutes">%1$dm</string>
+    <string name="alerts_now_bar_focus_unavailable" translatable="false">—</string>
+    <!-- %1$s is a window marker, %2$s the percentage or reset countdown. -->
+    <string name="alerts_now_bar_focus_marked">%1$s %2$s</string>
+    <!-- %1$s is the window name, %2$s the percentage or reset countdown. -->
+    <string name="alerts_now_bar_chip">Codex · %1$s %2$s</string>
+    <string name="alerts_now_bar_chip_unavailable">Codex · %1$s unavailable</string>
+    <string name="alerts_now_bar_limit_left">%1$s: %2$d%% left</string>
+    <string name="alerts_now_bar_limit_resets_in">%1$s: resets in %2$s</string>
+    <string name="alerts_now_bar_limit_unavailable">%1$s: unavailable</string>
+
+    <!-- Now Bar settings page. -->
+    <string name="alerts_now_bar_live_monitor">Live monitor</string>
+    <string name="alerts_now_bar_monitor_summary_default">Show remaining Codex allowance until the next usage reset</string>
+    <string name="alerts_now_bar_access_title">Live notification access</string>
+    <string name="alerts_now_bar_display_category">Display</string>
+    <string name="alerts_now_bar_display_mode_title">Live display mode</string>
+    <string name="alerts_now_bar_percent_mode_title">Percentage shown</string>
+    <string name="alerts_now_bar_auto_start_category">Automatic start</string>
+    <string name="alerts_now_bar_auto_start_title">Start when allowance is low</string>
+    <string name="alerts_now_bar_auto_start_summary">Start the monitor when remaining allowance is low</string>
+    <string name="alerts_now_bar_metric_title">Monitor</string>
+    <string name="alerts_now_bar_threshold_title">Start when remaining reaches</string>
+    <string name="alerts_now_bar_accelerated_title">Start for accelerated usage</string>
+    <string name="alerts_now_bar_accelerated_summary">Start while usage is projected to run out early</string>
+    <string name="alerts_troubleshooting_category">Troubleshooting</string>
+    <string name="alerts_now_bar_setup_help_title">Samsung setup help</string>
+    <string name="alerts_now_bar_setup_help_summary">Samsung firmware and developer-option guidance</string>
+    <string name="alerts_now_bar_preview_title">Start sample preview</string>
+    <string name="alerts_now_bar_preview_summary">Show a 20-minute sample activity for device testing</string>
+
+    <string name="alerts_now_bar_toast_contract_stopped">Could not refresh the live notification, so the monitor was stopped.</string>
+    <string name="alerts_now_bar_toast_display_mode_stopped">Could not refresh this display mode, so the monitor was stopped.</string>
+    <string name="alerts_now_bar_toast_percent_mode_stopped">Could not refresh the percentage mode, so the monitor was stopped.</string>
+    <string name="alerts_now_bar_toast_refresh_first">Refresh your signed-in usage before starting the monitor.</string>
+    <string name="alerts_now_bar_toast_preview_started">Sample Live Update started for 20 minutes.</string>
+    <string name="alerts_now_bar_toast_allow_notifications_first">Allow notifications first.</string>
+    <string name="alerts_now_bar_toast_no_developer_options">Developer options are not available on this firmware.</string>
+    <string name="alerts_now_bar_toast_auto_started">Live monitor started from the current usage threshold.</string>
+    <string name="alerts_now_bar_toast_allow_notifications">Allow notifications, then start the monitor again.</string>
+    <string name="alerts_now_bar_toast_enable_notifications">Enable app notifications, then start the monitor again.</string>
+
+    <string name="alerts_now_bar_samsung_help_title">Samsung Now Bar setup</string>
+    <string name="alerts_now_bar_developer_options">Developer options</string>
+    <string name="alerts_now_bar_samsung_help">For Android Live Updates:\n1. Open Settings &gt; About phone/tablet &gt; Software information.\n2. Tap Build number seven times and confirm your screen lock.\n3. Return to Settings &gt; Developer options.\n4. Turn on Live notifications for all apps.\n5. Make sure Settings &gt; Lock screen and AOD &gt; Now bar is enabled.\n\nIf “Live notifications for all apps” is missing, select Samsung compatibility above. Samsung changes third-party access by model, region, and firmware build even when Android and One UI versions match.\n\nIf both modes remain ordinary notifications, that firmware or device does not expose a third-party Now Bar surface. Codex Meter cannot override Samsung’s system allowlist.</string>
+
+    <!-- Live monitor switch summary while a session runs. -->
+    <string name="alerts_now_bar_state_live_samsung">Live monitor using Samsung compatibility</string>
+    <string name="alerts_now_bar_state_live_active">Live monitor active</string>
+    <string name="alerts_now_bar_state_live_promoted">Live monitor promoted as a Live Update</string>
+    <string name="alerts_now_bar_state_live_not_promoted">Live monitor active, but not promoted by the system</string>
+    <string name="alerts_now_bar_state_preview_samsung">Sample preview using Samsung compatibility</string>
+    <string name="alerts_now_bar_state_preview_active">Sample preview active</string>
+    <string name="alerts_now_bar_state_preview_promoted">Sample preview promoted as a Live Update</string>
+    <string name="alerts_now_bar_state_preview_not_promoted">Sample preview active, but not promoted by the system</string>
+    <!-- %1$s is the monitor state, %2$s when the session ends. -->
+    <string name="alerts_now_bar_summary_active">%1$s · ends %2$s</string>
+    <string name="alerts_now_bar_summary_waiting">Waiting for a low allowance or accelerated usage trigger</string>
+    <string name="alerts_now_bar_summary_idle">Show remaining Codex allowance until the next available usage reset</string>
+
+    <!-- Live notification access summary. -->
+    <string name="alerts_now_bar_access_notifications_off">App or live-monitor notifications disabled · tap to enable</string>
+    <string name="alerts_now_bar_access_samsung_fallback">Automatic · using Samsung fallback until Android access is allowed</string>
+    <string name="alerts_now_bar_access_samsung_selected">Samsung compatibility selected · firmware support required</string>
+    <string name="alerts_now_bar_access_legacy">Notifications allowed · Live display depends on your device</string>
+    <string name="alerts_now_bar_access_not_allowed">Live notifications not allowed · tap to enable</string>
+    <string name="alerts_now_bar_access_promoted">Live notification promoted by Android</string>
+    <string name="alerts_now_bar_access_not_promoted">Access allowed · active notification was not promoted</string>
+    <string name="alerts_now_bar_access_allowed">Live notifications allowed</string>
+
+    <!-- Notifications settings page. -->
+    <string name="alerts_notifications_allow_title">Allow notifications</string>
+    <string name="alerts_notifications_allow_summary">Usage and account activity alerts</string>
+    <string name="alerts_notifications_style_title">Delivery style</string>
+    <string name="alerts_notifications_low_usage_category">Low usage</string>
+    <string name="alerts_notifications_metric_title">Alert for</string>
+    <string name="alerts_notifications_threshold_title">Alert when remaining reaches</string>
+    <string name="alerts_notifications_account_category">Account activity</string>
+    <string name="alerts_notifications_refills_title">Surprise limit refills</string>
+    <string name="alerts_notifications_refills_summary" formatted="false">An allowance reaches 100% before its scheduled reset</string>
+    <string name="alerts_notifications_new_credits_title">New reset credits</string>
+    <string name="alerts_notifications_new_credits_summary">The available reset-credit count increases</string>
+    <string name="alerts_notifications_expiry_title">Expiring reset credits</string>
+    <string name="alerts_notifications_expiry_summary">Remind me before an available reset credit expires</string>
+    <string name="alerts_notifications_permission_title">System notification access</string>
+    <string name="alerts_notifications_permission_allowed">Allowed</string>
+    <string name="alerts_notifications_permission_denied">Not allowed</string>
+    <string name="alerts_notifications_test_title">Send test notification</string>
+    <string name="alerts_notifications_test_summary">Verify alert delivery now</string>
+    <string name="alerts_notifications_test_sent">Test notification sent.</string>
+    <string name="alerts_notifications_test_failed">Enable notifications and allow permission first.</string>
+
+    <!-- Reset credit expiry reminder times. -->
+    <string name="alerts_reminder_times_title">Reminder times</string>
+    <string name="alerts_reminder_times_none">No reminder times configured</string>
+    <string name="alerts_reminder_times_empty_message">No reminder times are configured. Add one to choose how long before expiry Codex Meter should notify you.</string>
+    <!-- %1$s lists the reminder times, joined with alerts_reminder_times_separator. -->
+    <string name="alerts_reminder_times_summary">%1$s before expiry</string>
+    <string name="alerts_reminder_times_separator">", "</string>
+    <string name="alerts_reminder_time_remove_item">%1$s before expiry — tap to remove</string>
+    <string name="alerts_reminder_time_removed">%1$s reminder removed.</string>
+    <string name="alerts_reminder_add_title">Add reminder time</string>
+    <string name="alerts_reminder_add_explanation">Notify me this long before each available reset credit expires.</string>
+    <string name="alerts_reminder_amount_hint">Amount</string>
+    <!-- Units in the order of SettingsNotificationsFragment.LEAD_TIME_UNIT_MILLIS. -->
+    <string-array name="alerts_reminder_units">
+        <item>Minutes</item>
+        <item>Hours</item>
+        <item>Days</item>
+        <item>Weeks</item>
+    </string-array>
+    <string name="alerts_reminder_invalid_amount">Enter a time from 1 minute to 1 year, in whole minutes.</string>
+    <plurals name="alerts_lead_time_minutes">
+        <item quantity="one">%d minute</item>
+        <item quantity="other">%d minutes</item>
+    </plurals>
+    <plurals name="alerts_lead_time_hours">
+        <item quantity="one">%d hour</item>
+        <item quantity="other">%d hours</item>
+    </plurals>
+    <plurals name="alerts_lead_time_days">
+        <item quantity="one">%d day</item>
+        <item quantity="other">%d days</item>
+    </plurals>
+    <plurals name="alerts_lead_time_weeks">
+        <item quantity="one">%d week</item>
+        <item quantity="other">%d weeks</item>
+    </plurals>
+</resources>

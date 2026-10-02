@@ -45,6 +45,7 @@ public final class ParserSelfTest {
         testWearGlanceFormat();
         testNowBarPercentModes();
         testNowBarCopy();
+        testNowBarTextMatchesNowBarCopy();
         testJwtMerge();
         testPkce();
         testWidgetOptions();
@@ -687,6 +688,165 @@ public final class ParserSelfTest {
         check("12m".equals(NowBarCopy.compactDuration(TimeUnit.MINUTES.toMillis(12))),
                 "compact duration uses minutes under one hour");
         System.out.println("Now Bar exhausted windows swap percentage copy for reset duration.");
+    }
+
+    /**
+     * The phone's localizable NowBarText, fed the English patterns from
+     * res/values/strings_alerts.xml, must render exactly like the shared NowBarCopy that the
+     * Wear companion keeps using.
+     */
+    private static void testNowBarTextMatchesNowBarCopy() throws Exception {
+        java.util.Map<String, String> res = alertStringResources();
+        NowBarText.Strings english = new NowBarText.Strings() {
+            @Override public String fiveHourLabel() {
+                return res.get("alerts_window_five_hour");
+            }
+            @Override public String percent(int percent) {
+                return formatAlertString(res, "alerts_now_bar_percent", percent);
+            }
+            @Override public String daysHours(long days, long hours) {
+                return formatAlertString(res, "alerts_now_bar_duration_days_hours", days, hours);
+            }
+            @Override public String days(long days) {
+                return formatAlertString(res, "alerts_now_bar_duration_days", days);
+            }
+            @Override public String hoursMinutes(long hours, long minutes) {
+                return formatAlertString(res, "alerts_now_bar_duration_hours_minutes",
+                        hours, minutes);
+            }
+            @Override public String hours(long hours) {
+                return formatAlertString(res, "alerts_now_bar_duration_hours", hours);
+            }
+            @Override public String minutes(long minutes) {
+                return formatAlertString(res, "alerts_now_bar_duration_minutes", minutes);
+            }
+            @Override public String focusUnavailable() {
+                return res.get("alerts_now_bar_focus_unavailable");
+            }
+            @Override public String focusMarked(String marker, String value) {
+                return formatAlertString(res, "alerts_now_bar_focus_marked", marker, value);
+            }
+            @Override public String chip(String windowLabel, String value) {
+                return formatAlertString(res, "alerts_now_bar_chip", windowLabel, value);
+            }
+            @Override public String chipUnavailable(String windowLabel) {
+                return formatAlertString(res, "alerts_now_bar_chip_unavailable", windowLabel);
+            }
+            @Override public String limitLeft(String label, int percent) {
+                return formatAlertString(res, "alerts_now_bar_limit_left", label, percent);
+            }
+            @Override public String limitResetsIn(String label, String duration) {
+                return formatAlertString(res, "alerts_now_bar_limit_resets_in", label, duration);
+            }
+            @Override public String limitUnavailable(String label) {
+                return formatAlertString(res, "alerts_now_bar_limit_unavailable", label);
+            }
+        };
+
+        long now = 1_700_000_000_000L;
+        long observed = now - TimeUnit.MINUTES.toMillis(5);
+        long[] resetOffsets = {
+                TimeUnit.SECONDS.toMillis(20),
+                TimeUnit.MINUTES.toMillis(12),
+                TimeUnit.HOURS.toMillis(1),
+                TimeUnit.HOURS.toMillis(3) + TimeUnit.MINUTES.toMillis(20),
+                TimeUnit.DAYS.toMillis(1),
+                TimeUnit.DAYS.toMillis(2) + TimeUnit.HOURS.toMillis(4),
+                TimeUnit.DAYS.toMillis(6) + TimeUnit.HOURS.toMillis(23)
+                        + TimeUnit.MINUTES.toMillis(59)};
+        List<UsageWindow> windows = new java.util.ArrayList<>();
+        windows.add(null);
+        windows.add(new UsageWindow(40, 18_000L, 3_600L,
+                (now + TimeUnit.HOURS.toMillis(1)) / 1000L));
+        windows.add(new UsageWindow(99, 604_800L, 0L,
+                (now + TimeUnit.DAYS.toMillis(3)) / 1000L));
+        // Exhausted: no reset time, a reset in the past, and only reset_after_seconds.
+        windows.add(new UsageWindow(100, 18_000L, 0L, 0L));
+        windows.add(new UsageWindow(100, 18_000L, 0L,
+                (now - TimeUnit.HOURS.toMillis(1)) / 1000L));
+        windows.add(new UsageWindow(100, 18_000L, 4_000L, 0L));
+        for (long offset : resetOffsets) {
+            windows.add(new UsageWindow(100, 604_800L, 0L, (now + offset) / 1000L));
+        }
+        String[] labels = {res.get("alerts_window_five_hour"), res.get("alerts_window_weekly"),
+                res.get("alerts_window_monthly")};
+        check(Arrays.asList("5-hour", "Weekly", "Monthly").equals(Arrays.asList(labels)),
+                "English Now Bar window labels match the shared copy");
+        String[][] markers = {{"", null}, {"W ", res.get("alerts_now_bar_marker_weekly")},
+                {"M ", res.get("alerts_now_bar_marker_monthly")}};
+        int compared = 0;
+        for (UsageWindow window : windows) {
+            for (String label : labels) {
+                check(NowBarCopy.limitText(label, window, observed, now).equals(
+                                NowBarText.limitText(english, label, window, observed, now)),
+                        "NowBarText limit text matches NowBarCopy: " + label);
+                check(NowBarCopy.chipExpandedText(label, window, observed, now).equals(
+                                NowBarText.chipExpandedText(english, label, window, observed,
+                                        now)),
+                        "NowBarText chip text matches NowBarCopy: " + label);
+                compared += 2;
+            }
+            check(NowBarCopy.chipExpandedText(null, window, observed, now).equals(
+                            NowBarText.chipExpandedText(english, null, window, observed, now)),
+                    "NowBarText chip without a label falls back like NowBarCopy");
+            for (String[] marker : markers) {
+                check(NowBarCopy.focusCriticalText(marker[0], window, observed, now).equals(
+                                NowBarText.focusCriticalText(english, marker[1], window,
+                                        observed, now)),
+                        "NowBarText focus text matches NowBarCopy: '" + marker[0] + "'");
+                compared++;
+            }
+        }
+        for (long offset : resetOffsets) {
+            check(NowBarCopy.compactDuration(offset).equals(
+                            NowBarText.compactDuration(english, offset)),
+                    "NowBarText compact duration matches NowBarCopy: " + offset);
+        }
+        check(compared > 0 && "W 2d 4h".equals(NowBarText.focusCriticalText(english,
+                        res.get("alerts_now_bar_marker_weekly"), windows.get(11), observed, now)),
+                "NowBarText exhausted weekly focus shows days and hours until natural reset");
+        System.out.println("Now Bar resource copy renders English exactly like NowBarCopy.");
+    }
+
+    private static String formatAlertString(java.util.Map<String, String> res, String name,
+            Object... args) {
+        String pattern = res.get(name);
+        check(pattern != null, "string resource exists: " + name);
+        return String.format(java.util.Locale.US, pattern, args);
+    }
+
+    /** Default-locale strings from res/values/strings_alerts.xml, with Android escapes undone. */
+    private static java.util.Map<String, String> alertStringResources() throws Exception {
+        java.nio.file.Path classes = java.nio.file.Paths.get(ParserSelfTest.class
+                .getProtectionDomain().getCodeSource().getLocation().toURI());
+        String relative = "app/src/main/res/values/strings_alerts.xml";
+        // run-tests.sh compiles into <android>/build/tests.
+        List<java.nio.file.Path> candidates = Arrays.asList(
+                classes.resolve("../..").resolve(relative).normalize(),
+                java.nio.file.Paths.get(relative),
+                java.nio.file.Paths.get("android").resolve(relative));
+        java.nio.file.Path file = null;
+        for (java.nio.file.Path candidate : candidates) {
+            if (java.nio.file.Files.isRegularFile(candidate)) {
+                file = candidate;
+                break;
+            }
+        }
+        check(file != null, "strings_alerts.xml found near " + classes);
+        org.w3c.dom.NodeList nodes = javax.xml.parsers.DocumentBuilderFactory.newInstance()
+                .newDocumentBuilder().parse(file.toFile()).getElementsByTagName("string");
+        java.util.Map<String, String> strings = new java.util.HashMap<>();
+        for (int i = 0; i < nodes.getLength(); i++) {
+            org.w3c.dom.Element node = (org.w3c.dom.Element) nodes.item(i);
+            String value = node.getTextContent();
+            if (value.length() >= 2 && value.startsWith("\"") && value.endsWith("\"")) {
+                value = value.substring(1, value.length() - 1);
+            }
+            value = value.replace("\\n", "\n").replace("\\'", "'")
+                    .replace("\\\"", "\"").replace("\\\\", "\\");
+            strings.put(node.getAttribute("name"), value);
+        }
+        return strings;
     }
 
     private static void testStandardUsage() throws Exception {

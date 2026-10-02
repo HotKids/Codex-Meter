@@ -153,9 +153,11 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         testNotificationPreference.setOnPreferenceClickListener(preference -> {
             boolean sent = ResetNotificationManager.sendTestNotification(requireContext());
             if (sent) {
-                showToast("Test notification sent.", Toast.LENGTH_SHORT);
+                showToast(getString(R.string.alerts_notifications_test_sent),
+                        Toast.LENGTH_SHORT);
             } else {
-                showToast("Enable notifications and allow permission first.", Toast.LENGTH_LONG);
+                showToast(getString(R.string.alerts_notifications_test_failed),
+                        Toast.LENGTH_LONG);
             }
             return true;
         });
@@ -214,7 +216,9 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
             return;
         }
         boolean allowed = areAppNotificationsEnabled() && !lacksNotificationPermission();
-        permissionPreference.setSummary(allowed ? "Allowed" : "Not allowed");
+        permissionPreference.setSummary(allowed
+                ? R.string.alerts_notifications_permission_allowed
+                : R.string.alerts_notifications_permission_denied);
         if (testNotificationPreference != null) {
             testNotificationPreference.setEnabled(
                     allowed && ResetAlertPreferences.enabled(requireContext()));
@@ -222,25 +226,27 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
     }
 
     private void showExpiryReminderTimesDialog() {
-        List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(
-                requireContext());
-        AlertDialog.Builder builder = new AlertDialog.Builder(requireContext())
-                .setTitle("Reminder times")
-                .setNeutralButton("Add", (dialog, which) -> showAddExpiryReminderDialog())
-                .setNegativeButton("Done", null);
+        Context context = requireContext();
+        List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(context);
+        AlertDialog.Builder builder = new AlertDialog.Builder(context)
+                .setTitle(R.string.alerts_reminder_times_title)
+                .setNeutralButton(R.string.alerts_add,
+                        (dialog, which) -> showAddExpiryReminderDialog())
+                .setNegativeButton(R.string.alerts_done, null);
         if (leadTimes.isEmpty()) {
-            builder.setMessage("No reminder times are configured. Add one to choose how "
-                    + "long before expiry Codex Meter should notify you.");
+            builder.setMessage(R.string.alerts_reminder_times_empty_message);
         } else {
             String[] labels = new String[leadTimes.size()];
             for (int i = 0; i < leadTimes.size(); i++) {
-                labels[i] = formatLeadTime(leadTimes.get(i)) + " before expiry — tap to remove";
+                labels[i] = context.getString(R.string.alerts_reminder_time_remove_item,
+                        formatLeadTime(context, leadTimes.get(i)));
             }
             builder.setItems(labels, (dialog, which) -> {
                 List<Long> updated = new ArrayList<>(leadTimes);
                 long removed = updated.remove(which);
                 saveExpiryLeadTimes(updated);
-                showToast(formatLeadTime(removed) + " reminder removed.", Toast.LENGTH_SHORT);
+                showToast(getString(R.string.alerts_reminder_time_removed,
+                        formatLeadTime(requireContext(), removed)), Toast.LENGTH_SHORT);
             });
         }
         builder.show();
@@ -253,7 +259,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         container.setOrientation(LinearLayout.VERTICAL);
         container.setPadding(Ui.dp(context, 24), Ui.dp(context, 8), Ui.dp(context, 24), 0);
         TextView explanation = Ui.text(context,
-                "Notify me this long before each available reset credit expires.",
+                context.getString(R.string.alerts_reminder_add_explanation),
                 14.0f, Ui.secondaryText(dark));
         container.addView(explanation, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 
@@ -262,13 +268,13 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         rowParams.setMargins(0, Ui.dp(context, 16), 0, 0);
         EditText amount = new EditText(context);
-        amount.setHint("Amount");
+        amount.setHint(R.string.alerts_reminder_amount_hint);
         amount.setSingleLine(true);
         amount.setTextColor(Ui.mainText(dark));
         amount.setHintTextColor(Ui.secondaryText(dark));
         amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         inputRow.addView(amount, new LinearLayout.LayoutParams(0, Ui.dp(context, 54), 1.0f));
-        String[] units = {"Minutes", "Hours", "Days", "Weeks"};
+        String[] units = context.getResources().getStringArray(R.array.alerts_reminder_units);
         Spinner unit = Ui.spinner(context, units, dark);
         unit.setSelection(DEFAULT_LEAD_TIME_UNIT);
         LinearLayout.LayoutParams unitParams = new LinearLayout.LayoutParams(
@@ -278,10 +284,10 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         container.addView(inputRow, rowParams);
 
         AlertDialog dialog = new AlertDialog.Builder(context)
-                .setTitle("Add reminder time")
+                .setTitle(R.string.alerts_reminder_add_title)
                 .setView(container)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Add", null)
+                .setNegativeButton(R.string.alerts_cancel, null)
+                .setPositiveButton(R.string.alerts_add, null)
                 .create();
         // Validate before dismissing so an invalid amount keeps the dialog open with an error.
         dialog.setOnShowListener(ignored -> dialog.getButton(AlertDialog.BUTTON_POSITIVE)
@@ -289,8 +295,8 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
                     Long leadTime = parseLeadTime(amount.getText().toString(),
                             unit.getSelectedItemPosition());
                     if (leadTime == null) {
-                        amount.setError("Enter a time from 1 minute to 1 year, "
-                                + "in whole minutes.");
+                        amount.setError(context.getString(
+                                R.string.alerts_reminder_invalid_amount));
                         return;
                     }
                     List<Long> updated = new ArrayList<>(
@@ -340,37 +346,43 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         if (expiryTimesPreference == null) {
             return;
         }
-        List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(
-                requireContext());
+        Context context = requireContext();
+        List<Long> leadTimes = ResetAlertPreferences.getResetCreditExpiryLeadTimes(context);
         if (leadTimes.isEmpty()) {
-            expiryTimesPreference.setSummary("No reminder times configured");
+            expiryTimesPreference.setSummary(R.string.alerts_reminder_times_none);
             return;
         }
         List<String> labels = new ArrayList<>();
         for (Long leadTime : leadTimes) {
-            labels.add(formatLeadTime(leadTime));
+            labels.add(formatLeadTime(context, leadTime));
         }
-        expiryTimesPreference.setSummary(String.join(", ", labels) + " before expiry");
+        expiryTimesPreference.setSummary(context.getString(
+                R.string.alerts_reminder_times_summary,
+                String.join(context.getString(R.string.alerts_reminder_times_separator),
+                        labels)));
     }
 
     /** Formats a lead time using the largest unit that divides it exactly, e.g. "2 hours". */
-    private static String formatLeadTime(long millis) {
+    private static String formatLeadTime(Context context, long millis) {
         if (millis % WEEK_MILLIS == 0L) {
-            return countLabel(millis / WEEK_MILLIS, "week");
+            return countLabel(context, R.plurals.alerts_lead_time_weeks, millis / WEEK_MILLIS);
         }
         long dayMillis = TimeUnit.DAYS.toMillis(1);
         if (millis % dayMillis == 0L) {
-            return countLabel(millis / dayMillis, "day");
+            return countLabel(context, R.plurals.alerts_lead_time_days, millis / dayMillis);
         }
         long hourMillis = TimeUnit.HOURS.toMillis(1);
         if (millis % hourMillis == 0L) {
-            return countLabel(millis / hourMillis, "hour");
+            return countLabel(context, R.plurals.alerts_lead_time_hours, millis / hourMillis);
         }
-        return countLabel(millis / TimeUnit.MINUTES.toMillis(1), "minute");
+        return countLabel(context, R.plurals.alerts_lead_time_minutes,
+                millis / TimeUnit.MINUTES.toMillis(1));
     }
 
-    private static String countLabel(long count, String unit) {
-        return count + " " + unit + (count == 1 ? "" : "s");
+    /** Lead times stay within a year of minutes, so the count always fits in an int. */
+    private static String countLabel(Context context, int pluralsRes, long count) {
+        int quantity = (int) count;
+        return context.getResources().getQuantityString(pluralsRes, quantity, quantity);
     }
 
     private void scheduleResetCreditExpiryReminders() {
