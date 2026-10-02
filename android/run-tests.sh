@@ -363,8 +363,33 @@ grep -q 'SettingsTransferStore.collect' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferFragment.java"
 grep -q 'SettingsTransferStore.apply' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferFragment.java"
-grep -q 'Protect authentication exports' \
+grep -q '@string/settings_transfer_security_title' \
   "$ROOT/app/src/main/res/xml/preferences_settings_transfer.xml"
+grep -q '"settings_transfer_security_title">Protect authentication exports<' \
+  "$ROOT/app/src/main/res/values/strings_settings.xml"
+# Dialogs show localized copies of the pure-Java transfer text; the English resources must stay
+# identical to what SettingsTransfer writes into files and returns to the self-tests.
+python3 - <<PY
+import re
+import xml.etree.ElementTree as ET
+from pathlib import Path
+root = Path(r"""$ROOT""")
+java = (root / "app/src/main/java/dev/bennett/codexmeter/SettingsTransfer.java").read_text()
+strings = {node.get("name"): node.text or "" for node in ET.parse(
+    root / "app/src/main/res/values/strings_settings.xml").getroot() if node.tag == "string"}
+block = java[java.index("SECURITY_WARNING ="):java.index(";", java.index("SECURITY_WARNING ="))]
+warning = "".join(re.findall(r'"((?:[^"\\\\]|\\\\.)*)"', block))
+assert strings["settings_transfer_security_warning"] == warning, "security warning drifted"
+for section in ("app_settings", "notifications", "now_bar", "authentication"):
+    for suffix, method in (("", "sectionTitle"), ("_summary", "sectionSummary")):
+        body = java[java.index("public static String " + method):]
+        constant = "SECTION_" + section.upper()
+        english = re.search(constant + r'\.equals\(section\)\) \{\s*return "([^"]*)"', body)
+        assert english, (method, section)
+        key = "settings_transfer_section_" + section + suffix
+        assert strings[key] == english.group(1), key + " drifted from SettingsTransfer"
+print("transfer section and security-warning resources match SettingsTransfer.")
+PY
 grep -q 'material_you' \
   "$ROOT/app/src/main/res/xml/preferences_settings_appearance.xml"
 grep -q 'HorizontalRadioPreference' \

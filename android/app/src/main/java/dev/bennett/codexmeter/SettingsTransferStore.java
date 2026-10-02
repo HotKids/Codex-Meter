@@ -34,7 +34,8 @@ public final class SettingsTransferStore {
         }
         if (!includeAppSettings && !includeNotifications && !includeNowBar
                 && !includeAuthentication) {
-            throw new IllegalArgumentException("Select at least one section to export.");
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_select_export));
         }
         Context app = context.getApplicationContext();
         JSONObject appSettings = includeAppSettings ? collectAppSettings(app) : null;
@@ -45,7 +46,7 @@ public final class SettingsTransferStore {
             AuthTokens tokens = SecureTokenStore.load(app);
             if (tokens == null || !tokens.isUsable()) {
                 throw new IllegalStateException(
-                        "No ChatGPT authentication is saved on this device to export.");
+                        context.getString(R.string.settings_transfer_error_no_auth_to_export));
             }
             authentication = tokens.toJson();
         }
@@ -55,16 +56,23 @@ public final class SettingsTransferStore {
 
     public static void write(Context context, Uri uri, SettingsTransfer.Document document)
             throws Exception {
-        if (context == null || uri == null || document == null) {
+        if (context == null) {
+            // No resources to localize with; unreachable from the settings page.
             throw new IllegalArgumentException("Export target is incomplete.");
         }
+        if (uri == null || document == null) {
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_error_export_target));
+        }
         if (!document.hasAnySection()) {
-            throw new IllegalArgumentException("Select at least one section to export.");
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_select_export));
         }
         byte[] bytes = document.toJsonString().getBytes(StandardCharsets.UTF_8);
         try (OutputStream output = context.getContentResolver().openOutputStream(uri, "wt")) {
             if (output == null) {
-                throw new Exception("Could not open the export file for writing.");
+                throw new Exception(
+                        context.getString(R.string.settings_transfer_error_open_export));
             }
             output.write(bytes);
             output.flush();
@@ -132,12 +140,18 @@ public final class SettingsTransferStore {
     // ---------------------------------------------------------------------------------------
 
     public static SettingsTransfer.Document read(Context context, Uri uri) throws Exception {
-        if (context == null || uri == null) {
+        if (context == null) {
+            // No resources to localize with; unreachable from the settings page.
             throw new IllegalArgumentException("Import source is incomplete.");
+        }
+        if (uri == null) {
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_error_import_source));
         }
         try (InputStream input = context.getContentResolver().openInputStream(uri)) {
             if (input == null) {
-                throw new Exception("Could not open the import file for reading.");
+                throw new Exception(
+                        context.getString(R.string.settings_transfer_error_open_import));
             }
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             byte[] chunk = new byte[READ_BUFFER_BYTES];
@@ -145,7 +159,8 @@ public final class SettingsTransferStore {
             while ((read = input.read(chunk)) >= 0) {
                 buffer.write(chunk, 0, read);
                 if (buffer.size() > MAX_TRANSFER_BYTES) {
-                    throw new IllegalArgumentException("Transfer file is too large.");
+                    throw new IllegalArgumentException(
+                            context.getString(R.string.settings_transfer_error_too_large));
                 }
             }
             return SettingsTransfer.parse(
@@ -160,38 +175,45 @@ public final class SettingsTransferStore {
     public static ApplyResult apply(Context context, SettingsTransfer.Document document,
             boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
             boolean applyAuthentication) throws Exception {
-        if (context == null || document == null) {
+        if (context == null) {
+            // No resources to localize with; unreachable from the settings page.
             throw new IllegalArgumentException("Import source is incomplete.");
+        }
+        if (document == null) {
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_error_import_source));
         }
         Context app = context.getApplicationContext();
         List<String> applied = new ArrayList<>();
         boolean themeChanged = false;
 
         if (applyAppSettings) {
-            requireSection(document.hasAppSettings(),
-                    "This file has no app settings to import.");
+            requireSection(context, document.hasAppSettings(),
+                    R.string.settings_transfer_error_no_app_settings);
             themeChanged = applyAppSettings(app, document.appSettings);
             applied.add(SettingsTransfer.SECTION_APP_SETTINGS);
         }
         if (applyNotifications) {
-            requireSection(document.hasNotifications(),
-                    "This file has no notification settings to import.");
+            requireSection(context, document.hasNotifications(),
+                    R.string.settings_transfer_error_no_notifications);
             applyNotifications(app, document.notifications);
             applied.add(SettingsTransfer.SECTION_NOTIFICATIONS);
         }
         if (applyNowBar) {
-            requireSection(document.hasNowBar(), "This file has no Now Bar settings to import.");
+            requireSection(context, document.hasNowBar(),
+                    R.string.settings_transfer_error_no_now_bar);
             applyNowBar(app, document.nowBar);
             applied.add(SettingsTransfer.SECTION_NOW_BAR);
         }
         if (applyAuthentication) {
-            requireSection(document.hasAuthentication(),
-                    "This file has no authentication to import.");
+            requireSection(context, document.hasAuthentication(),
+                    R.string.settings_transfer_error_no_authentication);
             applyAuthentication(app, document.authentication);
             applied.add(SettingsTransfer.SECTION_AUTHENTICATION);
         }
         if (applied.isEmpty()) {
-            throw new IllegalArgumentException("Select at least one section to import.");
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_select_import));
         }
 
         rescheduleAfterImport(app, applyAppSettings, applyNowBar);
@@ -201,9 +223,9 @@ public final class SettingsTransferStore {
         return new ApplyResult(applied, themeChanged, applyAuthentication);
     }
 
-    private static void requireSection(boolean present, String missingMessage) {
+    private static void requireSection(Context context, boolean present, int missingMessage) {
         if (!present) {
-            throw new IllegalArgumentException(missingMessage);
+            throw new IllegalArgumentException(context.getString(missingMessage));
         }
     }
 
@@ -321,7 +343,7 @@ public final class SettingsTransferStore {
         AuthTokens tokens = AuthTokens.fromJson(json);
         if (!tokens.isUsable()) {
             throw new IllegalArgumentException(
-                    "Imported authentication is incomplete or invalid.");
+                    context.getString(R.string.settings_transfer_error_auth_invalid));
         }
         SecureTokenStore.save(context, tokens);
         AppPreferences.clearSnapshot(context);
@@ -363,7 +385,7 @@ public final class SettingsTransferStore {
             } catch (Exception exception) {
                 String message = exception.getMessage();
                 if (message == null || message.trim().isEmpty()) {
-                    message = "Imported authentication could not refresh usage.";
+                    message = app.getString(R.string.settings_transfer_error_refresh_failed);
                 }
                 AppPreferences.setLastError(app, message);
                 WidgetRenderer.updateAll(app);

@@ -24,6 +24,11 @@ public final class SettingsTransfer {
     public static final String SECTION_NOW_BAR = "now_bar";
     public static final String SECTION_AUTHENTICATION = "authentication";
 
+    /**
+     * Always written into exported files in English. Dialogs show the localized
+     * {@code settings_transfer_security_warning} resource, whose English text run-tests.sh
+     * keeps identical to this constant.
+     */
     public static final String SECURITY_WARNING =
             "IMPORTANT: This file contains ChatGPT authentication tokens. "
                     + "Anyone with this file can access your ChatGPT account. "
@@ -52,6 +57,41 @@ public final class SettingsTransfer {
     private static final String KEY_SECTIONS = "sections";
     private static final String KEY_CONTAINS_AUTHENTICATION = "contains_authentication";
     private static final String KEY_SECURITY_WARNING = "security_warning";
+
+    /**
+     * Why a transfer file or one of its values was rejected. Stable across languages so the
+     * Android layer can show a localized message for each {@link TransferException}.
+     */
+    public enum Problem {
+        EMPTY_FILE,
+        NOT_TRANSFER_FILE,
+        UNSUPPORTED_VERSION,
+        NO_SECTIONS,
+        LEAD_TIMES_NOT_ARRAY,
+        LEAD_TIMES_INVALID_ENTRY,
+        LEAD_TIMES_NULL_ENTRY,
+        LEAD_TIMES_NON_INTEGER_ENTRY,
+        LEAD_TIMES_EMPTY_ENTRY,
+        LEAD_TIMES_NON_NUMERIC_ENTRY,
+        LEAD_TIMES_OUT_OF_RANGE_ENTRY
+    }
+
+    /**
+     * A rejected transfer file. The message stays English; {@link #problem} and
+     * {@link #argument} (the unsupported version or the offending JSON key) identify it.
+     */
+    public static final class TransferException extends IllegalArgumentException {
+        private static final long serialVersionUID = 1L;
+
+        public final Problem problem;
+        public final String argument;
+
+        TransferException(Problem problem, String argument, String message) {
+            super(message);
+            this.problem = problem;
+            this.argument = argument == null ? "" : argument;
+        }
+    }
 
     private SettingsTransfer() {
     }
@@ -86,22 +126,24 @@ public final class SettingsTransfer {
 
     public static Document parse(String json) throws Exception {
         if (json == null || json.trim().isEmpty()) {
-            throw new IllegalArgumentException("Transfer file is empty.");
+            throw new TransferException(Problem.EMPTY_FILE, "", "Transfer file is empty.");
         }
         return parse(new JSONObject(json));
     }
 
     public static Document parse(JSONObject json) throws Exception {
         if (json == null) {
-            throw new IllegalArgumentException("Transfer file is empty.");
+            throw new TransferException(Problem.EMPTY_FILE, "", "Transfer file is empty.");
         }
         String format = json.optString(KEY_FORMAT, "");
         if (!FORMAT.equals(format)) {
-            throw new IllegalArgumentException("Not a Codex Meter transfer file.");
+            throw new TransferException(Problem.NOT_TRANSFER_FILE, "",
+                    "Not a Codex Meter transfer file.");
         }
         int version = json.optInt(KEY_VERSION, 0);
         if (version < 1 || version > VERSION) {
-            throw new IllegalArgumentException("Unsupported transfer file version: " + version);
+            throw new TransferException(Problem.UNSUPPORTED_VERSION, String.valueOf(version),
+                    "Unsupported transfer file version: " + version);
         }
         Document document = new Document();
         document.exportedAtMillis = Math.max(0L, json.optLong(KEY_EXPORTED_AT, 0L));
@@ -114,7 +156,8 @@ public final class SettingsTransfer {
         document.nowBar = copyObject(sections.optJSONObject(SECTION_NOW_BAR));
         document.authentication = copyObject(sections.optJSONObject(SECTION_AUTHENTICATION));
         if (!document.hasAnySection()) {
-            throw new IllegalArgumentException("Transfer file does not contain any sections.");
+            throw new TransferException(Problem.NO_SECTIONS, "",
+                    "Transfer file does not contain any sections.");
         }
         return document;
     }
@@ -194,7 +237,7 @@ public final class SettingsTransfer {
 
     public static List<Long> leadTimesFromJson(JSONArray array) {
         if (array == null) {
-            throw new IllegalArgumentException(
+            throw leadTimesProblem(Problem.LEAD_TIMES_NOT_ARRAY,
                     "reset_credit_expiry_lead_times must be a JSON array.");
         }
         List<Long> values = new ArrayList<>();
@@ -211,11 +254,11 @@ public final class SettingsTransfer {
         try {
             raw = array.get(index);
         } catch (JSONException exception) {
-            throw new IllegalArgumentException(
+            throw leadTimesProblem(Problem.LEAD_TIMES_INVALID_ENTRY,
                     "reset_credit_expiry_lead_times contains an invalid entry.");
         }
         if (raw == null || raw == JSONObject.NULL) {
-            throw new IllegalArgumentException(
+            throw leadTimesProblem(Problem.LEAD_TIMES_NULL_ENTRY,
                     "reset_credit_expiry_lead_times contains a null entry.");
         }
         long value;
@@ -223,41 +266,47 @@ public final class SettingsTransfer {
             double asDouble = ((Number) raw).doubleValue();
             if (Double.isNaN(asDouble) || Double.isInfinite(asDouble)
                     || asDouble != Math.rint(asDouble)) {
-                throw new IllegalArgumentException(
+                throw leadTimesProblem(Problem.LEAD_TIMES_NON_INTEGER_ENTRY,
                         "reset_credit_expiry_lead_times contains a non-integer entry.");
             }
             value = ((Number) raw).longValue();
         } else if (raw instanceof String) {
             String text = ((String) raw).trim();
             if (text.isEmpty()) {
-                throw new IllegalArgumentException(
+                throw leadTimesProblem(Problem.LEAD_TIMES_EMPTY_ENTRY,
                         "reset_credit_expiry_lead_times contains an empty entry.");
             }
             try {
                 value = Long.parseLong(text);
             } catch (NumberFormatException exception) {
-                throw new IllegalArgumentException(
+                throw leadTimesProblem(Problem.LEAD_TIMES_NON_NUMERIC_ENTRY,
                         "reset_credit_expiry_lead_times contains a non-numeric entry.");
             }
         } else {
-            throw new IllegalArgumentException(
+            throw leadTimesProblem(Problem.LEAD_TIMES_NON_NUMERIC_ENTRY,
                     "reset_credit_expiry_lead_times contains a non-numeric entry.");
         }
         if (!ResetCreditExpiryReminder.isValidLeadTime(value)) {
-            throw new IllegalArgumentException(
+            throw leadTimesProblem(Problem.LEAD_TIMES_OUT_OF_RANGE_ENTRY,
                     "reset_credit_expiry_lead_times contains an out-of-range entry.");
         }
         return value;
     }
 
+    private static TransferException leadTimesProblem(Problem problem, String message) {
+        return new TransferException(problem, KEY_RESET_CREDIT_EXPIRY_LEAD_TIMES, message);
+    }
+
     /** Requires a JSON array when the lead-times key is present; rejects wrong types. */
     public static List<Long> requireLeadTimes(JSONObject json, String key) throws JSONException {
         if (json == null || !json.has(key) || json.isNull(key)) {
-            throw new IllegalArgumentException(key + " must be a JSON array.");
+            throw new TransferException(Problem.LEAD_TIMES_NOT_ARRAY, key,
+                    key + " must be a JSON array.");
         }
         Object raw = json.get(key);
         if (!(raw instanceof JSONArray)) {
-            throw new IllegalArgumentException(key + " must be a JSON array.");
+            throw new TransferException(Problem.LEAD_TIMES_NOT_ARRAY, key,
+                    key + " must be a JSON array.");
         }
         return leadTimesFromJson((JSONArray) raw);
     }
@@ -274,6 +323,11 @@ public final class SettingsTransfer {
         return json.has(key) ? json.optBoolean(key, fallback) : fallback;
     }
 
+    /**
+     * English title of a section id. The app shows the localized
+     * {@code settings_transfer_section_*} resources keyed by the same {@code SECTION_*} ids;
+     * this copy serves the self-tests and unknown ids.
+     */
     public static String sectionTitle(String section) {
         if (SECTION_APP_SETTINGS.equals(section)) {
             return "App settings";
@@ -290,6 +344,7 @@ public final class SettingsTransfer {
         return section == null ? "" : section;
     }
 
+    /** English summary of a section id; see {@link #sectionTitle(String)}. */
     public static String sectionSummary(String section) {
         if (SECTION_APP_SETTINGS.equals(section)) {
             return "Theme, refresh, updates, and default widget look";

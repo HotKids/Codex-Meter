@@ -1,0 +1,213 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Page titles (toolbar and root list rows) -->
+    <string name="settings_title">Settings</string>
+    <string name="settings_page_appearance">Appearance</string>
+    <string name="settings_page_refresh_usage">Refresh &amp; usage</string>
+    <string name="settings_page_notifications">Notifications</string>
+    <string name="settings_page_now_bar">Now Bar</string>
+    <string name="settings_page_updates">Updates</string>
+    <string name="settings_page_transfer">Backup &amp; transfer</string>
+    <string name="settings_page_privacy">Privacy</string>
+    <string name="settings_page_diagnostics">Diagnostics</string>
+
+    <!-- Shared dialog buttons -->
+    <string name="settings_dialog_cancel">Cancel</string>
+    <string name="settings_dialog_continue">Continue</string>
+
+    <!-- Root list -->
+    <string name="settings_category_general">General</string>
+    <string name="settings_category_features">Features</string>
+    <string name="settings_category_app_data">App &amp; data</string>
+    <string name="settings_page_transfer_summary">Move settings between devices</string>
+    <string name="settings_page_privacy_summary">Local storage, encryption, and network access</string>
+    <string name="settings_about">About Codex Meter</string>
+
+    <!-- Account card -->
+    <string name="settings_account_title_signed_in">ChatGPT account</string>
+    <string name="settings_account_title_signed_out">Not connected</string>
+    <string name="settings_account_summary_signed_out">Sign in from the dashboard</string>
+    <string name="settings_account_summary_connected">Connected</string>
+    <string name="settings_account_plan_fallback" translatable="false">Codex</string>
+    <string name="settings_account_sign_out">Sign out</string>
+    <string name="settings_account_sign_in">Sign in with ChatGPT</string>
+    <string name="settings_sign_out_dialog_title">Sign out?</string>
+    <string name="settings_sign_out_dialog_message">This removes encrypted ChatGPT tokens and cached usage from this device.</string>
+    <string name="settings_signed_out">Signed out.</string>
+
+    <!-- Root list summaries -->
+    <string name="settings_theme_system_default">System default</string>
+    <string name="settings_summary_appearance_material_you_on">%1$s · Material You on</string>
+    <string name="settings_summary_appearance_material_you_off">%1$s · Material You off</string>
+    <string name="settings_summary_refresh_automatic">Automatic · currently %1$s · %2$s</string>
+    <string name="settings_summary_refresh_manual">%1$s · %2$s</string>
+    <plurals name="settings_refresh_interval_minutes">
+        <item quantity="one">%1$d minute</item>
+        <item quantity="other">%1$d minutes</item>
+    </plurals>
+    <string name="settings_refresh_interval_hourly">Hourly</string>
+    <plurals name="settings_refresh_interval_every_hours">
+        <item quantity="one">Every %1$d hour</item>
+        <item quantity="other">Every %1$d hours</item>
+    </plurals>
+    <string name="settings_summary_estimates_off">Estimates off</string>
+    <string name="settings_summary_estimates_on_warnings_off">Estimates on · Warnings off</string>
+    <string name="settings_summary_estimates_on">Estimates on</string>
+    <string name="settings_summary_notifications_off">Off</string>
+    <string name="settings_summary_notifications_on">On · %1$s at %2$d%%</string>
+    <string name="settings_summary_metric_five_hour">5-hour</string>
+    <string name="settings_summary_metric_weekly">Weekly</string>
+    <string name="settings_summary_metric_both">Both limits</string>
+    <string name="settings_summary_now_bar_active">Live monitor active</string>
+    <string name="settings_summary_now_bar_automatic">Automatic · starts at %1$d%%</string>
+    <string name="settings_summary_now_bar_manual">Manual start</string>
+    <string name="settings_summary_updates_available">v%1$s available</string>
+    <string name="settings_summary_updates_automatic">Automatic · %1$s</string>
+    <string name="settings_summary_updates_checks_off">Automatic checks off</string>
+    <string name="settings_summary_updates_alpha">%1$s · Alpha channel</string>
+
+    <!-- Appearance -->
+    <string name="settings_appearance_category_theme">Theme</string>
+    <string name="settings_appearance_material_you">Material You</string>
+    <string name="settings_appearance_material_you_summary">Use the system color palette when available</string>
+
+    <!-- Refresh & usage -->
+    <string name="settings_refresh_category">Refresh</string>
+    <string name="settings_refresh_on_launch">Refresh on launch</string>
+    <string name="settings_refresh_mode">Refresh mode</string>
+    <string name="settings_refresh_mode_summary">Adapts to remaining usage, app attention, reset timing, and recent failures</string>
+    <string name="settings_refresh_manual_interval">Manual interval</string>
+    <string name="settings_dashboard_category">Dashboard</string>
+    <string name="settings_dashboard_edit">Edit dashboard</string>
+    <string name="settings_dashboard_edit_summary">Arrange usage cards and choose which ones appear</string>
+    <string name="settings_dashboard_window_summary">Shown only when OpenAI returns this window</string>
+    <string name="settings_dashboard_five_hour">5-hour limit</string>
+    <string name="settings_dashboard_weekly">Weekly limit</string>
+    <string name="settings_dashboard_additional_limits">Additional limits</string>
+    <string name="settings_dashboard_additional_limits_summary">Model-specific limits such as GPT-5.3-Codex-Spark</string>
+    <string name="settings_dashboard_usage_credits">Usage-credit balance</string>
+    <string name="settings_dashboard_usage_credits_summary">Hidden automatically at a zero or negative balance</string>
+    <string name="settings_dashboard_usage_history">Usage history</string>
+    <string name="settings_dashboard_usage_history_summary">Shown only when a 5-hour or weekly window is available</string>
+    <string name="settings_dashboard_reset_credits">Reset credits</string>
+    <string name="settings_dashboard_reset_credits_summary">Hidden automatically when no resets are available</string>
+    <string name="settings_usage_estimates_category">Usage estimates</string>
+    <string name="settings_usage_estimates_enabled">Estimated usage time</string>
+    <string name="settings_usage_estimates_enabled_summary">Project how long the current allowance may last</string>
+    <string name="settings_usage_estimates_sensitivity">Warning sensitivity</string>
+
+    <!-- Privacy -->
+    <string name="settings_privacy_category">Your data</string>
+    <string name="settings_privacy_storage">Encrypted local storage</string>
+    <string name="settings_privacy_storage_summary">OAuth tokens are encrypted with Android Keystore and remain on this device.</string>
+    <string name="settings_privacy_network">Direct network access</string>
+    <string name="settings_privacy_network_summary">Codex Meter connects directly to OpenAI for authentication and to ChatGPT and Codex endpoints for usage data. There is no Codex Meter backend.</string>
+
+    <!-- Diagnostics -->
+    <string name="settings_diagnostics_category_tracing">Log tracing</string>
+    <string name="settings_diagnostics_logging">Save diagnostic logs</string>
+    <string name="settings_diagnostics_logging_summary">Record detailed app, refresh, scheduler, Wear, and network events</string>
+    <string name="settings_diagnostics_saved_logs">Saved logs</string>
+    <string name="settings_diagnostics_export">Export logs</string>
+    <string name="settings_diagnostics_export_summary">Save a structured JSON Lines file</string>
+    <string name="settings_diagnostics_clear">Clear logs</string>
+    <string name="settings_diagnostics_clear_summary">Permanently delete saved diagnostic events</string>
+    <string name="settings_diagnostics_category_privacy">Privacy</string>
+    <string name="settings_diagnostics_sensitive_data">Sensitive data protection</string>
+    <string name="settings_diagnostics_sensitive_data_summary">Logs stay in private app storage until you export or clear them. Authentication tokens, cookies, authorization codes, email addresses, URL queries, and request/response bodies are never intentionally recorded. Review an export before sharing it.</string>
+    <string name="settings_diagnostics_tracing_enabled">Diagnostic tracing enabled.</string>
+    <string name="settings_diagnostics_tracing_disabled">Diagnostic tracing disabled. Saved logs were kept.</string>
+    <plurals name="settings_diagnostics_status_tracing_on">
+        <item quantity="one">Tracing on · %1$s in %2$d file</item>
+        <item quantity="other">Tracing on · %1$s across %2$d files</item>
+    </plurals>
+    <plurals name="settings_diagnostics_status_tracing_off">
+        <item quantity="one">Tracing off · %1$s in %2$d file</item>
+        <item quantity="other">Tracing off · %1$s across %2$d files</item>
+    </plurals>
+    <string name="settings_diagnostics_clear_dialog_title">Clear diagnostic logs?</string>
+    <string name="settings_diagnostics_clear_dialog_message">This permanently deletes all saved diagnostic events.</string>
+    <string name="settings_diagnostics_clear_confirm">Clear</string>
+    <string name="settings_diagnostics_cleared">Diagnostic logs cleared.</string>
+    <string name="settings_diagnostics_export_empty">There are no diagnostic logs to export.</string>
+    <string name="settings_diagnostics_export_no_picker">No file picker is available to export diagnostic logs.</string>
+    <string name="settings_diagnostics_exported">Diagnostic logs exported. Review the file before sharing it.</string>
+    <string name="settings_diagnostics_export_failed">Could not export diagnostic logs: %1$s</string>
+    <string name="settings_diagnostics_export_file_unavailable">Android could not open the export file.</string>
+
+    <!-- Backup & transfer page -->
+    <string name="settings_transfer_category">Transfer</string>
+    <string name="settings_transfer_export">Export settings</string>
+    <string name="settings_transfer_export_summary">Save selected settings and optional sign-in data</string>
+    <string name="settings_transfer_import">Import settings</string>
+    <string name="settings_transfer_import_summary">Restore selected sections from a transfer file</string>
+    <string name="settings_transfer_category_security">Security</string>
+    <string name="settings_transfer_security_title">Protect authentication exports</string>
+    <string name="settings_transfer_security_summary">Authentication exports include ChatGPT tokens. Anyone with the file can use your account, so keep it private.</string>
+
+    <!-- Transfer sections, keyed by SettingsTransfer.SECTION_* -->
+    <string name="settings_transfer_section_app_settings">App settings</string>
+    <string name="settings_transfer_section_app_settings_summary">Theme, refresh, updates, and default widget look</string>
+    <string name="settings_transfer_section_notifications">Notifications</string>
+    <string name="settings_transfer_section_notifications_summary">Low-usage alerts and reset-credit reminders</string>
+    <string name="settings_transfer_section_now_bar">Now Bar</string>
+    <string name="settings_transfer_section_now_bar_summary">Display mode, percentage mode, and auto-start</string>
+    <string name="settings_transfer_section_authentication">Authentication</string>
+    <string name="settings_transfer_section_authentication_summary">ChatGPT sign-in tokens (sensitive)</string>
+    <!-- Joins imported section titles in the import confirmation toast -->
+    <string name="settings_transfer_section_separator">", "</string>
+    <!-- Must match SettingsTransfer.SECURITY_WARNING, which is written into exported files -->
+    <string name="settings_transfer_security_warning">IMPORTANT: This file contains ChatGPT authentication tokens. Anyone with this file can access your ChatGPT account. Do not share it, upload it, or send it to anyone. Keep it only on devices you trust.</string>
+
+    <!-- Backup & transfer dialogs and results -->
+    <string name="settings_transfer_import_no_picker">No file picker is available to import a transfer file.</string>
+    <string name="settings_transfer_export_no_picker">No file picker is available to export a transfer file.</string>
+    <string name="settings_transfer_export_dialog_title">Export sections</string>
+    <string name="settings_transfer_export_auth_signed_out">Sign in first to export ChatGPT authentication</string>
+    <string name="settings_transfer_export_auth_sign_in_first">Sign in before exporting authentication.</string>
+    <string name="settings_transfer_select_export">Select at least one section to export.</string>
+    <string name="settings_transfer_export_auth_title">Authentication will be included</string>
+    <string name="settings_transfer_export_auth_message">%1$s\n\nOnly continue if you are moving Codex Meter to another device you control.</string>
+    <string name="settings_transfer_export_anyway">Export anyway</string>
+    <string name="settings_transfer_exported_with_auth">Exported. Keep this file private — it includes ChatGPT authentication.</string>
+    <string name="settings_transfer_exported">Settings exported.</string>
+    <string name="settings_transfer_export_failed">Could not export transfer file.</string>
+    <string name="settings_transfer_read_failed">Could not read transfer file.</string>
+    <string name="settings_transfer_file_has_no_sections">This transfer file has no sections.</string>
+    <string name="settings_transfer_import_auth_warning">Warning: replaces ChatGPT sign-in on this device</string>
+    <string name="settings_transfer_import_dialog_title">Import sections</string>
+    <string name="settings_transfer_select_import">Select at least one section to import.</string>
+    <string name="settings_transfer_import_auth_title">Import authentication?</string>
+    <string name="settings_transfer_import_auth_message">%1$s\n\nThis replaces ChatGPT sign-in on this device with the tokens from the file.</string>
+    <string name="settings_transfer_import_anyway">Import anyway</string>
+    <string name="settings_transfer_imported">Imported %1$s.</string>
+    <string name="settings_transfer_imported_with_auth">Imported %1$s. Authentication replaced — keep the file private.</string>
+    <string name="settings_transfer_import_failed">Could not import transfer file.</string>
+
+    <!-- Transfer file problems (SettingsTransfer.Problem); %1$s is a JSON key or a version -->
+    <string name="settings_transfer_error_empty">Transfer file is empty.</string>
+    <string name="settings_transfer_error_not_transfer_file">Not a Codex Meter transfer file.</string>
+    <string name="settings_transfer_error_unsupported_version">Unsupported transfer file version: %1$s</string>
+    <string name="settings_transfer_error_no_sections">Transfer file does not contain any sections.</string>
+    <string name="settings_transfer_error_lead_times_not_array">%1$s must be a JSON array.</string>
+    <string name="settings_transfer_error_lead_times_invalid_entry">%1$s contains an invalid entry.</string>
+    <string name="settings_transfer_error_lead_times_null_entry">%1$s contains a null entry.</string>
+    <string name="settings_transfer_error_lead_times_non_integer_entry">%1$s contains a non-integer entry.</string>
+    <string name="settings_transfer_error_lead_times_empty_entry">%1$s contains an empty entry.</string>
+    <string name="settings_transfer_error_lead_times_non_numeric_entry">%1$s contains a non-numeric entry.</string>
+    <string name="settings_transfer_error_lead_times_out_of_range_entry">%1$s contains an out-of-range entry.</string>
+
+    <!-- Transfer read/write/apply failures (SettingsTransferStore) -->
+    <string name="settings_transfer_error_no_auth_to_export">No ChatGPT authentication is saved on this device to export.</string>
+    <string name="settings_transfer_error_export_target">Export target is incomplete.</string>
+    <string name="settings_transfer_error_open_export">Could not open the export file for writing.</string>
+    <string name="settings_transfer_error_import_source">Import source is incomplete.</string>
+    <string name="settings_transfer_error_open_import">Could not open the import file for reading.</string>
+    <string name="settings_transfer_error_too_large">Transfer file is too large.</string>
+    <string name="settings_transfer_error_no_app_settings">This file has no app settings to import.</string>
+    <string name="settings_transfer_error_no_notifications">This file has no notification settings to import.</string>
+    <string name="settings_transfer_error_no_now_bar">This file has no Now Bar settings to import.</string>
+    <string name="settings_transfer_error_no_authentication">This file has no authentication to import.</string>
+    <string name="settings_transfer_error_auth_invalid">Imported authentication is incomplete or invalid.</string>
+    <string name="settings_transfer_error_refresh_failed">Imported authentication could not refresh usage.</string>
+</resources>

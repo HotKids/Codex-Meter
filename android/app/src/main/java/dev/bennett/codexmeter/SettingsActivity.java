@@ -49,27 +49,31 @@ public final class SettingsActivity extends AppCompatActivity {
         }
     }
 
-    private static String pageTitle(String page) {
+    private String pageTitle(String page) {
+        return getString(pageTitleRes(page));
+    }
+
+    private static int pageTitleRes(String page) {
         switch (page) {
             case PAGE_APPEARANCE:
-                return "Appearance";
+                return R.string.settings_page_appearance;
             case PAGE_REFRESH_USAGE:
-                return "Refresh & usage";
+                return R.string.settings_page_refresh_usage;
             case PAGE_NOTIFICATIONS:
-                return "Notifications";
+                return R.string.settings_page_notifications;
             case PAGE_NOW_BAR:
-                return "Now Bar";
+                return R.string.settings_page_now_bar;
             case PAGE_UPDATES:
-                return "Updates";
+                return R.string.settings_page_updates;
             case PAGE_TRANSFER:
-                return "Backup & transfer";
+                return R.string.settings_page_transfer;
             case PAGE_PRIVACY:
-                return "Privacy";
+                return R.string.settings_page_privacy;
             case PAGE_DIAGNOSTICS:
-                return "Diagnostics";
+                return R.string.settings_page_diagnostics;
             case PAGE_ROOT:
             default:
-                return "Settings";
+                return R.string.settings_title;
         }
     }
 

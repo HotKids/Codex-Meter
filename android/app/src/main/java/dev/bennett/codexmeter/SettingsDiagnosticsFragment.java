@@ -47,9 +47,9 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
             DiagnosticLog.setEnabled(requireContext(), loggingEnabled);
             enabled.setChecked(loggingEnabled);
             updateSummary();
-            showToast(loggingEnabled
-                            ? "Diagnostic tracing enabled."
-                            : "Diagnostic tracing disabled. Saved logs were kept.",
+            showToast(getString(loggingEnabled
+                            ? R.string.settings_diagnostics_tracing_enabled
+                            : R.string.settings_diagnostics_tracing_disabled),
                     Toast.LENGTH_LONG);
             return true;
         });
@@ -66,14 +66,16 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
 
     private void confirmClear() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Clear diagnostic logs?")
-                .setMessage("This permanently deletes all saved diagnostic events.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Clear", (dialog, which) -> {
-                    DiagnosticLog.clear(requireContext());
-                    updateSummary();
-                    showToast("Diagnostic logs cleared.", Toast.LENGTH_SHORT);
-                })
+                .setTitle(R.string.settings_diagnostics_clear_dialog_title)
+                .setMessage(R.string.settings_diagnostics_clear_dialog_message)
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_diagnostics_clear_confirm,
+                        (dialog, which) -> {
+                            DiagnosticLog.clear(requireContext());
+                            updateSummary();
+                            showToast(getString(R.string.settings_diagnostics_cleared),
+                                    Toast.LENGTH_SHORT);
+                        })
                 .show();
     }
 
@@ -88,9 +90,10 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
         }
         DiagnosticLog.Stats stats = DiagnosticLog.stats(requireContext());
         Preference status = findPreference("diagnostic_log_status");
-        status.setSummary((enabled ? "Tracing on" : "Tracing off")
-                + " · " + DiagnosticLog.formatBytes(stats.bytes)
-                + (stats.files == 1 ? " in 1 file" : " across " + stats.files + " files"));
+        status.setSummary(getResources().getQuantityString(enabled
+                        ? R.plurals.settings_diagnostics_status_tracing_on
+                        : R.plurals.settings_diagnostics_status_tracing_off,
+                stats.files, DiagnosticLog.formatBytes(stats.bytes), stats.files));
         findPreference("export_diagnostic_logs").setEnabled(stats.hasLogs());
         findPreference("clear_diagnostic_logs").setEnabled(stats.hasLogs());
     }
@@ -98,7 +101,7 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
     private void launchExport() {
         DiagnosticLog.Stats stats = DiagnosticLog.stats(requireContext());
         if (!stats.hasLogs()) {
-            showToast("There are no diagnostic logs to export.", Toast.LENGTH_SHORT);
+            showToast(getString(R.string.settings_diagnostics_export_empty), Toast.LENGTH_SHORT);
             return;
         }
         String stamp = new SimpleDateFormat("yyyyMMdd-HHmmss", Locale.US).format(new Date());
@@ -111,7 +114,7 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
         } catch (RuntimeException exception) {
             DiagnosticLog.error(requireContext(), "diagnostics", "export_picker_failed",
                     exception);
-            showToast("No file picker is available to export diagnostic logs.",
+            showToast(getString(R.string.settings_diagnostics_export_no_picker),
                     Toast.LENGTH_LONG);
         }
     }
@@ -120,12 +123,19 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
         try {
             DiagnosticLog.export(requireContext(), uri);
             updateSummary();
-            showToast("Diagnostic logs exported. Review the file before sharing it.",
-                    Toast.LENGTH_LONG);
+            showToast(getString(R.string.settings_diagnostics_exported), Toast.LENGTH_LONG);
         } catch (Exception exception) {
             DiagnosticLog.error(requireContext(), "diagnostics", "export_failed", exception);
-            showToast("Could not export diagnostic logs: " + MainActivity.safeMessage(exception),
-                    Toast.LENGTH_LONG);
+            showToast(getString(R.string.settings_diagnostics_export_failed,
+                    exportFailureReason(exception)), Toast.LENGTH_LONG);
         }
+    }
+
+    /** Localized reason for a failed export; other failures keep their own message. */
+    private String exportFailureReason(Exception exception) {
+        if (exception instanceof DiagnosticLog.ExportFileUnavailableException) {
+            return getString(R.string.settings_diagnostics_export_file_unavailable);
+        }
+        return MainActivity.safeMessage(exception);
     }
 }

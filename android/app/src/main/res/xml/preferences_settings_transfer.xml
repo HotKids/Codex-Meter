@@ -2,24 +2,24 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Transfer">
+    <PreferenceCategory android:title="@string/settings_transfer_category">
         <Preference
             android:key="export_settings_transfer"
-            android:summary="Save selected settings and optional sign-in data"
-            android:title="Export settings"
+            android:summary="@string/settings_transfer_export_summary"
+            android:title="@string/settings_transfer_export"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="import_settings_transfer"
-            android:summary="Restore selected sections from a transfer file"
-            android:title="Import settings"
+            android:summary="@string/settings_transfer_import_summary"
+            android:title="@string/settings_transfer_import"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Security">
+    <PreferenceCategory android:title="@string/settings_transfer_category_security">
         <Preference
             android:key="transfer_security_notice"
-            android:summary="Authentication exports include ChatGPT tokens. Anyone with the file can use your account, so keep it private."
-            android:title="Protect authentication exports"
+            android:summary="@string/settings_transfer_security_summary"
+            android:title="@string/settings_transfer_security_title"
             app:iconSpaceReserved="false"
             app:selectable="false" />
     </PreferenceCategory>

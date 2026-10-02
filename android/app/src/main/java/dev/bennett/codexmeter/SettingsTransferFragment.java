@@ -77,7 +77,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         try {
             startActivityForResult(open, REQUEST_IMPORT_TRANSFER);
         } catch (RuntimeException exception) {
-            showToast("No file picker is available to import a transfer file.",
+            showToast(getString(R.string.settings_transfer_import_no_picker),
                     Toast.LENGTH_LONG);
         }
     }
@@ -88,27 +88,30 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
                 sectionLabel(SettingsTransfer.SECTION_APP_SETTINGS),
                 sectionLabel(SettingsTransfer.SECTION_NOTIFICATIONS),
                 sectionLabel(SettingsTransfer.SECTION_NOW_BAR),
-                SettingsTransfer.sectionTitle(SettingsTransfer.SECTION_AUTHENTICATION) + "\n"
-                        + (signedIn
-                        ? SettingsTransfer.sectionSummary(SettingsTransfer.SECTION_AUTHENTICATION)
-                        : "Sign in first to export ChatGPT authentication")
+                signedIn
+                        ? sectionLabel(SettingsTransfer.SECTION_AUTHENTICATION)
+                        : sectionTitle(SettingsTransfer.SECTION_AUTHENTICATION) + "\n"
+                                + getString(R.string.settings_transfer_export_auth_signed_out)
         };
         // Authentication is opt-in; everything else starts selected.
         boolean[] checked = {true, true, true, false};
         new AlertDialog.Builder(requireContext())
-                .setTitle("Export sections")
+                .setTitle(R.string.settings_transfer_export_dialog_title)
                 .setMultiChoiceItems(labels, checked, (dialog, which, isChecked) -> {
                     if (which == EXPORT_AUTHENTICATION && isChecked && !signedIn) {
                         checked[EXPORT_AUTHENTICATION] = false;
                         ((AlertDialog) dialog).getListView()
                                 .setItemChecked(EXPORT_AUTHENTICATION, false);
-                        showToast("Sign in before exporting authentication.", Toast.LENGTH_LONG);
+                        showToast(getString(
+                                R.string.settings_transfer_export_auth_sign_in_first),
+                                Toast.LENGTH_LONG);
                         return;
                     }
                     checked[which] = isChecked;
                 })
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Continue", (dialog, which) -> onExportSectionsChosen(checked))
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_dialog_continue,
+                        (dialog, which) -> onExportSectionsChosen(checked))
                 .show();
     }
 
@@ -118,7 +121,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         boolean nowBar = checked[EXPORT_NOW_BAR];
         boolean authentication = checked[EXPORT_AUTHENTICATION];
         if (!(appSettings || notifications || nowBar || authentication)) {
-            showToast("Select at least one section to export.", Toast.LENGTH_LONG);
+            showToast(getString(R.string.settings_transfer_select_export), Toast.LENGTH_LONG);
             return;
         }
         if (authentication) {
@@ -132,12 +135,11 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
     private void confirmSensitiveExport(boolean appSettings, boolean notifications,
             boolean nowBar) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Authentication will be included")
-                .setMessage(SettingsTransfer.SECURITY_WARNING
-                        + "\n\nOnly continue if you are moving Codex Meter to another device "
-                        + "you control.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Export anyway", (dialog, which) ->
+                .setTitle(R.string.settings_transfer_export_auth_title)
+                .setMessage(getString(R.string.settings_transfer_export_auth_message,
+                        getString(R.string.settings_transfer_security_warning)))
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_transfer_export_anyway, (dialog, which) ->
                         launchExportPicker(appSettings, notifications, nowBar, true))
                 .show();
     }
@@ -159,7 +161,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         try {
             startActivityForResult(create, REQUEST_EXPORT_TRANSFER);
         } catch (RuntimeException exception) {
-            showToast("No file picker is available to export a transfer file.",
+            showToast(getString(R.string.settings_transfer_export_no_picker),
                     Toast.LENGTH_LONG);
         }
     }
@@ -170,12 +172,11 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
                     pendingExportAppSettings, pendingExportNotifications,
                     pendingExportNowBar, pendingExportAuthentication);
             SettingsTransferStore.write(requireContext(), uri, document);
-            String message = document.hasAuthentication()
-                    ? "Exported. Keep this file private — it includes ChatGPT authentication."
-                    : "Settings exported.";
-            showToast(message, Toast.LENGTH_LONG);
+            showToast(getString(document.hasAuthentication()
+                    ? R.string.settings_transfer_exported_with_auth
+                    : R.string.settings_transfer_exported), Toast.LENGTH_LONG);
         } catch (Exception exception) {
-            showToast(messageOr(exception, "Could not export transfer file."),
+            showToast(failureMessage(exception, R.string.settings_transfer_export_failed),
                     Toast.LENGTH_LONG);
         }
     }
@@ -184,14 +185,16 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         try {
             showImportSectionDialog(SettingsTransferStore.read(requireContext(), uri));
         } catch (Exception exception) {
-            showToast(messageOr(exception, "Could not read transfer file."), Toast.LENGTH_LONG);
+            showToast(failureMessage(exception, R.string.settings_transfer_read_failed),
+                    Toast.LENGTH_LONG);
         }
     }
 
     private void showImportSectionDialog(SettingsTransfer.Document document) {
         List<String> present = document.presentSections();
         if (present.isEmpty()) {
-            showToast("This transfer file has no sections.", Toast.LENGTH_LONG);
+            showToast(getString(R.string.settings_transfer_file_has_no_sections),
+                    Toast.LENGTH_LONG);
             return;
         }
         String[] labels = new String[present.size()];
@@ -199,18 +202,19 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         for (int i = 0; i < present.size(); i++) {
             String section = present.get(i);
             boolean authentication = SettingsTransfer.isAuthenticationSection(section);
-            String warning = authentication
-                    ? "\nWarning: replaces ChatGPT sign-in on this device" : "";
-            labels[i] = sectionLabel(section) + warning;
+            labels[i] = authentication
+                    ? sectionLabel(section) + "\n"
+                            + getString(R.string.settings_transfer_import_auth_warning)
+                    : sectionLabel(section);
             // Replacing the signed-in account is opt-in.
             checked[i] = !authentication;
         }
         new AlertDialog.Builder(requireContext())
-                .setTitle("Import sections")
+                .setTitle(R.string.settings_transfer_import_dialog_title)
                 .setMultiChoiceItems(labels, checked,
                         (dialog, which, isChecked) -> checked[which] = isChecked)
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Continue",
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_dialog_continue,
                         (dialog, which) -> onImportSectionsChosen(document, present, checked))
                 .show();
     }
@@ -237,7 +241,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
             }
         }
         if (!(appSettings || notifications || nowBar || authentication)) {
-            showToast("Select at least one section to import.", Toast.LENGTH_LONG);
+            showToast(getString(R.string.settings_transfer_select_import), Toast.LENGTH_LONG);
             return;
         }
         if (authentication) {
@@ -251,12 +255,11 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
     private void confirmSensitiveImport(SettingsTransfer.Document document,
             boolean appSettings, boolean notifications, boolean nowBar) {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Import authentication?")
-                .setMessage(SettingsTransfer.SECURITY_WARNING
-                        + "\n\nThis replaces ChatGPT sign-in on this device with the tokens "
-                        + "from the file.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Import anyway", (dialog, which) ->
+                .setTitle(R.string.settings_transfer_import_auth_title)
+                .setMessage(getString(R.string.settings_transfer_import_auth_message,
+                        getString(R.string.settings_transfer_security_warning)))
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_transfer_import_anyway, (dialog, which) ->
                         finishImport(document, appSettings, notifications, nowBar, true))
                 .show();
     }
@@ -269,28 +272,104 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
                     authentication);
             List<String> titles = new ArrayList<>();
             for (String section : result.appliedSections) {
-                titles.add(SettingsTransfer.sectionTitle(section));
+                titles.add(sectionTitle(section));
             }
-            String message = "Imported " + String.join(", ", titles) + ".";
-            if (result.authenticationImported) {
-                message += " Authentication replaced — keep the file private.";
-            }
-            showToast(message, Toast.LENGTH_LONG);
+            String sections = String.join(
+                    getString(R.string.settings_transfer_section_separator), titles);
+            showToast(getString(result.authenticationImported
+                    ? R.string.settings_transfer_imported_with_auth
+                    : R.string.settings_transfer_imported, sections), Toast.LENGTH_LONG);
             requireActivity().recreate();
         } catch (Exception exception) {
-            showToast(messageOr(exception, "Could not import transfer file."),
+            showToast(failureMessage(exception, R.string.settings_transfer_import_failed),
                     Toast.LENGTH_LONG);
         }
     }
 
-    private static String sectionLabel(String section) {
-        return SettingsTransfer.sectionTitle(section) + "\n"
-                + SettingsTransfer.sectionSummary(section);
+    /** Title and summary rows for a {@link SettingsTransfer} section id. */
+    private String sectionLabel(String section) {
+        return sectionTitle(section) + "\n" + sectionSummary(section);
     }
 
-    /** The exception's own message when it has one, otherwise {@code fallback}. */
-    private static String messageOr(Exception exception, String fallback) {
+    private String sectionTitle(String section) {
+        if (SettingsTransfer.SECTION_APP_SETTINGS.equals(section)) {
+            return getString(R.string.settings_transfer_section_app_settings);
+        }
+        if (SettingsTransfer.SECTION_NOTIFICATIONS.equals(section)) {
+            return getString(R.string.settings_transfer_section_notifications);
+        }
+        if (SettingsTransfer.SECTION_NOW_BAR.equals(section)) {
+            return getString(R.string.settings_transfer_section_now_bar);
+        }
+        if (SettingsTransfer.SECTION_AUTHENTICATION.equals(section)) {
+            return getString(R.string.settings_transfer_section_authentication);
+        }
+        return SettingsTransfer.sectionTitle(section);
+    }
+
+    private String sectionSummary(String section) {
+        if (SettingsTransfer.SECTION_APP_SETTINGS.equals(section)) {
+            return getString(R.string.settings_transfer_section_app_settings_summary);
+        }
+        if (SettingsTransfer.SECTION_NOTIFICATIONS.equals(section)) {
+            return getString(R.string.settings_transfer_section_notifications_summary);
+        }
+        if (SettingsTransfer.SECTION_NOW_BAR.equals(section)) {
+            return getString(R.string.settings_transfer_section_now_bar_summary);
+        }
+        if (SettingsTransfer.SECTION_AUTHENTICATION.equals(section)) {
+            return getString(R.string.settings_transfer_section_authentication_summary);
+        }
+        return SettingsTransfer.sectionSummary(section);
+    }
+
+    /**
+     * Localized text for a failed export or import: transfer-file problems by their stable
+     * code, otherwise the exception's own (already localized) message, else {@code fallback}.
+     */
+    private String failureMessage(Exception exception, int fallback) {
+        if (exception instanceof SettingsTransfer.TransferException) {
+            return problemMessage((SettingsTransfer.TransferException) exception);
+        }
         String message = exception.getMessage();
-        return message == null || message.isEmpty() ? fallback : message;
+        return message == null || message.isEmpty() ? getString(fallback) : message;
+    }
+
+    private String problemMessage(SettingsTransfer.TransferException exception) {
+        switch (exception.problem) {
+            case EMPTY_FILE:
+                return getString(R.string.settings_transfer_error_empty);
+            case NOT_TRANSFER_FILE:
+                return getString(R.string.settings_transfer_error_not_transfer_file);
+            case UNSUPPORTED_VERSION:
+                return getString(R.string.settings_transfer_error_unsupported_version,
+                        exception.argument);
+            case NO_SECTIONS:
+                return getString(R.string.settings_transfer_error_no_sections);
+            case LEAD_TIMES_NOT_ARRAY:
+                return getString(R.string.settings_transfer_error_lead_times_not_array,
+                        exception.argument);
+            case LEAD_TIMES_INVALID_ENTRY:
+                return getString(R.string.settings_transfer_error_lead_times_invalid_entry,
+                        exception.argument);
+            case LEAD_TIMES_NULL_ENTRY:
+                return getString(R.string.settings_transfer_error_lead_times_null_entry,
+                        exception.argument);
+            case LEAD_TIMES_NON_INTEGER_ENTRY:
+                return getString(R.string.settings_transfer_error_lead_times_non_integer_entry,
+                        exception.argument);
+            case LEAD_TIMES_EMPTY_ENTRY:
+                return getString(R.string.settings_transfer_error_lead_times_empty_entry,
+                        exception.argument);
+            case LEAD_TIMES_NON_NUMERIC_ENTRY:
+                return getString(R.string.settings_transfer_error_lead_times_non_numeric_entry,
+                        exception.argument);
+            case LEAD_TIMES_OUT_OF_RANGE_ENTRY:
+                return getString(
+                        R.string.settings_transfer_error_lead_times_out_of_range_entry,
+                        exception.argument);
+            default:
+                return exception.getMessage();
+        }
     }
 }

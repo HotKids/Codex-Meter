@@ -8,7 +8,7 @@
         <item>Light</item>
         <item>Dark</item>
     </string-array>
-    <string-array name="preferences_darkmode_values">
+    <string-array name="preferences_darkmode_values" translatable="false">
         <item>light</item>
         <item>dark</item>
     </string-array>
@@ -20,17 +20,17 @@
     <string-array name="settings_refresh_mode_entries">
         <item>Automatic</item><item>Manual</item>
     </string-array>
-    <string-array name="settings_refresh_mode_values">
+    <string-array name="settings_refresh_mode_values" translatable="false">
         <item>automatic</item><item>manual</item>
     </string-array>
-    <string-array name="settings_refresh_values">
+    <string-array name="settings_refresh_values" translatable="false">
         <item>5</item><item>10</item><item>15</item><item>30</item><item>60</item><item>120</item>
     </string-array>
     <string-array name="settings_update_channel_entries">
         <item>Stable</item>
         <item>Alpha (early builds)</item>
     </string-array>
-    <string-array name="settings_update_channel_values">
+    <string-array name="settings_update_channel_values" translatable="false">
         <item>stable</item>
         <item>alpha</item>
     </string-array>
@@ -41,7 +41,7 @@
         <item>Daily</item>
         <item>Weekly</item>
     </string-array>
-    <string-array name="settings_update_interval_values">
+    <string-array name="settings_update_interval_values" translatable="false">
         <item>1</item>
         <item>6</item>
         <item>12</item>
@@ -51,20 +51,20 @@
     <string-array name="settings_metric_entries">
         <item>Both</item><item>5-hour</item><item>Weekly</item>
     </string-array>
-    <string-array name="settings_metric_values">
+    <string-array name="settings_metric_values" translatable="false">
         <item>both</item><item>five_hour</item><item>weekly</item>
     </string-array>
     <string-array name="settings_alert_style_entries">
         <item>Silent</item><item>Notification sound</item><item>Alarm sound</item>
     </string-array>
-    <string-array name="settings_alert_style_values">
+    <string-array name="settings_alert_style_values" translatable="false">
         <item>silent</item><item>notification</item><item>alarm</item>
     </string-array>
     <string-array name="settings_threshold_entries">
         <item>Always</item><item>10% or lower</item><item>25% or lower</item>
         <item>50% or lower</item><item>75% or lower</item>
     </string-array>
-    <string-array name="settings_threshold_values">
+    <string-array name="settings_threshold_values" translatable="false">
         <item>100</item><item>10</item><item>25</item><item>50</item><item>75</item>
     </string-array>
     <string-array name="usage_pace_sensitivity_entries">
@@ -73,7 +73,7 @@
         <item>Balanced</item>
         <item>Relaxed</item>
     </string-array>
-    <string-array name="usage_pace_sensitivity_values">
+    <string-array name="usage_pace_sensitivity_values" translatable="false">
         <item>off</item>
         <item>sensitive</item>
         <item>balanced</item>
