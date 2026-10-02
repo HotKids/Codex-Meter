@@ -36,18 +36,33 @@
 
 每个小组件单独保存以下外观设置：
 
-- **样式**：彩色（渐变套餐徽章、灰色轨道的彩色进度条）或简洁（无徽章底色、描边轨道、黑/白进度条）。
+- **样式**：
+  - **彩色**（默认）：上文的 AI-Usage 卡片，渐变套餐徽章、按用量分级着色的进度条。
+  - **简洁**：Material You 卡片（`MaterialCardRenderer`、`res/layout/widget_material.xml`），见 2.1。
 - **主题**：跟随系统、深色、浅色。Android 12+ 跟随系统时由宿主在日夜模式间切换，不需要重新渲染。
-- **背景**：开启时为白色或 #1C1C1E 圆角卡片，可调不透明度（默认 100%）；关闭时为透明模式：
-  15% 黑色蒙层、白色文字、文字阴影（使用 `widget_card_shadow.xml`）、不显示水印。
+- **背景**：开启时为卡片底色，可调不透明度（默认 100%）；关闭时为透明模式。彩色样式在透明模式下
+  使用 15% 黑色蒙层、白色文字、文字阴影（`widget_card_shadow.xml`），不显示水印；简洁样式去掉外层底色，
+  标题栏文字和图标改为带阴影的白色（`widget_material_shadow.xml`），各周期的色块保持不变。
 
 套餐徽章按 AI-Usage 的配色绘制为位图（`PlanBadge`）：Plus、Pro 10x、Pro 5x、Team、Business、
 Enterprise、Premium、Free 各有渐变；未知套餐或未登录显示 “CODEX”。Pro 套餐（`pro`、旧缓存
 `pro20x`）显示为 PRO 10X。
 
+### 2.1 简洁样式（Material You）
+
+- 顶部为 Codex 图标、“Codex” 标题和刷新按钮；未登录、刷新失败或数据过旧时，标题与刷新按钮之间显示状态。
+- 每个周期一个圆角色块：第一行为标题和剩余百分比，第二行为较粗的进度条（按剩余比例），第三行为重置时间
+  （一天内显示“3小时59分后重置”，更久显示星期和时间，如“周二下午12:51 重置”）和该周期已经过去的时间比例。
+- 窄尺寸纵向排列前 2 项；宽尺寸（≥ 250dp）两列排列，最多 4 项（3 项时第二行占满宽度）。
+  各行平分高度，色块随小组件尺寸拉伸，文字和间距按参考尺寸缩放（0.7–1.25 倍）。
+- Android 12+ 的颜色取自系统壁纸取色（`system_accent1/2`、`system_neutral1/2` 调色板），由桌面在显示时
+  解析，壁纸或深浅色切换后自动更新；更早的系统使用固定的蓝色配色。
+- 简洁样式不显示套餐徽章、刷新时间和重置券。
+
 ## 3. 交互与刷新
 
-- 点击刷新时间（宽尺寸右上角，或小尺寸底部的“刷新时间”行）：立即请求刷新用量。
+- 彩色样式点击刷新时间（宽尺寸右上角，或小尺寸底部的“刷新时间”行）、简洁样式点击刷新按钮或状态文字：
+  立即请求刷新用量。
 - 点击卡片其他位置：打开应用首页。
 - 单行圆环布局点击整体打开应用。
 - 自动刷新沿用应用自身的刷新设置，小组件没有单独的刷新周期。应用每次刷新成功后更新所有小组件。
@@ -72,8 +87,9 @@ Enterprise、Premium、Free 各有渐变；未知套餐或未登录显示 “COD
 - 布局 `res/layout/widget_card.xml`：每一行放在一个铺满卡片的 FrameLayout 中，通过 padding 定位，
   以复现 AI-Usage 的绝对坐标；不需要的行设为 GONE。
 - 透明模式的文字阴影无法在 RemoteViews 中动态设置，因此使用由
-  `android/tools/widget-card-shadow.sh` 生成的 `widget_card_shadow.xml`（只把文字样式换成带阴影的版本）。
-  修改 `widget_card.xml` 后必须重新生成，`UsageCardModelTest` 会检查两者一致。
+  `android/tools/widget-card-shadow.sh` 生成的 `widget_card_shadow.xml` 和 `widget_material_shadow.xml`
+  （只把文字样式换成带阴影的版本）。修改 `widget_card.xml` 或 `widget_material.xml` 后必须重新生成，
+  `UsageCardModelTest` 会检查两者一致。
 - 进度条由轨道、填充（`<scale>` 胶囊，按 level 0–10000 缩放）和描边三层 ImageView 组成，
   用 `setColorFilter` 着色，填充最短为一个圆点。
 - RemoteViews 不允许内联普通 `View`，弹性空白使用 FrameLayout。
@@ -82,7 +98,7 @@ Enterprise、Premium、Free 各有渐变；未知套餐或未登录显示 “COD
 
 - `UsageCardModelTest`（Robolectric）：选择与排序、标题（中英文）、重置文案、百分比、颜色分级、
   套餐徽章与 Pro 10x 标签、变体选择、样式的保存与导入导出、阴影布局一致性。
-- `UsageCardPreviewTest`（Robolectric，原生图形模式）：用固定数据渲染各变体、深浅色、透明与简洁样式、
+- `UsageCardPreviewTest`（Robolectric，原生图形模式）：用固定数据渲染两种样式的各变体、深浅色、透明背景、
   未登录和单行圆环，输出到 `android/app/build/reports/widget-previews/`。这些是 Robolectric 渲染图，
   字体与真机不同，只用于检查布局，不能代替真机截图。
 

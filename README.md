@@ -67,9 +67,12 @@ The app includes:
   wide placements show up to four.
 - A per-widget editor: choose and drag-order 1–4 usage windows (five-hour,
   weekly, monthly when it coexists with weekly, and model-specific limits such
-  as Codex Spark), Color or Clear style, system/light/dark theme, and background
-  on/off with opacity. Automatic refresh follows the app's refresh settings.
-- Tap the refresh time to refresh; tap anywhere else to open the app.
+  as Codex Spark), Color (AI-Usage) or Clear (a Material You card with
+  wallpaper colours on Android 12+) style, system/light/dark theme, and
+  background on/off with opacity. Automatic refresh follows the app's refresh
+  settings.
+- Tap the refresh time (Color) or the refresh button (Clear) to refresh; tap
+  anywhere else to open the app.
 - One-row placements (2×1 and 4×1) keep the upstream One UI dials.
 - Reset-credit inventory, expiration, and redemption inside the app.
 - Samsung One UI presentation throughout the dashboard, settings, and widget configuration surfaces.
