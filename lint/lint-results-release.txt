@@ -1,0 +1,1065 @@
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/lint-baseline.xml: Hint: 84 warnings were filtered out because they are listed in the baseline file, lint-baseline.xml [LintBaseline]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/lint-baseline.xml: Hint: 193 errors/warnings were listed in the baseline file (lint-baseline.xml) but not found in the project; perhaps they have been fixed? Another possible explanation is that lint recently stopped analyzing (and including results from) dependent projects by default. You can turn this back on with android.lintOptions.checkDependencies=true. Unmatched issue types: DefaultLocale (2), DrawAllocation (2), HardcodedText (26), NestedWeights (7), SetTextI18n, ShowToast (15), SmallSp (20), UnusedAttribute (2), UseCompatLoadingForDrawables, WrongConstant (117) [LintBaselineFixed]
+
+   Explanation for issues of type "LintBaselineFixed":
+   If a lint baseline describes a problem which is no longer reported, then
+   the problem has either been fixed, or perhaps the issue type has been
+   disabled. In any case, the entry can be removed from the baseline (such
+   that if the issue is reintroduced at some point, lint will complain rather
+   than just silently starting to match the old baseline entry again.)
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/AppPreferences.java:531: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs(context).edit().putString(KEY_APP_THEME, normalizeAppTheme(theme)).commit();
+                                                                                 ~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/AppPreferences.java:545: Warning: Consider using apply() instead; commit writes its data to persistent storage immediately, whereas apply will handle it in the background [ApplySharedPref]
+        prefs(context).edit().putBoolean(KEY_MATERIAL_YOU, enabled).commit();
+                                                                    ~~~~~~~~
+
+   Explanation for issues of type "ApplySharedPref":
+   Consider using apply() instead of commit on shared preferences. Whereas
+   commit blocks and writes its data to persistent storage immediately, apply
+   will handle it in the background.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/UpdateCheckFrequency.java:84: Warning: Implicitly using the default locale is a common source of bugs: Use toLowerCase(Locale) instead. For strings meant to be internal use Locale.ROOT, otherwise Locale.getDefault(). [DefaultLocale]
+        return "Check signed GitHub releases " + label(hours).toLowerCase();
+                                                              ~~~~~~~~~~~
+
+   Explanation for issues of type "DefaultLocale":
+   Calling String#toLowerCase() or #toUpperCase() without specifying an
+   explicit locale is a common source of bugs. The reason for that is that
+   those methods will use the current locale on the user's device, and even
+   though the code appears to work correctly when you are developing the app,
+   it will fail in some locales. For example, in the Turkish locale, the
+   uppercase replacement for i is not I.
+
+   If you want the methods to just perform ASCII replacement, for example to
+   convert an enum name, call String#toUpperCase(Locale.ROOT) instead. If you
+   really want to use the current locale, call
+   String#toUpperCase(Locale.getDefault()) instead.
+
+   https://developer.android.com/reference/java/util/Locale.html#default_locale
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java:133: Warning: Field requires API level 31 (current min is 26): android.appwidget.AppWidgetManager#OPTION_APPWIDGET_SIZES [InlinedApi]
+                : host.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
+                                              ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "InlinedApi":
+   This check scans through all the Android API field references in the
+   application and flags certain constants, such as static final integers and
+   Strings, which were introduced in later versions. These will actually be
+   copied into the class files rather than being referenced, which means that
+   the value is available even when running on older devices. In some cases
+   that's fine, and in other cases it can result in a runtime crash or
+   incorrect behavior. It depends on the context, so consider the code
+   carefully and decide whether it's safe and can be suppressed or whether the
+   code needs to be guarded.
+
+   If you really want to use this API and don't need to support older devices
+   just set the minSdkVersion in your build.gradle or AndroidManifest.xml
+   files.
+
+   If your code is deliberately accessing newer APIs, and you have ensured
+   (e.g. with conditional execution) that this code will only ever be called
+   on a supported platform, then you can annotate your class or method with
+   the @TargetApi annotation specifying the local minimum SDK to apply, such
+   as @TargetApi(11), such that this check considers 11 rather than your
+   manifest file's minimum SDK as the required API level.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java:126: Error: Call requires API level 31 (current min is 26): new android.widget.RemoteViews [NewApi]
+        return new RemoteViews(layouts);
+               ~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NewApi":
+   This check scans through all the Android API calls in the application and
+   warns about any calls that are not available on all versions targeted by
+   this application (according to its minimum SDK attribute in the manifest).
+
+   If you really want to use this API and don't need to support older devices
+   just set the minSdkVersion in your build.gradle or AndroidManifest.xml
+   files.
+
+   If your code is deliberately accessing newer APIs, and you have ensured
+   (e.g. with conditional execution) that this code will only ever be called
+   on a supported platform, then you can annotate your class or method with
+   the @TargetApi annotation specifying the local minimum SDK to apply, such
+   as @TargetApi(11), such that this check considers 11 rather than your
+   manifest file's minimum SDK as the required API level.
+
+   If you are deliberately setting android: attributes in style definitions,
+   make sure you place this in a values-vNN folder in order to avoid running
+   into runtime conflicts on certain devices where manufacturers have added
+   custom attributes whose ids conflict with the new ones on later platforms.
+
+   Similarly, you can use tools:targetApi="11" in an XML file to indicate that
+   the element will only be inflated in an adequate context.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_five_hour_info.xml:10: Warning: Attribute previewLayout is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:previewLayout="@layout/widget_lock_five_hour_preview"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_five_hour_info.xml:11: Warning: Attribute targetCellHeight is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:targetCellHeight="1"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_five_hour_info.xml:12: Warning: Attribute targetCellWidth is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:targetCellWidth="1"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_weekly_info.xml:10: Warning: Attribute previewLayout is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:previewLayout="@layout/widget_lock_weekly_preview"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_weekly_info.xml:11: Warning: Attribute targetCellHeight is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:targetCellHeight="1"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/xml/samsung_lock_weekly_info.xml:12: Warning: Attribute targetCellWidth is only used in API level 31 and higher (current min is 26) [UnusedAttribute]
+    android:targetCellWidth="1"
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_lock_five_hour_preview.xml:32: Warning: Attribute textFontWeight is only used in API level 28 and higher (current min is 26) [UnusedAttribute]
+        android:textFontWeight="600"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_lock_weekly_preview.xml:32: Warning: Attribute textFontWeight is only used in API level 28 and higher (current min is 26) [UnusedAttribute]
+        android:textFontWeight="600"
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UnusedAttribute":
+   This check finds attributes set in XML files that were introduced in a
+   version newer than the oldest version targeted by your application (with
+   the minSdkVersion attribute).
+
+   This is not an error; the application will simply ignore the attribute.
+   However, if the attribute is important to the appearance or functionality
+   of your application, you should consider finding an alternative way to
+   achieve the same result with only available attributes, and then you can
+   optionally create a copy of the layout in a layout-vNN folder which will be
+   used on API NN or higher where you can take advantage of the newer
+   attribute.
+
+   Note: This check does not only apply to attributes. For example, some tags
+   can be unused too, such as the new <tag> element in layouts introduced in
+   API 21.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/OAuthClient.java:250: Warning: Found dynamic locale changes, but did not find corresponding Play Core library calls for downloading languages and splitting by language is not disabled in the bundle configuration [AppBundleLocaleChanges]
+        configuration.setLocale(Locale.ENGLISH);
+        ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AppBundleLocaleChanges":
+   When changing locales at runtime (e.g. to provide an in-app language
+   switcher), the Android App Bundle must be configured to not split by locale
+   or the Play Core library must be used to download additional locales at
+   runtime.
+
+   https://developer.android.com/guide/app-bundle/configure-base#handling_language_changes
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/gradle/wrapper/gradle-wrapper.properties:3: Warning: A newer version of Gradle than 9.6.1 is available: 9.8.0 [AndroidGradlePluginVersion]
+distributionUrl=https\://services.gradle.org/distributions/gradle-9.6.1-bin.zip
+                ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AndroidGradlePluginVersion":
+   This detector looks for usage of the Android Gradle Plugin where the
+   version you are using is not the current stable release. Using older
+   versions is fine, and there are cases where you deliberately want to stick
+   with an older version. However, you may simply not be aware that a more
+   recent version is available, and that is what this lint check helps find.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/build.gradle.kts:88: Warning: A newer version of com.google.android.gms:play-services-wearable than 19.0.0 is available: 20.0.1 [GradleDependency]
+    implementation("com.google.android.gms:play-services-wearable:19.0.0")
+                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "GradleDependency":
+   This detector looks for usages of libraries where the version you are using
+   is not the current stable release. Using older versions is fine, and there
+   are cases where you deliberately want to stick with an older version.
+   However, you may simply not be aware that a more recent version is
+   available, and that is what this lint check helps find.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/build.gradle.kts:92: Warning: A newer version of org.robolectric:robolectric than 4.16.1 is available: 4.17 [NewerVersionAvailable]
+    testImplementation("org.robolectric:robolectric:4.16.1")
+                       ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NewerVersionAvailable":
+   This detector checks with a central repository to see if there are newer
+   versions available for the dependencies used by this project. This is
+   similar to the GradleDependency check, which checks for newer versions
+   available in the Android SDK tools and libraries, but this works with any
+   MavenCentral dependency, and connects to the library every time, which
+   makes it more flexible but also much slower.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:74: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp"
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:92: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:113: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="32dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:126: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:143: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:166: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:173: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:196: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:202: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:208: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:267: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:290: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:297: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:320: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:326: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:332: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:398: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:404: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:410: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:476: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:482: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:488: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:553: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:562: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:583: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:592: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:615: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:625: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:640: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="8dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:659: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="8dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:75: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp"
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:93: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:114: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="32dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:127: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:144: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:167: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:174: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:197: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:203: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:209: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:268: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="14dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:291: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:298: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="12dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:321: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:327: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:333: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:399: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:405: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:411: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:477: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="13dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:483: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:489: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="14dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:554: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:563: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:584: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:593: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:616: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:626: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:641: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="8dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:660: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+            android:textSize="8dp" />
+            ~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:50: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="17dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:59: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10.5dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:116: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:122: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:161: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:167: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:209: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:215: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:254: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:260: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:311: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:317: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:356: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:362: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:404: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:410: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:449: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:455: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:51: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="17dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:60: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                android:textSize="10.5dp" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:117: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:123: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:162: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:168: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:210: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:216: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:255: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:261: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:312: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:318: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:357: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:363: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:405: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:411: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="15.5dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:450: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:456: Warning: Should use "sp" instead of "dp" for text sizes [SpUsage]
+                            android:textSize="12dp" />
+                            ~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "SpUsage":
+   When setting text sizes, you should normally use sp, or "scale-independent
+   pixels". This is like the dp unit, but it is also scaled by the user's font
+   size preference. It is recommend you use this unit when specifying font
+   sizes, so they will be adjusted for both the screen density and the user's
+   preference.
+
+   There are cases where you might need to use dp; typically this happens when
+   the text is in a container with a specific dp-size. This will prevent the
+   text from spilling outside the container. Note however that this means that
+   the user's font size settings are not respected, so consider adjusting the
+   layout itself to be more flexible.
+
+   https://developer.android.com/training/multiscreen/screendensities.html
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:39: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+        android:tint="#17232326" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:232: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:241: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:250: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:356: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:365: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffff8d28" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:374: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:434: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:443: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:452: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:512: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:521: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:530: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:40: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+        android:tint="#17232326" />
+        ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:233: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:242: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:251: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:357: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:366: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffff8d28" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:375: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:435: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:444: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:453: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:513: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ffc7c8cc" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:522: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#ff34c759" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:531: Error: Must use app:tint instead of android:tint [UseAppTint from androidx.appcompat]
+                android:tint="#12000000" />
+                ~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "UseAppTint":
+   ImageView or ImageButton uses android:tint instead of app:tint
+
+   Vendor: Android Open Source Project
+   Identifier: androidx.appcompat
+   Feedback: https://issuetracker.google.com/issues/new?component=460343
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/SamsungLockGraphics.java:97: Warning: Use AppCompatResources.getDrawable() [UseCompatLoadingForDrawables from androidx.appcompat]
+        Drawable icon = context == null ? null : context.getDrawable(
+                                                 ^
+
+   Explanation for issues of type "UseCompatLoadingForDrawables":
+   Use Compat loading of drawables
+
+   Vendor: Android Open Source Project
+   Identifier: androidx.appcompat
+   Feedback: https://issuetracker.google.com/issues/new?component=460343
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/strings_auth.xml:52: Warning: Repeated word "in" in message: possible typo [Typos]
+    <string name="auth_sign_in_complete_in_browser">Complete sign-in in your browser</string>
+                                                                  ~~~~~
+
+   Explanation for issues of type "Typos":
+   This check looks through the string definitions, and if it finds any words
+   that look like likely misspellings, they are flagged.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/strings_dashboard.xml:91: Warning: Formatting %d followed by words ("percent"): This should probably be a plural rather than a string [PluralsCandidate]
+    <string name="dashboard_wave_description">%1$s, %2$d percent. %3$s</string>
+    ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "PluralsCandidate":
+   This lint check looks for potential errors in internationalization where
+   you have translated a message which involves a quantity and it looks like
+   other parts of the string may need grammatical changes.
+
+   For example, rather than something like this:
+     <string name="try_again">Try again in %d seconds.</string>
+   you should be using a plural:
+      <plurals name="try_again">
+           <item quantity="one">Try again in %d second</item>
+           <item quantity="other">Try again in %d seconds</item>
+       </plurals>
+   This will ensure that in other languages the right set of translations are
+   provided for the different quantity classes.
+
+   (This check depends on some heuristics, so it may not accurately determine
+   whether a string really should be a quantity. You can use tools:ignore to
+   filter out false positives.
+
+   https://developer.android.com/guide/topics/resources/string-resource.html#Plurals
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/AndroidManifest.xml:7: Warning: Did you mean android.permission.INTERNET? [SystemPermissionTypo]
+    <uses-permission android:name="${applicationId}.permission.INTERNAL"/>
+                                   ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "SystemPermissionTypo":
+   This check looks for required permissions that look like well-known system
+   permissions or permissions from the Android SDK, but aren't, and may be
+   typos.
+
+   Please double check the permission value you have supplied.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:84: Warning: Nested weights are bad for performance [NestedWeights]
+                android:layout_weight="1">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:279: Warning: Nested weights are bad for performance [NestedWeights]
+                android:layout_weight="1">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:85: Warning: Nested weights are bad for performance [NestedWeights]
+                android:layout_weight="1">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:280: Warning: Nested weights are bad for performance [NestedWeights]
+                android:layout_weight="1">
+                ~~~~~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "NestedWeights":
+   Layout weights require a widget to be measured twice. When a LinearLayout
+   with non-zero weights is nested inside another LinearLayout with non-zero
+   weights, then the number of measurements increase exponentially.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-mdpi/codex_meter_adaptive_bg.png: Warning: The resource R.drawable.codex_meter_adaptive_bg appears to be unused [UnusedResources]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-mdpi/codex_meter_adaptive_fg.png: Warning: The resource R.drawable.codex_meter_adaptive_fg appears to be unused [UnusedResources]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-nodpi/codex_meter_icon_fg.png: Warning: The resource R.drawable.codex_meter_icon_fg appears to be unused [UnusedResources]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable/codex_samsung_arc_progress_lock.xml:2: Warning: The resource R.drawable.codex_samsung_arc_progress_lock appears to be unused [UnusedResources]
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+^
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/colors.xml:12: Warning: The resource R.color.oneui_card_bg appears to be unused [UnusedResources]
+    <color name="oneui_card_bg">#FCFCFF</color>
+           ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/colors.xml:13: Warning: The resource R.color.oneui_text_primary appears to be unused [UnusedResources]
+    <color name="oneui_text_primary">#000000</color>
+           ~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/colors.xml:14: Warning: The resource R.color.oneui_text_secondary appears to be unused [UnusedResources]
+    <color name="oneui_text_secondary">#747477</color>
+           ~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/colors.xml:15: Warning: The resource R.color.oneui_divider appears to be unused [UnusedResources]
+    <color name="oneui_divider">#E4E4E6</color>
+           ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/values/strings_widget_card.xml:47: Warning: The resource R.string.widget_card_refreshing appears to be unused [UnusedResources]
+    <string name="widget_card_refreshing">Refreshing…</string>
+            ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable/widget_lock_monochrome_bg.xml:2: Warning: The resource R.drawable.widget_lock_monochrome_bg appears to be unused [UnusedResources]
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+^
+
+   Explanation for issues of type "UnusedResources":
+   Unused resources make applications larger and slow down builds.
+
+
+   The unused resource check can ignore tests. If you want to include
+   resources that are only referenced from tests, consider packaging them in a
+   test source set instead.
+
+   You can include test sources in the unused resource check by setting the
+   system property lint.unused-resources.include-tests=true, and to exclude
+   them (usually for performance reasons), use
+   lint.unused-resources.exclude-tests=true.
+
+   Available options:
+
+   **skip-libraries** (default is true):
+   Whether the unused resource check should skip reporting unused resources in libraries.
+
+   Many libraries will declare resources that are part of the library surface; other modules depending on the library will also reference the resources. To avoid reporting all these resources as unused (in the context of a library), the unused resource check normally skips reporting unused resources in libraries. Instead, run the unused resource check on the consuming app module (along with `checkDependencies=true`).
+
+   However, there are cases where you want to check that all the resources declared in a library are used; in that case, you can disable the skip option.
+
+   To configure this option, use a `lint.xml` file with an <option> like this:
+
+   ```xml
+   <lint>
+       <issue id="UnusedResources">
+           <option name="skip-libraries" value="true" />
+       </issue>
+   </lint>
+   ```
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:65: Warning: This FrameLayout view is unnecessary (no children, no background, no id, no style) [UselessLeaf]
+            <FrameLayout
+             ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:66: Warning: This FrameLayout view is unnecessary (no children, no background, no id, no style) [UselessLeaf]
+            <FrameLayout
+             ~~~~~~~~~~~
+
+   Explanation for issues of type "UselessLeaf":
+   A layout that has no children or no background can often be removed (since
+   it is invisible) for a flatter and more efficient layout hierarchy.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:50: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:104: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:154: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:185: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:220: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:278: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:309: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:344: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:387: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:422: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:465: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:500: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:543: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:574: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:604: Warning: This LinearLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:51: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:105: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:155: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:186: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:221: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:279: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:310: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:345: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:388: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:423: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:466: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:501: Warning: This FrameLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <FrameLayout
+         ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:544: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:575: Warning: This LinearLayout layout or its FrameLayout parent is unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:605: Warning: This LinearLayout layout or its FrameLayout parent is possibly unnecessary [UselessParent]
+        <LinearLayout
+         ~~~~~~~~~~~~
+
+   Explanation for issues of type "UselessParent":
+   A layout with children that has no siblings, is not a scrollview or a root
+   layout, and does not have a background, can be removed and have its
+   children moved directly into the parent for a flatter and more efficient
+   layout hierarchy.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:629: Warning: widget_card.xml has more than 80 views, bad for performance [TooManyViews]
+    <FrameLayout
+     ~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:630: Warning: widget_card_shadow.xml has more than 80 views, bad for performance [TooManyViews]
+    <FrameLayout
+     ~~~~~~~~~~~
+
+   Explanation for issues of type "TooManyViews":
+   Using too many views in a single layout is bad for performance. Consider
+   using compound drawables or other tricks for reducing the number of views
+   in this layout.
+
+   The maximum view count defaults to 80 but can be configured with the
+   environment variable ANDROID_LINT_MAX_VIEW_COUNT.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-mdpi: Warning: Missing the following drawables in drawable-mdpi: display_help_dark_mode.webp, display_help_light_mode.webp [IconDensities]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-xhdpi: Warning: Missing the following drawables in drawable-xhdpi: display_help_dark_mode.webp, display_help_light_mode.webp, ic_openai_figma.png [IconDensities]
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/drawable-xxhdpi: Warning: Missing the following drawables in drawable-xxhdpi: ic_openai_figma.png (found in drawable-mdpi) [IconDensities]
+
+   Explanation for issues of type "IconDensities":
+   Icons will look best if a custom version is provided for each of the major
+   screen density classes (low, medium, high, extra high). This lint check
+   identifies icons which do not have complete coverage across the densities.
+
+   Low density is not really used much anymore, so this check ignores the ldpi
+   density. To force lint to include it, set the environment variable
+   ANDROID_LINT_INCLUDE_LDPI=true. For more information on current density
+   usage, see https://developer.android.com/about/dashboards
+
+   https://developer.android.com/guide/practices/screens_support.html
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res: Warning: Missing density variation folders in src/main/res: drawable-hdpi [IconMissingDensityFolder]
+
+   Explanation for issues of type "IconMissingDensityFolder":
+   Icons will look best if a custom version is provided for each of the major
+   screen density classes (low, medium, high, extra-high, extra-extra-high).
+   This lint check identifies folders which are missing, such as
+   drawable-hdpi.
+
+   Low density is not really used much anymore, so this check ignores the ldpi
+   density. To force lint to include it, set the environment variable
+   ANDROID_LINT_INCLUDE_LDPI=true. For more information on current density
+   usage, see https://developer.android.com/about/dashboards
+
+   https://developer.android.com/guide/practices/screens_support.html
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/AboutActivity.java:68: Warning: Prefer "SHOW_AS_ACTION_IF_ROOM" instead of "SHOW_AS_ACTION_ALWAYS" [AlwaysShowAction]
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                                          ~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/AboutActivity.java:71: Warning: Prefer "SHOW_AS_ACTION_IF_ROOM" instead of "SHOW_AS_ACTION_ALWAYS" [AlwaysShowAction]
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                                          ~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/MainActivity.java:124: Warning: Prefer "SHOW_AS_ACTION_IF_ROOM" instead of "SHOW_AS_ACTION_ALWAYS" [AlwaysShowAction]
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                                          ~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/MainActivity.java:127: Warning: Prefer "SHOW_AS_ACTION_IF_ROOM" instead of "SHOW_AS_ACTION_ALWAYS" [AlwaysShowAction]
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                                          ~~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/UsageHistoryActivity.java:61: Warning: Prefer "SHOW_AS_ACTION_IF_ROOM" instead of "SHOW_AS_ACTION_ALWAYS" [AlwaysShowAction]
+                .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
+                                          ~~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "AlwaysShowAction":
+   Using showAsAction="always" in menu XML, or MenuItem.SHOW_AS_ACTION_ALWAYS
+   in Java code is usually a deviation from the user interface style guide.Use
+   ifRoom or the corresponding MenuItem.SHOW_AS_ACTION_IF_ROOM instead.
+
+   If always is used sparingly there are usually no problems and behavior is
+   roughly equivalent to ifRoom but with preference over other ifRoom items.
+   Using it more than twice in the same menu is a bad idea.
+
+   This check looks for menu XML files that contain more than two always
+   actions, or some always actions and no ifRoom actions. In Java code, it
+   looks for projects that contain references to
+   MenuItem.SHOW_AS_ACTION_ALWAYS and no references to
+   MenuItem.SHOW_AS_ACTION_IF_ROOM.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/java/dev/bennett/codexmeter/UsageBurnChartView.java:168: Warning: Custom view UsageBurnChartView overrides onTouchEvent but not performClick [ClickableViewAccessibility]
+    public boolean onTouchEvent(MotionEvent event) {
+                   ~~~~~~~~~~~~
+
+   Explanation for issues of type "ClickableViewAccessibility":
+   If a View that overrides onTouchEvent or uses an OnTouchListener does not
+   also implement performClick and call it when clicks are detected, the View
+   may not handle accessibility actions properly. Logic handling the click
+   actions should ideally be placed in View#performClick as some accessibility
+   services invoke performClick when a click action should occur.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_lock_five_hour_preview.xml:30: Warning: Hardcoded string "68%", should use @string resource [HardcodedText]
+        android:text="68%"
+        ~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_lock_weekly_preview.xml:30: Warning: Hardcoded string "74%", should use @string resource [HardcodedText]
+        android:text="74%"
+        ~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "HardcodedText":
+   Hardcoding text attributes directly in layout files is bad for several
+   reasons:
+
+   * When creating configuration variations (for example for landscape or
+   portrait) you have to repeat the actual text (and keep it up to date when
+   making changes)
+
+   * The application cannot be translated to other languages by just adding
+   new translations for existing string resources.
+
+   There are quickfixes to automatically extract this hardcoded string into a
+   resource lookup.
+
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:124: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="8dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:171: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="4dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:201: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:207: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:295: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="4dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:325: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:331: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:403: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:409: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:481: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:487: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:561: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:591: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card.xml:623: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:125: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="8dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:172: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="4dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:202: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:208: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:296: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="4dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:326: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:332: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:404: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:410: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:482: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:488: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="5dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:562: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:592: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_card_shadow.xml:624: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="6dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:58: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="8dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:121: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:166: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:214: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:259: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:316: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:361: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:409: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material.xml:454: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:59: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                android:paddingStart="8dp"
+                ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:122: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:167: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:215: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:260: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:317: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:362: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:410: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+/home/runner/work/Codex-Meter/Codex-Meter/android/app/src/main/res/layout/widget_material_shadow.xml:455: Warning: When you define paddingStart you should probably also define paddingEnd for right-to-left symmetry [RtlSymmetry]
+                            android:paddingStart="6dp"
+                            ~~~~~~~~~~~~~~~~~~~~
+
+   Explanation for issues of type "RtlSymmetry":
+   If you specify padding or margin on the left side of a layout, you should
+   probably also specify padding on the right side (and vice versa) for
+   right-to-left layout symmetry.
+
+27 errors, 222 warnings (and 84 warnings filtered by baseline lint-baseline.xml)
