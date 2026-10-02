@@ -28,6 +28,10 @@ android {
         buildConfig = true
     }
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     signingConfigs {
         create("localRelease") {
             val signingDir = rootProject.file(".local-signing")
@@ -84,4 +88,6 @@ dependencies {
     implementation("com.google.android.gms:play-services-wearable:19.0.0")
     implementation("io.github.tribalfs:oneui-design:0.9.14+oneui8")
     implementation("io.github.oneuiproject:icons:1.1.0")
+    testImplementation("junit:junit:4.13.2")
+    testImplementation("org.robolectric:robolectric:4.16.1")
 }

@@ -4,8 +4,14 @@ on:
   pull_request:
     branches: [main, alpha]
   push:
+    branches: [main, alpha]
     tags: ['v*']
   workflow_dispatch:
+    inputs:
+      print_widget_previews:
+        description: Print rendered widget preview sheets to the job log as base64 PNG
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -103,6 +109,30 @@ jobs:
         run: |
           set -euo pipefail
           ./run-tests.sh
+          ./gradlew :app:testDebugUnitTest --console=plain
+
+      - name: Upload phone test reports and widget previews
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: phone-test-reports
+          path: |
+            android/app/build/reports/tests/
+            android/app/build/reports/widget-previews/
+          if-no-files-found: ignore
+
+      - name: Print widget preview sheets
+        if: always() && inputs.print_widget_previews
+        shell: bash
+        run: |
+          set -euo pipefail
+          for sheet in app/build/reports/widget-previews/*-sheet.png; do
+            [[ -f "$sheet" ]] || continue
+            echo "PREVIEW-BEGIN $(basename "$sheet")"
+            base64 -w 0 "$sheet"
+            echo
+            echo "PREVIEW-END $(basename "$sheet")"
+          done
 
       - name: Run Android lint
         shell: bash
