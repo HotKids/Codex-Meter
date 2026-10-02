@@ -18,6 +18,7 @@ public final class NowBarPreferences {
     private static final String KEY_SUPPRESS_UNTIL = "suppress_until";
     private static final String KEY_THRESHOLD = "threshold";
     private static final String PREFS = "codex_meter_now_bar_prefs_v1";
+    private static final int DEFAULT_THRESHOLD = 25;
 
     private NowBarPreferences() {
     }
@@ -67,7 +68,8 @@ public final class NowBarPreferences {
     }
 
     public static int getThreshold(Context context) {
-        return NowBarAutoStart.normalizeThreshold(prefs(context).getInt(KEY_THRESHOLD, 25));
+        return NowBarAutoStart.normalizeThreshold(prefs(context).getInt(KEY_THRESHOLD,
+                DEFAULT_THRESHOLD));
     }
 
     public static void save(Context context, boolean autoEnabled, String metric, int threshold) {
@@ -85,7 +87,9 @@ public final class NowBarPreferences {
     }
 
     public static boolean meetsThreshold(Context context, UsageSnapshot snapshot) {
-        if (snapshot == null) return false;
+        if (snapshot == null) {
+            return false;
+        }
         long now = System.currentTimeMillis();
         return NowBarAutoStart.shouldStart(isAutoStartEnabled(context), getMetric(context),
                 getThreshold(context),

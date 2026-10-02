@@ -43,6 +43,16 @@ public final class SettingsTransfer {
             SECTION_NOW_BAR
     };
 
+    /** Notification-section key holding reminder lead times; validated before import. */
+    static final String KEY_RESET_CREDIT_EXPIRY_LEAD_TIMES = "reset_credit_expiry_lead_times";
+
+    private static final String KEY_FORMAT = "format";
+    private static final String KEY_VERSION = "version";
+    private static final String KEY_EXPORTED_AT = "exported_at";
+    private static final String KEY_SECTIONS = "sections";
+    private static final String KEY_CONTAINS_AUTHENTICATION = "contains_authentication";
+    private static final String KEY_SECURITY_WARNING = "security_warning";
+
     private SettingsTransfer() {
     }
 
@@ -85,17 +95,17 @@ public final class SettingsTransfer {
         if (json == null) {
             throw new IllegalArgumentException("Transfer file is empty.");
         }
-        String format = json.optString("format", "");
+        String format = json.optString(KEY_FORMAT, "");
         if (!FORMAT.equals(format)) {
             throw new IllegalArgumentException("Not a Codex Meter transfer file.");
         }
-        int version = json.optInt("version", 0);
+        int version = json.optInt(KEY_VERSION, 0);
         if (version < 1 || version > VERSION) {
             throw new IllegalArgumentException("Unsupported transfer file version: " + version);
         }
         Document document = new Document();
-        document.exportedAtMillis = Math.max(0L, json.optLong("exported_at", 0L));
-        JSONObject sections = json.optJSONObject("sections");
+        document.exportedAtMillis = Math.max(0L, json.optLong(KEY_EXPORTED_AT, 0L));
+        JSONObject sections = json.optJSONObject(KEY_SECTIONS);
         if (sections == null) {
             sections = new JSONObject();
         }
@@ -193,6 +203,7 @@ public final class SettingsTransfer {
         return values;
     }
 
+    /** Accepts integral numbers and numeric strings within the reminder lead-time range. */
     private static long parseLeadTimeEntry(JSONArray array, int index) {
         Object raw;
         try {
@@ -230,8 +241,7 @@ public final class SettingsTransfer {
             throw new IllegalArgumentException(
                     "reset_credit_expiry_lead_times contains a non-numeric entry.");
         }
-        if (value < ResetCreditExpiryReminder.MIN_LEAD_TIME_MS
-                || value > ResetCreditExpiryReminder.MAX_LEAD_TIME_MS) {
+        if (!ResetCreditExpiryReminder.isValidLeadTime(value)) {
             throw new IllegalArgumentException(
                     "reset_credit_expiry_lead_times contains an out-of-range entry.");
         }
@@ -356,9 +366,9 @@ public final class SettingsTransfer {
 
         public JSONObject toJson() throws JSONException {
             JSONObject root = new JSONObject();
-            root.put("format", FORMAT);
-            root.put("version", VERSION);
-            root.put("exported_at", exportedAtMillis);
+            root.put(KEY_FORMAT, FORMAT);
+            root.put(KEY_VERSION, VERSION);
+            root.put(KEY_EXPORTED_AT, exportedAtMillis);
             JSONObject sections = new JSONObject();
             if (appSettings != null) {
                 sections.put(SECTION_APP_SETTINGS, appSettings);
@@ -372,10 +382,10 @@ public final class SettingsTransfer {
             if (authentication != null) {
                 sections.put(SECTION_AUTHENTICATION, authentication);
             }
-            root.put("sections", sections);
-            root.put("contains_authentication", authentication != null);
+            root.put(KEY_SECTIONS, sections);
+            root.put(KEY_CONTAINS_AUTHENTICATION, authentication != null);
             if (authentication != null) {
-                root.put("security_warning", SECURITY_WARNING);
+                root.put(KEY_SECURITY_WARNING, SECURITY_WARNING);
             }
             return root;
         }

@@ -3,12 +3,36 @@ package dev.bennett.codexmeter;
 import android.content.Context;
 import android.content.SharedPreferences;
 import dev.bennett.codexmeter.wear.PhoneWearSync;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 
-/* JADX INFO: loaded from: classes.dex */
+/**
+ * Main phone settings store: cached usage data and errors, refresh settings, dashboard and
+ * usage-history layout, appearance, widget options, OAuth progress, and onboarding state.
+ */
 public final class AppPreferences {
-    private static final String KEY_APP_STYLE = "app_surface_style";
-    private static final String KEY_APP_THEME = "app_theme";
+    private static final String PREFS = "codex_meter_settings_v1";
+
+    // Cached usage data and errors.
+    private static final String KEY_SNAPSHOT = "last_snapshot";
+    private static final String KEY_ERROR = "last_error";
+    private static final String KEY_ERROR_AT = "last_error_at";
+    private static final String KEY_RESET_CREDITS = "reset_credits_snapshot";
+    private static final String KEY_RESET_ERROR = "reset_credits_error";
+    private static final String KEY_RESET_ERROR_AT = "reset_credits_error_at";
+    private static final String KEY_SCHEDULER_ERROR = "scheduler_error";
+    private static final String KEY_HISTORY_FIVE_HOUR = "usage_history_five_hour";
+    private static final String KEY_HISTORY_WEEKLY = "usage_history_weekly";
+    private static final String KEY_HISTORY_MONTHLY = "usage_history_monthly";
+
+    // Refresh settings.
+    private static final String KEY_AUTOMATIC_REFRESH = "automatic_refresh";
+    private static final String KEY_REFRESH_FAILURES = "refresh_failures";
+    private static final String KEY_REFRESH_MINUTES = "refresh_minutes";
+    private static final String KEY_REFRESH_ON_LAUNCH = "refresh_on_launch";
+
+    // Dashboard and usage-history layout.
     private static final String KEY_DASHBOARD_ADDITIONAL_LIMITS = "dashboard_additional_limits";
     private static final String KEY_DASHBOARD_FIVE_HOUR = "dashboard_five_hour";
     private static final String KEY_DASHBOARD_HIDDEN_SECTIONS = "dashboard_hidden_sections";
@@ -19,42 +43,84 @@ public final class AppPreferences {
     private static final String KEY_DASHBOARD_USAGE_HISTORY = "dashboard_usage_history";
     private static final String KEY_DASHBOARD_WEEKLY = "dashboard_weekly";
     private static final String KEY_HISTORY_SECTION_OVERRIDES = "history_section_overrides";
+
+    // Appearance.
+    private static final String KEY_APP_STYLE = "app_surface_style";
+    private static final String KEY_APP_THEME = "app_theme";
     private static final String KEY_MATERIAL_YOU = "material_you";
-    private static final String KEY_ERROR = "last_error";
-    private static final String KEY_ERROR_AT = "last_error_at";
+
+    // Widget option fields, stored per widget as "default_<field>" (defaults for new home-screen
+    // widgets), "widget_<id>_<field>" (placed home-screen widgets), and "lock_widget_<id>_<field>".
+    private static final String DEFAULT_WIDGET_PREFIX = "default_";
+    private static final String FIELD_STYLE = "style";
+    private static final String FIELD_LAYOUT = "layout";
+    private static final String FIELD_DENSITY = "density";
+    private static final String FIELD_SURFACE_STYLE = "surface_style";
+    private static final String FIELD_GRAPHIC_SCALE = "graphic_scale";
+    private static final String FIELD_THEME = "theme";
+    private static final String FIELD_ACCENT = "accent";
+    private static final String FIELD_OPACITY = "opacity";
+    private static final String FIELD_RESET_MODE = "reset_mode";
+    private static final String FIELD_DISPLAY_MODE = "display_mode";
+    private static final String FIELD_METRIC_MODE = "metric_mode";
+    private static final String FIELD_VISIBLE_METERS = "visible_meters";
+    private static final String FIELD_SHOW_TITLE = "show_title";
+    private static final String FIELD_SHOW_PLAN = "show_plan";
+    private static final String FIELD_SHOW_UPDATED = "show_updated";
+    private static final String FIELD_SHOW_REFRESH = "show_refresh";
+    private static final String FIELD_SHOW_RESET_CREDITS = "show_reset_credits";
+    private static final String FIELD_SHOW_RESET_ACTION = "show_reset_action";
+    private static final String FIELD_SHOW_PERCENT_SYMBOL = "show_percent_symbol";
+    private static final String FIELD_SHOW_COUNTDOWN = "show_countdown";
+    private static final String FIELD_TAP_ACTION = "tap_action";
+    /** Every field {@link #saveWidgetOptions} writes for a home-screen widget. */
+    private static final String[] HOME_WIDGET_FIELDS = {
+            FIELD_STYLE, FIELD_LAYOUT, FIELD_DENSITY, FIELD_SURFACE_STYLE, FIELD_GRAPHIC_SCALE,
+            FIELD_THEME, FIELD_ACCENT, FIELD_OPACITY, FIELD_RESET_MODE, FIELD_DISPLAY_MODE,
+            FIELD_METRIC_MODE, FIELD_VISIBLE_METERS, FIELD_SHOW_TITLE, FIELD_SHOW_PLAN,
+            FIELD_SHOW_UPDATED, FIELD_SHOW_REFRESH, FIELD_SHOW_RESET_CREDITS,
+            FIELD_SHOW_RESET_ACTION, FIELD_SHOW_PERCENT_SYMBOL
+    };
+
+    // OAuth and onboarding.
     private static final String KEY_OAUTH_PENDING = "oauth_pending";
     private static final String KEY_OAUTH_STARTED_AT = "oauth_started_at";
     private static final String KEY_OAUTH_URL = "oauth_url";
     private static final String KEY_ONBOARDING_COMPLETE = "onboarding_complete";
     private static final String KEY_ONBOARDING_STEP = "onboarding_step";
-    private static final String KEY_AUTOMATIC_REFRESH = "automatic_refresh";
-    private static final String KEY_REFRESH_FAILURES = "refresh_failures";
-    private static final String KEY_REFRESH_MINUTES = "refresh_minutes";
-    private static final String KEY_REFRESH_ON_LAUNCH = "refresh_on_launch";
-    private static final String KEY_RESET_CREDITS = "reset_credits_snapshot";
-    private static final String KEY_RESET_ERROR = "reset_credits_error";
-    private static final String KEY_RESET_ERROR_AT = "reset_credits_error_at";
-    private static final String KEY_SCHEDULER_ERROR = "scheduler_error";
-    private static final String KEY_SNAPSHOT = "last_snapshot";
-    private static final String KEY_HISTORY_FIVE_HOUR = "usage_history_five_hour";
-    private static final String KEY_HISTORY_WEEKLY = "usage_history_weekly";
-    private static final String KEY_HISTORY_MONTHLY = "usage_history_monthly";
-    private static final long OAUTH_STALE_AFTER_MS = 720000;
-    private static final String PREFS = "codex_meter_settings_v1";
+
+    private static final int DEFAULT_REFRESH_MINUTES = 30;
+    private static final int MAX_REFRESH_FAILURES = 3;
+    private static final int MAX_ERROR_LENGTH = 240;
+    /** Widget ID 0 stands for the defaults that new widgets start from. */
+    private static final int DEFAULT_WIDGET_ID = 0;
+    /** Refresh errors stay hidden while the cached usage is younger than this. */
+    private static final long REFRESH_ERROR_GRACE_MS = TimeUnit.MINUTES.toMillis(15);
+    /** Reset-credit errors stay hidden while the cached credits are younger than this. */
+    private static final long RESET_CREDITS_ERROR_GRACE_MS = TimeUnit.MINUTES.toMillis(30);
+    private static final long OAUTH_STALE_AFTER_MS = TimeUnit.MINUTES.toMillis(12);
 
     private AppPreferences() {
     }
 
     private static SharedPreferences prefs(Context context) {
-        return context.getSharedPreferences(PREFS, 0);
+        return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    public static boolean saveSnapshot(Context context, UsageSnapshot usageSnapshot) {
-        if (usageSnapshot == null) {
+    // ---------------------------------------------------------------------------------------
+    // Usage snapshot and refresh errors
+    // ---------------------------------------------------------------------------------------
+
+    public static boolean saveSnapshot(Context context, UsageSnapshot snapshot) {
+        if (snapshot == null) {
             return false;
         }
         try {
-            return prefs(context).edit().putString(KEY_SNAPSHOT, usageSnapshot.toJson().toString()).remove(KEY_ERROR).remove(KEY_ERROR_AT).commit();
+            return prefs(context).edit()
+                    .putString(KEY_SNAPSHOT, snapshot.toJson().toString())
+                    .remove(KEY_ERROR)
+                    .remove(KEY_ERROR_AT)
+                    .commit();
         } catch (Exception e) {
             setLastError(context, "Could not cache the latest usage response.");
             return false;
@@ -62,23 +128,26 @@ public final class AppPreferences {
     }
 
     public static UsageSnapshot loadSnapshot(Context context) {
-        String string = prefs(context).getString(KEY_SNAPSHOT, null);
-        if (string == null || string.isEmpty()) {
+        String json = prefs(context).getString(KEY_SNAPSHOT, null);
+        if (json == null || json.isEmpty()) {
             return null;
         }
         try {
-            return UsageSnapshot.fromJson(new JSONObject(string));
+            return UsageSnapshot.fromJson(new JSONObject(json));
         } catch (Exception e) {
             return null;
         }
     }
 
+    /** Forgets all cached usage data and the state derived from it (signing out). */
     public static void clearSnapshot(Context context) {
-        prefs(context).edit().remove(KEY_SNAPSHOT).remove(KEY_ERROR).remove(KEY_ERROR_AT)
+        prefs(context).edit()
+                .remove(KEY_SNAPSHOT).remove(KEY_ERROR).remove(KEY_ERROR_AT)
                 .remove(KEY_RESET_CREDITS).remove(KEY_RESET_ERROR).remove(KEY_RESET_ERROR_AT)
                 .remove(KEY_HISTORY_FIVE_HOUR).remove(KEY_HISTORY_WEEKLY)
                 .remove(KEY_HISTORY_MONTHLY)
-                .remove(KEY_REFRESH_FAILURES).apply();
+                .remove(KEY_REFRESH_FAILURES)
+                .apply();
         NowBarManager.stop(context);
         NowBarPreferences.clearSuppression(context);
         ResetNotificationManager.clearState(context);
@@ -86,21 +155,56 @@ public final class AppPreferences {
         PhoneWearSync.pushUsage(context, null);
     }
 
-    public static void setLastError(Context context, String str) {
-        if (str == null || str.trim().isEmpty()) {
+    public static void setLastError(Context context, String message) {
+        if (isBlank(message)) {
             clearLastError(context);
-        } else {
-            prefs(context).edit().putString(KEY_ERROR, trim(str, "Refresh failed.")).putLong(KEY_ERROR_AT, System.currentTimeMillis()).apply();
+            return;
         }
+        prefs(context).edit()
+                .putString(KEY_ERROR, clip(message))
+                .putLong(KEY_ERROR_AT, System.currentTimeMillis())
+                .apply();
     }
 
     public static void clearLastError(Context context) {
         prefs(context).edit().remove(KEY_ERROR).remove(KEY_ERROR_AT).apply();
     }
 
+    public static String getLastError(Context context) {
+        return prefs(context).getString(KEY_ERROR, "");
+    }
+
+    /**
+     * Returns the last refresh error unless newer usage data superseded it (which also clears
+     * it) or the cached usage is still fresh enough that the error is not worth showing.
+     */
+    public static String getVisibleRefreshError(Context context) {
+        String lastError = getLastError(context);
+        if (lastError.isEmpty()) {
+            return "";
+        }
+        UsageSnapshot snapshot = loadSnapshot(context);
+        if (snapshot == null) {
+            return lastError;
+        }
+        long errorAt = prefs(context).getLong(KEY_ERROR_AT, 0L);
+        if (errorAt > 0 && errorAt <= snapshot.fetchedAtMillis) {
+            clearLastError(context);
+            return "";
+        }
+        long snapshotAge = Math.max(0L, System.currentTimeMillis() - snapshot.fetchedAtMillis);
+        return snapshotAge < REFRESH_ERROR_GRACE_MS ? "" : lastError;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Usage history
+    // ---------------------------------------------------------------------------------------
+
     public static UsageHistory loadUsageHistory(Context context, String kind) {
         String stored = prefs(context).getString(historyKey(kind), null);
-        if (stored == null || stored.isEmpty()) return UsageHistory.empty(kind);
+        if (stored == null || stored.isEmpty()) {
+            return UsageHistory.empty(kind);
+        }
         try {
             return UsageHistory.fromJson(new JSONObject(stored), kind);
         } catch (Exception ignored) {
@@ -109,87 +213,92 @@ public final class AppPreferences {
     }
 
     public static boolean saveUsageHistory(Context context, UsageHistory history) {
-        if (history == null) return false;
+        if (history == null) {
+            return false;
+        }
         try {
             return prefs(context).edit()
-                    .putString(historyKey(history.kind), history.toJson().toString()).commit();
+                    .putString(historyKey(history.kind), history.toJson().toString())
+                    .commit();
         } catch (Exception ignored) {
             return false;
         }
     }
 
     public static void clearUsageHistory(Context context) {
-        prefs(context).edit().remove(KEY_HISTORY_FIVE_HOUR).remove(KEY_HISTORY_WEEKLY)
-                .remove(KEY_HISTORY_MONTHLY).apply();
+        prefs(context).edit()
+                .remove(KEY_HISTORY_FIVE_HOUR)
+                .remove(KEY_HISTORY_WEEKLY)
+                .remove(KEY_HISTORY_MONTHLY)
+                .apply();
     }
 
     private static String historyKey(String kind) {
-        if (UsageHistory.WEEKLY.equals(kind)) return KEY_HISTORY_WEEKLY;
-        if (UsageHistory.MONTHLY.equals(kind)) return KEY_HISTORY_MONTHLY;
+        if (UsageHistory.WEEKLY.equals(kind)) {
+            return KEY_HISTORY_WEEKLY;
+        }
+        if (UsageHistory.MONTHLY.equals(kind)) {
+            return KEY_HISTORY_MONTHLY;
+        }
         return KEY_HISTORY_FIVE_HOUR;
     }
 
-    public static String getLastError(Context context) {
-        return prefs(context).getString(KEY_ERROR, "");
-    }
+    // ---------------------------------------------------------------------------------------
+    // Reset credits
+    // ---------------------------------------------------------------------------------------
 
-    public static String getVisibleRefreshError(Context context) {
-        String lastError = getLastError(context);
-        if (lastError.isEmpty()) {
-            return "";
-        }
-        UsageSnapshot usageSnapshotLoadSnapshot = loadSnapshot(context);
-        if (usageSnapshotLoadSnapshot != null) {
-            long j = prefs(context).getLong(KEY_ERROR_AT, 0L);
-            if (j <= 0 || j > usageSnapshotLoadSnapshot.fetchedAtMillis) {
-                return Math.max(0L, System.currentTimeMillis() - usageSnapshotLoadSnapshot.fetchedAtMillis) < 900000 ? "" : lastError;
-            }
-            clearLastError(context);
-            return "";
-        }
-        return lastError;
-    }
-
-    public static boolean saveResetCredits(Context context, ResetCreditsSnapshot resetCreditsSnapshot) {
-        if (resetCreditsSnapshot == null) {
+    public static boolean saveResetCredits(Context context, ResetCreditsSnapshot snapshot) {
+        if (snapshot == null) {
             return false;
         }
         try {
-            return prefs(context).edit().putString(KEY_RESET_CREDITS, resetCreditsSnapshot.toJson().toString()).remove(KEY_RESET_ERROR).remove(KEY_RESET_ERROR_AT).commit();
+            return prefs(context).edit()
+                    .putString(KEY_RESET_CREDITS, snapshot.toJson().toString())
+                    .remove(KEY_RESET_ERROR)
+                    .remove(KEY_RESET_ERROR_AT)
+                    .commit();
         } catch (Exception e) {
             setResetCreditsError(context, "Could not cache Codex reset credits.");
             return false;
         }
     }
 
+    /**
+     * Loads the cached reset-credit details, falling back to the available-credit count from
+     * the usage snapshot when no details are cached or the usage response reports a newer,
+     * different count.
+     */
     public static ResetCreditsSnapshot loadResetCredits(Context context) {
-        ResetCreditsSnapshot resetCreditsSnapshotFromJson = null;
-        String string = prefs(context).getString(KEY_RESET_CREDITS, null);
-        if (string != null && !string.isEmpty()) {
+        ResetCreditsSnapshot stored = null;
+        String json = prefs(context).getString(KEY_RESET_CREDITS, null);
+        if (json != null && !json.isEmpty()) {
             try {
-                resetCreditsSnapshotFromJson = ResetCreditsSnapshot.fromJson(new JSONObject(string));
-            } catch (Exception e) {
+                stored = ResetCreditsSnapshot.fromJson(new JSONObject(json));
+            } catch (Exception ignored) {
             }
         }
-        UsageSnapshot usageSnapshotLoadSnapshot = loadSnapshot(context);
-        if (usageSnapshotLoadSnapshot != null && usageSnapshotLoadSnapshot.resetCreditsAvailable >= 0) {
-            if (resetCreditsSnapshotFromJson == null) {
-                return ResetCreditsSnapshot.summary(usageSnapshotLoadSnapshot.resetCreditsAvailable, usageSnapshotLoadSnapshot.fetchedAtMillis);
-            }
-            if (usageSnapshotLoadSnapshot.fetchedAtMillis > resetCreditsSnapshotFromJson.fetchedAtMillis && usageSnapshotLoadSnapshot.resetCreditsAvailable != resetCreditsSnapshotFromJson.availableCount) {
-                return ResetCreditsSnapshot.summary(usageSnapshotLoadSnapshot.resetCreditsAvailable, usageSnapshotLoadSnapshot.fetchedAtMillis);
-            }
-            return resetCreditsSnapshotFromJson;
+        UsageSnapshot usage = loadSnapshot(context);
+        if (usage == null || usage.resetCreditsAvailable < 0) {
+            return stored;
         }
-        return resetCreditsSnapshotFromJson;
+        if (stored == null
+                || (usage.fetchedAtMillis > stored.fetchedAtMillis
+                        && usage.resetCreditsAvailable != stored.availableCount)) {
+            return ResetCreditsSnapshot.summary(usage.resetCreditsAvailable,
+                    usage.fetchedAtMillis);
+        }
+        return stored;
     }
 
-    public static void setResetCreditsError(Context context, String str) {
-        if (str == null || str.trim().isEmpty()) {
+    public static void setResetCreditsError(Context context, String message) {
+        if (isBlank(message)) {
             clearResetCreditsError(context);
-        } else {
-            prefs(context).edit().putString(KEY_RESET_ERROR, trim(str, "Reset-credit refresh failed.")).putLong(KEY_RESET_ERROR_AT, System.currentTimeMillis()).apply();
+            return;
         }
+        prefs(context).edit()
+                .putString(KEY_RESET_ERROR, clip(message))
+                .putLong(KEY_RESET_ERROR_AT, System.currentTimeMillis())
+                .apply();
     }
 
     public static void clearResetCreditsError(Context context) {
@@ -200,28 +309,34 @@ public final class AppPreferences {
         return prefs(context).getString(KEY_RESET_ERROR, "");
     }
 
+    /** Same visibility rules as {@link #getVisibleRefreshError}, for reset-credit refreshes. */
     public static String getVisibleResetCreditsError(Context context) {
-        String resetCreditsError = getResetCreditsError(context);
-        if (resetCreditsError.isEmpty()) {
+        String error = getResetCreditsError(context);
+        if (error.isEmpty()) {
             return "";
         }
-        ResetCreditsSnapshot resetCreditsSnapshotLoadResetCredits = loadResetCredits(context);
-        if (resetCreditsSnapshotLoadResetCredits != null) {
-            long j = prefs(context).getLong(KEY_RESET_ERROR_AT, 0L);
-            if (j <= 0 || j > resetCreditsSnapshotLoadResetCredits.fetchedAtMillis) {
-                return Math.max(0L, System.currentTimeMillis() - resetCreditsSnapshotLoadResetCredits.fetchedAtMillis) < 1800000 ? "" : resetCreditsError;
-            }
+        ResetCreditsSnapshot credits = loadResetCredits(context);
+        if (credits == null) {
+            return error;
+        }
+        long errorAt = prefs(context).getLong(KEY_RESET_ERROR_AT, 0L);
+        if (errorAt > 0 && errorAt <= credits.fetchedAtMillis) {
             clearResetCreditsError(context);
             return "";
         }
-        return resetCreditsError;
+        long creditsAge = Math.max(0L, System.currentTimeMillis() - credits.fetchedAtMillis);
+        return creditsAge < RESET_CREDITS_ERROR_GRACE_MS ? "" : error;
     }
 
-    public static void setSchedulerError(Context context, String str) {
-        if (str == null || str.trim().isEmpty()) {
+    // ---------------------------------------------------------------------------------------
+    // Background refresh
+    // ---------------------------------------------------------------------------------------
+
+    public static void setSchedulerError(Context context, String message) {
+        if (isBlank(message)) {
             prefs(context).edit().remove(KEY_SCHEDULER_ERROR).apply();
         } else {
-            prefs(context).edit().putString(KEY_SCHEDULER_ERROR, trim(str, "Background scheduling is unavailable.")).apply();
+            prefs(context).edit().putString(KEY_SCHEDULER_ERROR, clip(message)).apply();
         }
     }
 
@@ -230,19 +345,20 @@ public final class AppPreferences {
     }
 
     public static int getRefreshMinutes(Context context) {
-        int i = prefs(context).getInt(KEY_REFRESH_MINUTES, 30);
-        if (validRefresh(i)) {
-            return i;
-        }
-        return 30;
+        int minutes = prefs(context).getInt(KEY_REFRESH_MINUTES, DEFAULT_REFRESH_MINUTES);
+        return isValidRefreshMinutes(minutes) ? minutes : DEFAULT_REFRESH_MINUTES;
     }
 
-    public static void setRefreshMinutes(Context context, int i) {
-        SharedPreferences.Editor editorEdit = prefs(context).edit();
-        if (!validRefresh(i)) {
-            i = 30;
-        }
-        editorEdit.putInt(KEY_REFRESH_MINUTES, i).apply();
+    public static void setRefreshMinutes(Context context, int minutes) {
+        prefs(context).edit()
+                .putInt(KEY_REFRESH_MINUTES,
+                        isValidRefreshMinutes(minutes) ? minutes : DEFAULT_REFRESH_MINUTES)
+                .apply();
+    }
+
+    private static boolean isValidRefreshMinutes(int minutes) {
+        return minutes == 5 || minutes == 10 || minutes == 15 || minutes == 30
+                || minutes == 60 || minutes == 120;
     }
 
     public static boolean getAutomaticRefresh(Context context) {
@@ -253,8 +369,10 @@ public final class AppPreferences {
         prefs(context).edit().putBoolean(KEY_AUTOMATIC_REFRESH, enabled).apply();
     }
 
+    /** Consecutive failed background refreshes, capped at {@value #MAX_REFRESH_FAILURES}. */
     public static int getRefreshFailures(Context context) {
-        return Math.max(0, Math.min(3, prefs(context).getInt(KEY_REFRESH_FAILURES, 0)));
+        int failures = prefs(context).getInt(KEY_REFRESH_FAILURES, 0);
+        return Math.max(0, Math.min(MAX_REFRESH_FAILURES, failures));
     }
 
     public static void recordRefreshSuccess(Context context) {
@@ -262,7 +380,7 @@ public final class AppPreferences {
     }
 
     public static void recordRefreshFailure(Context context) {
-        int failures = Math.min(3, getRefreshFailures(context) + 1);
+        int failures = Math.min(MAX_REFRESH_FAILURES, getRefreshFailures(context) + 1);
         prefs(context).edit().putInt(KEY_REFRESH_FAILURES, failures).apply();
     }
 
@@ -274,12 +392,16 @@ public final class AppPreferences {
         prefs(context).edit().putBoolean(KEY_REFRESH_ON_LAUNCH, enabled).apply();
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Dashboard sections
+    // ---------------------------------------------------------------------------------------
+
     public static boolean showDashboardFiveHour(Context context) {
         return prefs(context).getBoolean(KEY_DASHBOARD_FIVE_HOUR, true);
     }
 
     public static void setShowDashboardFiveHour(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_FIVE_HOUR, show).apply();
+        putBoolean(context, KEY_DASHBOARD_FIVE_HOUR, show);
     }
 
     public static boolean showDashboardWeekly(Context context) {
@@ -287,7 +409,7 @@ public final class AppPreferences {
     }
 
     public static void setShowDashboardWeekly(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_WEEKLY, show).apply();
+        putBoolean(context, KEY_DASHBOARD_WEEKLY, show);
     }
 
     public static boolean showDashboardMonthly(Context context) {
@@ -295,7 +417,7 @@ public final class AppPreferences {
     }
 
     public static void setShowDashboardMonthly(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_MONTHLY, show).apply();
+        putBoolean(context, KEY_DASHBOARD_MONTHLY, show);
     }
 
     public static boolean showDashboardAdditionalLimits(Context context) {
@@ -307,7 +429,7 @@ public final class AppPreferences {
     }
 
     public static void setShowDashboardUsageCredits(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_USAGE_CREDITS, show).apply();
+        putBoolean(context, KEY_DASHBOARD_USAGE_CREDITS, show);
     }
 
     public static boolean showDashboardUsageHistory(Context context) {
@@ -315,7 +437,7 @@ public final class AppPreferences {
     }
 
     public static void setShowDashboardUsageHistory(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_USAGE_HISTORY, show).apply();
+        putBoolean(context, KEY_DASHBOARD_USAGE_HISTORY, show);
     }
 
     public static boolean showDashboardResetCredits(Context context) {
@@ -323,51 +445,7 @@ public final class AppPreferences {
     }
 
     public static void setShowDashboardResetCredits(Context context, boolean show) {
-        prefs(context).edit().putBoolean(KEY_DASHBOARD_RESET_CREDITS, show).apply();
-    }
-
-    /** Hidden section keys (currently model-specific limits) as a {@link DashboardSections} CSV. */
-    public static String getDashboardHiddenSections(Context context) {
-        return prefs(context).getString(KEY_DASHBOARD_HIDDEN_SECTIONS, "");
-    }
-
-    public static void setDashboardHiddenSections(Context context, String hiddenCsv) {
-        if (hiddenCsv == null || hiddenCsv.trim().isEmpty()) {
-            prefs(context).edit().remove(KEY_DASHBOARD_HIDDEN_SECTIONS).apply();
-        } else {
-            prefs(context).edit().putString(KEY_DASHBOARD_HIDDEN_SECTIONS, hiddenCsv).apply();
-        }
-    }
-
-    public static boolean isDashboardSectionHidden(Context context, String key) {
-        return DashboardSections.isHidden(getDashboardHiddenSections(context), key);
-    }
-
-    public static void setDashboardSectionHidden(Context context, String key, boolean hidden) {
-        setDashboardHiddenSections(context,
-                DashboardSections.setHidden(getDashboardHiddenSections(context), key, hidden));
-    }
-
-    /** Usage-history highlight overrides as a {@link HistorySections} CSV. */
-    public static String getHistorySectionOverrides(Context context) {
-        return prefs(context).getString(KEY_HISTORY_SECTION_OVERRIDES, "");
-    }
-
-    public static void setHistorySectionOverrides(Context context, String overridesCsv) {
-        if (overridesCsv == null || overridesCsv.trim().isEmpty()) {
-            prefs(context).edit().remove(KEY_HISTORY_SECTION_OVERRIDES).apply();
-        } else {
-            prefs(context).edit().putString(KEY_HISTORY_SECTION_OVERRIDES, overridesCsv).apply();
-        }
-    }
-
-    public static boolean isHistorySectionVisible(Context context, String key) {
-        return HistorySections.isVisible(getHistorySectionOverrides(context), key);
-    }
-
-    public static void setHistorySectionVisible(Context context, String key, boolean visible) {
-        setHistorySectionOverrides(context,
-                HistorySections.setVisible(getHistorySectionOverrides(context), key, visible));
+        putBoolean(context, KEY_DASHBOARD_RESET_CREDITS, show);
     }
 
     public static void setDashboardVisibility(Context context, boolean fiveHour,
@@ -384,12 +462,30 @@ public final class AppPreferences {
                 .apply();
     }
 
+    /** Hidden section keys (currently model-specific limits) as a {@link DashboardSections} CSV. */
+    public static String getDashboardHiddenSections(Context context) {
+        return prefs(context).getString(KEY_DASHBOARD_HIDDEN_SECTIONS, "");
+    }
+
+    public static void setDashboardHiddenSections(Context context, String hiddenCsv) {
+        putOrRemoveIfBlank(context, KEY_DASHBOARD_HIDDEN_SECTIONS, hiddenCsv);
+    }
+
+    public static boolean isDashboardSectionHidden(Context context, String key) {
+        return DashboardSections.isHidden(getDashboardHiddenSections(context), key);
+    }
+
+    public static void setDashboardSectionHidden(Context context, String key, boolean hidden) {
+        setDashboardHiddenSections(context,
+                DashboardSections.setHidden(getDashboardHiddenSections(context), key, hidden));
+    }
+
     /** Saved dashboard section order as a comma-separated {@link DashboardSections} key list. */
     public static String getDashboardOrder(Context context) {
         return prefs(context).getString(KEY_DASHBOARD_SECTION_ORDER, "");
     }
 
-    public static void setDashboardOrder(Context context, java.util.List<String> order) {
+    public static void setDashboardOrder(Context context, List<String> order) {
         String csv = DashboardSections.serialize(order);
         if (csv.isEmpty()) {
             prefs(context).edit().remove(KEY_DASHBOARD_SECTION_ORDER).apply();
@@ -398,20 +494,44 @@ public final class AppPreferences {
         }
     }
 
-    private static boolean validRefresh(int i) {
-        return i == 5 || i == 10 || i == 15 || i == 30 || i == 60 || i == 120;
+    // ---------------------------------------------------------------------------------------
+    // Usage-history highlights
+    // ---------------------------------------------------------------------------------------
+
+    /** Usage-history highlight overrides as a {@link HistorySections} CSV. */
+    public static String getHistorySectionOverrides(Context context) {
+        return prefs(context).getString(KEY_HISTORY_SECTION_OVERRIDES, "");
     }
+
+    public static void setHistorySectionOverrides(Context context, String overridesCsv) {
+        putOrRemoveIfBlank(context, KEY_HISTORY_SECTION_OVERRIDES, overridesCsv);
+    }
+
+    public static boolean isHistorySectionVisible(Context context, String key) {
+        return HistorySections.isVisible(getHistorySectionOverrides(context), key);
+    }
+
+    public static void setHistorySectionVisible(Context context, String key, boolean visible) {
+        setHistorySectionOverrides(context,
+                HistorySections.setVisible(getHistorySectionOverrides(context), key, visible));
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // Appearance
+    // ---------------------------------------------------------------------------------------
 
     public static String getAppTheme(Context context) {
-        String string = prefs(context).getString(KEY_APP_THEME, WidgetOptions.THEME_SYSTEM);
-        return (WidgetOptions.THEME_DARK.equals(string) || WidgetOptions.THEME_LIGHT.equals(string)) ? string : WidgetOptions.THEME_SYSTEM;
+        return normalizeAppTheme(
+                prefs(context).getString(KEY_APP_THEME, WidgetOptions.THEME_SYSTEM));
     }
 
-    public static void setAppTheme(Context context, String str) {
-        if (!WidgetOptions.THEME_DARK.equals(str) && !WidgetOptions.THEME_LIGHT.equals(str)) {
-            str = WidgetOptions.THEME_SYSTEM;
-        }
-        prefs(context).edit().putString(KEY_APP_THEME, str).commit();
+    public static void setAppTheme(Context context, String theme) {
+        prefs(context).edit().putString(KEY_APP_THEME, normalizeAppTheme(theme)).commit();
+    }
+
+    private static String normalizeAppTheme(String theme) {
+        return WidgetOptions.THEME_DARK.equals(theme) || WidgetOptions.THEME_LIGHT.equals(theme)
+                ? theme : WidgetOptions.THEME_SYSTEM;
     }
 
     /** When enabled, accents follow Android Material You system colors (API 31+). */
@@ -423,121 +543,143 @@ public final class AppPreferences {
         prefs(context).edit().putBoolean(KEY_MATERIAL_YOU, enabled).commit();
     }
 
+    /** The app always uses the One UI surface; other styles are no longer offered. */
     public static String getAppStyle(Context context) {
         return WidgetOptions.SURFACE_ONE_UI;
     }
 
-    public static void setAppStyle(Context context, String str) {
+    /** Stores the One UI surface regardless of {@code style}; see {@link #getAppStyle}. */
+    public static void setAppStyle(Context context, String style) {
         prefs(context).edit().putString(KEY_APP_STYLE, WidgetOptions.SURFACE_ONE_UI).apply();
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Home-screen widget options
+    // ---------------------------------------------------------------------------------------
+
     public static WidgetOptions loadDefaultWidgetOptions(Context context) {
-        SharedPreferences sharedPreferencesPrefs = prefs(context);
+        SharedPreferences prefs = prefs(context);
+        String prefix = DEFAULT_WIDGET_PREFIX;
         return normalizeLoaded(new WidgetOptions(
-                sharedPreferencesPrefs.getString("default_style", WidgetOptions.STYLE_AUTO),
-                sharedPreferencesPrefs.getString("default_density", "auto"),
-                sharedPreferencesPrefs.getString("default_surface_style", WidgetOptions.SURFACE_ONE_UI),
-                sharedPreferencesPrefs.getString("default_graphic_scale", "auto"),
-                sharedPreferencesPrefs.getString("default_theme", WidgetOptions.THEME_SYSTEM),
-                sharedPreferencesPrefs.getString("default_accent", WidgetOptions.ACCENT_BLUE),
-                sharedPreferencesPrefs.getInt("default_opacity", 88),
-                sharedPreferencesPrefs.getString("default_reset_mode", WidgetOptions.RESET_ABSOLUTE),
-                sharedPreferencesPrefs.getString("default_display_mode", WidgetOptions.DISPLAY_REMAINING),
-                sharedPreferencesPrefs.getString("default_metric_mode", WidgetOptions.METRIC_BOTH),
+                prefs.getString(prefix + FIELD_STYLE, WidgetOptions.STYLE_AUTO),
+                prefs.getString(prefix + FIELD_DENSITY, "auto"),
+                prefs.getString(prefix + FIELD_SURFACE_STYLE, WidgetOptions.SURFACE_ONE_UI),
+                prefs.getString(prefix + FIELD_GRAPHIC_SCALE, "auto"),
+                prefs.getString(prefix + FIELD_THEME, WidgetOptions.THEME_SYSTEM),
+                prefs.getString(prefix + FIELD_ACCENT, WidgetOptions.ACCENT_BLUE),
+                prefs.getInt(prefix + FIELD_OPACITY, WidgetOptions.DEFAULT_OPACITY),
+                prefs.getString(prefix + FIELD_RESET_MODE, WidgetOptions.RESET_ABSOLUTE),
+                prefs.getString(prefix + FIELD_DISPLAY_MODE, WidgetOptions.DISPLAY_REMAINING),
+                prefs.getString(prefix + FIELD_METRIC_MODE, WidgetOptions.METRIC_BOTH),
                 false,
-                sharedPreferencesPrefs.getBoolean("default_show_plan", false),
-                sharedPreferencesPrefs.getBoolean("default_show_updated", false),
-                sharedPreferencesPrefs.getBoolean("default_show_refresh", true),
-                sharedPreferencesPrefs.getBoolean("default_show_reset_credits", false),
-                sharedPreferencesPrefs.getBoolean("default_show_reset_action", false))
-                .withPercentSymbol(sharedPreferencesPrefs.getBoolean(
-                        "default_show_percent_symbol", true))
-                .withVisibleMeters(sharedPreferencesPrefs.getString("default_visible_meters", "")));
+                prefs.getBoolean(prefix + FIELD_SHOW_PLAN, false),
+                prefs.getBoolean(prefix + FIELD_SHOW_UPDATED, false),
+                prefs.getBoolean(prefix + FIELD_SHOW_REFRESH, true),
+                prefs.getBoolean(prefix + FIELD_SHOW_RESET_CREDITS, false),
+                prefs.getBoolean(prefix + FIELD_SHOW_RESET_ACTION, false))
+                .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, true))
+                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS, "")));
     }
 
-    public static void saveDefaultWidgetOptions(Context context, WidgetOptions widgetOptions) {
-        prefs(context).edit()
-                .putString("default_style", widgetOptions.layout)
-                .putString("default_layout", widgetOptions.layout)
-                .putString("default_density", widgetOptions.density)
-                .putString("default_surface_style", widgetOptions.surfaceStyle)
-                .putString("default_graphic_scale", widgetOptions.graphicScale)
-                .putString("default_theme", widgetOptions.theme)
-                .putString("default_accent", widgetOptions.accent)
-                .putInt("default_opacity", widgetOptions.opacity)
-                .putString("default_reset_mode", widgetOptions.resetMode)
-                .putString("default_display_mode", widgetOptions.displayMode)
-                .putString("default_metric_mode", widgetOptions.metricMode)
-                .putString("default_visible_meters", widgetOptions.visibleMeters)
-                .putBoolean("default_show_title", widgetOptions.showTitle)
-                .putBoolean("default_show_plan", widgetOptions.showPlan)
-                .putBoolean("default_show_updated", widgetOptions.showUpdated)
-                .putBoolean("default_show_refresh", widgetOptions.showRefresh)
-                .putBoolean("default_show_reset_credits", widgetOptions.showResetCredits)
-                .putBoolean("default_show_reset_action", widgetOptions.showResetAction)
-                .putBoolean("default_show_percent_symbol", widgetOptions.showPercentSymbol)
-                .apply();
+    public static void saveDefaultWidgetOptions(Context context, WidgetOptions options) {
+        SharedPreferences.Editor editor = prefs(context).edit();
+        putWidgetOptions(editor, DEFAULT_WIDGET_PREFIX, options, options.metricMode);
+        editor.apply();
     }
 
-    public static WidgetOptions loadWidgetOptions(Context context, int i) {
-        if (i == 0) {
+    /** Loads a placed widget's options, falling back to the defaults for unset fields. */
+    public static WidgetOptions loadWidgetOptions(Context context, int widgetId) {
+        if (widgetId == DEFAULT_WIDGET_ID) {
             return loadDefaultWidgetOptions(context);
         }
-        SharedPreferences sharedPreferencesPrefs = prefs(context);
-        WidgetOptions widgetOptionsLoadDefaultWidgetOptions = loadDefaultWidgetOptions(context);
-        String str = "widget_" + i + "_";
+        SharedPreferences prefs = prefs(context);
+        WidgetOptions defaults = loadDefaultWidgetOptions(context);
+        String prefix = widgetPrefix(widgetId);
         return normalizeLoaded(new WidgetOptions(
-                sharedPreferencesPrefs.getString(str + "style",
-                        widgetOptionsLoadDefaultWidgetOptions.layout),
-                sharedPreferencesPrefs.getString(str + "density",
-                        widgetOptionsLoadDefaultWidgetOptions.density),
-                sharedPreferencesPrefs.getString(str + "surface_style",
-                        widgetOptionsLoadDefaultWidgetOptions.surfaceStyle),
-                sharedPreferencesPrefs.getString(str + "graphic_scale",
-                        widgetOptionsLoadDefaultWidgetOptions.graphicScale),
-                sharedPreferencesPrefs.getString(str + "theme",
-                        widgetOptionsLoadDefaultWidgetOptions.theme),
-                sharedPreferencesPrefs.getString(str + "accent",
-                        widgetOptionsLoadDefaultWidgetOptions.accent),
-                sharedPreferencesPrefs.getInt(str + "opacity",
-                        widgetOptionsLoadDefaultWidgetOptions.opacity),
-                sharedPreferencesPrefs.getString(str + "reset_mode",
-                        widgetOptionsLoadDefaultWidgetOptions.resetMode),
-                sharedPreferencesPrefs.getString(str + "display_mode",
-                        widgetOptionsLoadDefaultWidgetOptions.displayMode),
-                sharedPreferencesPrefs.getString(str + "metric_mode",
-                        widgetOptionsLoadDefaultWidgetOptions.metricMode),
+                prefs.getString(prefix + FIELD_STYLE, defaults.layout),
+                prefs.getString(prefix + FIELD_DENSITY, defaults.density),
+                prefs.getString(prefix + FIELD_SURFACE_STYLE, defaults.surfaceStyle),
+                prefs.getString(prefix + FIELD_GRAPHIC_SCALE, defaults.graphicScale),
+                prefs.getString(prefix + FIELD_THEME, defaults.theme),
+                prefs.getString(prefix + FIELD_ACCENT, defaults.accent),
+                prefs.getInt(prefix + FIELD_OPACITY, defaults.opacity),
+                prefs.getString(prefix + FIELD_RESET_MODE, defaults.resetMode),
+                prefs.getString(prefix + FIELD_DISPLAY_MODE, defaults.displayMode),
+                prefs.getString(prefix + FIELD_METRIC_MODE, defaults.metricMode),
                 false,
-                sharedPreferencesPrefs.getBoolean(str + "show_plan",
-                        widgetOptionsLoadDefaultWidgetOptions.showPlan),
-                sharedPreferencesPrefs.getBoolean(str + "show_updated",
-                        widgetOptionsLoadDefaultWidgetOptions.showUpdated),
-                sharedPreferencesPrefs.getBoolean(str + "show_refresh",
-                        widgetOptionsLoadDefaultWidgetOptions.showRefresh),
-                sharedPreferencesPrefs.getBoolean(str + "show_reset_credits",
-                        widgetOptionsLoadDefaultWidgetOptions.showResetCredits),
-                sharedPreferencesPrefs.getBoolean(str + "show_reset_action",
-                        widgetOptionsLoadDefaultWidgetOptions.showResetAction))
-                .withPercentSymbol(sharedPreferencesPrefs.getBoolean(str + "show_percent_symbol",
-                        widgetOptionsLoadDefaultWidgetOptions.showPercentSymbol))
-                .withVisibleMeters(sharedPreferencesPrefs.getString(str + "visible_meters",
-                        widgetOptionsLoadDefaultWidgetOptions.visibleMeters)));
+                prefs.getBoolean(prefix + FIELD_SHOW_PLAN, defaults.showPlan),
+                prefs.getBoolean(prefix + FIELD_SHOW_UPDATED, defaults.showUpdated),
+                prefs.getBoolean(prefix + FIELD_SHOW_REFRESH, defaults.showRefresh),
+                prefs.getBoolean(prefix + FIELD_SHOW_RESET_CREDITS, defaults.showResetCredits),
+                prefs.getBoolean(prefix + FIELD_SHOW_RESET_ACTION, defaults.showResetAction))
+                .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL,
+                        defaults.showPercentSymbol))
+                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
+                        defaults.visibleMeters)));
+    }
+
+    /** Saves a placed widget's options; its metric mode is derived from the visible meters. */
+    public static void saveWidgetOptions(Context context, int widgetId, WidgetOptions options) {
+        String prefix = widgetPrefix(widgetId);
+        String metricMode = metricModeFromVisible(options.effectiveVisibleMeters());
+        SharedPreferences.Editor editor = prefs(context).edit();
+        putWidgetOptions(editor, prefix, options, metricMode);
+        editor.apply();
+    }
+
+    public static void deleteWidgetOptions(Context context, int widgetId) {
+        String prefix = widgetPrefix(widgetId);
+        SharedPreferences.Editor editor = prefs(context).edit();
+        for (String field : HOME_WIDGET_FIELDS) {
+            editor.remove(prefix + field);
+        }
+        editor.remove(prefix + FIELD_TAP_ACTION);
+        editor.apply();
     }
 
     public static String getWidgetTapAction(Context context, int appWidgetId) {
-        if (appWidgetId == 0) {
+        if (appWidgetId == DEFAULT_WIDGET_ID) {
             return WidgetOptions.TAP_OPEN_APP;
         }
-        return WidgetOptions.normalizeTapAction(
-                prefs(context).getString("widget_" + appWidgetId + "_tap_action",
-                        WidgetOptions.TAP_OPEN_APP));
+        return WidgetOptions.normalizeTapAction(prefs(context).getString(
+                widgetPrefix(appWidgetId) + FIELD_TAP_ACTION, WidgetOptions.TAP_OPEN_APP));
     }
 
     public static void saveWidgetTapAction(Context context, int appWidgetId, String action) {
-        if (appWidgetId != 0) {
-            prefs(context).edit().putString("widget_" + appWidgetId + "_tap_action",
-                    WidgetOptions.normalizeTapAction(action)).apply();
+        if (appWidgetId == DEFAULT_WIDGET_ID) {
+            return;
         }
+        prefs(context).edit()
+                .putString(widgetPrefix(appWidgetId) + FIELD_TAP_ACTION,
+                        WidgetOptions.normalizeTapAction(action))
+                .apply();
+    }
+
+    private static String widgetPrefix(int widgetId) {
+        return "widget_" + widgetId + "_";
+    }
+
+    private static void putWidgetOptions(SharedPreferences.Editor editor, String prefix,
+            WidgetOptions options, String metricMode) {
+        editor.putString(prefix + FIELD_STYLE, options.layout)
+                .putString(prefix + FIELD_LAYOUT, options.layout)
+                .putString(prefix + FIELD_DENSITY, options.density)
+                .putString(prefix + FIELD_SURFACE_STYLE, options.surfaceStyle)
+                .putString(prefix + FIELD_GRAPHIC_SCALE, options.graphicScale)
+                .putString(prefix + FIELD_THEME, options.theme)
+                .putString(prefix + FIELD_ACCENT, options.accent)
+                .putInt(prefix + FIELD_OPACITY, options.opacity)
+                .putString(prefix + FIELD_RESET_MODE, options.resetMode)
+                .putString(prefix + FIELD_DISPLAY_MODE, options.displayMode)
+                .putString(prefix + FIELD_METRIC_MODE, metricMode)
+                .putString(prefix + FIELD_VISIBLE_METERS, options.visibleMeters)
+                .putBoolean(prefix + FIELD_SHOW_TITLE, options.showTitle)
+                .putBoolean(prefix + FIELD_SHOW_PLAN, options.showPlan)
+                .putBoolean(prefix + FIELD_SHOW_UPDATED, options.showUpdated)
+                .putBoolean(prefix + FIELD_SHOW_REFRESH, options.showRefresh)
+                .putBoolean(prefix + FIELD_SHOW_RESET_CREDITS, options.showResetCredits)
+                .putBoolean(prefix + FIELD_SHOW_RESET_ACTION, options.showResetAction)
+                .putBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, options.showPercentSymbol);
     }
 
     /**
@@ -547,123 +689,98 @@ public final class AppPreferences {
     private static WidgetOptions normalizeLoaded(WidgetOptions options) {
         return new WidgetOptions(options.layout, WidgetOptions.DENSITY_AUTO,
                 WidgetOptions.SURFACE_ONE_UI, "auto", options.theme, options.accent,
-                options.opacity, WidgetOptions.RESET_HIDDEN, options.displayMode, options.metricMode,
-                false, false, false, false, false, false)
+                options.opacity, WidgetOptions.RESET_HIDDEN, options.displayMode,
+                options.metricMode, false, false, false, false, false, false)
                 .withPercentSymbol(options.showPercentSymbol)
                 .withVisibleMeters(options.visibleMeters);
     }
 
-    public static void saveWidgetOptions(Context context, int i, WidgetOptions widgetOptions) {
-        String str = "widget_" + i + "_";
-        String metricMode = metricModeFromVisible(widgetOptions.effectiveVisibleMeters());
-        prefs(context).edit()
-                .putString(str + "style", widgetOptions.layout)
-                .putString(str + "layout", widgetOptions.layout)
-                .putString(str + "density", widgetOptions.density)
-                .putString(str + "surface_style", widgetOptions.surfaceStyle)
-                .putString(str + "graphic_scale", widgetOptions.graphicScale)
-                .putString(str + "theme", widgetOptions.theme)
-                .putString(str + "accent", widgetOptions.accent)
-                .putInt(str + "opacity", widgetOptions.opacity)
-                .putString(str + "reset_mode", widgetOptions.resetMode)
-                .putString(str + "display_mode", widgetOptions.displayMode)
-                .putString(str + "metric_mode", metricMode)
-                .putString(str + "visible_meters", widgetOptions.visibleMeters)
-                .putBoolean(str + "show_title", widgetOptions.showTitle)
-                .putBoolean(str + "show_plan", widgetOptions.showPlan)
-                .putBoolean(str + "show_updated", widgetOptions.showUpdated)
-                .putBoolean(str + "show_refresh", widgetOptions.showRefresh)
-                .putBoolean(str + "show_reset_credits", widgetOptions.showResetCredits)
-                .putBoolean(str + "show_reset_action", widgetOptions.showResetAction)
-                .putBoolean(str + "show_percent_symbol", widgetOptions.showPercentSymbol)
-                .apply();
-    }
-
+    /** The legacy metric mode matching which of the 5-hour and weekly meters are visible. */
     private static String metricModeFromVisible(String visibleCsv) {
-        java.util.List<String> keys = WidgetMeters.parse(visibleCsv);
-        boolean five = WidgetMeters.contains(keys, WidgetMeters.FIVE_HOUR);
+        List<String> keys = WidgetMeters.parse(visibleCsv);
+        boolean fiveHour = WidgetMeters.contains(keys, WidgetMeters.FIVE_HOUR);
         boolean weekly = WidgetMeters.contains(keys, WidgetMeters.WEEKLY);
-        if (five && !weekly) {
+        if (fiveHour && !weekly) {
             return WidgetOptions.METRIC_FIVE_HOUR;
         }
-        if (weekly && !five) {
+        if (weekly && !fiveHour) {
             return WidgetOptions.METRIC_WEEKLY;
         }
         return WidgetOptions.METRIC_BOTH;
     }
 
-    public static void deleteWidgetOptions(Context context, int i) {
-        String str = "widget_" + i + "_";
-        SharedPreferences.Editor editorEdit = prefs(context).edit();
-        for (String str2 : new String[]{"style", "layout", "density", "surface_style",
-                "graphic_scale", "theme", "accent", "opacity", "reset_mode", "display_mode",
-                "metric_mode", "visible_meters", "show_title", "show_plan", "show_updated",
-                "show_refresh", "show_reset_credits", "show_reset_action", "show_percent_symbol",
-                "tap_action"}) {
-            editorEdit.remove(str + str2);
-        }
-        editorEdit.apply();
-    }
+    // ---------------------------------------------------------------------------------------
+    // Lock-screen widget options
+    // ---------------------------------------------------------------------------------------
 
-    public static LockWidgetOptions loadLockWidgetOptions(Context context, int i) {
-        if (i == 0) {
+    public static LockWidgetOptions loadLockWidgetOptions(Context context, int widgetId) {
+        if (widgetId == DEFAULT_WIDGET_ID) {
             return LockWidgetOptions.defaults();
         }
-        SharedPreferences sharedPreferencesPrefs = prefs(context);
-        String str = "lock_widget_" + i + "_";
+        SharedPreferences prefs = prefs(context);
         return new LockWidgetOptions(
-                sharedPreferencesPrefs.getString(str + "metric_mode", "both"),
-                sharedPreferencesPrefs.getBoolean(str + "show_reset_credits", false),
-                sharedPreferencesPrefs.getBoolean(str + "show_reset_action", false),
-                sharedPreferencesPrefs.getBoolean(str + "show_countdown", true),
-                sharedPreferencesPrefs.getString(str + "visible_meters", ""));
+                prefs.getString(lockWidgetKey(widgetId, FIELD_METRIC_MODE),
+                        WidgetOptions.METRIC_BOTH),
+                prefs.getBoolean(lockWidgetKey(widgetId, FIELD_SHOW_RESET_CREDITS), false),
+                prefs.getBoolean(lockWidgetKey(widgetId, FIELD_SHOW_RESET_ACTION), false),
+                prefs.getBoolean(lockWidgetKey(widgetId, FIELD_SHOW_COUNTDOWN), true),
+                prefs.getString(lockWidgetKey(widgetId, FIELD_VISIBLE_METERS), ""));
     }
 
-    public static void saveLockWidgetOptions(Context context, int i, LockWidgetOptions lockWidgetOptions) {
-        if (i != 0 && lockWidgetOptions != null) {
-            String str = "lock_widget_" + i + "_";
-            prefs(context).edit()
-                    .putString(str + "metric_mode", lockWidgetOptions.metricMode)
-                    .putBoolean(str + "show_reset_credits", lockWidgetOptions.showResetCredits)
-                    .putBoolean(str + "show_reset_action", lockWidgetOptions.showResetAction)
-                    .putBoolean(str + "show_countdown", lockWidgetOptions.showCountdown)
-                    .putString(str + "visible_meters", lockWidgetOptions.visibleMeters)
-                    .apply();
+    public static void saveLockWidgetOptions(Context context, int widgetId,
+            LockWidgetOptions options) {
+        if (widgetId == DEFAULT_WIDGET_ID || options == null) {
+            return;
         }
-    }
-
-    public static void deleteLockWidgetOptions(Context context, int i) {
-        String str = "lock_widget_" + i + "_";
         prefs(context).edit()
-                .remove(str + "metric_mode")
-                .remove(str + "show_reset_credits")
-                .remove(str + "show_reset_action")
-                .remove(str + "show_countdown")
-                .remove(str + "visible_meters")
+                .putString(lockWidgetKey(widgetId, FIELD_METRIC_MODE), options.metricMode)
+                .putBoolean(lockWidgetKey(widgetId, FIELD_SHOW_RESET_CREDITS),
+                        options.showResetCredits)
+                .putBoolean(lockWidgetKey(widgetId, FIELD_SHOW_RESET_ACTION),
+                        options.showResetAction)
+                .putBoolean(lockWidgetKey(widgetId, FIELD_SHOW_COUNTDOWN), options.showCountdown)
+                .putString(lockWidgetKey(widgetId, FIELD_VISIBLE_METERS), options.visibleMeters)
                 .apply();
     }
 
-    public static void setOAuthPending(Context context, boolean z, String str) {
-        SharedPreferences.Editor editorPutBoolean = prefs(context).edit().putBoolean(KEY_OAUTH_PENDING, z);
-        if (str == null) {
-            str = "";
-        }
-        SharedPreferences.Editor editorPutString = editorPutBoolean.putString(KEY_OAUTH_URL, str);
-        if (z) {
-            editorPutString.putLong(KEY_OAUTH_STARTED_AT, System.currentTimeMillis());
-        } else {
-            editorPutString.remove(KEY_OAUTH_STARTED_AT);
-        }
-        editorPutString.apply();
+    public static void deleteLockWidgetOptions(Context context, int widgetId) {
+        prefs(context).edit()
+                .remove(lockWidgetKey(widgetId, FIELD_METRIC_MODE))
+                .remove(lockWidgetKey(widgetId, FIELD_SHOW_RESET_CREDITS))
+                .remove(lockWidgetKey(widgetId, FIELD_SHOW_RESET_ACTION))
+                .remove(lockWidgetKey(widgetId, FIELD_SHOW_COUNTDOWN))
+                .remove(lockWidgetKey(widgetId, FIELD_VISIBLE_METERS))
+                .apply();
     }
 
+    private static String lockWidgetKey(int widgetId, String field) {
+        return "lock_widget_" + widgetId + "_" + field;
+    }
+
+    // ---------------------------------------------------------------------------------------
+    // OAuth sign-in
+    // ---------------------------------------------------------------------------------------
+
+    public static void setOAuthPending(Context context, boolean pending, String url) {
+        SharedPreferences.Editor editor = prefs(context).edit()
+                .putBoolean(KEY_OAUTH_PENDING, pending)
+                .putString(KEY_OAUTH_URL, url == null ? "" : url);
+        if (pending) {
+            editor.putLong(KEY_OAUTH_STARTED_AT, System.currentTimeMillis());
+        } else {
+            editor.remove(KEY_OAUTH_STARTED_AT);
+        }
+        editor.apply();
+    }
+
+    /** Whether a sign-in is in progress; a stale pending flag is cleared and reported false. */
     public static boolean isOAuthPending(Context context) {
-        SharedPreferences sharedPreferencesPrefs = prefs(context);
-        if (!sharedPreferencesPrefs.getBoolean(KEY_OAUTH_PENDING, false)) {
+        SharedPreferences prefs = prefs(context);
+        if (!prefs.getBoolean(KEY_OAUTH_PENDING, false)) {
             return false;
         }
-        long j = sharedPreferencesPrefs.getLong(KEY_OAUTH_STARTED_AT, 0L);
-        if (j <= 0 || System.currentTimeMillis() - j > OAUTH_STALE_AFTER_MS) {
+        long startedAt = prefs.getLong(KEY_OAUTH_STARTED_AT, 0L);
+        if (startedAt <= 0 || System.currentTimeMillis() - startedAt > OAUTH_STALE_AFTER_MS) {
             setOAuthPending(context, false, "");
             return false;
         }
@@ -673,6 +790,10 @@ public final class AppPreferences {
     public static String getOAuthUrl(Context context) {
         return isOAuthPending(context) ? prefs(context).getString(KEY_OAUTH_URL, "") : "";
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Onboarding
+    // ---------------------------------------------------------------------------------------
 
     public static boolean isOnboardingComplete(Context context) {
         return prefs(context).getBoolean(KEY_ONBOARDING_COMPLETE, false);
@@ -696,10 +817,30 @@ public final class AppPreferences {
                 .apply();
     }
 
-    private static String trim(String str, String str2) {
-        if (str != null && !str.trim().isEmpty()) {
-            str2 = str.trim();
+    // ---------------------------------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------------------------------
+
+    private static void putBoolean(Context context, String key, boolean value) {
+        prefs(context).edit().putBoolean(key, value).apply();
+    }
+
+    private static void putOrRemoveIfBlank(Context context, String key, String value) {
+        if (isBlank(value)) {
+            prefs(context).edit().remove(key).apply();
+        } else {
+            prefs(context).edit().putString(key, value).apply();
         }
-        return str2.length() > 240 ? str2.substring(0, 240) : str2;
+    }
+
+    private static boolean isBlank(String value) {
+        return value == null || value.trim().isEmpty();
+    }
+
+    /** Trims a non-blank error message and caps it at {@value #MAX_ERROR_LENGTH} characters. */
+    private static String clip(String message) {
+        String trimmed = message.trim();
+        return trimmed.length() > MAX_ERROR_LENGTH
+                ? trimmed.substring(0, MAX_ERROR_LENGTH) : trimmed;
     }
 }

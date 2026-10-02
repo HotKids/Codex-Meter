@@ -30,10 +30,15 @@ public final class ResetCreditExpiryReceiver extends BroadcastReceiver {
         WidgetRenderer.updateAll(context);
     }
 
+    /** Whether the cached credits still hold an available credit matching the reminder. */
     static boolean isStillAvailable(Context context, String creditId, long expiresAt) {
-        if (expiresAt <= System.currentTimeMillis()) return false;
+        if (expiresAt <= System.currentTimeMillis()) {
+            return false;
+        }
         ResetCreditsSnapshot snapshot = AppPreferences.loadResetCredits(context);
-        if (snapshot == null) return false;
+        if (snapshot == null) {
+            return false;
+        }
         for (RateLimitResetCredit credit : snapshot.credits) {
             if (credit == null || !credit.isAvailable()
                     || credit.expiresAtMillis != expiresAt) {

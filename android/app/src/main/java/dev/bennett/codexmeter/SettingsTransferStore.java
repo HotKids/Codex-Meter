@@ -14,8 +14,17 @@ import org.json.JSONObject;
 
 /** Reads and writes {@link SettingsTransfer} documents against on-device preferences. */
 public final class SettingsTransferStore {
+    private static final String KEY_LEAD_TIMES =
+            SettingsTransfer.KEY_RESET_CREDIT_EXPIRY_LEAD_TIMES;
+    private static final int MAX_TRANSFER_BYTES = 1024 * 1024;
+    private static final int READ_BUFFER_BYTES = 4096;
+
     private SettingsTransferStore() {
     }
+
+    // ---------------------------------------------------------------------------------------
+    // Export
+    // ---------------------------------------------------------------------------------------
 
     public static SettingsTransfer.Document collect(Context context, boolean includeAppSettings,
             boolean includeNotifications, boolean includeNowBar, boolean includeAuthentication)
@@ -62,111 +71,6 @@ public final class SettingsTransferStore {
         }
     }
 
-    public static SettingsTransfer.Document read(Context context, Uri uri) throws Exception {
-        if (context == null || uri == null) {
-            throw new IllegalArgumentException("Import source is incomplete.");
-        }
-        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
-            if (input == null) {
-                throw new Exception("Could not open the import file for reading.");
-            }
-            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
-            byte[] chunk = new byte[4096];
-            int read;
-            while ((read = input.read(chunk)) >= 0) {
-                buffer.write(chunk, 0, read);
-                if (buffer.size() > 1024 * 1024) {
-                    throw new IllegalArgumentException("Transfer file is too large.");
-                }
-            }
-            return SettingsTransfer.parse(new String(buffer.toByteArray(), StandardCharsets.UTF_8));
-        }
-    }
-
-    public static ApplyResult apply(Context context, SettingsTransfer.Document document,
-            boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
-            boolean applyAuthentication) throws Exception {
-        if (context == null || document == null) {
-            throw new IllegalArgumentException("Import source is incomplete.");
-        }
-        Context app = context.getApplicationContext();
-        List<String> applied = new ArrayList<>();
-        boolean themeChanged = false;
-        boolean authImported = false;
-
-        if (applyAppSettings) {
-            if (!document.hasAppSettings()) {
-                throw new IllegalArgumentException("This file has no app settings to import.");
-            }
-            themeChanged = applyAppSettings(app, document.appSettings);
-            applied.add(SettingsTransfer.SECTION_APP_SETTINGS);
-        }
-        if (applyNotifications) {
-            if (!document.hasNotifications()) {
-                throw new IllegalArgumentException("This file has no notification settings to import.");
-            }
-            applyNotifications(app, document.notifications);
-            applied.add(SettingsTransfer.SECTION_NOTIFICATIONS);
-        }
-        if (applyNowBar) {
-            if (!document.hasNowBar()) {
-                throw new IllegalArgumentException("This file has no Now Bar settings to import.");
-            }
-            applyNowBar(app, document.nowBar);
-            applied.add(SettingsTransfer.SECTION_NOW_BAR);
-        }
-        if (applyAuthentication) {
-            if (!document.hasAuthentication()) {
-                throw new IllegalArgumentException("This file has no authentication to import.");
-            }
-            applyAuthentication(app, document.authentication);
-            applied.add(SettingsTransfer.SECTION_AUTHENTICATION);
-            authImported = true;
-        }
-        if (applied.isEmpty()) {
-            throw new IllegalArgumentException("Select at least one section to import.");
-        }
-
-        RefreshScheduler.schedulePeriodic(app);
-        ResetAlertScheduler.scheduleFromSnapshot(app, AppPreferences.loadSnapshot(app));
-        ResetNotificationManager.onResetCreditExpirySettingsChanged(app,
-                AppPreferences.loadResetCredits(app));
-        if (UpdatePreferences.automaticChecks(app)) {
-            ReleaseUpdateScheduler.ensureScheduled(app);
-        } else {
-            ReleaseUpdateScheduler.cancel(app);
-        }
-        // Only reconcile an active Now Bar when that section was imported. Unrelated
-        // imports must not stop a live monitor if a transient repost fails.
-        if (applyNowBar && NowBarManager.isActive(app) && !NowBarManager.repostActive(app)) {
-            NowBarManager.stop(app, false);
-        }
-        if (applyAppSettings) {
-            NowBarManager.onPaceSettingsChanged(app);
-        }
-        WidgetRenderer.updateAll(app);
-        PhoneWearSync.pushSettings(app);
-
-        if (authImported) {
-            new Thread(() -> {
-                try {
-                    UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
-                    RefreshScheduler.scheduleAtNextReset(app, snapshot);
-                    WidgetRenderer.updateAll(app);
-                } catch (Exception exception) {
-                    String message = exception.getMessage();
-                    if (message == null || message.trim().isEmpty()) {
-                        message = "Imported authentication could not refresh usage.";
-                    }
-                    AppPreferences.setLastError(app, message);
-                    WidgetRenderer.updateAll(app);
-                }
-            }, "codex-transfer-refresh").start();
-        }
-
-        return new ApplyResult(applied, themeChanged, authImported);
-    }
-
     private static JSONObject collectAppSettings(Context context) throws Exception {
         JSONObject json = new JSONObject();
         json.put("app_theme", AppPreferences.getAppTheme(context));
@@ -206,7 +110,7 @@ public final class SettingsTransferStore {
         json.put("reset_credit_increases",
                 ResetAlertPreferences.resetCreditIncreasesEnabled(context));
         json.put("reset_credit_expiry", ResetAlertPreferences.resetCreditExpiryEnabled(context));
-        json.put("reset_credit_expiry_lead_times", SettingsTransfer.leadTimesToJson(
+        json.put(KEY_LEAD_TIMES, SettingsTransfer.leadTimesToJson(
                 ResetAlertPreferences.getResetCreditExpiryLeadTimes(context)));
         return json;
     }
@@ -223,6 +127,87 @@ public final class SettingsTransferStore {
         return json;
     }
 
+    // ---------------------------------------------------------------------------------------
+    // Import
+    // ---------------------------------------------------------------------------------------
+
+    public static SettingsTransfer.Document read(Context context, Uri uri) throws Exception {
+        if (context == null || uri == null) {
+            throw new IllegalArgumentException("Import source is incomplete.");
+        }
+        try (InputStream input = context.getContentResolver().openInputStream(uri)) {
+            if (input == null) {
+                throw new Exception("Could not open the import file for reading.");
+            }
+            ByteArrayOutputStream buffer = new ByteArrayOutputStream();
+            byte[] chunk = new byte[READ_BUFFER_BYTES];
+            int read;
+            while ((read = input.read(chunk)) >= 0) {
+                buffer.write(chunk, 0, read);
+                if (buffer.size() > MAX_TRANSFER_BYTES) {
+                    throw new IllegalArgumentException("Transfer file is too large.");
+                }
+            }
+            return SettingsTransfer.parse(
+                    new String(buffer.toByteArray(), StandardCharsets.UTF_8));
+        }
+    }
+
+    /**
+     * Applies the selected sections of {@code document} in order, then reschedules everything
+     * that depends on them.
+     */
+    public static ApplyResult apply(Context context, SettingsTransfer.Document document,
+            boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
+            boolean applyAuthentication) throws Exception {
+        if (context == null || document == null) {
+            throw new IllegalArgumentException("Import source is incomplete.");
+        }
+        Context app = context.getApplicationContext();
+        List<String> applied = new ArrayList<>();
+        boolean themeChanged = false;
+
+        if (applyAppSettings) {
+            requireSection(document.hasAppSettings(),
+                    "This file has no app settings to import.");
+            themeChanged = applyAppSettings(app, document.appSettings);
+            applied.add(SettingsTransfer.SECTION_APP_SETTINGS);
+        }
+        if (applyNotifications) {
+            requireSection(document.hasNotifications(),
+                    "This file has no notification settings to import.");
+            applyNotifications(app, document.notifications);
+            applied.add(SettingsTransfer.SECTION_NOTIFICATIONS);
+        }
+        if (applyNowBar) {
+            requireSection(document.hasNowBar(), "This file has no Now Bar settings to import.");
+            applyNowBar(app, document.nowBar);
+            applied.add(SettingsTransfer.SECTION_NOW_BAR);
+        }
+        if (applyAuthentication) {
+            requireSection(document.hasAuthentication(),
+                    "This file has no authentication to import.");
+            applyAuthentication(app, document.authentication);
+            applied.add(SettingsTransfer.SECTION_AUTHENTICATION);
+        }
+        if (applied.isEmpty()) {
+            throw new IllegalArgumentException("Select at least one section to import.");
+        }
+
+        rescheduleAfterImport(app, applyAppSettings, applyNowBar);
+        if (applyAuthentication) {
+            refreshUsageInBackground(app);
+        }
+        return new ApplyResult(applied, themeChanged, applyAuthentication);
+    }
+
+    private static void requireSection(boolean present, String missingMessage) {
+        if (!present) {
+            throw new IllegalArgumentException(missingMessage);
+        }
+    }
+
+    /** Returns whether the app theme or Material You setting changed. */
     private static boolean applyAppSettings(Context context, JSONObject json) throws Exception {
         String previousTheme = AppPreferences.getAppTheme(context);
         boolean previousMaterialYou = AppPreferences.isMaterialYouEnabled(context);
@@ -262,13 +247,12 @@ public final class SettingsTransferStore {
                 UsagePacePreferences.isEnabled(context)));
         UsagePacePreferences.setSensitivity(context, json.optString("usage_pace_sensitivity",
                 UsagePacePreferences.getSensitivity(context)));
-        boolean automatic = json.optBoolean("automatic_update_checks",
-                UpdatePreferences.automaticChecks(context));
-        UpdatePreferences.setAutomaticChecks(context, automatic);
+        UpdatePreferences.setAutomaticChecks(context, json.optBoolean("automatic_update_checks",
+                UpdatePreferences.automaticChecks(context)));
         UpdatePreferences.setCheckIntervalHours(context, json.optInt("check_interval_hours",
                 UpdatePreferences.checkIntervalHours(context)));
-        UpdatePreferences.setNotifyUpdatesEnabled(context,
-                json.optBoolean("notify_updates", UpdatePreferences.notifyUpdatesEnabled(context)));
+        UpdatePreferences.setNotifyUpdatesEnabled(context, json.optBoolean("notify_updates",
+                UpdatePreferences.notifyUpdatesEnabled(context)));
         UpdatePreferences.setChannel(context, json.optString("update_channel",
                 UpdatePreferences.channel(context)));
         JSONObject widget = json.optJSONObject("default_widget");
@@ -284,8 +268,8 @@ public final class SettingsTransferStore {
     private static void applyNotifications(Context context, JSONObject json) throws Exception {
         // Fail closed before any preference writes: malformed lead times must leave
         // style/metric/threshold/enablement flags completely untouched.
-        final List<Long> leadTimes = json.has("reset_credit_expiry_lead_times")
-                ? SettingsTransfer.requireLeadTimes(json, "reset_credit_expiry_lead_times")
+        final List<Long> leadTimes = json.has(KEY_LEAD_TIMES)
+                ? SettingsTransfer.requireLeadTimes(json, KEY_LEAD_TIMES)
                 : null;
         ResetAlertPreferences.save(context,
                 json.optString("style", ResetAlertPreferences.getStyle(context)),
@@ -305,7 +289,8 @@ public final class SettingsTransferStore {
         }
         if (ResetAlertPreferences.enabled(context)) {
             ResetNotificationManager.ensureChannel(context);
-            ResetNotificationManager.onUsageUpdated(context, AppPreferences.loadSnapshot(context));
+            ResetNotificationManager.onUsageUpdated(context,
+                    AppPreferences.loadSnapshot(context));
             ResetNotificationManager.onResetCreditsUpdated(context,
                     AppPreferences.loadResetCredits(context));
         } else {
@@ -342,6 +327,48 @@ public final class SettingsTransferStore {
         AppPreferences.clearSnapshot(context);
         AppPreferences.setOAuthPending(context, false, "");
         AppPreferences.completeOnboarding(context);
+    }
+
+    /** Re-arms schedules, alerts, the Now Bar, widgets, and the watch for the new settings. */
+    private static void rescheduleAfterImport(Context app, boolean applyAppSettings,
+            boolean applyNowBar) {
+        RefreshScheduler.schedulePeriodic(app);
+        ResetAlertScheduler.scheduleFromSnapshot(app, AppPreferences.loadSnapshot(app));
+        ResetNotificationManager.onResetCreditExpirySettingsChanged(app,
+                AppPreferences.loadResetCredits(app));
+        if (UpdatePreferences.automaticChecks(app)) {
+            ReleaseUpdateScheduler.ensureScheduled(app);
+        } else {
+            ReleaseUpdateScheduler.cancel(app);
+        }
+        // Only reconcile an active Now Bar when that section was imported. Unrelated
+        // imports must not stop a live monitor if a transient repost fails.
+        if (applyNowBar && NowBarManager.isActive(app) && !NowBarManager.repostActive(app)) {
+            NowBarManager.stop(app, false);
+        }
+        if (applyAppSettings) {
+            NowBarManager.onPaceSettingsChanged(app);
+        }
+        WidgetRenderer.updateAll(app);
+        PhoneWearSync.pushSettings(app);
+    }
+
+    /** Fetches usage with newly imported credentials off the calling thread. */
+    private static void refreshUsageInBackground(Context app) {
+        new Thread(() -> {
+            try {
+                UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
+                RefreshScheduler.scheduleAtNextReset(app, snapshot);
+                WidgetRenderer.updateAll(app);
+            } catch (Exception exception) {
+                String message = exception.getMessage();
+                if (message == null || message.trim().isEmpty()) {
+                    message = "Imported authentication could not refresh usage.";
+                }
+                AppPreferences.setLastError(app, message);
+                WidgetRenderer.updateAll(app);
+            }
+        }, "codex-transfer-refresh").start();
     }
 
     public static final class ApplyResult {

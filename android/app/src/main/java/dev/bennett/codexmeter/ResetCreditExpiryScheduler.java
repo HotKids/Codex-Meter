@@ -6,7 +6,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.Uri;
-import android.os.Build;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,7 +25,9 @@ public final class ResetCreditExpiryScheduler {
 
     public static void scheduleFromSnapshot(Context context, ResetCreditsSnapshot snapshot) {
         Context app = appContext(context);
-        if (app == null) return;
+        if (app == null) {
+            return;
+        }
         cancelAll(app);
         if (snapshot == null || !SecureTokenStore.isSignedIn(app)
                 || !ResetAlertPreferences.enabled(app)
@@ -37,8 +38,11 @@ public final class ResetCreditExpiryScheduler {
                 snapshot.credits, ResetAlertPreferences.getResetCreditExpiryLeadTimes(app),
                 System.currentTimeMillis());
         AlarmManager manager = (AlarmManager) app.getSystemService(Context.ALARM_SERVICE);
-        if (manager == null) return;
+        if (manager == null) {
+            return;
+        }
         long now = System.currentTimeMillis();
+        // Each alarm is keyed by its intent data URI, which cancelAll() needs to find it again.
         Set<String> scheduledUris = new HashSet<>();
         for (ResetCreditExpiryReminder reminder : reminders) {
             if (ResetNotificationManager.isResetCreditExpiryReminderAnnounced(
@@ -49,27 +53,17 @@ public final class ResetCreditExpiryScheduler {
                     reminder.leadTimeMillis);
             PendingIntent pendingIntent = pending(app, data, reminder);
             long triggerAt = Math.max(now + DELIVERY_GRACE_MS, reminder.triggerAtMillis);
-            try {
-                if (Build.VERSION.SDK_INT < 31 || manager.canScheduleExactAlarms()) {
-                    manager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-                            triggerAt, pendingIntent);
-                } else {
-                    manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-                            triggerAt, pendingIntent);
-                }
-                scheduledUris.add(data.toString());
-            } catch (SecurityException exception) {
-                manager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP,
-                        triggerAt, pendingIntent);
-                scheduledUris.add(data.toString());
-            }
+            ResetAlertScheduler.setWakeUpAlarm(manager, triggerAt, pendingIntent);
+            scheduledUris.add(data.toString());
         }
         prefs(app).edit().putStringSet(KEY_ALARM_URIS, scheduledUris).apply();
     }
 
     public static void cancelAll(Context context) {
         Context app = appContext(context);
-        if (app == null) return;
+        if (app == null) {
+            return;
+        }
         AlarmManager manager = (AlarmManager) app.getSystemService(Context.ALARM_SERVICE);
         Set<String> uris = prefs(app).getStringSet(KEY_ALARM_URIS, null);
         if (manager != null && uris != null) {
@@ -120,7 +114,9 @@ public final class ResetCreditExpiryScheduler {
     }
 
     private static Context appContext(Context context) {
-        if (context == null) return null;
+        if (context == null) {
+            return null;
+        }
         Context applicationContext = context.getApplicationContext();
         return applicationContext == null ? context : applicationContext;
     }

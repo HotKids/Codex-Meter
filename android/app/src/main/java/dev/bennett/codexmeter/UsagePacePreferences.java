@@ -47,9 +47,19 @@ public final class UsagePacePreferences {
         if (!isEnabled(context) || snapshot == null) {
             return UsagePace.assess(null, 0L, nowMillis, getSensitivity(context));
         }
-        String kind = window == snapshot.weekly ? UsageHistory.WEEKLY
-                : window == snapshot.monthly ? UsageHistory.MONTHLY : UsageHistory.FIVE_HOUR;
-        return UsagePace.assess(window, AppPreferences.loadUsageHistory(context, kind),
+        return UsagePace.assess(window,
+                AppPreferences.loadUsageHistory(context, historyKind(snapshot, window)),
                 snapshot.fetchedAtMillis, nowMillis, getSensitivity(context));
+    }
+
+    /** Maps a window of {@code snapshot} to the usage history it is recorded in. */
+    private static String historyKind(UsageSnapshot snapshot, UsageWindow window) {
+        if (window == snapshot.weekly) {
+            return UsageHistory.WEEKLY;
+        }
+        if (window == snapshot.monthly) {
+            return UsageHistory.MONTHLY;
+        }
+        return UsageHistory.FIVE_HOUR;
     }
 }

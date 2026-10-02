@@ -6,11 +6,16 @@ import android.content.Context;
 import android.content.Intent;
 import android.os.Build;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Schedules an alarm at each usage window's reset for {@link ResetAlertReceiver}. */
 public final class ResetAlertScheduler {
-    private static final long DELIVERY_GRACE_MS = 3000;
     static final String EXTRA_METRIC = "metric";
     static final String EXTRA_RESET_AT = "reset_at";
+    /** Usage-window identifiers carried in {@link #EXTRA_METRIC}. */
+    static final String WINDOW_FIVE_HOUR = "five_hour";
+    static final String WINDOW_WEEKLY = "weekly";
+    static final String WINDOW_MONTHLY = "monthly";
+
+    private static final long DELIVERY_GRACE_MS = 3000;
     private static final int REQUEST_FIVE_HOUR = 74205;
     private static final int REQUEST_WEEKLY = 74207;
     private static final int REQUEST_MONTHLY = 74208;
@@ -18,62 +23,91 @@ public final class ResetAlertScheduler {
     private ResetAlertScheduler() {
     }
 
-    public static void scheduleFromSnapshot(Context context, UsageSnapshot usageSnapshot) {
-        Context contextAppContext = appContext(context);
-        if (contextAppContext != null) {
-            cancelAll(contextAppContext);
-            if (usageSnapshot != null && SecureTokenStore.isSignedIn(contextAppContext) && ResetAlertPreferences.enabled(contextAppContext)) {
-                String metric = ResetAlertPreferences.getMetric(contextAppContext);
-                if (!"weekly".equals(metric)) {
-                    scheduleWindow(contextAppContext, usageSnapshot.fiveHour, "five_hour", REQUEST_FIVE_HOUR);
-                }
-                if (!"five_hour".equals(metric)) {
-                    scheduleWindow(contextAppContext, usageSnapshot.weekly, "weekly", REQUEST_WEEKLY);
-                    scheduleWindow(contextAppContext, usageSnapshot.monthly, "monthly", REQUEST_MONTHLY);
-                }
-            }
+    public static void scheduleFromSnapshot(Context context, UsageSnapshot snapshot) {
+        Context app = appContext(context);
+        if (app == null) {
+            return;
+        }
+        cancelAll(app);
+        if (snapshot == null || !SecureTokenStore.isSignedIn(app)
+                || !ResetAlertPreferences.enabled(app)) {
+            return;
+        }
+        String metric = ResetAlertPreferences.getMetric(app);
+        if (!ResetAlertPreferences.METRIC_WEEKLY.equals(metric)) {
+            scheduleWindow(app, snapshot.fiveHour, WINDOW_FIVE_HOUR, REQUEST_FIVE_HOUR);
+        }
+        if (!ResetAlertPreferences.METRIC_FIVE_HOUR.equals(metric)) {
+            // The monthly free-tier window rides on the same long-cadence metric as weekly.
+            scheduleWindow(app, snapshot.weekly, WINDOW_WEEKLY, REQUEST_WEEKLY);
+            scheduleWindow(app, snapshot.monthly, WINDOW_MONTHLY, REQUEST_MONTHLY);
         }
     }
 
     public static void cancelAll(Context context) {
-        AlarmManager alarmManager;
-        Context contextAppContext = appContext(context);
-        if (contextAppContext != null && (alarmManager = (AlarmManager) contextAppContext.getSystemService(ResetAlertPreferences.STYLE_ALARM)) != null) {
-            alarmManager.cancel(pending(contextAppContext, "five_hour", 0L, REQUEST_FIVE_HOUR));
-            alarmManager.cancel(pending(contextAppContext, "weekly", 0L, REQUEST_WEEKLY));
-            alarmManager.cancel(pending(contextAppContext, "monthly", 0L, REQUEST_MONTHLY));
+        Context app = appContext(context);
+        if (app == null) {
+            return;
         }
+        AlarmManager alarmManager = (AlarmManager) app.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            return;
+        }
+        alarmManager.cancel(pending(app, WINDOW_FIVE_HOUR, 0L, REQUEST_FIVE_HOUR));
+        alarmManager.cancel(pending(app, WINDOW_WEEKLY, 0L, REQUEST_WEEKLY));
+        alarmManager.cancel(pending(app, WINDOW_MONTHLY, 0L, REQUEST_MONTHLY));
     }
 
     public static boolean canScheduleExact(Context context) {
         if (Build.VERSION.SDK_INT < 31) {
             return true;
         }
-        AlarmManager alarmManager = (AlarmManager) context.getSystemService(ResetAlertPreferences.STYLE_ALARM);
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         return alarmManager != null && alarmManager.canScheduleExactAlarms();
     }
 
-    private static void scheduleWindow(Context context, UsageWindow usageWindow, String str, int i) {
-        AlarmManager alarmManager;
-        if (usageWindow != null && usageWindow.resetAtMillis() > System.currentTimeMillis()) {
-            if ((alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE)) != null) {
-                long jResetAtMillis = usageWindow.resetAtMillis() + DELIVERY_GRACE_MS;
-                PendingIntent pendingIntentPending = pending(context, str, usageWindow.resetAtMillis(), i);
-                try {
-                    if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
-                        alarmManager.setExactAndAllowWhileIdle(0, jResetAtMillis, pendingIntentPending);
-                    } else {
-                        alarmManager.setAndAllowWhileIdle(0, jResetAtMillis, pendingIntentPending);
-                    }
-                } catch (SecurityException e) {
-                    alarmManager.setAndAllowWhileIdle(0, jResetAtMillis, pendingIntentPending);
-                }
+    /**
+     * Sets an RTC wake-up alarm that may fire while idle: exact when the app may schedule exact
+     * alarms, otherwise inexact.
+     */
+    static void setWakeUpAlarm(AlarmManager alarmManager, long triggerAtMillis,
+            PendingIntent operation) {
+        try {
+            if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
+                alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
+                        operation);
+            } else {
+                alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
+                        operation);
             }
+        } catch (SecurityException e) {
+            // Exact-alarm access can be revoked between the check and the call.
+            alarmManager.setAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis, operation);
         }
     }
 
-    private static PendingIntent pending(Context context, String str, long j, int i) {
-        return PendingIntent.getBroadcast(context, i, new Intent(context, (Class<?>) ResetAlertReceiver.class).setAction(AppConstants.ACTION_RESET_ALERT).putExtra(EXTRA_METRIC, str).putExtra(EXTRA_RESET_AT, j), 201326592);
+    private static void scheduleWindow(Context context, UsageWindow window, String windowId,
+            int requestCode) {
+        if (window == null || window.resetAtMillis() <= System.currentTimeMillis()) {
+            return;
+        }
+        AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
+        if (alarmManager == null) {
+            return;
+        }
+        long triggerAtMillis = window.resetAtMillis() + DELIVERY_GRACE_MS;
+        setWakeUpAlarm(alarmManager, triggerAtMillis,
+                pending(context, windowId, window.resetAtMillis(), requestCode));
+    }
+
+    private static PendingIntent pending(Context context, String windowId, long resetAtMillis,
+            int requestCode) {
+        Intent intent = new Intent(context, ResetAlertReceiver.class)
+                .setAction(AppConstants.ACTION_RESET_ALERT)
+                .putExtra(EXTRA_METRIC, windowId)
+                .putExtra(EXTRA_RESET_AT, resetAtMillis);
+        return PendingIntent.getBroadcast(context, requestCode, intent,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
     }
 
     private static Context appContext(Context context) {

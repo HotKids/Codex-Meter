@@ -12,6 +12,10 @@ public final class RefreshEngagement {
     private static final long HALF_LIFE_MS = TimeUnit.HOURS.toMillis(6);
     private static final long OPEN_DEBOUNCE_MS = TimeUnit.MINUTES.toMillis(10);
     private static final long FOREGROUND_UNIT_MS = TimeUnit.MINUTES.toMillis(10);
+    /** Score added per app open (opens within {@link #OPEN_DEBOUNCE_MS} count once). */
+    private static final double OPEN_SCORE = 1.0d;
+    /** Cap on the score one foreground session can add, one point per foreground unit. */
+    private static final double MAX_FOREGROUND_SCORE = 6.0d;
     private static final String KEY_FOREGROUND_AT = "foreground_at";
     private static final String KEY_LAST_OPEN_AT = "last_open_at";
     private static final String KEY_SCORE = "score";
@@ -31,7 +35,7 @@ public final class RefreshEngagement {
         long lastOpen = prefs.getLong(KEY_LAST_OPEN_AT, 0L);
         SharedPreferences.Editor edit = prefs.edit();
         if (lastOpen <= 0L || nowMillis - lastOpen >= OPEN_DEBOUNCE_MS) {
-            score += 1.0d;
+            score += OPEN_SCORE;
             edit.putLong(KEY_LAST_OPEN_AT, nowMillis);
         }
         edit.putLong(KEY_FOREGROUND_AT, nowMillis)
@@ -46,11 +50,7 @@ public final class RefreshEngagement {
 
     static synchronized void onBackground(Context context, long nowMillis) {
         SharedPreferences prefs = prefs(context);
-        long foregroundAt = prefs.getLong(KEY_FOREGROUND_AT, 0L);
-        double score = decayedScore(prefs, nowMillis);
-        if (foregroundAt > 0L && nowMillis > foregroundAt) {
-            score += Math.min(6.0d, (double) (nowMillis - foregroundAt) / FOREGROUND_UNIT_MS);
-        }
+        double score = decayedScore(prefs, nowMillis) + foregroundScore(prefs, nowMillis);
         prefs.edit()
                 .remove(KEY_FOREGROUND_AT)
                 .putLong(KEY_SCORE_AT, nowMillis)
@@ -60,12 +60,18 @@ public final class RefreshEngagement {
 
     public static synchronized double score(Context context, long nowMillis) {
         SharedPreferences prefs = prefs(context);
-        double score = decayedScore(prefs, nowMillis);
-        long foregroundAt = prefs.getLong(KEY_FOREGROUND_AT, 0L);
-        if (foregroundAt > 0L && nowMillis > foregroundAt) {
-            score += Math.min(6.0d, (double) (nowMillis - foregroundAt) / FOREGROUND_UNIT_MS);
-        }
+        double score = decayedScore(prefs, nowMillis) + foregroundScore(prefs, nowMillis);
         return Math.max(0.0d, score);
+    }
+
+    /** Credit for the foreground session in progress, if any. */
+    private static double foregroundScore(SharedPreferences prefs, long nowMillis) {
+        long foregroundAt = prefs.getLong(KEY_FOREGROUND_AT, 0L);
+        if (foregroundAt <= 0L || nowMillis <= foregroundAt) {
+            return 0.0d;
+        }
+        return Math.min(MAX_FOREGROUND_SCORE,
+                (double) (nowMillis - foregroundAt) / FOREGROUND_UNIT_MS);
     }
 
     private static double decayedScore(SharedPreferences prefs, long nowMillis) {
@@ -73,7 +79,9 @@ public final class RefreshEngagement {
                 KEY_SCORE, Double.doubleToRawLongBits(0.0d)));
         long scoreAt = prefs.getLong(KEY_SCORE_AT, nowMillis);
         long elapsed = Math.max(0L, nowMillis - scoreAt);
-        if (!Double.isFinite(stored) || stored <= 0.0d) return 0.0d;
+        if (!Double.isFinite(stored) || stored <= 0.0d) {
+            return 0.0d;
+        }
         return stored * Math.pow(0.5d, (double) elapsed / HALF_LIFE_MS);
     }
 
