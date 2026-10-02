@@ -86,7 +86,10 @@ final class SamsungLockGraphics {
         canvas.scale(scale, scale);
         Paint paint = newPaint();
         if (!signedIn) {
-            drawSignIn(canvas, paint, width, height);
+            if (context != null) {
+                drawSignIn(canvas, paint, width, height,
+                        context.getString(R.string.dashboard_lock_sign_in));
+            }
             return bitmap;
         }
         float dialScale = Math.min(1.0f, Math.min(height / DIAL_HEIGHT, width / DIAL_WIDTH));
@@ -118,7 +121,8 @@ final class SamsungLockGraphics {
         return new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG | Paint.FILTER_BITMAP_FLAG);
     }
 
-    private static void drawSignIn(Canvas canvas, Paint paint, int width, int height) {
+    private static void drawSignIn(Canvas canvas, Paint paint, int width, int height,
+            String text) {
         paint.setStyle(Paint.Style.FILL);
         paint.setTextAlign(Paint.Align.CENTER);
         paint.setColor(FOREGROUND);
@@ -126,7 +130,7 @@ final class SamsungLockGraphics {
         paint.setTextSize(SIGN_IN_TEXT_SIZE);
         Paint.FontMetrics metrics = paint.getFontMetrics();
         float baseline = (height / 2.0f) - ((metrics.ascent + metrics.descent) / 2.0f);
-        canvas.drawText("SIGN IN", width / 2.0f, baseline, paint);
+        canvas.drawText(text, width / 2.0f, baseline, paint);
     }
 
     /** Draws a dial whose bounding box is centered on {@code cx} and starts at {@code top}. */

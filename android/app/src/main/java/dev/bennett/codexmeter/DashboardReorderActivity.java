@@ -57,15 +57,13 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(state);
         this.dark = Ui.isDark(this);
-        LinearLayout content = Ui.installPage(this, "Edit dashboard", true).content;
+        LinearLayout content =
+                Ui.installPage(this, getString(R.string.dashboard_edit_title), true).content;
         // Pull-to-refresh would swallow downward drag gestures while rearranging rows.
         SwipeRefreshLayout refresh = findViewById(R.id.dashboard_refresh);
         refresh.setEnabled(false);
 
-        TextView hint = Ui.text(this,
-                "Drag the handles to arrange your usage cards and use the switches to hide the "
-                        + "ones you don't need. Model-specific limits such as GPT-5.3-Codex-Spark "
-                        + "appear here automatically once OpenAI reports them for your account.",
+        TextView hint = Ui.text(this, getString(R.string.dashboard_edit_hint),
                 14.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams hintParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -84,12 +82,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         listCard.addView(recycler, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         content.addView(listCard);
 
-        TextView note = Ui.text(this,
-                "Changes are saved instantly. Usage-credit balance and reset credits stay hidden "
-                        + "when they have nothing to show (zero or below), and 5-hour, weekly, "
-                        + "monthly, and usage-history cards appear only while OpenAI reports data "
-                        + "for them — no matter where each card is placed or whether its switch "
-                        + "is on.",
+        TextView note = Ui.text(this, getString(R.string.dashboard_edit_note),
                 12.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams noteParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -110,46 +103,10 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         List<String> ordered = DashboardSections.resolveOrder(
                 AppPreferences.getDashboardOrder(this), DashboardSections.defaultOrder(limits));
         for (String key : ordered) {
-            items.add(sectionItem(key, limits));
+            items.add(new SectionItem(key,
+                    SharedLabels.dashboardSectionTitle(this, key, limits),
+                    SharedLabels.dashboardSectionSummary(this, key)));
         }
-    }
-
-    private static SectionItem sectionItem(String key, List<UsageLimit> limits) {
-        if (DashboardSections.FIVE_HOUR.equals(key)) {
-            return new SectionItem(key, "5-hour limit", "Rolling 5-hour Codex window");
-        }
-        if (DashboardSections.WEEKLY.equals(key)) {
-            return new SectionItem(key, "Weekly limit", "Rolling 7-day Codex window");
-        }
-        if (DashboardSections.MONTHLY.equals(key)) {
-            return new SectionItem(key, "Monthly limit",
-                    "Rolling ~30-day Codex window (free tier)");
-        }
-        if (DashboardSections.USAGE_CREDITS.equals(key)) {
-            return new SectionItem(key, "Usage-credit balance",
-                    "Hidden automatically at a zero or negative balance");
-        }
-        if (DashboardSections.USAGE_HISTORY.equals(key)) {
-            return new SectionItem(key, "Usage history",
-                    "Shown only when a 5-hour or weekly window is available");
-        }
-        if (DashboardSections.RESET_CREDITS.equals(key)) {
-            return new SectionItem(key, "Reset credits",
-                    "Hidden automatically when no resets are available");
-        }
-        UsageLimit match = findLimit(key, limits);
-        return new SectionItem(key,
-                match == null ? "Additional limit" : match.displayName(),
-                "Model-specific limit · detected automatically");
-    }
-
-    private static UsageLimit findLimit(String key, List<UsageLimit> limits) {
-        for (UsageLimit limit : limits) {
-            if (limit != null && DashboardSections.limitKey(limit).equals(key)) {
-                return limit;
-            }
-        }
-        return null;
     }
 
     /**
@@ -239,7 +196,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
             row.addView(labels, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
 
             SwitchCompat toggle = new SwitchCompat(context);
-            toggle.setContentDescription("Show on dashboard");
+            toggle.setContentDescription(context.getString(R.string.dashboard_edit_show));
             LinearLayout.LayoutParams toggleParams =
                     new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
             toggleParams.setMargins(Ui.dp(context, 8), 0, Ui.dp(context, 4), 0);
@@ -248,7 +205,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
             ImageView handle = new ImageView(context);
             handle.setImageResource(R.drawable.ic_oui_reorder);
             handle.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(dark)));
-            handle.setContentDescription("Reorder");
+            handle.setContentDescription(context.getString(R.string.dashboard_edit_reorder));
             int pad = Ui.dp(context, 12);
             handle.setPadding(pad, pad, pad, pad);
             row.addView(handle, new LinearLayout.LayoutParams(Ui.dp(context, 48),

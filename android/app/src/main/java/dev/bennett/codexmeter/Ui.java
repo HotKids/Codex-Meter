@@ -539,7 +539,7 @@ public final class Ui {
 
     /** One UI circular indeterminate spinner, centered below the rounded content corners. */
     public static SeslProgressBar indeterminateLoading(Context context) {
-        return indeterminateLoading(context, "Loading");
+        return indeterminateLoading(context, context.getString(R.string.dashboard_loading));
     }
 
     /**
