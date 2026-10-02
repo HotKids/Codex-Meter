@@ -10,6 +10,7 @@ import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.drawable.Icon;
 import android.os.Build;
@@ -37,7 +38,6 @@ public final class NowBarManager {
     private static final String EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing";
     private static final String SAMSUNG_ONGOING_PREFIX = "android.ongoingActivityNoti.";
     private static final String TAG = "CodexNowBar";
-    private static final String LABEL_FIVE_HOUR = "5-hour";
 
     // Session state.
     private static final String PREFS = "codex_meter_now_bar_v1";
@@ -459,7 +459,7 @@ public final class NowBarManager {
             return false;
         }
         try {
-            createChannel(manager);
+            createChannel(context, manager);
         } catch (RuntimeException exception) {
             DiagnosticLog.error(context, "now_bar", "channel_create_failed", exception);
             Log.w(TAG, "Could not create live monitor notification channel", exception);
@@ -555,7 +555,7 @@ public final class NowBarManager {
         Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
                 // Official Codex mark (white, no opaque square) — system tints status-bar icons.
                 .setSmallIcon(R.drawable.ic_notification)
-                .setContentTitle("Codex usage")
+                .setContentTitle(context.getString(R.string.alerts_now_bar_title))
                 .setContentText(text)
                 .setContentIntent(contentIntent)
                 .setDeleteIntent(stopIntent)
@@ -566,10 +566,12 @@ public final class NowBarManager {
                 .setColor(accentColor(content.accelerated))
                 .setShowWhen(false)
                 .addAction(new Notification.Action.Builder(
-                        stopActionIcon, "Stop", stopIntent).build());
+                        stopActionIcon, context.getString(R.string.alerts_now_bar_stop),
+                        stopIntent).build());
         if (!preview) {
             builder.addAction(new Notification.Action.Builder(
-                    refreshActionIcon, "Refresh", refreshIntent).build());
+                    refreshActionIcon, context.getString(R.string.alerts_now_bar_refresh),
+                    refreshIntent).build());
         }
         return builder;
     }
@@ -583,21 +585,22 @@ public final class NowBarManager {
         Icon chipIcon = Icon.createWithResource(context, R.drawable.ic_codex_logo_on_accent);
         Icon nowBarIcon = themeAdaptiveCodexLogo(context);
         Icon progressDot = Icon.createWithResource(context, R.drawable.ic_now_bar_progress_dot);
-        String chipLabel = content.weeklyFocus ? content.longLabel : LABEL_FIVE_HOUR;
+        String chipLabel = content.weeklyFocus ? content.longLabel : content.fiveHourLabel;
         String secondaryInfo = content.accelerated && !content.estimate.isEmpty()
-                ? content.estimate : availableWindowsText(content);
+                ? content.estimate : availableWindowsText(context, content);
 
         Bundle extras = new Bundle();
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "style", 1);
         extras.putParcelable(SAMSUNG_ONGOING_PREFIX + "chipIcon", chipIcon);
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "chipBgColor", accentColor(content.accelerated));
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "chipExpandedText",
-                NowBarCopy.chipExpandedText(chipLabel, content.progressWindow,
+                NowBarText.chipExpandedText(content.strings, chipLabel, content.progressWindow,
                         content.observedAt, content.now));
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "primaryInfo",
                 content.fiveHourText + " · " + content.longWindowText);
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "secondaryInfo", secondaryInfo);
-        extras.putString(SAMSUNG_ONGOING_PREFIX + "description", "Codex usage limits");
+        extras.putString(SAMSUNG_ONGOING_PREFIX + "description",
+                context.getString(R.string.alerts_now_bar_samsung_description));
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "progress", content.used);
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "progressMax", PROGRESS_MAX);
         extras.putParcelable(SAMSUNG_ONGOING_PREFIX + "progressSegments.icon", progressDot);
@@ -607,7 +610,9 @@ public final class NowBarManager {
                 content.longWindowText);
         extras.putString(SAMSUNG_ONGOING_PREFIX + "nowbarIconType", "progress");
         builder.addExtras(extras)
-                .setSubText(preview ? "Now Bar preview" : "Until the next usage reset")
+                .setSubText(context.getString(preview
+                        ? R.string.alerts_now_bar_preview_subtext
+                        : R.string.alerts_now_bar_until_reset_subtext))
                 .setProgress(PROGRESS_MAX, content.used, false)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setShowWhen(true)
@@ -617,17 +622,19 @@ public final class NowBarManager {
                 .setTimeoutAfter(Math.max(1L, until - content.now));
     }
 
-    private static String availableWindowsText(MonitorContent content) {
+    private static String availableWindowsText(Context context, MonitorContent content) {
         if (content.fiveHour != null && content.longWindow != null) {
-            return "Both usage windows";
+            return context.getString(R.string.alerts_now_bar_both_windows);
         }
         if (content.fiveHour != null) {
-            return "5-hour window";
+            return context.getString(R.string.alerts_now_bar_five_hour_window);
         }
         if (content.longWindow != null) {
-            return content.longLabel + " window";
+            return context.getString(content.longIsMonthly
+                    ? R.string.alerts_now_bar_monthly_window
+                    : R.string.alerts_now_bar_weekly_window);
         }
-        return "Usage window unavailable";
+        return context.getString(R.string.alerts_now_bar_window_unavailable);
     }
 
     private static void logPosting(Context context, Notification notification,
@@ -672,11 +679,13 @@ public final class NowBarManager {
                 : R.drawable.ic_codex_logo;
     }
 
-    private static void createChannel(NotificationManager manager) {
+    /** Creates (or renames, for the current locale) the live monitor channel. */
+    private static void createChannel(Context context, NotificationManager manager) {
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
-                "Codex live monitor", NotificationManager.IMPORTANCE_DEFAULT);
+                context.getString(R.string.alerts_now_bar_channel_name),
+                NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription(
-                "Codex allowance monitor that ends at the next reset; may start from Settings or when remaining usage hits your threshold");
+                context.getString(R.string.alerts_now_bar_channel_description));
         channel.setSound(null, null);
         channel.enableVibration(false);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);
@@ -874,12 +883,15 @@ public final class NowBarManager {
 
     /** Usage values and copy for one post of the monitor notification. */
     private static final class MonitorContent {
+        final NowBarText.Strings strings;
         final long now;
         /** Remote observation time that anchors reset countdowns. */
         final long observedAt;
         final UsageWindow fiveHour;
         /** The long-cadence window: weekly, or monthly on the Free tier. */
         final UsageWindow longWindow;
+        final boolean longIsMonthly;
+        final String fiveHourLabel;
         final String longLabel;
         final String focus;
         final boolean weeklyFocus;
@@ -894,10 +906,13 @@ public final class NowBarManager {
         final String focusCritical;
 
         MonitorContent(Context context, UsageSnapshot snapshot, boolean preview) {
+            strings = new ResourceStrings(context);
             now = System.currentTimeMillis();
             // Weekly slot carries the long-cadence window; on the Free tier that is monthly.
-            boolean longIsMonthly = snapshot != null && snapshot.longWindowIsMonthly();
-            longLabel = longIsMonthly ? "Monthly" : "Weekly";
+            longIsMonthly = snapshot != null && snapshot.longWindowIsMonthly();
+            fiveHourLabel = context.getString(R.string.alerts_window_five_hour);
+            longLabel = context.getString(longIsMonthly
+                    ? R.string.alerts_window_monthly : R.string.alerts_window_weekly);
             UsageWindow snapshotFiveHour = snapshot == null ? null : snapshot.fiveHour;
             UsageWindow snapshotLongWindow = snapshot == null ? null : snapshot.longWindow();
             if (preview) {
@@ -920,11 +935,100 @@ public final class NowBarManager {
             // Preview snapshots invent their own windows without a remote observation time;
             // live monitors must use fetchedAt so reset_after_seconds stays anchored.
             observedAt = preview || snapshot == null ? now : snapshot.fetchedAtMillis;
-            fiveHourText = NowBarCopy.limitText(LABEL_FIVE_HOUR, fiveHour, observedAt, now);
-            longWindowText = NowBarCopy.limitText(longLabel, longWindow, observedAt, now);
-            String focusPrefix = weeklyFocus ? (longIsMonthly ? "M " : "W ") : "";
-            focusCritical = NowBarCopy.focusCriticalText(focusPrefix, progressWindow,
+            fiveHourText = NowBarText.limitText(strings, fiveHourLabel, fiveHour, observedAt,
+                    now);
+            longWindowText = NowBarText.limitText(strings, longLabel, longWindow, observedAt,
+                    now);
+            String focusMarker = weeklyFocus
+                    ? context.getString(longIsMonthly
+                            ? R.string.alerts_now_bar_marker_monthly
+                            : R.string.alerts_now_bar_marker_weekly)
+                    : null;
+            focusCritical = NowBarText.focusCriticalText(strings, focusMarker, progressWindow,
                     observedAt, now);
+        }
+    }
+
+    /**
+     * {@link NowBarText} copy from string resources. In English it renders exactly like the
+     * shared {@link NowBarCopy}, which the Wear OS companion still uses.
+     */
+    private static final class ResourceStrings implements NowBarText.Strings {
+        private final Resources resources;
+
+        ResourceStrings(Context context) {
+            this.resources = context.getResources();
+        }
+
+        @Override
+        public String fiveHourLabel() {
+            return resources.getString(R.string.alerts_window_five_hour);
+        }
+
+        @Override
+        public String percent(int percent) {
+            return resources.getString(R.string.alerts_now_bar_percent, percent);
+        }
+
+        @Override
+        public String daysHours(long days, long hours) {
+            return resources.getString(R.string.alerts_now_bar_duration_days_hours, days, hours);
+        }
+
+        @Override
+        public String days(long days) {
+            return resources.getString(R.string.alerts_now_bar_duration_days, days);
+        }
+
+        @Override
+        public String hoursMinutes(long hours, long minutes) {
+            return resources.getString(R.string.alerts_now_bar_duration_hours_minutes,
+                    hours, minutes);
+        }
+
+        @Override
+        public String hours(long hours) {
+            return resources.getString(R.string.alerts_now_bar_duration_hours, hours);
+        }
+
+        @Override
+        public String minutes(long minutes) {
+            return resources.getString(R.string.alerts_now_bar_duration_minutes, minutes);
+        }
+
+        @Override
+        public String focusUnavailable() {
+            return resources.getString(R.string.alerts_now_bar_focus_unavailable);
+        }
+
+        @Override
+        public String focusMarked(String marker, String value) {
+            return resources.getString(R.string.alerts_now_bar_focus_marked, marker, value);
+        }
+
+        @Override
+        public String chip(String windowLabel, String value) {
+            return resources.getString(R.string.alerts_now_bar_chip, windowLabel, value);
+        }
+
+        @Override
+        public String chipUnavailable(String windowLabel) {
+            return resources.getString(R.string.alerts_now_bar_chip_unavailable, windowLabel);
+        }
+
+        @Override
+        public String limitLeft(String label, int percent) {
+            return resources.getString(R.string.alerts_now_bar_limit_left, label, percent);
+        }
+
+        @Override
+        public String limitResetsIn(String label, String duration) {
+            return resources.getString(R.string.alerts_now_bar_limit_resets_in, label, duration);
+        }
+
+        @Override
+        public String limitUnavailable(String label) {
+            return resources.getString(R.string.alerts_now_bar_limit_unavailable, label);
         }
     }
 

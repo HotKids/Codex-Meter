@@ -55,6 +55,7 @@ javac -encoding UTF-8 -cp "$JSON_JAR" -d "$OUT" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/RateLimitResetCredit.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditsSnapshot.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryReminder.java" \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarText.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/Pkce.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/JwtClaims.java" \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetOptions.java" \
@@ -245,10 +246,18 @@ grep -q 'ic_oui_credit_card_outline' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 ! grep -q 'Ui.separator' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
-grep -Fq 'Ui.separator(this, "Available credits")' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
-grep -Fq 'Ui.separator(this, "Credit expirations")' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
+python3 - <<PY
+import re
+from pathlib import Path
+root = Path(r"""$ROOT""")
+text = (root / "app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java").read_text()
+strings = (root / "app/src/main/res/values/strings_alerts.xml").read_text()
+for key, title in (("alerts_reset_credits_section_available", "Available credits"),
+                   ("alerts_reset_credits_section_expirations", "Credit expirations")):
+    assert re.search(r"Ui\.separator\(this,\s*getString\(R\.string\.%s\)\)" % key, text), key
+    assert '<string name="%s">%s</string>' % (key, title) in strings, title
+print("Reset credit page keeps its One UI section separators.")
+PY
 ! grep -q 'ic_reset_credit_details' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 # Reset credits is an orderable dashboard section, not a card pinned below the dashboard.
@@ -456,8 +465,10 @@ test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryReceive
 grep -q 'ResetCreditExpiryReceiver' "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'reset_credit_expiry_times_ui' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNotificationsFragment.java"
-grep -q '"Use reset", useReset' \
+grep -q 'getString(R.string.alerts_use_reset_action), useReset' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetNotificationManager.java"
+grep -Fq '<string name="alerts_use_reset_action">Use reset</string>' \
+  "$ROOT/app/src/main/res/values/strings_alerts.xml"
 grep -q 'EXTRA_PROMPT_USE_RESET' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditActivity.java"
 test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
@@ -467,12 +478,15 @@ test -f "$ROOT/shared/src/main/java/dev/bennett/codexmeter/NowBarAutoStart.java"
 test -f "$ROOT/shared/src/main/java/dev/bennett/codexmeter/NowBarDisplayMode.java"
 test -f "$ROOT/shared/src/main/java/dev/bennett/codexmeter/NowBarPercentMode.java"
 test -f "$ROOT/shared/src/main/java/dev/bennett/codexmeter/NowBarCopy.java"
-grep -q 'NowBarCopy.focusCriticalText' \
+# The phone renders NowBarCopy's rules through the localizable NowBarText; ParserSelfTest checks
+# that its English resource copy matches NowBarCopy exactly.
+grep -q 'NowBarText.focusCriticalText' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
-grep -q 'NowBarCopy.limitText' \
+grep -q 'NowBarText.limitText' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
-grep -q 'NowBarCopy.chipExpandedText' \
+grep -q 'NowBarText.chipExpandedText' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
+grep -q 'testNowBarTextMatchesNowBarCopy' "$ROOT/tests/ParserSelfTest.java"
 grep -q 'NowBarCopy.focusCriticalText' \
   "$ROOT/wear/src/main/java/dev/bennett/codexmeter/WearOngoingMonitor.java"
 grep -q 'NowBarCopy.wearLimitText' \
@@ -595,8 +609,10 @@ grep -q 'applyPercentModeChange' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 grep -q 'KEY_FOCUS_METRIC' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
-grep -q 'Live notifications for all apps' \
+grep -q 'R.string.alerts_now_bar_samsung_help)' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
+grep -q 'Live notifications for all apps' \
+  "$ROOT/app/src/main/res/values/strings_alerts.xml"
 
 grep -R -q '<Chronometer' "$ROOT/app/src/main/res/layout/widget_lock_"*.xml
 grep -q 'setChronometerCountDown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SamsungLockWidgetSupport.java"

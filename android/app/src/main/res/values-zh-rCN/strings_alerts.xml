@@ -1,0 +1,224 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- 提醒：用量与重置券通知、重置券页面、Now Bar 实时监控，以及“通知”和“Now Bar”设置页。 -->
+<resources>
+    <string name="alerts_window_five_hour">5 小时</string>
+    <string name="alerts_window_weekly">每周</string>
+    <string name="alerts_window_monthly">每月</string>
+
+    <string name="alerts_add">添加</string>
+    <string name="alerts_cancel">取消</string>
+    <string name="alerts_done">完成</string>
+
+    <string name="alerts_channel_alerts_name">Codex 用量提醒</string>
+    <string name="alerts_channel_alarms_name">Codex 用量闹铃</string>
+    <string name="alerts_channel_description">额度不足、定时重置、额度提前恢复和重置券</string>
+
+    <string name="alerts_reset_five_hour_title">Codex 5 小时额度已重置</string>
+    <string name="alerts_reset_five_hour_text">你的 5 小时额度应已恢复，正在刷新用量。</string>
+    <string name="alerts_reset_weekly_title">Codex 每周额度已重置</string>
+    <string name="alerts_reset_weekly_text">你的每周额度应已恢复，正在刷新用量。</string>
+    <string name="alerts_reset_monthly_title">Codex 每月额度已重置</string>
+    <string name="alerts_reset_monthly_text">你的每月额度应已恢复，正在刷新用量。</string>
+
+    <string name="alerts_low_five_hour_title">Codex 5 小时额度不足</string>
+    <string name="alerts_low_five_hour_text">当前 5 小时周期剩余 %1$d%%。</string>
+    <string name="alerts_low_weekly_title">Codex 每周额度不足</string>
+    <string name="alerts_low_weekly_text">当前每周周期剩余 %1$d%%。</string>
+    <string name="alerts_low_monthly_title">Codex 每月额度不足</string>
+    <string name="alerts_low_monthly_text">当前每月周期剩余 %1$d%%。</string>
+
+    <string name="alerts_refill_multiple_title">Codex 额度提前恢复</string>
+    <string name="alerts_refill_multiple_text" formatted="false">你的 Codex 额度在计划重置前恢复到了 100%。尽情使用这份额外额度吧。</string>
+    <string name="alerts_refill_five_hour_title">Codex 5 小时额度提前恢复</string>
+    <string name="alerts_refill_five_hour_text" formatted="false">你的 5 小时额度在计划重置前恢复到了 100%。尽情使用这份额外额度吧。</string>
+    <string name="alerts_refill_weekly_title">Codex 每周额度提前恢复</string>
+    <string name="alerts_refill_weekly_text" formatted="false">你的每周额度在计划重置前恢复到了 100%。尽情使用这份额外额度吧。</string>
+    <string name="alerts_refill_monthly_title">Codex 每月额度提前恢复</string>
+    <string name="alerts_refill_monthly_text" formatted="false">你的每月额度在计划重置前恢复到了 100%。尽情使用这份额外额度吧。</string>
+
+    <plurals name="alerts_reset_credits_added_title">
+        <item quantity="other">新增 Codex 重置券</item>
+    </plurals>
+    <plurals name="alerts_reset_credits_added_text">
+        <item quantity="other">新增 %1$d 张 Codex 重置券，你现在共有 %2$d 张。</item>
+    </plurals>
+
+    <string name="alerts_reset_credit_expiry_title">Codex 重置券即将到期</string>
+    <string name="alerts_reset_credit_expiry_text">有一张重置券将于%1$s到期（%2$s）。请在到期前使用。</string>
+    <string name="alerts_use_reset_action">使用重置券</string>
+
+    <string name="alerts_test_title">Codex Meter 通知工作正常</string>
+    <string name="alerts_test_text">额度不足、定时重置、额度提前恢复和重置券提醒均已就绪。</string>
+
+    <string name="alerts_reset_credits_page_title">Codex 重置</string>
+    <string name="alerts_reset_credits_section_available">可用重置券</string>
+    <string name="alerts_reset_credits_section_expirations">重置券到期时间</string>
+    <string name="alerts_reset_credits_none_available">暂无可用重置券</string>
+    <plurals name="alerts_reset_credits_available">
+        <item quantity="other">%d 张可用重置券</item>
+    </plurals>
+    <string name="alerts_reset_credit_expiry_time">%1$s · %2$s</string>
+    <string name="alerts_reset_credits_next_expires">最早到期：%1$s</string>
+    <string name="alerts_reset_credits_openai_chooses">OpenAI 将选择一张符合条件的重置券</string>
+    <string name="alerts_reset_credits_none_summary">当前没有可用的重置券</string>
+    <string name="alerts_reset_credits_expiration_pending">暂时无法获取到期详情</string>
+    <plurals name="alerts_reset_credits_missing_details">
+        <item quantity="other">另有 %d 张重置券暂无到期详情</item>
+    </plurals>
+    <string name="alerts_reset_credits_more">更多重置券</string>
+    <string name="alerts_reset_credits_none_title">暂无可用重置券</string>
+    <string name="alerts_reset_credits_earn">可在 ChatGPT Codex 中获得重置券</string>
+    <string name="alerts_reset_credit_numbered">重置券 %1$d</string>
+    <string name="alerts_reset_credit_next">%1$s · 最先到期</string>
+    <string name="alerts_reset_credit_expiration_unavailable">暂无到期时间</string>
+    <string name="alerts_reset_credits_use_one">使用 1 张重置券</string>
+    <string name="alerts_reset_credits_confirm_title">使用一张 Codex 重置券？</string>
+    <string name="alerts_reset_credits_confirm_message">将使用最早到期的可用重置券。此操作无法撤销。</string>
+    <string name="alerts_reset_credits_applying">正在使用…</string>
+    <string name="alerts_reset_credits_apply_failed">无法使用重置券。</string>
+
+    <plurals name="alerts_reset_result_windows">
+        <item quantity="other">已重置 %d 个用量周期。</item>
+    </plurals>
+    <string name="alerts_reset_result_applied">已重置 Codex 用量。</string>
+    <string name="alerts_reset_result_with_warning">%1$s%2$s</string>
+    <string name="alerts_reset_result_nothing">目前没有已用的 Codex 额度需要重置。</string>
+    <string name="alerts_reset_result_no_credit">当前没有可用的重置券。</string>
+    <string name="alerts_reset_result_already_redeemed">该重置请求已兑换过。</string>
+    <string name="alerts_reset_result_unknown">OpenAI 返回了无法识别的重置结果。</string>
+
+    <string name="alerts_now_bar_channel_name">Codex 实时监控</string>
+    <string name="alerts_now_bar_channel_description">监控 Codex 额度直到下次重置；可在设置中启动，也可在剩余额度达到阈值时自动启动</string>
+    <string name="alerts_now_bar_title">Codex 用量</string>
+    <string name="alerts_now_bar_stop">停止</string>
+    <string name="alerts_now_bar_refresh">刷新</string>
+    <string name="alerts_now_bar_samsung_description">Codex 用量额度</string>
+    <string name="alerts_now_bar_preview_subtext">Now Bar 预览</string>
+    <string name="alerts_now_bar_until_reset_subtext">直到下次用量重置</string>
+    <string name="alerts_now_bar_both_windows">两个用量周期</string>
+    <string name="alerts_now_bar_five_hour_window">5 小时周期</string>
+    <string name="alerts_now_bar_weekly_window">每周周期</string>
+    <string name="alerts_now_bar_monthly_window">每月周期</string>
+    <string name="alerts_now_bar_window_unavailable">暂无用量周期</string>
+    <string name="alerts_now_bar_marker_weekly">周</string>
+    <string name="alerts_now_bar_marker_monthly">月</string>
+
+    <string name="alerts_now_bar_percent">%1$d%%</string>
+    <string name="alerts_now_bar_duration_days_hours">%1$d天%2$d小时</string>
+    <string name="alerts_now_bar_duration_days">%1$d天</string>
+    <string name="alerts_now_bar_duration_hours_minutes">%1$d小时%2$d分</string>
+    <string name="alerts_now_bar_duration_hours">%1$d小时</string>
+    <string name="alerts_now_bar_duration_minutes">%1$d分钟</string>
+    <string name="alerts_now_bar_focus_marked">%1$s %2$s</string>
+    <string name="alerts_now_bar_chip">Codex · %1$s %2$s</string>
+    <string name="alerts_now_bar_chip_unavailable">Codex · %1$s 暂无数据</string>
+    <string name="alerts_now_bar_limit_left">%1$s：剩余 %2$d%%</string>
+    <string name="alerts_now_bar_limit_resets_in">%1$s：%2$s后重置</string>
+    <string name="alerts_now_bar_limit_unavailable">%1$s：暂无数据</string>
+
+    <string name="alerts_now_bar_live_monitor">实时监控</string>
+    <string name="alerts_now_bar_monitor_summary_default">显示 Codex 剩余额度，直到下次用量重置</string>
+    <string name="alerts_now_bar_access_title">实时通知权限</string>
+    <string name="alerts_now_bar_display_category">显示</string>
+    <string name="alerts_now_bar_display_mode_title">实时显示方式</string>
+    <string name="alerts_now_bar_percent_mode_title">显示的百分比</string>
+    <string name="alerts_now_bar_auto_start_category">自动启动</string>
+    <string name="alerts_now_bar_auto_start_title">额度不足时启动</string>
+    <string name="alerts_now_bar_auto_start_summary">剩余额度不足时启动监控</string>
+    <string name="alerts_now_bar_metric_title">监控范围</string>
+    <string name="alerts_now_bar_threshold_title">剩余额度降至以下比例时启动</string>
+    <string name="alerts_now_bar_accelerated_title">用量消耗过快时启动</string>
+    <string name="alerts_now_bar_accelerated_summary">预计额度会提前用完时启动</string>
+    <string name="alerts_troubleshooting_category">故障排查</string>
+    <string name="alerts_now_bar_setup_help_title">三星设置帮助</string>
+    <string name="alerts_now_bar_setup_help_summary">三星固件与开发者选项说明</string>
+    <string name="alerts_now_bar_preview_title">启动示例预览</string>
+    <string name="alerts_now_bar_preview_summary">显示 20 分钟的示例活动，用于测试设备</string>
+
+    <string name="alerts_now_bar_toast_contract_stopped">无法刷新实时通知，监控已停止。</string>
+    <string name="alerts_now_bar_toast_display_mode_stopped">无法按此显示方式刷新，监控已停止。</string>
+    <string name="alerts_now_bar_toast_percent_mode_stopped">无法按此百分比模式刷新，监控已停止。</string>
+    <string name="alerts_now_bar_toast_refresh_first">启动监控前，请先登录并刷新用量。</string>
+    <string name="alerts_now_bar_toast_preview_started">已启动 20 分钟的实时更新示例。</string>
+    <string name="alerts_now_bar_toast_allow_notifications_first">请先允许通知。</string>
+    <string name="alerts_now_bar_toast_no_developer_options">此固件不提供开发者选项。</string>
+    <string name="alerts_now_bar_toast_auto_started">已根据当前用量阈值启动实时监控。</string>
+    <string name="alerts_now_bar_toast_allow_notifications">请允许通知，然后再次启动监控。</string>
+    <string name="alerts_now_bar_toast_enable_notifications">请开启应用通知，然后再次启动监控。</string>
+
+    <string name="alerts_now_bar_samsung_help_title">三星 Now Bar 设置</string>
+    <string name="alerts_now_bar_developer_options">开发者选项</string>
+    <string name="alerts_now_bar_samsung_help">设置 Android 实时更新：\n1. 打开“设置 &gt; 关于手机/平板电脑 &gt; 软件信息”。\n2. 连续点按“编译编号”七次，并验证锁屏密码。\n3. 返回“设置 &gt; 开发者选项”。\n4. 开启“为所有应用启用实时通知”。\n5. 确认已开启“设置 &gt; 锁定屏幕和 AOD &gt; Now Bar”。\n\n如果没有“为所有应用启用实时通知”选项，请在上方选择三星兼容模式。即使 Android 和 One UI 版本相同，三星也会因机型、地区和固件版本而调整第三方应用的访问权限。\n\n如果两种模式都只显示为普通通知，说明该固件或设备未向第三方开放 Now Bar。Codex Meter 无法绕过三星的系统允许列表。</string>
+
+    <string name="alerts_now_bar_state_live_samsung">实时监控正在使用三星兼容模式</string>
+    <string name="alerts_now_bar_state_live_active">实时监控已开启</string>
+    <string name="alerts_now_bar_state_live_promoted">实时监控已显示为实时更新</string>
+    <string name="alerts_now_bar_state_live_not_promoted">实时监控已开启，但系统未将其显示为实时更新</string>
+    <string name="alerts_now_bar_state_preview_samsung">示例预览正在使用三星兼容模式</string>
+    <string name="alerts_now_bar_state_preview_active">示例预览已开启</string>
+    <string name="alerts_now_bar_state_preview_promoted">示例预览已显示为实时更新</string>
+    <string name="alerts_now_bar_state_preview_not_promoted">示例预览已开启，但系统未将其显示为实时更新</string>
+    <string name="alerts_now_bar_summary_active">%1$s · %2$s结束</string>
+    <string name="alerts_now_bar_summary_waiting">等待额度不足或用量加速时启动</string>
+    <string name="alerts_now_bar_summary_idle">显示 Codex 剩余额度，直到下次可用的用量重置</string>
+
+    <string name="alerts_now_bar_access_notifications_off">应用或实时监控通知已关闭 · 点按开启</string>
+    <string name="alerts_now_bar_access_samsung_fallback">自动 · 在获得 Android 权限前使用三星兼容模式</string>
+    <string name="alerts_now_bar_access_samsung_selected">已选择三星兼容模式 · 需要固件支持</string>
+    <string name="alerts_now_bar_access_legacy">通知已允许 · 实时显示取决于设备</string>
+    <string name="alerts_now_bar_access_not_allowed">未允许实时通知 · 点按开启</string>
+    <string name="alerts_now_bar_access_promoted">Android 已将通知显示为实时通知</string>
+    <string name="alerts_now_bar_access_not_promoted">权限已允许 · 当前通知未显示为实时通知</string>
+    <string name="alerts_now_bar_access_allowed">已允许实时通知</string>
+
+    <string name="alerts_notifications_allow_title">允许通知</string>
+    <string name="alerts_notifications_allow_summary">用量与账户动态提醒</string>
+    <string name="alerts_notifications_style_title">提醒方式</string>
+    <string name="alerts_notifications_low_usage_category">额度不足</string>
+    <string name="alerts_notifications_metric_title">提醒范围</string>
+    <string name="alerts_notifications_threshold_title">剩余额度降至以下比例时提醒</string>
+    <string name="alerts_notifications_account_category">账户动态</string>
+    <string name="alerts_notifications_refills_title">额度提前恢复</string>
+    <string name="alerts_notifications_refills_summary" formatted="false">额度在计划重置前恢复到 100%</string>
+    <string name="alerts_notifications_new_credits_title">新增重置券</string>
+    <string name="alerts_notifications_new_credits_summary">可用重置券数量增加时</string>
+    <string name="alerts_notifications_expiry_title">重置券即将到期</string>
+    <string name="alerts_notifications_expiry_summary">在可用重置券到期前提醒我</string>
+    <string name="alerts_notifications_permission_title">系统通知权限</string>
+    <string name="alerts_notifications_permission_allowed">已允许</string>
+    <string name="alerts_notifications_permission_denied">未允许</string>
+    <string name="alerts_notifications_test_title">发送测试通知</string>
+    <string name="alerts_notifications_test_summary">立即检查通知能否送达</string>
+    <string name="alerts_notifications_test_sent">测试通知已发送。</string>
+    <string name="alerts_notifications_test_failed">请先开启通知并授予权限。</string>
+
+    <string name="alerts_reminder_times_title">提醒时间</string>
+    <string name="alerts_reminder_times_none">尚未设置提醒时间</string>
+    <string name="alerts_reminder_times_empty_message">尚未设置提醒时间。添加一项，选择 Codex Meter 在到期前多久通知你。</string>
+    <string name="alerts_reminder_times_summary">到期前%1$s</string>
+    <string name="alerts_reminder_times_separator">、</string>
+    <string name="alerts_reminder_time_remove_item">到期前%1$s — 点按即可移除</string>
+    <string name="alerts_reminder_time_removed">已移除到期前%1$s的提醒。</string>
+    <string name="alerts_reminder_add_title">添加提醒时间</string>
+    <string name="alerts_reminder_add_explanation">在每张可用重置券到期前这么久通知我。</string>
+    <string name="alerts_reminder_amount_hint">数量</string>
+    <string-array name="alerts_reminder_units">
+        <item>分钟</item>
+        <item>小时</item>
+        <item>天</item>
+        <item>周</item>
+    </string-array>
+    <string name="alerts_reminder_invalid_amount">请输入 1 分钟到 1 年之间的时间，以整分钟为单位。</string>
+    <plurals name="alerts_lead_time_minutes">
+        <item quantity="other">%d分钟</item>
+    </plurals>
+    <plurals name="alerts_lead_time_hours">
+        <item quantity="other">%d小时</item>
+    </plurals>
+    <plurals name="alerts_lead_time_days">
+        <item quantity="other">%d天</item>
+    </plurals>
+    <plurals name="alerts_lead_time_weeks">
+        <item quantity="other">%d周</item>
+    </plurals>
+</resources>

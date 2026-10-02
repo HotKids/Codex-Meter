@@ -12,7 +12,6 @@ import android.media.AudioAttributes;
 import android.media.RingtoneManager;
 import android.os.Build;
 import java.util.HashSet;
-import java.util.Locale;
 import java.util.Set;
 import java.util.concurrent.TimeUnit;
 
@@ -23,11 +22,6 @@ public final class ResetNotificationManager {
     private static final String CHANNEL_SILENT = "codex_reset_silent";
     private static final String ACTION_USE_RESET_FROM_NOTIFICATION =
             AppConstants.action("USE_RESET_FROM_NOTIFICATION");
-    private static final String CHANNEL_DESCRIPTION =
-            "Low usage, scheduled resets, surprise refills, and reset credits";
-    private static final String LABEL_FIVE_HOUR = "5-hour";
-    private static final String LABEL_WEEKLY = "Weekly";
-    private static final String LABEL_MONTHLY = "Monthly";
 
     private static final String PREFS = "codex_meter_notification_state_v1";
     private static final String KEY_FIVE_HOUR_WINDOW = "low_five_hour_window";
@@ -88,14 +82,17 @@ public final class ResetNotificationManager {
         String metric = ResetAlertPreferences.getMetric(context);
         if (!ResetAlertPreferences.METRIC_WEEKLY.equals(metric)) {
             notifyLowWindow(context, snapshot.fiveHour, snapshot.fetchedAtMillis,
-                    LABEL_FIVE_HOUR, KEY_FIVE_HOUR_WINDOW, NOTIFICATION_LOW_FIVE_HOUR);
+                    R.string.alerts_low_five_hour_title, R.string.alerts_low_five_hour_text,
+                    KEY_FIVE_HOUR_WINDOW, NOTIFICATION_LOW_FIVE_HOUR);
         }
         if (!ResetAlertPreferences.METRIC_FIVE_HOUR.equals(metric)) {
             notifyLowWindow(context, snapshot.weekly, snapshot.fetchedAtMillis,
-                    LABEL_WEEKLY, KEY_WEEKLY_WINDOW, NOTIFICATION_LOW_WEEKLY);
+                    R.string.alerts_low_weekly_title, R.string.alerts_low_weekly_text,
+                    KEY_WEEKLY_WINDOW, NOTIFICATION_LOW_WEEKLY);
             // The monthly free-tier window rides on the same long-cadence metric as weekly.
             notifyLowWindow(context, snapshot.monthly, snapshot.fetchedAtMillis,
-                    LABEL_MONTHLY, KEY_MONTHLY_WINDOW, NOTIFICATION_LOW_MONTHLY);
+                    R.string.alerts_low_monthly_title, R.string.alerts_low_monthly_text,
+                    KEY_MONTHLY_WINDOW, NOTIFICATION_LOW_MONTHLY);
         }
         if (ResetAlertPreferences.unexpectedRefillsEnabled(context)) {
             notifyUnexpectedRefill(context, unexpectedRefills);
@@ -123,24 +120,28 @@ public final class ResetNotificationManager {
 
     /** Announces a scheduled reset; {@code window} is a {@link ResetAlertScheduler} window ID. */
     public static void showResetNotification(Context context, String window) {
-        String label;
+        int title;
+        int text;
         int id;
         if (ResetAlertScheduler.WINDOW_WEEKLY.equals(window)) {
-            label = LABEL_WEEKLY;
+            title = R.string.alerts_reset_weekly_title;
+            text = R.string.alerts_reset_weekly_text;
             id = NOTIFICATION_RESET_WEEKLY;
         } else if (ResetAlertScheduler.WINDOW_MONTHLY.equals(window)) {
-            label = LABEL_MONTHLY;
+            title = R.string.alerts_reset_monthly_title;
+            text = R.string.alerts_reset_monthly_text;
             id = NOTIFICATION_RESET_MONTHLY;
         } else {
-            label = LABEL_FIVE_HOUR;
+            title = R.string.alerts_reset_five_hour_title;
+            text = R.string.alerts_reset_five_hour_text;
             id = NOTIFICATION_RESET_FIVE_HOUR;
         }
-        post(context, id, "Codex " + label + " usage reset",
-                "Your " + label + " allowance should be available again. Refreshing usage now.");
+        post(context, id, context.getString(title), context.getString(text));
     }
 
+    /** {@code textRes} takes the remaining percentage as its only argument. */
     private static void notifyLowWindow(Context context, UsageWindow window, long fetchedAt,
-            String label, String stateKey, int notificationId) {
+            int titleRes, int textRes, String stateKey, int notificationId) {
         if (window == null
                 || window.remainingPercent() > ResetAlertPreferences.getThreshold(context)) {
             return;
@@ -159,9 +160,8 @@ public final class ResetNotificationManager {
             return;
         }
         int remaining = window.remainingPercent();
-        String title = label + " Codex usage is low";
-        String text = remaining + "% remaining in the current "
-                + label.toLowerCase(Locale.ROOT) + " window.";
+        String title = context.getString(titleRes);
+        String text = context.getString(textRes, remaining);
         if (post(context, notificationId, title, text, true)) {
             state.edit().putLong(stateKey, windowId).apply();
         }
@@ -175,17 +175,21 @@ public final class ResetNotificationManager {
         boolean weekly = (refills & CelebrationDetector.WEEKLY) != 0;
         boolean monthly = (refills & CelebrationDetector.MONTHLY) != 0;
         if ((fiveHour && weekly) || (fiveHour && monthly)) {
-            post(context, NOTIFICATION_REFILL_BOTH, "Surprise Codex refill",
-                    "Your Codex allowances jumped to 100% before their scheduled resets. Enjoy the bonus capacity.");
+            post(context, NOTIFICATION_REFILL_BOTH,
+                    context.getString(R.string.alerts_refill_multiple_title),
+                    context.getString(R.string.alerts_refill_multiple_text));
         } else if (weekly) {
-            post(context, NOTIFICATION_REFILL_WEEKLY, "Surprise weekly Codex refill",
-                    "Your weekly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.");
+            post(context, NOTIFICATION_REFILL_WEEKLY,
+                    context.getString(R.string.alerts_refill_weekly_title),
+                    context.getString(R.string.alerts_refill_weekly_text));
         } else if (monthly) {
-            post(context, NOTIFICATION_REFILL_MONTHLY, "Surprise monthly Codex refill",
-                    "Your monthly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.");
+            post(context, NOTIFICATION_REFILL_MONTHLY,
+                    context.getString(R.string.alerts_refill_monthly_title),
+                    context.getString(R.string.alerts_refill_monthly_text));
         } else {
-            post(context, NOTIFICATION_REFILL_FIVE_HOUR, "Surprise 5-hour Codex refill",
-                    "Your 5-hour allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.");
+            post(context, NOTIFICATION_REFILL_FIVE_HOUR,
+                    context.getString(R.string.alerts_refill_five_hour_title),
+                    context.getString(R.string.alerts_refill_five_hour_text));
         }
     }
 
@@ -280,15 +284,10 @@ public final class ResetNotificationManager {
             state.edit().putInt(KEY_CREDIT_COUNT, current).apply();
             return;
         }
-        String title;
-        String text;
-        if (added == 1) {
-            title = "Codex reset credit added";
-            text = "One Codex reset credit was added. You now have " + current + ".";
-        } else {
-            title = "Codex reset credits added";
-            text = added + " Codex reset credits were added. You now have " + current + ".";
-        }
+        String title = context.getResources().getQuantityString(
+                R.plurals.alerts_reset_credits_added_title, added);
+        String text = context.getResources().getQuantityString(
+                R.plurals.alerts_reset_credits_added_text, added, added, current);
         if (post(context, NOTIFICATION_NEW_CREDIT, title, text)) {
             state.edit().putInt(KEY_CREDIT_COUNT, current).apply();
         }
@@ -309,12 +308,11 @@ public final class ResetNotificationManager {
             }
             int notificationId = notificationIdForCredit(creditId, token);
             long now = System.currentTimeMillis();
-            String text = "One reset credit expires "
-                    + UsageFormat.absolute(context, expiresAtMillis, now) + " ("
-                    + UsageFormat.relative(expiresAtMillis, now)
-                    + "). Use it before it expires.";
+            String text = context.getString(R.string.alerts_reset_credit_expiry_text,
+                    UsageFormat.absolute(context, expiresAtMillis, now),
+                    UsageFormat.relative(expiresAtMillis, now));
             if (!postResetCreditExpiry(context, notificationId,
-                    "Codex reset credit expires soon", text)) {
+                    context.getString(R.string.alerts_reset_credit_expiry_title), text)) {
                 return false;
             }
             Set<String> announced = new HashSet<>(state(context).getStringSet(
@@ -401,8 +399,8 @@ public final class ResetNotificationManager {
         if (context == null || !ResetAlertPreferences.enabled(context)) {
             return false;
         }
-        return post(context, NOTIFICATION_TEST, "Codex Meter notifications are working",
-                "Low usage, scheduled resets, surprise refills, and reset-credit alerts are ready.");
+        return post(context, NOTIFICATION_TEST, context.getString(R.string.alerts_test_title),
+                context.getString(R.string.alerts_test_text));
     }
 
     public static void ensureChannel(Context context) {
@@ -411,7 +409,7 @@ public final class ResetNotificationManager {
         }
         NotificationManager manager = manager(context);
         if (manager != null) {
-            createChannel(manager, ResetAlertPreferences.getStyle(context));
+            createChannel(context, manager, ResetAlertPreferences.getStyle(context));
         }
     }
 
@@ -452,7 +450,8 @@ public final class ResetNotificationManager {
         if (manager == null) {
             return false;
         }
-        String channel = createChannel(manager, ResetAlertPreferences.getStyle(context));
+        String channel = createChannel(context, manager,
+                ResetAlertPreferences.getStyle(context));
         if (!canPost(context, manager, channel)) {
             return false;
         }
@@ -483,7 +482,8 @@ public final class ResetNotificationManager {
         if (manager == null) {
             return false;
         }
-        String channel = createChannel(manager, ResetAlertPreferences.getStyle(context));
+        String channel = createChannel(context, manager,
+                ResetAlertPreferences.getStyle(context));
         if (!canPost(context, manager, channel)) {
             return false;
         }
@@ -506,7 +506,7 @@ public final class ResetNotificationManager {
                 .setStyle(new Notification.BigTextStyle().bigText(text))
                 .setContentIntent(details)
                 .addAction(new Notification.Action.Builder(R.drawable.ic_reset_notification,
-                        "Use reset", useReset).build())
+                        context.getString(R.string.alerts_use_reset_action), useReset).build())
                 .setAutoCancel(true)
                 .setCategory(Notification.CATEGORY_REMINDER)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
@@ -536,12 +536,18 @@ public final class ResetNotificationManager {
         return context.getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
-    /** Creates (or updates) the channel for the alert style and returns its ID. */
-    private static String createChannel(NotificationManager manager, String style) {
+    /**
+     * Creates (or updates) the channel for the alert style and returns its ID. Re-creating it
+     * also refreshes the channel name and description for the current locale.
+     */
+    private static String createChannel(Context context, NotificationManager manager,
+            String style) {
+        String alertsName = context.getString(R.string.alerts_channel_alerts_name);
+        String description = context.getString(R.string.alerts_channel_description);
         if (ResetAlertPreferences.STYLE_SILENT.equals(style)) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_SILENT,
-                    "Codex usage alerts", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription(CHANNEL_DESCRIPTION);
+                    alertsName, NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription(description);
             channel.setSound(null, null);
             channel.enableVibration(false);
             manager.createNotificationChannel(channel);
@@ -549,8 +555,9 @@ public final class ResetNotificationManager {
         }
         if (ResetAlertPreferences.STYLE_ALARM.equals(style)) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ALARM,
-                    "Codex usage alarms", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription(CHANNEL_DESCRIPTION);
+                    context.getString(R.string.alerts_channel_alarms_name),
+                    NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(description);
             channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                     sonification(AudioAttributes.USAGE_ALARM));
             channel.enableVibration(true);
@@ -558,8 +565,8 @@ public final class ResetNotificationManager {
             return CHANNEL_ALARM;
         }
         NotificationChannel channel = new NotificationChannel(CHANNEL_NOTIFY,
-                "Codex usage alerts", NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setDescription(CHANNEL_DESCRIPTION);
+                alertsName, NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription(description);
         channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
                 sonification(AudioAttributes.USAGE_NOTIFICATION));
         manager.createNotificationChannel(channel);

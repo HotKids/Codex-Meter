@@ -1,5 +1,7 @@
 package dev.bennett.codexmeter;
 
+import android.content.Context;
+
 /** Outcome of redeeming a reset credit, with the message shown to the user. */
 public final class ResetConsumeResult {
     public static final String ALREADY_REDEEMED = "already_redeemed";
@@ -21,23 +23,27 @@ public final class ResetConsumeResult {
         return RESET.equals(outcome);
     }
 
-    public String userMessage() {
+    /** The localized message for {@link #outcome}, followed by any refresh warning. */
+    public String userMessage(Context context) {
         if (RESET.equals(outcome)) {
             String message = windowsReset > 0
-                    ? "Reset applied to " + windowsReset + " usage window"
-                            + (windowsReset == 1 ? "." : "s.")
-                    : "Codex usage reset applied.";
-            return refreshWarning.isEmpty() ? message : message + " " + refreshWarning;
+                    ? context.getResources().getQuantityString(
+                            R.plurals.alerts_reset_result_windows, windowsReset, windowsReset)
+                    : context.getString(R.string.alerts_reset_result_applied);
+            return refreshWarning.isEmpty()
+                    ? message
+                    : context.getString(R.string.alerts_reset_result_with_warning,
+                            message, refreshWarning);
         }
         if (NOTHING_TO_RESET.equals(outcome)) {
-            return "There is no used Codex allowance to reset right now.";
+            return context.getString(R.string.alerts_reset_result_nothing);
         }
         if (NO_CREDIT.equals(outcome)) {
-            return "No reset credit is currently available.";
+            return context.getString(R.string.alerts_reset_result_no_credit);
         }
         if (ALREADY_REDEEMED.equals(outcome)) {
-            return "That reset request was already redeemed.";
+            return context.getString(R.string.alerts_reset_result_already_redeemed);
         }
-        return "OpenAI returned an unrecognized reset result.";
+        return context.getString(R.string.alerts_reset_result_unknown);
     }
 }

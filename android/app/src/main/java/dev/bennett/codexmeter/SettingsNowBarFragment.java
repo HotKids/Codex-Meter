@@ -21,19 +21,6 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
     private static final int REQUEST_NOTIFICATION_PERMISSION = 8602;
     /** Delay before re-reading the monitor state after a manual start has posted it. */
     private static final long STARTED_SUMMARY_RECHECK_DELAY_MS = 1500L;
-    private static final String SAMSUNG_HELP = "For Android Live Updates:\n"
-            + "1. Open Settings > About phone/tablet > Software information.\n"
-            + "2. Tap Build number seven times and confirm your screen lock.\n"
-            + "3. Return to Settings > Developer options.\n"
-            + "4. Turn on Live notifications for all apps.\n"
-            + "5. Make sure Settings > Lock screen and AOD > Now bar is enabled.\n\n"
-            + "If “Live notifications for all apps” is missing, select Samsung "
-            + "compatibility above. Samsung changes third-party access by model, "
-            + "region, and firmware build even when Android and One UI versions "
-            + "match.\n\n"
-            + "If both modes remain ordinary notifications, that firmware or "
-            + "device does not expose a third-party Now Bar surface. Codex Meter "
-            + "cannot override Samsung’s system allowlist.";
 
     private SwitchPreferenceCompat monitorPreference;
     private SwitchPreferenceCompat autoStartPreference;
@@ -60,8 +47,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
     public void onResume() {
         super.onResume();
         if (!NowBarManager.refreshActiveNotificationContract(requireContext())) {
-            showToast("Could not refresh the live notification, so the monitor was stopped.",
-                    Toast.LENGTH_LONG);
+            showToast(getString(R.string.alerts_now_bar_toast_contract_stopped), Toast.LENGTH_LONG);
         }
         updateSummary();
     }
@@ -76,7 +62,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             displayModePreference.setValue(mode);
             if (NowBarManager.isActive(requireContext())
                     && !NowBarManager.repostActive(requireContext())) {
-                showToast("Could not refresh this display mode, so the monitor was stopped.",
+                showToast(getString(R.string.alerts_now_bar_toast_display_mode_stopped),
                         Toast.LENGTH_LONG);
             }
             updateSummary();
@@ -93,7 +79,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             percentModePreference.setValue(mode);
             if (NowBarManager.isActive(requireContext())
                     && !NowBarManager.applyPercentModeChange(requireContext())) {
-                showToast("Could not refresh the percentage mode, so the monitor was stopped.",
+                showToast(getString(R.string.alerts_now_bar_toast_percent_mode_stopped),
                         Toast.LENGTH_LONG);
             }
             updateSummary();
@@ -122,8 +108,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
         }
         boolean started = NowBarManager.start(requireContext());
         if (!started) {
-            showToast("Refresh your signed-in usage before starting the monitor.",
-                    Toast.LENGTH_LONG);
+            showToast(getString(R.string.alerts_now_bar_toast_refresh_first), Toast.LENGTH_LONG);
         }
         updateSummary();
         View settingsView = getView();
@@ -199,9 +184,11 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             }
             boolean started = NowBarManager.startPreview(requireContext());
             if (started) {
-                showToast("Sample Live Update started for 20 minutes.", Toast.LENGTH_SHORT);
+                showToast(getString(R.string.alerts_now_bar_toast_preview_started),
+                        Toast.LENGTH_SHORT);
             } else {
-                showToast("Allow notifications first.", Toast.LENGTH_LONG);
+                showToast(getString(R.string.alerts_now_bar_toast_allow_notifications_first),
+                        Toast.LENGTH_LONG);
             }
             updateSummary();
             return true;
@@ -246,10 +233,11 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
 
     private void showSamsungNowBarHelp() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Samsung Now Bar setup")
-                .setMessage(SAMSUNG_HELP)
-                .setNeutralButton("Developer options", (dialog, which) -> openDeveloperOptions())
-                .setPositiveButton("Done", null)
+                .setTitle(R.string.alerts_now_bar_samsung_help_title)
+                .setMessage(R.string.alerts_now_bar_samsung_help)
+                .setNeutralButton(R.string.alerts_now_bar_developer_options,
+                        (dialog, which) -> openDeveloperOptions())
+                .setPositiveButton(R.string.alerts_done, null)
                 .show();
     }
 
@@ -257,7 +245,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
         try {
             startActivity(new Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS));
         } catch (RuntimeException exception) {
-            showToast("Developer options are not available on this firmware.",
+            showToast(getString(R.string.alerts_now_bar_toast_no_developer_options),
                     Toast.LENGTH_LONG);
         }
     }
@@ -270,7 +258,7 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             boolean started = NowBarManager.maybeAutoStart(requireContext(),
                     AppPreferences.loadSnapshot(requireContext()));
             if (started) {
-                showToast("Live monitor started from the current usage threshold.",
+                showToast(getString(R.string.alerts_now_bar_toast_auto_started),
                         Toast.LENGTH_SHORT);
             }
         }
@@ -300,13 +288,14 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
     private boolean ensureNotificationPermission() {
         if (lacksNotificationPermission()) {
             requestNotificationPermission(REQUEST_NOTIFICATION_PERMISSION);
-            showToast("Allow notifications, then start the monitor again.", Toast.LENGTH_LONG);
+            showToast(getString(R.string.alerts_now_bar_toast_allow_notifications),
+                    Toast.LENGTH_LONG);
             return false;
         }
         if (NowBarManager.canPostNotifications(requireContext())) {
             return true;
         }
-        showToast("Enable app notifications, then start the monitor again.", Toast.LENGTH_LONG);
+        showToast(getString(R.string.alerts_now_bar_toast_enable_notifications), Toast.LENGTH_LONG);
         return false;
     }
 
@@ -339,54 +328,69 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
 
     private static String monitorSummary(Context context, boolean active) {
         if (active) {
-            String kind = NowBarManager.isPreview(context) ? "Sample preview" : "Live monitor";
-            return kind + " " + activeMonitorState(context) + " · ends "
-                    + UsageFormat.absolute(context, NowBarManager.activeUntil(context),
-                            System.currentTimeMillis());
+            return context.getString(R.string.alerts_now_bar_summary_active,
+                    context.getString(activeMonitorState(context,
+                            NowBarManager.isPreview(context))),
+                    UsageFormat.absolute(context, NowBarManager.activeUntil(context),
+                            System.currentTimeMillis()));
         }
         if (NowBarPreferences.isAutoStartEnabled(context)
                 || (UsagePacePreferences.areWarningsEnabled(context)
                 && NowBarPreferences.isAcceleratedStartEnabled(context))) {
-            return "Waiting for a low allowance or accelerated usage trigger";
+            return context.getString(R.string.alerts_now_bar_summary_waiting);
         }
-        return "Show remaining Codex allowance until the next available usage reset";
+        return context.getString(R.string.alerts_now_bar_summary_idle);
     }
 
-    private static String activeMonitorState(Context context) {
+    /** "Live monitor active", "Sample preview using Samsung compatibility", and so on. */
+    private static int activeMonitorState(Context context, boolean preview) {
         if (NowBarDisplayMode.SAMSUNG_COMPATIBILITY.equals(
                 NowBarManager.postedDisplayMode(context))) {
-            return "using Samsung compatibility";
+            return preview
+                    ? R.string.alerts_now_bar_state_preview_samsung
+                    : R.string.alerts_now_bar_state_live_samsung;
         }
         if (Build.VERSION.SDK_INT < 36) {
-            return "active";
+            return preview
+                    ? R.string.alerts_now_bar_state_preview_active
+                    : R.string.alerts_now_bar_state_live_active;
         }
-        return NowBarManager.isPromoted(context)
-                ? "promoted as a Live Update"
-                : "active, but not promoted by the system";
+        if (NowBarManager.isPromoted(context)) {
+            return preview
+                    ? R.string.alerts_now_bar_state_preview_promoted
+                    : R.string.alerts_now_bar_state_live_promoted;
+        }
+        return preview
+                ? R.string.alerts_now_bar_state_preview_not_promoted
+                : R.string.alerts_now_bar_state_live_not_promoted;
     }
 
     private static String permissionSummary(Context context, boolean active) {
+        return context.getString(permissionSummaryRes(context, active));
+    }
+
+    private static int permissionSummaryRes(Context context, boolean active) {
         if (!NowBarManager.canPostNotifications(context)) {
-            return "App or live-monitor notifications disabled · tap to enable";
+            return R.string.alerts_now_bar_access_notifications_off;
         }
         if (NowBarDisplayMode.SAMSUNG_COMPATIBILITY.equals(
                 NowBarManager.postedDisplayMode(context))) {
             return NowBarDisplayMode.AUTO.equals(NowBarPreferences.getDisplayMode(context))
-                    ? "Automatic · using Samsung fallback until Android access is allowed"
-                    : "Samsung compatibility selected · firmware support required";
+                    ? R.string.alerts_now_bar_access_samsung_fallback
+                    : R.string.alerts_now_bar_access_samsung_selected;
         }
         if (Build.VERSION.SDK_INT < 36) {
-            return "Notifications allowed · Live display depends on your device";
+            return R.string.alerts_now_bar_access_legacy;
         }
         if (!NowBarManager.canPostPromotedNotifications(context)) {
-            return "Live notifications not allowed · tap to enable";
+            return R.string.alerts_now_bar_access_not_allowed;
         }
         if (active && NowBarManager.isPromoted(context)) {
-            return "Live notification promoted by Android";
+            return R.string.alerts_now_bar_access_promoted;
         }
         if (active) {
-            return "Access allowed · active notification was not promoted";
+            return R.string.alerts_now_bar_access_not_promoted;
         }
-        return "Live notifications allowed";
+        return R.string.alerts_now_bar_access_allowed;
     }
 }
