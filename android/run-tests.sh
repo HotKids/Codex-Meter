@@ -111,7 +111,7 @@ grep -q 'ic_oui_reorder' \
 grep -q 'dashboard_reorder_ui' \
   "$ROOT/app/src/main/res/xml/preferences_settings_refresh_usage.xml"
 grep -q 'dashboard_reorder_ui' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsRefreshUsageFragment.java"
 
 # Edit-dashboard visibility switches + sortable/hideable usage-history section.
 grep -q 'USAGE_HISTORY = "usage_history"' \
@@ -310,7 +310,7 @@ grep -q 'UpdateChannel.isReturnToStable' \
 grep -q 'update_channel_ui' \
   "$ROOT/app/src/main/res/xml/preferences_settings_updates.xml"
 grep -q 'update_channel_ui' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsUpdatesFragment.java"
 grep -q 'settings_update_channel_entries' \
   "$ROOT/app/src/main/res/values/settings_arrays.xml"
 grep -q '"update_channel"' \
@@ -325,9 +325,9 @@ grep -q 'testDiagnosticSanitizer' "$ROOT/tests/ParserSelfTest.java"
 grep -q 'android:name="dev.bennett.codexmeter.CodexMeterApplication"' \
   "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'preferences_settings_diagnostics' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsDiagnosticsFragment.java"
 grep -q 'application/x-ndjson' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsDiagnosticsFragment.java"
 grep -q 'DiagnosticSanitizer.safeUrl' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageApi.java"
 grep -q 'export_settings_transfer' \
@@ -339,11 +339,11 @@ grep -q 'transfer_security_notice' \
 grep -q 'SECURITY_WARNING' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransfer.java"
 grep -q 'bindTransfer' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferFragment.java"
 grep -q 'SettingsTransferStore.collect' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferFragment.java"
 grep -q 'SettingsTransferStore.apply' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsTransferFragment.java"
 grep -q 'Protect authentication exports' \
   "$ROOT/app/src/main/res/xml/preferences_settings_transfer.xml"
 grep -q 'material_you' \
@@ -355,7 +355,7 @@ grep -q 'theme_system_ui' \
 grep -q 'preferences_darkmode_entries_image' \
   "$ROOT/app/src/main/res/values/settings_arrays.xml"
 grep -q 'HorizontalRadioPreference theme' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsAppearanceFragment.java"
 test -f "$ROOT/app/src/main/res/drawable-xxhdpi/display_help_light_mode.webp"
 test -f "$ROOT/app/src/main/res/drawable-xxhdpi/display_help_dark_mode.webp"
 grep -q 'isMaterialYouEnabled' \
@@ -406,12 +406,12 @@ test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetAlertPreferences.ja
 test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetAlertScheduler.java"
 test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetAlertReceiver.java"
 grep -q 'scheduleFromSnapshot' "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetAlertScheduler.java"
-grep -q 'POST_NOTIFICATIONS' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+grep -q 'POST_NOTIFICATIONS' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsPageFragment.java"
 test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryScheduler.java"
 test -f "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetCreditExpiryReceiver.java"
 grep -q 'ResetCreditExpiryReceiver' "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'reset_credit_expiry_times_ui' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNotificationsFragment.java"
 grep -q '"Use reset", useReset' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/ResetNotificationManager.java"
 grep -q 'EXTRA_PROMPT_USE_RESET' \
@@ -497,7 +497,7 @@ grep -q 'legacyColorizedFallback' \
 grep -q 'builder.setColorized(true)' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'NowBarManager.isPromoted' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 grep -q 'hasStoredActiveState' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'NowBarManager.onUsageUpdated' \
@@ -507,9 +507,9 @@ grep -q 'maybeAutoStart' \
 grep -q 'now_bar_auto_start_ui' \
   "$ROOT/app/src/main/res/xml/preferences_settings_now_bar.xml"
 grep -q 'now_bar_threshold_ui' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 grep -q 'NowBarPreferences.isAutoStartEnabled' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 grep -q 'markSuppressedUntil' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'NowBarAutoStart.shouldStart' \
@@ -548,11 +548,11 @@ grep -q 'now_bar_percent_mode_ui' \
 grep -q 'NowBarPreferences.getPercentMode' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'applyPercentModeChange' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 grep -q 'KEY_FOCUS_METRIC' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'Live notifications for all apps' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsNowBarFragment.java"
 
 grep -R -q '<Chronometer' "$ROOT/app/src/main/res/layout/widget_lock_"*.xml
 grep -q 'setChronometerCountDown' "$ROOT/app/src/main/java/dev/bennett/codexmeter/SamsungLockWidgetSupport.java"
@@ -676,7 +676,7 @@ grep -q '"· " + pace' \
 grep -q 'card.setMinimumHeight(Ui.dp(this, 103.0f))' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/MainActivity.java"
 grep -q 'onPaceSettingsChanged' \
-  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsActivity.java"
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/SettingsRefreshUsageFragment.java"
 grep -q '!usageWindow.showsResetCountdown()' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageFormat.java"
 ! grep -q 'resetPaint.setColor(Ui.secondaryText(dark));' \

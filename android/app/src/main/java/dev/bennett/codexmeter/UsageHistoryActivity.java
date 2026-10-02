@@ -1,5 +1,8 @@
 package dev.bennett.codexmeter;
 
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
 import android.app.AlertDialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
@@ -25,6 +28,10 @@ import java.util.Locale;
 public final class UsageHistoryActivity extends AppCompatActivity {
     private static final int MAX_BREAKDOWN_WINDOWS = 5;
     private static final int MENU_CUSTOMIZE = 8201;
+    private static final int CHART_HEIGHT_DP = 200;
+    private static final int CLEAR_BUTTON_HEIGHT_DP = 58;
+    /** Differences under this many percentage points count as "on par" with typical pace. */
+    private static final long PACE_TOLERANCE_POINTS = 2L;
 
     private LinearLayout content;
     private boolean dark;
@@ -68,7 +75,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         boolean[] checked = new boolean[keys.size()];
         for (int i = 0; i < keys.size(); i++) {
             labels[i] = HistorySections.label(keys.get(i));
-            checked[i] = AppPreferences.isHistorySectionVisible(this, keys.get(i));
+            checked[i] = visible(keys.get(i));
         }
         new AlertDialog.Builder(this)
                 .setTitle("Highlights to show")
@@ -94,15 +101,10 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                 ? null : PlanPricing.forPlan(snapshot.planType);
 
         if (visible(HistorySections.GUIDE)) {
-            LinearLayout guide = Ui.card(this, dark);
-            guide.addView(Ui.text(this,
-                    "The solid line is this window's usage, faint lines are previous windows, "
-                            + "the dotted diagonal is a sustainable pace, and the dashed line is "
-                            + "the projection. Drag a chart to inspect any moment. Samples are "
-                            + "recorded after each successful refresh and stay on this device.",
-                    13, Ui.secondaryText(dark)));
-            content.addView(guide);
-            Ui.addSpacer(content, 20);
+            addNoteCard("The solid line is this window's usage, faint lines are previous "
+                    + "windows, the dotted diagonal is a sustainable pace, and the dashed line "
+                    + "is the projection. Drag a chart to inspect any moment. Samples are "
+                    + "recorded after each successful refresh and stay on this device.");
         }
 
         // Windows still waiting for usage data are skipped instead of rendering blank charts.
@@ -123,13 +125,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             hasCharts = true;
         }
         if (!hasCharts) {
-            LinearLayout waiting = Ui.card(this, dark);
-            waiting.addView(Ui.text(this,
-                    "Charts appear once OpenAI reports your 5-hour, weekly, or monthly usage "
-                            + "windows. Refresh usage from the dashboard to check again.",
-                    13, Ui.secondaryText(dark)));
-            content.addView(waiting);
-            Ui.addSpacer(content, 20);
+            addNoteCard("Charts appear once OpenAI reports your 5-hour, weekly, or monthly "
+                    + "usage windows. Refresh usage from the dashboard to check again.");
         }
 
         if (pricing != null && hasCharts) {
@@ -138,9 +135,21 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             Ui.addSpacer(content, 20);
         }
 
-        Button clear = Ui.button(this, "Clear local history", false, dark);
-        clear.setEnabled(!five.samples.isEmpty() || !weekly.samples.isEmpty()
+        addClearHistoryButton(!five.samples.isEmpty() || !weekly.samples.isEmpty()
                 || !monthly.samples.isEmpty());
+    }
+
+    /** A card holding one paragraph of secondary text, followed by section spacing. */
+    private void addNoteCard(String text) {
+        LinearLayout card = Ui.card(this, dark);
+        card.addView(Ui.text(this, text, 13, Ui.secondaryText(dark)));
+        content.addView(card);
+        Ui.addSpacer(content, 20);
+    }
+
+    private void addClearHistoryButton(boolean hasSamples) {
+        Button clear = Ui.button(this, "Clear local history", false, dark);
+        clear.setEnabled(hasSamples);
         clear.setOnClickListener(view -> new AlertDialog.Builder(this)
                 .setTitle("Clear usage history?")
                 .setMessage("This removes every locally stored usage sample. Your latest "
@@ -151,7 +160,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     render();
                 })
                 .show());
-        content.addView(clear, new LinearLayout.LayoutParams(-1, Ui.dp(this, 58)));
+        content.addView(clear, new LinearLayout.LayoutParams(MATCH_PARENT,
+                Ui.dp(this, CLEAR_BUTTON_HEIGHT_DP)));
     }
 
     private void addWindowSection(String label, UsageWindow window, UsageSnapshot snapshot,
@@ -179,7 +189,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         chart.setScrubEnabled(true);
         chart.setData(label, window, history,
                 snapshot == null ? now : snapshot.fetchedAtMillis, pace);
-        card.addView(chart, new LinearLayout.LayoutParams(-1, Ui.dp(this, 200)));
+        card.addView(chart, new LinearLayout.LayoutParams(MATCH_PARENT,
+                Ui.dp(this, CHART_HEIGHT_DP)));
 
         List<UsageStats.WindowStats> breakdown =
                 UsageStats.windowBreakdown(history, MAX_BREAKDOWN_WINDOWS);
@@ -188,7 +199,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         String defaultDetail = showWindowRows
                 ? "Drag to inspect · tap a window to compare" : "Drag to inspect";
         TextView scrubDetail = Ui.text(this, defaultDetail, 12, Ui.secondaryText(dark));
-        LinearLayout.LayoutParams scrubParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams scrubParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         scrubParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 2), Ui.dp(this, 12), Ui.dp(this, 6));
         card.addView(scrubDetail, scrubParams);
         chart.setOnScrubListener(new UsageBurnChartView.OnScrubListener() {
@@ -215,7 +227,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         if (showWindowRows) {
             View divider = new View(this);
             divider.setBackgroundColor(Ui.divider(dark));
-            LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, 1);
+            LinearLayout.LayoutParams dividerParams =
+                    new LinearLayout.LayoutParams(MATCH_PARENT, 1);
             dividerParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12),
                     Ui.dp(this, 4));
             card.addView(divider, dividerParams);
@@ -230,22 +243,13 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         boolean dayGranularity = UsageHistory.WEEKLY.equals(history.kind)
                 || UsageHistory.MONTHLY.equals(history.kind);
         TextView[] titles = new TextView[breakdown.size()];
-        Runnable[] selections = new Runnable[breakdown.size()];
+        // Rows run newest first; breakdown and the chart's windows are both oldest first.
         for (int index = breakdown.size() - 1; index >= 0; index--) {
             UsageStats.WindowStats stats = breakdown.get(index);
             boolean current = !stats.complete;
             String rowTitle = current ? "Current window"
                     : windowRangeLabel(stats, dayGranularity);
-            StringBuilder subtitle = new StringBuilder();
-            subtitle.append(stats.finalPercent).append("% used");
-            if (stats.averageBurnPercentPerHour > 0d) {
-                subtitle.append(" · avg ").append(formatRate(stats.averageBurnPercentPerHour));
-            }
-            if (pricing != null) {
-                subtitle.append(" · ≈ ").append(PlanPricing.formatUsd(
-                        pricing.estimatedValueUsd(history.kind, stats.finalPercent)));
-            }
-            if (stats.exhausted) subtitle.append(" · hit limit");
+            String subtitle = windowSubtitle(stats, history, pricing);
 
             LinearLayout row = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
             row.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
@@ -255,27 +259,42 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     current ? Ui.accent(this, dark) : Ui.mainText(dark));
             titleView.setTypeface(Ui.mediumTypeface(this));
             texts.addView(titleView);
-            texts.addView(Ui.text(this, subtitle.toString(), 12, Ui.secondaryText(dark)));
-            row.addView(texts, new LinearLayout.LayoutParams(0, -2, 1f));
-            card.addView(row, new LinearLayout.LayoutParams(-1, -2));
+            texts.addView(Ui.text(this, subtitle, 12, Ui.secondaryText(dark)));
+            row.addView(texts, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
+            card.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 
             titles[index] = titleView;
             int chartWindowIndex = chart.windowCount() - breakdown.size() + index;
-            boolean selectsCurrent = current;
             int rowIndex = index;
-            selections[index] = () -> {
-                chart.setSelectedWindow(selectsCurrent ? -1 : chartWindowIndex);
+            row.setOnClickListener(view -> {
+                chart.setSelectedWindow(
+                        current ? UsageBurnChartView.CURRENT_WINDOW : chartWindowIndex);
                 for (int i = 0; i < titles.length; i++) {
-                    boolean selected = i == rowIndex;
-                    titles[i].setTextColor(selected ? Ui.accent(this, dark)
+                    titles[i].setTextColor(i == rowIndex ? Ui.accent(this, dark)
                             : Ui.mainText(dark));
                 }
-            };
-            row.setOnClickListener(view -> selections[rowIndex].run());
+            });
             row.setClickable(true);
             row.setFocusable(true);
             row.setContentDescription("Inspect " + rowTitle + ". " + subtitle);
         }
+    }
+
+    private static String windowSubtitle(UsageStats.WindowStats stats, UsageHistory history,
+            PlanPricing pricing) {
+        StringBuilder subtitle = new StringBuilder();
+        subtitle.append(stats.finalPercent).append("% used");
+        if (stats.averageBurnPercentPerHour > 0d) {
+            subtitle.append(" · avg ").append(formatRate(stats.averageBurnPercentPerHour));
+        }
+        if (pricing != null) {
+            subtitle.append(" · ≈ ").append(PlanPricing.formatUsd(
+                    pricing.estimatedValueUsd(history.kind, stats.finalPercent)));
+        }
+        if (stats.exhausted) {
+            subtitle.append(" · hit limit");
+        }
+        return subtitle.toString();
     }
 
     private LinearLayout buildInsightsCard(UsageWindow window, UsageSnapshot snapshot,
@@ -288,24 +307,10 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         card.addView(title);
         int rows = 0;
 
-        // Current position against the typical pace of completed windows.
-        long resetAt = window.effectiveResetAtMillis(observedAt);
-        long durationMillis = window.windowSeconds * 1000L;
-        if (visible(HistorySections.INSIGHT_PACE) && resetAt > 0L && durationMillis > 0L) {
-            double elapsedFraction = 1d - Math.max(0d, Math.min(1d,
-                    (resetAt - now) / (double) durationMillis));
-            double typical = UsageStats.typicalUsedPercentAt(history, elapsedFraction);
-            if (typical >= 0d) {
-                long delta = Math.round(window.usedPercent - typical);
-                String value;
-                if (delta >= 2L) {
-                    value = delta + " pts ahead of typical";
-                } else if (delta <= -2L) {
-                    value = (-delta) + " pts behind typical";
-                } else {
-                    value = "On par with typical";
-                }
-                addStatRow(card, "Pace vs. previous windows", value);
+        if (visible(HistorySections.INSIGHT_PACE)) {
+            String comparison = paceComparedToTypical(window, history, observedAt, now);
+            if (comparison != null) {
+                addStatRow(card, "Pace vs. previous windows", comparison);
                 rows++;
             }
         }
@@ -352,6 +357,33 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         return rows == 0 ? null : card;
     }
 
+    /**
+     * Current position against the typical pace of completed windows at the same point in the
+     * window, or null when the window timing or comparable history is unavailable.
+     */
+    private static String paceComparedToTypical(UsageWindow window, UsageHistory history,
+            long observedAt, long now) {
+        long resetAt = window.effectiveResetAtMillis(observedAt);
+        long durationMillis = window.windowSeconds * 1000L;
+        if (resetAt <= 0L || durationMillis <= 0L) {
+            return null;
+        }
+        double elapsedFraction = 1d - Math.max(0d, Math.min(1d,
+                (resetAt - now) / (double) durationMillis));
+        double typical = UsageStats.typicalUsedPercentAt(history, elapsedFraction);
+        if (typical < 0d) {
+            return null;
+        }
+        long delta = Math.round(window.usedPercent - typical);
+        if (delta >= PACE_TOLERANCE_POINTS) {
+            return delta + " pts ahead of typical";
+        }
+        if (delta <= -PACE_TOLERANCE_POINTS) {
+            return (-delta) + " pts behind typical";
+        }
+        return "On par with typical";
+    }
+
     private LinearLayout buildValueCard(UsageSnapshot snapshot, PlanPricing pricing) {
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this, pricing.planLabel + " · "
@@ -376,7 +408,8 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                 "Rough community estimates comparing plan allowances with API pricing; "
                         + "not a billing statement.",
                 12, Ui.secondaryText(dark));
-        LinearLayout.LayoutParams disclaimerParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams disclaimerParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         disclaimerParams.setMargins(0, Ui.dp(this, 10), 0, 0);
         card.addView(disclaimer, disclaimerParams);
         return card;
@@ -384,32 +417,32 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     private void addStatRow(LinearLayout card, String label, String value) {
         LinearLayout row = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
-        LinearLayout.LayoutParams rowParams = new LinearLayout.LayoutParams(-1, -2);
+        LinearLayout.LayoutParams rowParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         rowParams.setMargins(0, Ui.dp(this, 8), 0, 0);
         TextView labelView = Ui.text(this, label, 13, Ui.secondaryText(dark));
-        row.addView(labelView, new LinearLayout.LayoutParams(0, -2, 1f));
+        row.addView(labelView, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
         TextView valueView = Ui.text(this, value, 13, Ui.mainText(dark));
         valueView.setTypeface(Typeface.create("sec", Typeface.NORMAL));
         valueView.setGravity(Gravity.END);
-        row.addView(valueView, new LinearLayout.LayoutParams(-2, -2));
+        row.addView(valueView, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
         card.addView(row, rowParams);
     }
 
     private String windowRangeLabel(UsageStats.WindowStats stats, boolean dayGranularity) {
         boolean is24Hour = DateFormat.is24HourFormat(this);
-        if (dayGranularity) {
-            SimpleDateFormat day = new SimpleDateFormat("MMM d", Locale.getDefault());
-            return day.format(new Date(stats.windowStartMillis)) + " – "
-                    + day.format(new Date(stats.resetAtMillis));
-        }
         SimpleDateFormat day = new SimpleDateFormat("MMM d", Locale.getDefault());
+        Date start = new Date(stats.windowStartMillis);
+        Date end = new Date(stats.resetAtMillis);
+        if (dayGranularity) {
+            return day.format(start) + " – " + day.format(end);
+        }
         SimpleDateFormat time = new SimpleDateFormat(is24Hour ? "HH:mm" : "h:mm a",
                 Locale.getDefault());
-        return day.format(new Date(stats.windowStartMillis)) + " · "
-                + time.format(new Date(stats.windowStartMillis)) + " – "
-                + time.format(new Date(stats.resetAtMillis));
+        return day.format(start) + " · " + time.format(start) + " – " + time.format(end);
     }
 
+    /** Burn rate in percent per hour, with one decimal below 10%/h. */
     private static String formatRate(double percentPerHour) {
         if (percentPerHour >= 10d) {
             return Math.round(percentPerHour) + "%/h";
