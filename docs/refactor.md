@@ -48,4 +48,4 @@
 - `ResetNotificationManager`：调度失败被静默吞掉。
 - 设置导出页把所选导出项只保存在 Fragment 字段中，文件选择器期间进程被回收会丢失选择。
 
-在后续提交中已修复的问题见 [README.md](README.md) 的“问题修复”一节。
+在后续提交中修复的问题见 [README.md](README.md) 第 3 节。
