@@ -54,6 +54,18 @@ public final class DiagnosticLog {
         }
     }
 
+    /**
+     * Android returned no stream for the chosen export file. The message stays English for the
+     * log; the settings page shows its own localized text for this type.
+     */
+    public static final class ExportFileUnavailableException extends IllegalStateException {
+        private static final long serialVersionUID = 1L;
+
+        ExportFileUnavailableException() {
+            super("Android could not open the export file.");
+        }
+    }
+
     private DiagnosticLog() {
     }
 
@@ -175,7 +187,7 @@ public final class DiagnosticLog {
         synchronized (FILE_LOCK) {
             try (OutputStream raw = app.getContentResolver().openOutputStream(destination, "wt")) {
                 if (raw == null) {
-                    throw new IllegalStateException("Android could not open the export file.");
+                    throw new ExportFileUnavailableException();
                 }
                 try (BufferedOutputStream output = new BufferedOutputStream(raw)) {
                     byte[] buffer = new byte[EXPORT_BUFFER_BYTES];

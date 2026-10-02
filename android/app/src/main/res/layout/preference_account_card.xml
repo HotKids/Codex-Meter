@@ -81,6 +81,6 @@
         android:clickable="true"
         android:focusable="true"
         app:showTopDivider="false"
-        app:title="Sign out" />
+        app:title="@string/settings_account_sign_out" />
 
 </dev.oneuiproject.oneui.widget.RoundedLinearLayout>

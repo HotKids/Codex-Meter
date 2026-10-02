@@ -2,7 +2,7 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Theme">
+    <PreferenceCategory android:title="@string/settings_appearance_category_theme">
         <dev.oneuiproject.oneui.preference.HorizontalRadioPreference
             android:key="app_theme"
             app:entries="@array/preferences_darkmode_entries"
@@ -11,12 +11,12 @@
             app:viewType="image" />
         <SwitchPreferenceCompat
             android:key="theme_system_ui"
-            android:title="System default" />
+            android:title="@string/settings_theme_system_default" />
         <SwitchPreferenceCompat
             android:defaultValue="false"
             android:key="material_you"
-            android:summary="Use the system color palette when available"
-            android:title="Material You" />
+            android:summary="@string/settings_appearance_material_you_summary"
+            android:title="@string/settings_appearance_material_you" />
     </PreferenceCategory>
 
 </PreferenceScreen>

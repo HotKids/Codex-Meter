@@ -70,20 +70,30 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         AuthTokens tokens = SecureTokenStore.load(context);
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(context);
         boolean signedIn = tokens != null;
-        title.setText(signedIn ? "ChatGPT account" : "Not connected");
+        title.setText(signedIn
+                ? R.string.settings_account_title_signed_in
+                : R.string.settings_account_title_signed_out);
         if (!signedIn) {
-            summary.setText("Sign in from the dashboard");
+            summary.setText(R.string.settings_account_summary_signed_out);
+        } else if (tokens.email.isEmpty()) {
+            summary.setText(R.string.settings_account_summary_connected);
         } else {
-            summary.setText(tokens.email.isEmpty() ? "Connected" : tokens.email);
+            summary.setText(tokens.email);
         }
         if (signedIn && snapshot != null) {
             String label = UsageFormat.planLabel(snapshot.planType);
-            plan.setText(label.isEmpty() ? "Codex" : label);
+            if (label.isEmpty()) {
+                plan.setText(R.string.settings_account_plan_fallback);
+            } else {
+                plan.setText(label);
+            }
             plan.setVisibility(View.VISIBLE);
         } else {
             plan.setVisibility(View.GONE);
         }
-        action.getTitleView().setText(signedIn ? "Sign out" : "Sign in with ChatGPT");
+        action.getTitleView().setText(signedIn
+                ? R.string.settings_account_sign_out
+                : R.string.settings_account_sign_in);
         action.getTitleView().setTextColor(signedIn
                 ? (dark ? SIGN_OUT_COLOR_DARK : SIGN_OUT_COLOR_LIGHT)
                 : Ui.accent(context, dark));
@@ -112,11 +122,11 @@ public final class SettingsRootFragment extends SettingsPageFragment {
 
     private void confirmSignOut() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Sign out?")
-                .setMessage("This removes encrypted ChatGPT tokens and cached usage from this "
-                        + "device.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Sign out", (dialog, which) -> signOut())
+                .setTitle(R.string.settings_sign_out_dialog_title)
+                .setMessage(R.string.settings_sign_out_dialog_message)
+                .setNegativeButton(R.string.settings_dialog_cancel, null)
+                .setPositiveButton(R.string.settings_account_sign_out,
+                        (dialog, which) -> signOut())
                 .show();
     }
 
@@ -129,7 +139,7 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         RefreshScheduler.cancelAll(context);
         ResetAlertScheduler.cancelAll(context);
         WidgetRenderer.updateAll(context);
-        showToast("Signed out.", Toast.LENGTH_SHORT);
+        showToast(getString(R.string.settings_signed_out), Toast.LENGTH_SHORT);
         requireActivity().recreate();
         if (tokens != null) {
             // Server-side revocation is best effort and must not block the UI thread.
@@ -152,16 +162,15 @@ public final class SettingsRootFragment extends SettingsPageFragment {
 
     private static String appearanceSummary(Context context) {
         String theme = AppPreferences.getAppTheme(context);
-        String themeLabel;
-        if (WidgetOptions.THEME_SYSTEM.equals(theme)) {
-            themeLabel = "System default";
-        } else if (WidgetOptions.THEME_DARK.equals(theme)) {
-            themeLabel = "Dark";
-        } else {
-            themeLabel = "Light";
-        }
-        return themeLabel + " · Material You "
-                + (AppPreferences.isMaterialYouEnabled(context) ? "on" : "off");
+        String themeLabel = WidgetOptions.THEME_SYSTEM.equals(theme)
+                ? context.getString(R.string.settings_theme_system_default)
+                : arrayLabel(context, R.array.preferences_darkmode_entries,
+                        R.array.preferences_darkmode_values,
+                        WidgetOptions.THEME_DARK.equals(theme)
+                                ? WidgetOptions.THEME_DARK : WidgetOptions.THEME_LIGHT);
+        return context.getString(AppPreferences.isMaterialYouEnabled(context)
+                ? R.string.settings_summary_appearance_material_you_on
+                : R.string.settings_summary_appearance_material_you_off, themeLabel);
     }
 
     private static String refreshUsageSummary(Context context) {
@@ -169,74 +178,95 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         int refreshMinutes = automatic
                 ? RefreshScheduler.effectiveRefreshMinutes(context)
                 : AppPreferences.getRefreshMinutes(context);
-        String refreshLabel = refreshIntervalLabel(refreshMinutes);
-        if (automatic) {
-            refreshLabel = "Automatic · currently " + refreshLabel;
-        }
-        return refreshLabel + " · " + estimatesSummary(context);
+        return context.getString(automatic
+                        ? R.string.settings_summary_refresh_automatic
+                        : R.string.settings_summary_refresh_manual,
+                refreshIntervalLabel(context, refreshMinutes), estimatesSummary(context));
     }
 
-    private static String refreshIntervalLabel(int minutes) {
+    private static String refreshIntervalLabel(Context context, int minutes) {
         if (minutes < MINUTES_PER_HOUR) {
-            return minutes + " minutes";
+            return context.getResources().getQuantityString(
+                    R.plurals.settings_refresh_interval_minutes, minutes, minutes);
         }
         if (minutes == MINUTES_PER_HOUR) {
-            return "Hourly";
+            return context.getString(R.string.settings_refresh_interval_hourly);
         }
-        return "Every " + (minutes / MINUTES_PER_HOUR) + " hours";
+        int hours = minutes / MINUTES_PER_HOUR;
+        return context.getResources().getQuantityString(
+                R.plurals.settings_refresh_interval_every_hours, hours, hours);
     }
 
     private static String estimatesSummary(Context context) {
         if (!UsagePacePreferences.isEnabled(context)) {
-            return "Estimates off";
+            return context.getString(R.string.settings_summary_estimates_off);
         }
         if (!UsagePacePreferences.areWarningsEnabled(context)) {
-            return "Estimates on · Warnings off";
+            return context.getString(R.string.settings_summary_estimates_on_warnings_off);
         }
-        return "Estimates on";
+        return context.getString(R.string.settings_summary_estimates_on);
     }
 
     private static String notificationsSummary(Context context) {
         if (!ResetAlertPreferences.enabled(context)) {
-            return "Off";
+            return context.getString(R.string.settings_summary_notifications_off);
         }
-        return "On · " + metricLabel(ResetAlertPreferences.getMetric(context))
-                + " at " + ResetAlertPreferences.getThreshold(context) + "%";
+        return context.getString(R.string.settings_summary_notifications_on,
+                metricLabel(context, ResetAlertPreferences.getMetric(context)),
+                ResetAlertPreferences.getThreshold(context));
     }
 
-    private static String metricLabel(String metric) {
+    private static String metricLabel(Context context, String metric) {
         if ("five_hour".equals(metric)) {
-            return "5-hour";
+            return context.getString(R.string.settings_summary_metric_five_hour);
         }
         if ("weekly".equals(metric)) {
-            return "Weekly";
+            return context.getString(R.string.settings_summary_metric_weekly);
         }
-        return "Both limits";
+        return context.getString(R.string.settings_summary_metric_both);
     }
 
     private static String nowBarSummary(Context context) {
         if (NowBarManager.isActive(context)) {
-            return "Live monitor active";
+            return context.getString(R.string.settings_summary_now_bar_active);
         }
         if (NowBarPreferences.isAutoStartEnabled(context)) {
-            return "Automatic · starts at " + NowBarPreferences.getThreshold(context) + "%";
+            return context.getString(R.string.settings_summary_now_bar_automatic,
+                    NowBarPreferences.getThreshold(context));
         }
-        return "Manual start";
+        return context.getString(R.string.settings_summary_now_bar_manual);
     }
 
     private static String updatesSummary(Context context) {
         GitHubRelease availableUpdate = UpdatePreferences.availableUpdate(context);
-        String channelSuffix = UpdateChannel.isAlpha(UpdatePreferences.channel(context))
-                ? " · Alpha channel" : "";
         String status;
         if (availableUpdate != null) {
-            status = "v" + availableUpdate.version + " available";
+            status = context.getString(R.string.settings_summary_updates_available,
+                    availableUpdate.version);
         } else if (UpdatePreferences.automaticChecks(context)) {
-            status = "Automatic · " + UpdateCheckFrequency.label(
+            int hours = UpdateCheckFrequency.normalize(
                     UpdatePreferences.checkIntervalHours(context));
+            status = context.getString(R.string.settings_summary_updates_automatic,
+                    arrayLabel(context, R.array.settings_update_interval_entries,
+                            R.array.settings_update_interval_values, String.valueOf(hours)));
         } else {
-            status = "Automatic checks off";
+            status = context.getString(R.string.settings_summary_updates_checks_off);
         }
-        return status + channelSuffix;
+        return UpdateChannel.isAlpha(UpdatePreferences.channel(context))
+                ? context.getString(R.string.settings_summary_updates_alpha, status)
+                : status;
+    }
+
+    /** The localized list entry whose stored value is {@code value}; the value if none match. */
+    private static String arrayLabel(Context context, int entriesRes, int valuesRes,
+            String value) {
+        String[] entries = context.getResources().getStringArray(entriesRes);
+        String[] values = context.getResources().getStringArray(valuesRes);
+        for (int i = 0; i < values.length && i < entries.length; i++) {
+            if (values[i].equals(value)) {
+                return entries[i];
+            }
+        }
+        return value;
     }
 }
