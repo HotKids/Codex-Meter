@@ -1,16 +1,24 @@
 # Contributing
 
-This repository is a monorepo:
+This repository holds the Codex Meter Android project:
 
 - Shared docs and release notes live at the repository root (`README.md`,
   `CHANGELOG.md`, `LICENSE`, `AGENTS.md`).
 - **Android** lives under [`android/`](android/) (Gradle, `app/`, `shared/`,
   `wear/`, `tests/`).
-- **iOS** lives under [`ios/`](ios/).
 
-Keep platform-specific changes in the matching tree. Prefer focused commits and
-update tests with behavior changes. Do not commit credentials, tokens, or
-generated build artifacts.
+Prefer focused commits and update tests with behavior changes. Do not commit
+credentials, tokens, or generated build artifacts.
+
+This fork (`HotKids/Codex-Meter`) takes ordinary commits and pushes; pull
+requests are opened only when the maintainer asks for one. Keep the fork
+relationship with `BenItBuhner/Codex-Meter` so upstream changes can be merged.
+
+**Wear OS is frozen.** Leave `android/wear/` code, resources, dependencies, and
+version unchanged, and preserve the shared phone-to-watch behavior in
+`android/shared/`. Building and validating the existing companion is allowed.
+Release steps that change Wear OS require an explicit maintainer request to
+resume that work.
 
 ## Android local setup
 
@@ -28,6 +36,20 @@ From the repository root (wrappers) or from `android/`:
 ./build.sh
 ./lint.sh
 ```
+
+CI additionally runs the Robolectric unit tests:
+
+```bash
+cd android && ./gradlew :app:testDebugUnitTest
+```
+
+User-visible phone text belongs in string resources with a Simplified Chinese
+translation under `res/values-zh-rCN/`; lint treats a missing translation as an
+error. Use whole-sentence format strings with positional arguments and
+`<plurals>` for counts rather than concatenating fragments.
+
+After editing `app/src/main/res/layout/widget_card.xml`, regenerate its
+text-shadow twin with `android/tools/widget-card-shadow.sh`.
 
 See [`android/README.md`](android/README.md) for module layout details.
 
@@ -68,16 +90,3 @@ add a `## 2.8.0-alpha.1` section to `CHANGELOG.md`, then tag `v2.8.0-alpha.1`.
 Promoting to stable: merge `alpha` into `main`, drop the suffix, bump
 `versionCode`, consolidate the alpha changelog sections under the stable version,
 then tag as usual.
-
-## iOS local setup
-
-Install Xcode 26 or newer. From `ios/`:
-
-```bash
-swift test --package-path CodexMeterCore
-xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeter \
-  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
-```
-
-See [`ios/README.md`](ios/README.md) for device signing, App Groups, and release
-checklist notes.

@@ -1,16 +1,42 @@
 # Codex Meter
 
-Codex Meter is an unofficial open-source client for viewing the Codex allowance
-attached to a signed-in ChatGPT account. This repository is a **monorepo**:
+Codex Meter is an unofficial open-source Android client for viewing the Codex
+allowance attached to a signed-in ChatGPT account.
 
 | Path | Platform | Notes |
 |------|----------|--------|
 | Repository root | Shared | Docs, license, changelog, CI, convenience script wrappers |
-| [`android/`](android/) | **Android** | Phone app + Wear companion: One UI dashboard, home widgets, Samsung lock/AOD, notifications, optional live usage monitor |
-| [`ios/`](ios/) | **iPhone / iPad** | Native SwiftUI + WidgetKit client with portable 2.8.0 behavior (meters, monthly Free-tier windows, history analytics, diagnostics, widgets) |
+| [`android/`](android/) | **Android** | Phone app (One UI dashboard, home widgets, Samsung lock/AOD, notifications, optional live usage monitor) and a frozen Wear OS companion |
 
-There is no shared backend. Each platform talks to ChatGPT/Codex endpoints
-directly and stores credentials only on-device.
+There is no backend. The app talks to ChatGPT/Codex endpoints directly and
+stores credentials only on-device.
+
+## About this fork
+
+This is [`HotKids/Codex-Meter`](https://github.com/HotKids/Codex-Meter), a fork of
+[`BenItBuhner/Codex-Meter`](https://github.com/BenItBuhner/Codex-Meter). It keeps
+the fork relationship so upstream changes can be merged by hand. Differences from
+upstream:
+
+- **Package and updates.** The phone installs as `me.pipi.usage` (the Java
+  namespace stays `dev.bennett.codexmeter`), so it can sit beside an upstream
+  install. Broadcast actions and the internal signature permission are derived
+  from the application ID. In-app updates and project links point at this fork,
+  so an upstream APK with the old package ID is never offered as an update.
+- **Simplified Chinese.** All phone screens, notifications and widgets have
+  zh-CN resources; English remains the fallback.
+- **Home widgets in the style of AI-Usage.** The responsive home widget is a
+  usage card modelled on the Codex widgets of
+  [AI-Usage](https://github.com/StarYunLee/Scripting) (MIT, bundled in
+  `android/app/src/main/assets/AI-Usage-LICENSE.txt`). See *Widget surfaces*.
+- **Plan labels.** OpenAI's top Pro tier (`pro`, cached `pro20x`) is labelled
+  **Pro 10x**; Team, Business, Enterprise and Premium also get labels and badges.
+- **Branding.** A blue allowance-ring launcher icon and a matching Codex glyph
+  for the Now Bar and Live Update notifications.
+- **No iOS client.** The upstream `ios/` tree and its CI are removed.
+- **Wear OS is frozen.** `android/wear/` is unchanged. Google's Data Layer only
+  pairs apps with the same application ID and signing certificate, so the
+  upstream Wear package cannot pair with this renamed phone app.
 
 ## Android — Version 2.8.0
 
@@ -34,10 +60,18 @@ Users can choose silent, notification-sound, or alarm-sound alerts for the five-
 
 The app includes:
 
-- Responsive home-screen widgets with ring, four-dial, and battery-list layouts, plus Adaptive / Dials / Progress bars layout preference and drag-reorderable meter slots (Codex 5-hour/weekly, next reset, reset credits).
-- Both-window, five-hour-only, and weekly-only configurations (legacy metric mode; meters checklist supersedes this when customized).
-- Optional reset-credit inventory, expiration, and redemption controls.
-- Transparent through opaque backgrounds, including a Background off toggle and three One UI-style opacity steps.
+- A responsive home-screen usage card in the style of AI-Usage: plan badge,
+  remaining percentage, reset countdown and a severity-coloured bar per usage
+  window, with the refresh time and any available reset credits (count and
+  nearest expiry) as footer metadata. Small placements show one or two windows;
+  wide placements show up to four.
+- A per-widget editor: choose and drag-order 1–4 usage windows (five-hour,
+  weekly, monthly when it coexists with weekly, and model-specific limits such
+  as Codex Spark), Color or Clear style, system/light/dark theme, and background
+  on/off with opacity. Automatic refresh follows the app's refresh settings.
+- Tap the refresh time to refresh; tap anywhere else to open the app.
+- One-row placements (2×1 and 4×1) keep the upstream One UI dials.
+- Reset-credit inventory, expiration, and redemption inside the app.
 - Samsung One UI presentation throughout the dashboard, settings, and widget configuration surfaces.
 - Samsung lock/AOD providers for both usage windows together or dedicated five-hour and weekly views.
 - High-resolution supersampled lock-screen geometry with native Android text overlays.
@@ -81,21 +115,7 @@ From the repository root:
 ./build.sh
 ```
 
-Or from `android/` directly. `build.sh` assembles the release APKs with Gradle and signs them with a local development key under `android/.local-signing/`. Those locally signed APKs will not install over the distributed release build. Artifacts land in `android/dist/`.
-
-### iOS
-
-See [`ios/README.md`](ios/README.md). Requires Xcode 26+ and iOS/iPadOS 26+.
-The iOS client now carries portable Android 2.8.0 behavior: Free-tier monthly
-windows, scrubbable usage-history analytics with customize, and opt-in
-diagnostic log export.
-
-```bash
-cd ios
-swift test --package-path CodexMeterCore
-xcodebuild -project CodexMeter.xcodeproj -scheme CodexMeter \
-  -destination 'generic/platform=iOS Simulator' CODE_SIGNING_ALLOWED=NO build
-```
+Or from `android/` directly. `run-tests.sh` runs the pure-Java self-tests; CI also runs the Robolectric unit tests with `./gradlew :app:testDebugUnitTest`. `build.sh` assembles the release APKs with Gradle and signs them with a local development key under `android/.local-signing/`. Those locally signed APKs will not install over the distributed release build. Artifacts land in `android/dist/`.
 
 ## Releases
 
