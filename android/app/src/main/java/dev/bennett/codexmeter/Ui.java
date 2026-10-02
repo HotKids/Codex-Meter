@@ -432,11 +432,17 @@ public final class Ui {
     // Buttons
     // ---------------------------------------------------------------------------------------
 
-    /**
-     * Pill button filled with the accent ({@code primary}) or the control surface. Labels that
-     * name a known action get a matching leading icon.
-     */
+    /** Pill button filled with the accent ({@code primary}) or the control surface. */
     public static Button button(Context context, String label, boolean primary, boolean dark) {
+        return button(context, label, 0, primary, dark);
+    }
+
+    /**
+     * Pill button with an optional leading icon. Icons are chosen by the caller rather than
+     * inferred from the label, so translated labels keep their icons.
+     */
+    public static Button button(Context context, String label, int icon, boolean primary,
+            boolean dark) {
         Button button = new AppCompatButton(context);
         button.setText(label);
         button.setAllCaps(false);
@@ -457,7 +463,6 @@ public final class Ui {
         button.setBackground(new RippleDrawable(ColorStateList.valueOf(ripple),
                 shape(fill, dp(context, PILL_CORNER_RADIUS_DP)), null));
         button.setTextColor(foreground);
-        int icon = buttonIcon(label);
         if (icon != 0) {
             button.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
             button.setCompoundDrawablePadding(dp(context, 8.0f));
@@ -516,38 +521,6 @@ public final class Ui {
     }
 
     /** Picks a leading icon from keywords in the button label, or 0 for none. */
-    private static int buttonIcon(String label) {
-        String value = label == null ? "" : label.toLowerCase();
-        if (value.contains("refresh")) {
-            return R.drawable.ic_oui_refresh;
-        }
-        if (value.contains("sign in")) {
-            return R.drawable.ic_oui_samsung_account;
-        }
-        if (value.contains("sign out")) {
-            return R.drawable.ic_oui_app_closed;
-        }
-        if (value.contains("add widget")) {
-            return R.drawable.ic_oui_add_home;
-        }
-        if (value.contains("customize") || value.contains("settings")) {
-            return R.drawable.ic_oui_settings;
-        }
-        if (value.contains("save")) {
-            return R.drawable.ic_oui_save;
-        }
-        if (value.contains("cancel") || value.contains("discard")) {
-            return R.drawable.ic_oui_close;
-        }
-        if (value.contains("reset")) {
-            return R.drawable.ic_oui_battery;
-        }
-        if (value.contains("alarm")) {
-            return R.drawable.ic_oui_alarm;
-        }
-        return 0;
-    }
-
     // ---------------------------------------------------------------------------------------
     // Progress and form controls
     // ---------------------------------------------------------------------------------------
