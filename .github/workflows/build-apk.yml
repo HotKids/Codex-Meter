@@ -200,8 +200,8 @@ jobs:
           SOURCE_SHA: ${{ github.sha }}
         run: |
           set -euo pipefail
-          test -d reports/widget-previews
-          cd reports/widget-previews
+          test -d reports
+          cd reports
           git init -q
           git checkout -q -b ci/widget-previews
           git add -A

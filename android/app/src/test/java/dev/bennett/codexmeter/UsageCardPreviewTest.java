@@ -34,7 +34,7 @@ public class UsageCardPreviewTest {
     }
 
     @Test
-    @Config(qualifiers = "zh-rCN-xhdpi-night")
+    @Config(qualifiers = "zh-rCN-night-xhdpi")
     public void rendersChineseDarkCards() throws Exception {
         renderSheet("cards-zh-dark", false, 2);
     }

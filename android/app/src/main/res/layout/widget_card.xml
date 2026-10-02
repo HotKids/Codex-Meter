@@ -62,7 +62,7 @@
                 android:scaleType="fitStart"
                 android:src="@drawable/ai_usage_openai" />
 
-            <View
+            <FrameLayout
                 android:layout_width="0dp"
                 android:layout_height="0dp"
                 android:layout_weight="1" />
@@ -112,7 +112,7 @@
                 style="@style/WidgetCardText.Bold"
                 android:textSize="32dp" />
 
-            <View
+            <FrameLayout
                 android:id="@+id/card_hero_spacer"
                 android:layout_width="0dp"
                 android:layout_height="0dp"
