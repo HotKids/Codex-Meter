@@ -383,7 +383,7 @@ public final class SettingsTransferStore {
                 RefreshScheduler.scheduleAtNextReset(app, snapshot);
                 WidgetRenderer.updateAll(app);
             } catch (Exception exception) {
-                String message = exception.getMessage();
+                String message = exception.getLocalizedMessage();
                 if (message == null || message.trim().isEmpty()) {
                     message = app.getString(R.string.settings_transfer_error_refresh_failed);
                 }

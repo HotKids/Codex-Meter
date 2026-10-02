@@ -136,6 +136,6 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
         if (exception instanceof DiagnosticLog.ExportFileUnavailableException) {
             return getString(R.string.settings_diagnostics_export_file_unavailable);
         }
-        return MainActivity.safeMessage(exception);
+        return MainActivity.safeMessage(requireContext(), exception);
     }
 }

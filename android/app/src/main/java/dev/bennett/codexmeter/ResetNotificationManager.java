@@ -310,7 +310,7 @@ public final class ResetNotificationManager {
             long now = System.currentTimeMillis();
             String text = context.getString(R.string.alerts_reset_credit_expiry_text,
                     UsageFormat.absolute(context, expiresAtMillis, now),
-                    UsageFormat.relative(expiresAtMillis, now));
+                    UsageFormat.relative(context, expiresAtMillis, now));
             if (!postResetCreditExpiry(context, notificationId,
                     context.getString(R.string.alerts_reset_credit_expiry_title), text)) {
                 return false;

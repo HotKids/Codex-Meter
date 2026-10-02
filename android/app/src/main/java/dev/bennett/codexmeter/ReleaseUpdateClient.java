@@ -171,7 +171,7 @@ public final class ReleaseUpdateClient {
     }
 
     static String safeMessage(Context context, Exception exception) {
-        String message = exception == null ? "" : exception.getMessage();
+        String message = exception == null ? "" : exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             message = context.getString(R.string.updates_error_check_failed);
         }

@@ -68,25 +68,11 @@ public final class ResetCreditActivity extends AppCompatActivity {
                 R.plurals.alerts_reset_credits_available, available, available);
     }
 
-    /**
-     * English-only {@link #availableResetsLabel(Context, int)}, kept for callers that have not
-     * moved to the localized overload yet.
-     */
-    static String availableResetsLabel(int available) {
-        if (available <= 0) {
-            return "No resets available";
-        }
-        if (available == 1) {
-            return "1 reset available";
-        }
-        return available + " resets available";
-    }
-
     /** Absolute expiry time followed by the relative countdown, e.g. "Fri 10:00 · in 2d". */
     static String expiryText(Context context, long expiresAtMillis, long nowMillis) {
         return context.getString(R.string.alerts_reset_credit_expiry_time,
                 UsageFormat.absolute(context, expiresAtMillis, nowMillis),
-                UsageFormat.relative(expiresAtMillis, nowMillis));
+                UsageFormat.relative(context, expiresAtMillis, nowMillis));
     }
 
     private void rebuild() {
@@ -293,7 +279,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
      * none.
      */
     private static String safeMessage(Context context, Exception exception) {
-        String message = exception == null ? "" : exception.getMessage();
+        String message = exception == null ? "" : exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             return context.getString(R.string.alerts_reset_credits_apply_failed);
         }

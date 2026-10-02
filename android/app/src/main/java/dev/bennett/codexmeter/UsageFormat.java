@@ -9,9 +9,8 @@ import java.util.Locale;
 import java.util.concurrent.TimeUnit;
 
 /**
- * Phone/widget presentation of plans, percentages, reset times, and ages. Methods taking a
- * {@link Context} return localized text; the remaining English-only overloads exist for
- * callers that have not been localized yet.
+ * Phone/widget presentation of plans, percentages, reset times, and ages, localized through
+ * the given {@link Context}. Plan names are product names and stay untranslated.
  */
 public final class UsageFormat {
     private static final long MINUTES_PER_HOUR = TimeUnit.HOURS.toMinutes(1);
@@ -122,17 +121,6 @@ public final class UsageFormat {
         return minutes > 0 ? compactDuration(context, targetMillis - nowMillis) : "";
     }
 
-    /** English-only; kept for callers that have not been localized yet. */
-    public static String estimatedRemaining(UsagePace.Assessment assessment) {
-        if (assessment == null || !assessment.available) {
-            return "";
-        }
-        if (assessment.estimatedRemainingMillis <= 0L) {
-            return "Est. depleted";
-        }
-        return "Est. " + compactDuration(assessment.estimatedRemainingMillis);
-    }
-
     /** "Est. 1d 3h" / "Est. depleted", or "" when no estimate is available. */
     public static String estimatedRemaining(Context context, UsagePace.Assessment assessment) {
         return estimate(context, assessment, R.string.dashboard_estimate_remaining,
@@ -156,20 +144,6 @@ public final class UsageFormat {
         }
         return context.getString(remainingRes,
                 compactDuration(context, assessment.estimatedRemainingMillis));
-    }
-
-    /** English-only "Xd Yh", "Xh Ym", or "Xm"; never below one minute. */
-    static String compactDuration(long millis) {
-        long minutes = durationMinutes(millis);
-        long days = minutes / MINUTES_PER_DAY;
-        long hours = minutes % MINUTES_PER_DAY / MINUTES_PER_HOUR;
-        if (days > 0L) {
-            return days + "d " + hours + "h";
-        }
-        if (hours > 0L) {
-            return hours + "h " + minutes % MINUTES_PER_HOUR + "m";
-        }
-        return minutes + "m";
     }
 
     /** Localized "Xd Yh", "Xh Ym", or "Xm"; never below one minute. */
@@ -237,12 +211,6 @@ public final class UsageFormat {
         return a.get(Calendar.ERA) == b.get(Calendar.ERA)
                 && a.get(Calendar.YEAR) == b.get(Calendar.YEAR)
                 && a.get(Calendar.DAY_OF_YEAR) == b.get(Calendar.DAY_OF_YEAR);
-    }
-
-    /** English-only; kept for callers that have not been localized yet. */
-    public static String relative(long targetMillis, long nowMillis) {
-        long minutes = TimeUnit.MILLISECONDS.toMinutes(Math.max(0L, targetMillis - nowMillis));
-        return minutes > 0 ? "in " + compactDuration(targetMillis - nowMillis) : "now";
     }
 
     /** "in Xd Yh", "in Xh Ym", "in Xm", or "now" once less than a minute remains. */

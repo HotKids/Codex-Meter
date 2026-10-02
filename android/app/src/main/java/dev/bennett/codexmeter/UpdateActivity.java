@@ -409,7 +409,7 @@ public final class UpdateActivity extends AppCompatActivity {
     }
 
     private String safeMessage(Exception exception) {
-        String message = exception == null ? "" : exception.getMessage();
+        String message = exception == null ? "" : exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             message = getString(R.string.updates_error_prepare_failed);
         }

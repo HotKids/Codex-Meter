@@ -901,21 +901,13 @@ public final class MainActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * English-only {@link #safeMessage(Context, Exception)}; kept for callers that have not
-     * been localized yet.
-     */
-    public static String safeMessage(Exception exc) {
-        return cappedMessage(exc, "The operation failed.");
-    }
-
     /** User-facing error text: the exception message capped in length, or a generic failure. */
     public static String safeMessage(Context context, Exception exc) {
         return cappedMessage(exc, context.getString(R.string.dashboard_operation_failed));
     }
 
     private static String cappedMessage(Exception exc, String fallback) {
-        String message = exc.getMessage();
+        String message = exc.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             return fallback;
         }

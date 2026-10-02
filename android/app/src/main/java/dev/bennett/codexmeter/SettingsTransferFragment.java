@@ -331,7 +331,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
         if (exception instanceof SettingsTransfer.TransferException) {
             return problemMessage((SettingsTransfer.TransferException) exception);
         }
-        String message = exception.getMessage();
+        String message = exception.getLocalizedMessage();
         return message == null || message.isEmpty() ? getString(fallback) : message;
     }
 
@@ -369,7 +369,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
                         R.string.settings_transfer_error_lead_times_out_of_range_entry,
                         exception.argument);
             default:
-                return exception.getMessage();
+                return exception.getLocalizedMessage();
         }
     }
 }

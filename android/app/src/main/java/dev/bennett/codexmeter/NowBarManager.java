@@ -929,7 +929,7 @@ public final class NowBarManager {
             UsagePace.Assessment pace = UsagePacePreferences.assess(
                     context, snapshot, progressWindow, now);
             accelerated = !preview && pace.accelerated;
-            estimate = UsageFormat.estimatedRemaining(pace);
+            estimate = UsageFormat.estimatedRemaining(context, pace);
             remaining = progressWindow == null ? 0 : progressWindow.remainingPercent();
             used = progressWindow == null ? 0 : progressWindow.usedPercent;
             // Preview snapshots invent their own windows without a remote observation time;
