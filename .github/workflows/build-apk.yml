@@ -7,11 +7,6 @@ on:
     branches: [main, alpha]
     tags: ['v*']
   workflow_dispatch:
-    inputs:
-      publish_widget_previews:
-        description: Push rendered widget previews to the ci/widget-previews branch
-        type: boolean
-        default: false
 
 permissions:
   contents: read
@@ -127,14 +122,6 @@ jobs:
           set -euo pipefail
           ./lint.sh
 
-      - name: Upload lint report
-        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish_widget_previews
-        uses: actions/upload-artifact@v7
-        with:
-          name: phone-lint-report
-          path: android/app/build/intermediates/lint_intermediate_text_report/release/lintReportRelease/lint-results-release.txt
-          if-no-files-found: ignore
-
       - name: Configure release signing
         if: github.ref_type == 'tag'
         shell: bash
@@ -187,44 +174,6 @@ jobs:
           if-no-files-found: error
           retention-days: 3
 
-
-  widget-previews:
-    if: always() && github.event_name == 'workflow_dispatch' && inputs.publish_widget_previews
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      contents: write
-    steps:
-      - name: Download widget previews
-        uses: actions/download-artifact@v8
-        with:
-          name: phone-test-reports
-          path: reports
-
-      - name: Download lint report
-        continue-on-error: true
-        uses: actions/download-artifact@v8
-        with:
-          name: phone-lint-report
-          path: reports/lint
-
-      - name: Publish previews to ci/widget-previews
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SOURCE_SHA: ${{ github.sha }}
-        run: |
-          set -euo pipefail
-          test -d reports
-          cd reports
-          git init -q
-          git checkout -q -b ci/widget-previews
-          git add -A
-          git -c user.name='github-actions[bot]' \
-              -c user.email='41898282+github-actions[bot]@users.noreply.github.com' \
-              commit -q -m "Widget previews for ${SOURCE_SHA}"
-          git push -q -f "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" \
-              HEAD:refs/heads/ci/widget-previews
 
   release:
     if: startsWith(github.ref, 'refs/tags/v')
