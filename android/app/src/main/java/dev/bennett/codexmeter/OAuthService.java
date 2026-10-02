@@ -233,8 +233,9 @@ public final class OAuthService extends Service {
     private int bindServer() throws Exception {
         Exception last = null;
         for (int port : AppConstants.OAUTH_PORTS) {
+            ServerSocket candidate = null;
             try {
-                ServerSocket candidate = new ServerSocket();
+                candidate = new ServerSocket();
                 candidate.setReuseAddress(true);
                 InetAddress loopback = InetAddress.getByName(LOOPBACK_ADDRESS);
                 candidate.bind(new InetSocketAddress(loopback, port));
@@ -243,6 +244,8 @@ public final class OAuthService extends Service {
                 return port;
             } catch (Exception exception) {
                 last = exception;
+                // A socket that failed to bind must not stay open while the next port is tried.
+                closeQuietly(candidate);
             }
         }
         OAuthClient.UserFacingException failure =
@@ -372,6 +375,16 @@ public final class OAuthService extends Service {
                 socket.close();
             } catch (Exception ignored) {
                 // Closing only unblocks a pending accept; nothing to recover.
+            }
+        }
+    }
+
+    private static void closeQuietly(ServerSocket socket) {
+        if (socket != null) {
+            try {
+                socket.close();
+            } catch (Exception ignored) {
+                // Nothing was accepted on it; the port is released either way.
             }
         }
     }

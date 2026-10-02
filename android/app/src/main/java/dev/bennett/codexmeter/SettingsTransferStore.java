@@ -183,37 +183,27 @@ public final class SettingsTransferStore {
             throw new IllegalArgumentException(
                     context.getString(R.string.settings_transfer_error_import_source));
         }
+        validateImport(context, document, applyAppSettings, applyNotifications, applyNowBar,
+                applyAuthentication);
         Context app = context.getApplicationContext();
         List<String> applied = new ArrayList<>();
         boolean themeChanged = false;
 
         if (applyAppSettings) {
-            requireSection(context, document.hasAppSettings(),
-                    R.string.settings_transfer_error_no_app_settings);
             themeChanged = applyAppSettings(app, document.appSettings);
             applied.add(SettingsTransfer.SECTION_APP_SETTINGS);
         }
         if (applyNotifications) {
-            requireSection(context, document.hasNotifications(),
-                    R.string.settings_transfer_error_no_notifications);
             applyNotifications(app, document.notifications);
             applied.add(SettingsTransfer.SECTION_NOTIFICATIONS);
         }
         if (applyNowBar) {
-            requireSection(context, document.hasNowBar(),
-                    R.string.settings_transfer_error_no_now_bar);
             applyNowBar(app, document.nowBar);
             applied.add(SettingsTransfer.SECTION_NOW_BAR);
         }
         if (applyAuthentication) {
-            requireSection(context, document.hasAuthentication(),
-                    R.string.settings_transfer_error_no_authentication);
             applyAuthentication(app, document.authentication);
             applied.add(SettingsTransfer.SECTION_AUTHENTICATION);
-        }
-        if (applied.isEmpty()) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_select_import));
         }
 
         rescheduleAfterImport(app, applyAppSettings, applyNowBar);
@@ -221,6 +211,42 @@ public final class SettingsTransferStore {
             refreshUsageInBackground(app);
         }
         return new ApplyResult(applied, themeChanged, applyAuthentication);
+    }
+
+    /**
+     * Checks every selected section before anything is written, so a missing section, bad
+     * reminder lead times or unusable tokens cannot leave a half-applied import behind.
+     */
+    private static void validateImport(Context context, SettingsTransfer.Document document,
+            boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
+            boolean applyAuthentication) throws Exception {
+        if (!applyAppSettings && !applyNotifications && !applyNowBar && !applyAuthentication) {
+            throw new IllegalArgumentException(
+                    context.getString(R.string.settings_transfer_select_import));
+        }
+        if (applyAppSettings) {
+            requireSection(context, document.hasAppSettings(),
+                    R.string.settings_transfer_error_no_app_settings);
+        }
+        if (applyNotifications) {
+            requireSection(context, document.hasNotifications(),
+                    R.string.settings_transfer_error_no_notifications);
+            if (document.notifications.has(KEY_LEAD_TIMES)) {
+                SettingsTransfer.requireLeadTimes(document.notifications, KEY_LEAD_TIMES);
+            }
+        }
+        if (applyNowBar) {
+            requireSection(context, document.hasNowBar(),
+                    R.string.settings_transfer_error_no_now_bar);
+        }
+        if (applyAuthentication) {
+            requireSection(context, document.hasAuthentication(),
+                    R.string.settings_transfer_error_no_authentication);
+            if (!AuthTokens.fromJson(document.authentication).isUsable()) {
+                throw new IllegalArgumentException(
+                        context.getString(R.string.settings_transfer_error_auth_invalid));
+            }
+        }
     }
 
     private static void requireSection(Context context, boolean present, int missingMessage) {

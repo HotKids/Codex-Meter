@@ -13,6 +13,7 @@ import android.util.AttributeSet;
 import android.view.HapticFeedbackConstants;
 import android.view.MotionEvent;
 import android.view.View;
+import android.view.ViewParent;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
@@ -177,11 +178,12 @@ public final class UsageBurnChartView extends View {
             case MotionEvent.ACTION_DOWN:
             case MotionEvent.ACTION_MOVE:
                 // Keep scrolling parents from stealing a horizontal scrub.
-                getParent().requestDisallowInterceptTouchEvent(true);
+                disallowParentIntercept(true);
                 updateScrub(event.getX(), active, axis);
                 return true;
             case MotionEvent.ACTION_UP:
             case MotionEvent.ACTION_CANCEL:
+                disallowParentIntercept(false);
                 scrubbing = false;
                 lastHapticBucket = Long.MIN_VALUE;
                 if (scrubListener != null) {
@@ -191,6 +193,14 @@ public final class UsageBurnChartView extends View {
                 return true;
             default:
                 return super.onTouchEvent(event);
+        }
+    }
+
+    /** Hands vertical scrolling back to the page once the finger lifts; tolerates detachment. */
+    private void disallowParentIntercept(boolean disallow) {
+        ViewParent parent = getParent();
+        if (parent != null) {
+            parent.requestDisallowInterceptTouchEvent(disallow);
         }
     }
 
