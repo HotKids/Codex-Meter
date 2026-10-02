@@ -480,8 +480,8 @@ grep -q 'android:pathData="M 8.086,0.457 a 6.105,6.105 0 0,1' \
   "$ROOT/app/src/main/res/drawable/ic_codex_logo_on_accent.xml"
 grep -q 'fillType="evenOdd"' \
   "$ROOT/app/src/main/res/drawable/ic_notification.xml"
-grep -q '#FF111111' "$ROOT/app/src/main/res/drawable/ic_codex_logo.xml"
-grep -q '#FFFFFFFF' "$ROOT/app/src/main/res/drawable/ic_codex_logo_dark.xml"
+grep -q '#435F87' "$ROOT/app/src/main/res/drawable/ic_codex_logo.xml"
+grep -q '#B5CDFA' "$ROOT/app/src/main/res/drawable/ic_codex_logo_dark.xml"
 grep -q 'android.ongoingActivityNoti.' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/NowBarManager.java"
 grep -q 'applySamsungCompatibility' \
