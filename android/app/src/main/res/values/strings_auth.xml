@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Onboarding, ChatGPT sign-in, About, and usage / reset-credit refresh errors. -->
+<resources>
+    <!-- Onboarding. -->
+    <string name="auth_onboarding_step_progress">STEP %1$d OF %2$d</string>
+    <string name="auth_onboarding_continue">Continue</string>
+    <string name="auth_onboarding_welcome_title">Meet Codex Meter</string>
+    <string name="auth_onboarding_welcome_body">Your ChatGPT Codex allowance, reset timing, and available reset credits in one quick One UI view.</string>
+    <string name="auth_onboarding_galaxy_title">Built to feel at home on Galaxy</string>
+    <string name="auth_onboarding_galaxy_body">Reachable layouts, responsive cards, system theming, and Samsung lock-screen widgets all use the app’s native One UI components.</string>
+    <string name="auth_onboarding_usage_title">Everything important at a glance</string>
+    <string name="auth_onboarding_usage_body">See what remains without digging through ChatGPT, then keep it visible with home-screen and supported Galaxy lock-screen widgets.</string>
+    <string name="auth_onboarding_features_header">What you get</string>
+    <string name="auth_onboarding_feature_limits_title">Live Codex limits</string>
+    <string name="auth_onboarding_feature_limits_summary">Five-hour and weekly allowance with reset timing</string>
+    <string name="auth_onboarding_feature_widgets_title">Native One UI widgets</string>
+    <string name="auth_onboarding_feature_widgets_summary">At-a-glance usage on your home and lock screens</string>
+    <string name="auth_onboarding_feature_alerts_title">Useful alerts</string>
+    <string name="auth_onboarding_feature_alerts_summary">Optional updates when limits reset or credits arrive</string>
+    <string name="auth_onboarding_account_title">Connect your ChatGPT account</string>
+    <string name="auth_onboarding_account_body">Use OpenAI’s secure browser flow to sign up or sign in. Codex Meter never sees your password.</string>
+    <string name="auth_onboarding_privacy_header">Private by design</string>
+    <string name="auth_onboarding_privacy_encrypted_title">Encrypted on this device</string>
+    <string name="auth_onboarding_privacy_encrypted_summary">Session tokens are protected by Android Keystore</string>
+    <string name="auth_onboarding_privacy_analytics_title">No analytics SDK</string>
+    <string name="auth_onboarding_privacy_analytics_summary">Your account and usage are not sent through a Codex Meter server</string>
+    <string name="auth_onboarding_sign_in_start">Sign up or sign in with ChatGPT</string>
+    <string name="auth_onboarding_sign_in_continue">Continue sign-in with ChatGPT</string>
+    <string name="auth_onboarding_not_now">Not now</string>
+    <string name="auth_onboarding_done_signed_in_title">You’re all set</string>
+    <string name="auth_onboarding_done_signed_in_body">Your ChatGPT account is connected. Codex Meter will load your latest allowance as the app opens.</string>
+    <string name="auth_onboarding_done_signed_out_title">Setup complete</string>
+    <string name="auth_onboarding_done_signed_out_body">You can connect ChatGPT later from the Codex Meter dashboard.</string>
+    <string name="auth_onboarding_account_connected">ChatGPT connected</string>
+    <string name="auth_onboarding_account_connected_summary">Secure sign-in complete</string>
+    <string name="auth_onboarding_account_skipped">Continue without an account</string>
+    <string name="auth_onboarding_account_skipped_summary">Sign in whenever you’re ready</string>
+    <string name="auth_onboarding_open_app">Open Codex Meter</string>
+    <string name="auth_onboarding_status_did_not_complete">Sign-in did not complete. You can safely try again.</string>
+    <string name="auth_onboarding_status_try_again">Sign-in did not complete. Please try again.</string>
+    <string name="auth_onboarding_status_updates_unavailable">Sign-in updates are unavailable: %1$s</string>
+    <string name="auth_onboarding_status_browser_open">Your secure ChatGPT sign-in is open in the browser.</string>
+    <string name="auth_onboarding_status_preparing">Preparing secure ChatGPT sign-in…</string>
+    <string name="auth_onboarding_status_resuming">Resuming secure ChatGPT sign-in…</string>
+    <string name="auth_onboarding_status_start_failed">Could not start sign-in: %1$s</string>
+    <string name="auth_onboarding_status_no_browser">No browser is available to complete sign-in.</string>
+
+    <!-- Browser sign-in service: notification, result messages, and failures. -->
+    <string name="auth_sign_in_notification_title">Codex Meter sign-in</string>
+    <string name="auth_sign_in_notification_cancel">Cancel</string>
+    <string name="auth_sign_in_preparing">Preparing secure sign-in…</string>
+    <string name="auth_sign_in_complete_in_browser">Complete sign-in in your browser</string>
+    <string name="auth_sign_in_securing_session">Securing your ChatGPT session…</string>
+    <string name="auth_sign_in_loading_usage">Loading Codex usage…</string>
+    <string name="auth_sign_in_cancelled">Sign-in cancelled.</string>
+    <string name="auth_sign_in_already_signed_in">Already signed in.</string>
+    <string name="auth_sign_in_succeeded">Signed in successfully.</string>
+    <string name="auth_sign_in_succeeded_usage_pending">Signed in. Usage can be refreshed from the app.</string>
+    <string name="auth_sign_in_failed">Sign-in could not be completed.</string>
+    <string name="auth_sign_in_failed_reason">Sign-in failed: %1$s</string>
+    <string name="auth_sign_in_failed_no_code">Sign-in failed because no authorization code was returned.</string>
+    <string name="auth_sign_in_timed_out">Sign-in timed out. Start again from the app.</string>
+    <string name="auth_sign_in_port_unavailable">Could not open the local OAuth callback port (1455 or 1457).</string>
+    <string name="auth_sign_in_callback_empty">The browser callback was empty.</string>
+    <string name="auth_widget_update_failed">Widget update: %1$s</string>
+
+    <!-- Page shown in the browser after the sign-in redirect. -->
+    <!-- BCP 47 tag of this translation, used as the page's <html lang>. -->
+    <string name="auth_browser_html_lang">en</string>
+    <string name="auth_browser_success_eyebrow">SIGN-IN COMPLETE</string>
+    <string name="auth_browser_success_title">You’re connected</string>
+    <string name="auth_browser_success_message">Your ChatGPT account is connected. Returning to Codex Meter…</string>
+    <string name="auth_browser_success_action">Open Codex Meter</string>
+    <string name="auth_browser_success_hint">Returning to the app automatically…</string>
+    <string name="auth_browser_failure_eyebrow">SIGN-IN NEEDS ATTENTION</string>
+    <string name="auth_browser_failure_title">Let’s try that again</string>
+    <string name="auth_browser_failure_action">Back to Codex Meter</string>
+    <string name="auth_browser_failure_hint">Return to the app to restart secure sign-in.</string>
+    <string name="auth_browser_not_found">Not found</string>
+    <string name="auth_browser_state_mismatch">The sign-in state did not match. Return to Codex Meter and try again.</string>
+    <string name="auth_browser_missing_code">The authorization response did not include a code.</string>
+
+    <!-- Token, usage, and reset-credit request failures shown on the dashboard, in toasts and on widgets. -->
+    <string name="auth_error_sign_in_required">Sign in to ChatGPT first.</string>
+    <string name="auth_error_authentication_http">Authentication failed (HTTP %1$d).</string>
+    <string name="auth_error_incomplete_credentials">The authorization server returned incomplete credentials.</string>
+    <string name="auth_error_credentials_not_saved">Could not persist encrypted credentials.</string>
+    <string name="auth_error_response_too_large">Server response was unexpectedly large.</string>
+    <string name="auth_error_usage_denied">Codex usage access was denied for this account.</string>
+    <string name="auth_error_usage_endpoint_unavailable">The Codex usage endpoint is unavailable or has changed.</string>
+    <string name="auth_error_usage_http">Usage refresh failed (HTTP %1$d).</string>
+    <string name="auth_error_usage_unrecognized">OpenAI returned no recognizable Codex usage data.</string>
+    <string name="auth_error_usage_not_saved">Usage was received, but it could not be saved on this device.</string>
+    <string name="auth_error_usage_not_cached">Could not cache the latest usage response.</string>
+    <string name="auth_error_usage_refresh_failed">Usage refresh failed.</string>
+    <string name="auth_error_reset_credits_refresh_failed">Reset-credit refresh failed.</string>
+    <string name="auth_error_reset_credits_not_saved">Reset credits were received, but could not be saved on this device.</string>
+    <string name="auth_error_reset_credits_not_cached">Could not cache Codex reset credits.</string>
+    <string name="auth_error_reset_credits_load_denied">Could not load Codex reset credits: this account is not allowed to use reset credits.</string>
+    <string name="auth_error_reset_credits_load_unavailable">Could not load Codex reset credits: the reset-credit endpoint is unavailable.</string>
+    <string name="auth_error_reset_credits_load_http">Could not load Codex reset credits (HTTP %1$d).</string>
+    <string name="auth_error_reset_apply_denied">Could not apply the Codex reset: this account is not allowed to use reset credits.</string>
+    <string name="auth_error_reset_apply_unavailable">Could not apply the Codex reset: the reset-credit endpoint is unavailable.</string>
+    <string name="auth_error_reset_apply_http">Could not apply the Codex reset (HTTP %1$d).</string>
+    <string name="auth_reset_usage_reload_failed">The reset succeeded, but the new usage values could not be loaded yet.</string>
+    <string name="auth_error_scheduler_declined">Android declined the background refresh request.</string>
+    <string name="auth_error_scheduler_unavailable">Android\'s background scheduler is unavailable.</string>
+    <string name="auth_error_scheduler_failed">Background refresh: %1$s</string>
+
+    <!-- About. -->
+    <string name="auth_about_app_info">App info</string>
+    <string name="auth_about_credits">Credits</string>
+    <string name="auth_about_benit_summary">App creator and AI geek</string>
+    <string name="auth_about_tjg_title" translatable="false">That Josh Guy</string>
+    <string name="auth_about_tjg_summary">App and Icon designer</string>
+    <string name="auth_about_dependencies">Dependencies</string>
+    <string name="auth_about_oneui_summary">The library that makes this app so pretty.</string>
+    <string name="auth_about_openai_title" translatable="false">OpenAI API</string>
+    <string name="auth_about_openai_summary">This app would be pretty useless without it.</string>
+    <string name="auth_about_diagnostics_unlocked">Diagnostics unlocked.</string>
+    <plurals name="auth_about_diagnostics_taps_remaining">
+        <item quantity="one">%1$d more tap for diagnostics.</item>
+        <item quantity="other">%1$d more taps for diagnostics.</item>
+    </plurals>
+</resources>

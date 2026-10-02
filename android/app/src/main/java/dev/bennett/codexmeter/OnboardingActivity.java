@@ -30,7 +30,6 @@ import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 public final class OnboardingActivity extends AppCompatActivity {
     public static final String EXTRA_AUTH_RETURN = "oauth_return";
 
-    private static final String PAGE_TITLE = "Codex Meter";
     private static final int MAX_ERROR_MESSAGE_LENGTH = 180;
 
     private LinearLayout content;
@@ -66,7 +65,7 @@ public final class OnboardingActivity extends AppCompatActivity {
             return;
         }
         this.dark = Ui.isDark(this);
-        this.page = Ui.installPage(this, PAGE_TITLE, false);
+        this.page = Ui.installPage(this, getString(R.string.app_name), false);
         this.content = this.page.content;
         findViewById(R.id.dashboard_refresh).setEnabled(false);
         boolean oauthReturn = getIntent().getBooleanExtra(EXTRA_AUTH_RETURN, false);
@@ -76,7 +75,7 @@ public final class OnboardingActivity extends AppCompatActivity {
                 SecureTokenStore.isSignedIn(this),
                 oauthReturn);
         if (oauthReturn && !SecureTokenStore.isSignedIn(this)) {
-            this.authMessage = "Sign-in did not complete. You can safely try again.";
+            this.authMessage = getString(R.string.auth_onboarding_status_did_not_complete);
         }
         getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
             @Override
@@ -101,7 +100,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (SecureTokenStore.isSignedIn(this)) {
             showStep(OnboardingFlow.STEP_COMPLETE);
         } else if (intent.getBooleanExtra(EXTRA_AUTH_RETURN, false)) {
-            this.authMessage = "Sign-in did not complete. You can safely try again.";
+            this.authMessage = getString(R.string.auth_onboarding_status_did_not_complete);
             showStep(OnboardingFlow.STEP_ACCOUNT);
         }
     }
@@ -132,7 +131,8 @@ public final class OnboardingActivity extends AppCompatActivity {
             this.receiverRegistered = true;
         } catch (RuntimeException exception) {
             this.receiverRegistered = false;
-            this.authMessage = "Sign-in updates are unavailable: " + safeMessage(exception);
+            this.authMessage = getString(R.string.auth_onboarding_status_updates_unavailable,
+                    safeMessage(exception));
             render();
         }
     }
@@ -160,7 +160,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (url == null || url.isEmpty()) {
             return;
         }
-        this.authMessage = "Your secure ChatGPT sign-in is open in the browser.";
+        this.authMessage = getString(R.string.auth_onboarding_status_browser_open);
         render();
         openAuthUrl(url);
     }
@@ -172,7 +172,7 @@ public final class OnboardingActivity extends AppCompatActivity {
             return;
         }
         this.authMessage = message == null || message.trim().isEmpty()
-                ? "Sign-in did not complete. Please try again."
+                ? getString(R.string.auth_onboarding_status_try_again)
                 : message;
         showStep(OnboardingFlow.STEP_ACCOUNT);
     }
@@ -182,7 +182,7 @@ public final class OnboardingActivity extends AppCompatActivity {
             return;
         }
         this.content.removeAllViews();
-        this.page.toolbar.setTitle(PAGE_TITLE);
+        this.page.toolbar.setTitle(getString(R.string.app_name));
         this.page.toolbar.setShowNavigationButtonAsBack(this.step > OnboardingFlow.STEP_WELCOME);
 
         addProgress();
@@ -201,8 +201,8 @@ public final class OnboardingActivity extends AppCompatActivity {
 
     /** "STEP N OF M" label above a progress bar. */
     private void addProgress() {
-        TextView label = Ui.text(this, "STEP " + (this.step + 1) + " OF "
-                + OnboardingFlow.STEP_COUNT, 12.0f, Ui.accent(this, this.dark));
+        TextView label = Ui.text(this, getString(R.string.auth_onboarding_step_progress,
+                this.step + 1, OnboardingFlow.STEP_COUNT), 12.0f, Ui.accent(this, this.dark));
         label.setTypeface(Ui.mediumTypeface(this));
         label.setLetterSpacing(0.08f);
         LinearLayout.LayoutParams labelParams =
@@ -219,69 +219,73 @@ public final class OnboardingActivity extends AppCompatActivity {
     }
 
     private void buildWelcome() {
-        addIntro("Meet Codex Meter",
-                "Your ChatGPT Codex allowance, reset timing, and available reset credits in one "
-                        + "quick One UI view.",
+        addIntro(getString(R.string.auth_onboarding_welcome_title),
+                getString(R.string.auth_onboarding_welcome_body),
                 R.drawable.ic_oui_battery);
 
         Ui.addSpacer(this.content, 20);
         RoundedLinearLayout card = Ui.seslCard(this, this.dark);
-        TextView title = Ui.text(this, "Built to feel at home on Galaxy", 18.0f,
+        TextView title = Ui.text(this, getString(R.string.auth_onboarding_galaxy_title), 18.0f,
                 Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
-        TextView body = Ui.text(this,
-                "Reachable layouts, responsive cards, system theming, and Samsung lock-screen "
-                        + "widgets all use the app’s native One UI components.",
+        TextView body = Ui.text(this, getString(R.string.auth_onboarding_galaxy_body),
                 15.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams bodyParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         bodyParams.setMargins(0, Ui.dp(this, 10), 0, 0);
         card.addView(body, bodyParams);
         this.content.addView(card);
-        addPrimaryAction("Continue", () -> showStep(OnboardingFlow.STEP_USAGE));
+        addPrimaryAction(getString(R.string.auth_onboarding_continue),
+                () -> showStep(OnboardingFlow.STEP_USAGE));
     }
 
     private void buildUsage() {
-        addIntro("Everything important at a glance",
-                "See what remains without digging through ChatGPT, then keep it visible with "
-                        + "home-screen and supported Galaxy lock-screen widgets.",
+        addIntro(getString(R.string.auth_onboarding_usage_title),
+                getString(R.string.auth_onboarding_usage_body),
                 R.drawable.ic_oui_time);
 
-        this.content.addView(Ui.separator(this, "What you get"));
+        this.content.addView(Ui.separator(this,
+                getString(R.string.auth_onboarding_features_header)));
         RoundedLinearLayout features = Ui.seslRowCard(this, this.dark);
-        CardItemView limits = Ui.actionRow(this, "Live Codex limits",
-                "Five-hour and weekly allowance with reset timing",
+        CardItemView limits = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_limits_title),
+                getString(R.string.auth_onboarding_feature_limits_summary),
                 R.drawable.ic_oui_calendar_week, null);
         limits.setShowBottomDivider(true);
         features.addView(limits);
-        CardItemView widgets = Ui.actionRow(this, "Native One UI widgets",
-                "At-a-glance usage on your home and lock screens",
+        CardItemView widgets = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_widgets_title),
+                getString(R.string.auth_onboarding_feature_widgets_summary),
                 R.drawable.ic_oui_add_home, null);
         widgets.setShowBottomDivider(true);
         features.addView(widgets);
-        features.addView(Ui.actionRow(this, "Useful alerts",
-                "Optional updates when limits reset or credits arrive",
+        features.addView(Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_alerts_title),
+                getString(R.string.auth_onboarding_feature_alerts_summary),
                 R.drawable.ic_oui_notification, null));
         this.content.addView(features);
-        addPrimaryAction("Continue", () -> showStep(OnboardingFlow.STEP_ACCOUNT));
+        addPrimaryAction(getString(R.string.auth_onboarding_continue),
+                () -> showStep(OnboardingFlow.STEP_ACCOUNT));
     }
 
     private void buildAccount() {
-        addIntro("Connect your ChatGPT account",
-                "Use OpenAI’s secure browser flow to sign up or sign in. Codex Meter never sees "
-                        + "your password.",
+        addIntro(getString(R.string.auth_onboarding_account_title),
+                getString(R.string.auth_onboarding_account_body),
                 R.drawable.ic_oui_samsung_account);
 
-        this.content.addView(Ui.separator(this, "Private by design"));
+        this.content.addView(Ui.separator(this,
+                getString(R.string.auth_onboarding_privacy_header)));
         RoundedLinearLayout privacy = Ui.seslRowCard(this, this.dark);
-        CardItemView encrypted = Ui.actionRow(this, "Encrypted on this device",
-                "Session tokens are protected by Android Keystore",
+        CardItemView encrypted = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_privacy_encrypted_title),
+                getString(R.string.auth_onboarding_privacy_encrypted_summary),
                 R.drawable.ic_oui_privacy, null);
         encrypted.setShowBottomDivider(true);
         privacy.addView(encrypted);
-        privacy.addView(Ui.actionRow(this, "No analytics SDK",
-                "Your account and usage are not sent through a Codex Meter server",
+        privacy.addView(Ui.actionRow(this,
+                getString(R.string.auth_onboarding_privacy_analytics_title),
+                getString(R.string.auth_onboarding_privacy_analytics_summary),
                 R.drawable.ic_oui_contact_outline, null));
         this.content.addView(privacy);
 
@@ -292,11 +296,12 @@ public final class OnboardingActivity extends AppCompatActivity {
             this.content.addView(status);
         }
 
-        String signInLabel = AppPreferences.isOAuthPending(this)
-                ? "Continue sign-in with ChatGPT"
-                : "Sign up or sign in with ChatGPT";
+        String signInLabel = getString(AppPreferences.isOAuthPending(this)
+                ? R.string.auth_onboarding_sign_in_continue
+                : R.string.auth_onboarding_sign_in_start);
         addPrimaryAction(signInLabel, this::startSignIn);
-        Button later = Ui.button(this, "Not now", false, this.dark);
+        Button later = Ui.button(this, getString(R.string.auth_onboarding_not_now), false,
+                this.dark);
         later.setOnClickListener(view -> completeAndOpenMain());
         LinearLayout.LayoutParams laterParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 54));
@@ -306,30 +311,35 @@ public final class OnboardingActivity extends AppCompatActivity {
 
     private void buildComplete() {
         boolean signedIn = SecureTokenStore.isSignedIn(this);
-        addIntro(signedIn ? "You’re all set" : "Setup complete",
-                signedIn
-                        ? "Your ChatGPT account is connected. Codex Meter will load your latest "
-                                + "allowance as the app opens."
-                        : "You can connect ChatGPT later from the Codex Meter dashboard.",
+        addIntro(getString(signedIn
+                        ? R.string.auth_onboarding_done_signed_in_title
+                        : R.string.auth_onboarding_done_signed_out_title),
+                getString(signedIn
+                        ? R.string.auth_onboarding_done_signed_in_body
+                        : R.string.auth_onboarding_done_signed_out_body),
                 signedIn ? R.drawable.ic_oui_samsung_account : R.drawable.ic_oui_info_outline);
 
         Ui.addSpacer(this.content, 20);
         RoundedLinearLayout account = Ui.seslRowCard(this, this.dark);
         AuthTokens tokens = SecureTokenStore.load(this);
         account.addView(Ui.actionRow(this,
-                signedIn ? "ChatGPT connected" : "Continue without an account",
+                getString(signedIn
+                        ? R.string.auth_onboarding_account_connected
+                        : R.string.auth_onboarding_account_skipped),
                 accountSummary(signedIn, tokens),
                 signedIn ? R.drawable.ic_oui_contact_outline : R.drawable.ic_oui_privacy,
                 null));
         this.content.addView(account);
-        addPrimaryAction("Open Codex Meter", this::completeAndOpenMain);
+        addPrimaryAction(getString(R.string.auth_onboarding_open_app), this::completeAndOpenMain);
     }
 
-    private static String accountSummary(boolean signedIn, AuthTokens tokens) {
+    private String accountSummary(boolean signedIn, AuthTokens tokens) {
         if (signedIn && tokens != null && !tokens.email.isEmpty()) {
             return tokens.email;
         }
-        return signedIn ? "Secure sign-in complete" : "Sign in whenever you’re ready";
+        return getString(signedIn
+                ? R.string.auth_onboarding_account_connected_summary
+                : R.string.auth_onboarding_account_skipped_summary);
     }
 
     /** Hero card: tinted round icon, large title, and body copy. */
@@ -389,9 +399,9 @@ public final class OnboardingActivity extends AppCompatActivity {
         }
         boolean resuming = AppPreferences.isOAuthPending(this);
         this.oauthRequested = true;
-        this.authMessage = resuming
-                ? "Resuming secure ChatGPT sign-in…"
-                : "Preparing secure ChatGPT sign-in…";
+        this.authMessage = getString(resuming
+                ? R.string.auth_onboarding_status_resuming
+                : R.string.auth_onboarding_status_preparing);
         render();
         try {
             startForegroundService(new Intent(this, OAuthService.class)
@@ -399,7 +409,8 @@ public final class OnboardingActivity extends AppCompatActivity {
         } catch (RuntimeException exception) {
             this.oauthRequested = false;
             AppPreferences.setOAuthPending(this, false, "");
-            this.authMessage = "Could not start sign-in: " + safeMessage(exception);
+            this.authMessage = getString(R.string.auth_onboarding_status_start_failed,
+                    safeMessage(exception));
             render();
         }
     }
@@ -416,7 +427,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (RuntimeException exception) {
-            this.authMessage = "No browser is available to complete sign-in.";
+            this.authMessage = getString(R.string.auth_onboarding_status_no_browser);
             render();
         }
     }
@@ -448,7 +459,7 @@ public final class OnboardingActivity extends AppCompatActivity {
     }
 
     private static String safeMessage(RuntimeException exception) {
-        String message = exception.getMessage();
+        String message = exception.getLocalizedMessage();
         if (message == null || message.trim().isEmpty()) {
             return exception.getClass().getSimpleName();
         }

@@ -1,23 +1,53 @@
 package dev.bennett.codexmeter;
 
-/** Generates the small localhost page shown after the browser OAuth callback. */
+/**
+ * Generates the small localhost page shown after the browser OAuth callback. The caller supplies
+ * the visible text in the app's language ({@link Copy}); every piece of it is HTML-escaped.
+ */
 public final class OAuthBrowserPage {
     private OAuthBrowserPage() {
     }
 
-    public static String render(String message, boolean success, String appLink) {
+    /** The page's visible text in one language. */
+    public static final class Copy {
+        final String languageTag;
+        final String eyebrow;
+        final String title;
+        final String action;
+        final String hint;
+
+        /**
+         * @param languageTag BCP 47 tag of the text, used as {@code <html lang>} (e.g. "en")
+         * @param eyebrow short uppercase label above the title
+         * @param title the page heading
+         * @param action the label of the button that returns to the app
+         * @param hint the small print below the button
+         */
+        public Copy(String languageTag, String eyebrow, String title, String action,
+                String hint) {
+            this.languageTag = languageTag;
+            this.eyebrow = eyebrow;
+            this.title = title;
+            this.action = action;
+            this.hint = hint;
+        }
+    }
+
+    public static String render(Copy copy, String message, boolean success, String appLink) {
         String safeMessage = htmlEscape(message);
         String safeLink = htmlEscape(appLink);
         String scriptLink = javascriptString(appLink);
-        String title = success ? "You’re connected" : "Let’s try that again";
-        String eyebrow = success ? "SIGN-IN COMPLETE" : "SIGN-IN NEEDS ATTENTION";
-        String action = success ? "Open Codex Meter" : "Back to Codex Meter";
+        String language = htmlEscape(copy.languageTag);
+        String title = htmlEscape(copy.title);
+        String eyebrow = htmlEscape(copy.eyebrow);
+        String action = htmlEscape(copy.action);
+        String hint = htmlEscape(copy.hint);
         String symbol = success ? "&#10003;" : "!";
         String autoReturn = success
                 ? "<script>setTimeout(function(){window.location.href='" + scriptLink
                     + "';},700);</script>"
                 : "";
-        return "<!doctype html><html lang=\"en\"><head>"
+        return "<!doctype html><html lang=\"" + language + "\"><head>"
                 + "<meta charset=\"utf-8\"><meta name=\"viewport\" content=\"width=device-width,initial-scale=1\">"
                 + "<meta name=\"color-scheme\" content=\"light dark\"><title>Codex Meter</title>"
                 + "<style>"
@@ -44,8 +74,7 @@ public final class OAuthBrowserPage {
                 + "<div class=\"mark\" aria-hidden=\"true\">" + symbol + "</div>"
                 + "<div class=\"eyebrow\">" + eyebrow + "</div><h1>" + title + "</h1>"
                 + "<p>" + safeMessage + "</p><a class=\"button\" href=\"" + safeLink + "\">"
-                + action + "</a><div class=\"hint\">"
-                + (success ? "Returning to the app automatically…" : "Return to the app to restart secure sign-in.")
+                + action + "</a><div class=\"hint\">" + hint
                 + "</div></main>" + autoReturn + "</body></html>";
     }
 

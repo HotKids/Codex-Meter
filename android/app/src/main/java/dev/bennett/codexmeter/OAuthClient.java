@@ -1,6 +1,8 @@
 package dev.bennett.codexmeter;
 
 import android.content.Context;
+import android.content.res.Configuration;
+import android.content.res.Resources;
 import android.os.SystemClock;
 import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
@@ -10,6 +12,7 @@ import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
+import java.util.Locale;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
 import org.json.JSONObject;
@@ -37,7 +40,7 @@ public final class OAuthClient {
         form.put("client_id", AppConstants.OAUTH_CLIENT_ID);
         form.put("code_verifier", codeVerifier);
         String response = postForm(context, "oauth_code_exchange", AppConstants.TOKEN_URL, form);
-        return parseTokens(response, null);
+        return parseTokens(context, response, null);
     }
 
     public static AuthTokens refresh(Context context, AuthTokens tokens) throws Exception {
@@ -47,7 +50,7 @@ public final class OAuthClient {
         request.put("client_id", AppConstants.OAUTH_CLIENT_ID);
         String response = postJson(context, "oauth_token_refresh", AppConstants.TOKEN_URL,
                 request);
-        return tokens.mergeRefresh(parseTokens(response, tokens));
+        return tokens.mergeRefresh(parseTokens(context, response, tokens));
     }
 
     /** Revokes the refresh token, retrying as a form post when the JSON request fails. */
@@ -80,7 +83,8 @@ public final class OAuthClient {
      * Builds credentials from a token-endpoint response. When refreshing, values the server
      * omitted fall back to the {@code previous} credentials.
      */
-    private static AuthTokens parseTokens(String body, AuthTokens previous) throws Exception {
+    private static AuthTokens parseTokens(Context context, String body, AuthTokens previous)
+            throws Exception {
         JSONObject response = new JSONObject(body);
         String accessToken = response.optString("access_token", "");
         String refreshToken = response.optString("refresh_token", "");
@@ -102,7 +106,7 @@ public final class OAuthClient {
         AuthTokens tokens = new AuthTokens(accessToken, refreshToken, idToken, expiresAtMillis,
                 accountId, email);
         if (!tokens.isUsable()) {
-            throw new Exception("The authorization server returned incomplete credentials.");
+            throw userError(context, R.string.auth_error_incomplete_credentials);
         }
         return tokens;
     }
@@ -147,15 +151,15 @@ public final class OAuthClient {
                 output.write(payload);
             }
             int status = connection.getResponseCode();
-            String body = readBody(connection, status);
+            String body = readBody(context, connection, status);
             DiagnosticLog.info(context, "network", "request_finished",
                     "operation", operation,
                     "status", status,
                     "duration_ms", SystemClock.elapsedRealtime() - started,
                     "response_bytes", body.getBytes(StandardCharsets.UTF_8).length);
             if (!isSuccessful(status)) {
-                throw new Exception(readError(body,
-                        "Authentication failed (HTTP " + status + ")."));
+                throw responseError(context, body, R.string.auth_error_authentication_http,
+                        status);
             }
             return body;
         } catch (Exception exception) {
@@ -173,7 +177,8 @@ public final class OAuthClient {
     }
 
     /** Reads a response body (or error body) as UTF-8, refusing anything over 2 MiB. */
-    static String readBody(HttpURLConnection connection, int status) throws Exception {
+    static String readBody(Context context, HttpURLConnection connection, int status)
+            throws Exception {
         InputStream stream = status < 200 || status >= 400
                 ? connection.getErrorStream()
                 : connection.getInputStream();
@@ -187,15 +192,27 @@ public final class OAuthClient {
             while ((read = input.read(buffer)) != -1) {
                 body.write(buffer, 0, read);
                 if (body.size() > MAX_RESPONSE_BYTES) {
-                    throw new Exception("Server response was unexpectedly large.");
+                    throw userError(context, R.string.auth_error_response_too_large);
                 }
             }
             return body.toString(StandardCharsets.UTF_8.name());
         }
     }
 
-    /** Extracts a server-provided error message, or returns {@code fallback}. */
-    static String readError(String body, String fallback) {
+    /**
+     * The failure for an unsuccessful response: the server's own error message when it sent one,
+     * otherwise the string {@code fallbackRes} formatted with {@code args}.
+     */
+    static Exception responseError(Context context, String body, int fallbackRes,
+            Object... args) {
+        String serverMessage = readError(body);
+        return serverMessage.isEmpty()
+                ? userError(context, fallbackRes, args)
+                : new Exception(serverMessage);
+    }
+
+    /** Extracts a server-provided error message, or returns "" when there is none. */
+    private static String readError(String body) {
         try {
             JSONObject object = new JSONObject(body == null ? "" : body);
             String description = object.optString("error_description", "");
@@ -219,7 +236,47 @@ public final class OAuthClient {
         } catch (Exception ignored) {
             // Do not surface arbitrary HTML from a proxy or gateway.
         }
-        return fallback;
+        return "";
+    }
+
+    /**
+     * A failure written for the user from the string resource {@code messageRes}: its
+     * {@link Exception#getMessage() message} is the English text for diagnostic logs, and its
+     * {@link Exception#getLocalizedMessage() localized message} is in the app's language.
+     */
+    static UserFacingException userError(Context context, int messageRes, Object... args) {
+        Configuration configuration =
+                new Configuration(context.getResources().getConfiguration());
+        configuration.setLocale(Locale.ENGLISH);
+        Resources english = context.createConfigurationContext(configuration).getResources();
+        return new UserFacingException(format(english, messageRes, args),
+                format(context.getResources(), messageRes, args));
+    }
+
+    private static String format(Resources resources, int messageRes, Object... args) {
+        return args.length == 0
+                ? resources.getString(messageRes)
+                : resources.getString(messageRes, args);
+    }
+
+    /** See {@link #userError}; {@link #toString()} also stays English for stack traces. */
+    static final class UserFacingException extends Exception {
+        private final String localizedMessage;
+
+        UserFacingException(String englishMessage, String localizedMessage) {
+            super(englishMessage);
+            this.localizedMessage = localizedMessage;
+        }
+
+        @Override
+        public String getLocalizedMessage() {
+            return localizedMessage;
+        }
+
+        @Override
+        public String toString() {
+            return getClass().getName() + ": " + getMessage();
+        }
     }
 
     /** Encodes parameters as {@code application/x-www-form-urlencoded}, preserving order. */

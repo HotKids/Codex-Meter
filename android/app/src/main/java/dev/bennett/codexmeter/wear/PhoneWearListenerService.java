@@ -91,8 +91,8 @@ public final class PhoneWearListenerService extends WearableListenerService {
                 UsageApi.refreshAndCache(app);
             } catch (Exception exception) {
                 DiagnosticLog.error(app, "wear", "wear_refresh_failed", exception);
-                AppPreferences.setLastError(app, exception.getMessage());
-                PhoneWearSync.pushStatus(app, false, exception.getMessage());
+                AppPreferences.setLastError(app, exception.getLocalizedMessage());
+                PhoneWearSync.pushStatus(app, false, exception.getLocalizedMessage());
                 Log.w(TAG, "Wear-requested usage refresh failed", exception);
                 return;
             }

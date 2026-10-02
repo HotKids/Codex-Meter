@@ -647,6 +647,10 @@ print("settings list keeps spacing before About and bottom padding after it.")
 PY
 grep -q 'OAuthBrowserPage.render' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/OAuthService.java"
+# The browser page text comes from the app's resources in its current language.
+grep -q 'R.string.auth_browser_success_title' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/OAuthService.java"
+grep -Fq '>You’re connected<' "$ROOT/app/src/main/res/values/strings_auth.xml"
 grep -q 'titlePaint.setColor(foreground);' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/UsageWaveView.java"
 grep -q 'resetPaint.setColor(foreground);' \

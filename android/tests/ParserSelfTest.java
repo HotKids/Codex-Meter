@@ -1618,8 +1618,11 @@ public final class ParserSelfTest {
     }
 
     private static void testOAuthBrowserPage() {
-        String success = OAuthBrowserPage.render(
+        OAuthBrowserPage.Copy successCopy = new OAuthBrowserPage.Copy("en", "SIGN-IN COMPLETE",
+                "You’re connected", "Open Codex Meter", "Returning to the app automatically…");
+        String success = OAuthBrowserPage.render(successCopy,
                 "Connected <securely> & ready.", true, "codexmeter://auth/complete");
+        check(success.contains("<html lang=\"en\">"), "browser page language");
         check(success.contains("You’re connected"), "browser success title");
         check(success.contains("Codex Meter</a>"), "browser app return action");
         check(success.contains("prefers-color-scheme:dark"), "browser One UI light and dark themes");
@@ -1628,11 +1631,25 @@ public final class ParserSelfTest {
                 "browser message HTML escaping");
         check(success.contains("setTimeout"), "successful browser page automatically returns");
 
-        String failure = OAuthBrowserPage.render(
+        OAuthBrowserPage.Copy failureCopy = new OAuthBrowserPage.Copy("en",
+                "SIGN-IN NEEDS ATTENTION", "Let’s try that again", "Back to Codex Meter",
+                "Return to the app to restart secure sign-in.");
+        String failure = OAuthBrowserPage.render(failureCopy,
                 "Denied", false, "codexmeter://auth/complete");
         check(failure.contains("Let’s try that again"), "browser failure title");
         check(failure.contains("Back to Codex Meter"), "browser failure return action");
         check(!failure.contains("setTimeout"), "failure page waits for user");
+
+        String localized = OAuthBrowserPage.render(new OAuthBrowserPage.Copy("zh-CN",
+                "登录完成", "账户已连接", "打开 <Codex Meter>", "正在自动返回应用…"),
+                "OK", true, "codexmeter://auth/complete");
+        check(localized.contains("<html lang=\"zh-CN\">"), "browser page localized language");
+        check(localized.contains("<h1>账户已连接</h1>"), "browser page localized title");
+        check(localized.contains("打开 &lt;Codex Meter&gt;</a>"), "browser copy HTML escaping");
+        String hostileLanguage = OAuthBrowserPage.render(new OAuthBrowserPage.Copy(
+                "en\"><script>", "a", "b", "c", "d"), "", false, "codexmeter://auth/complete");
+        check(hostileLanguage.contains("lang=\"en&quot;&gt;&lt;script&gt;\""),
+                "browser page language HTML escaping");
 
         String escapedScript = OAuthBrowserPage.javascriptString("x'\\\n\u2028");
         check("x\\'\\\\\\n\\u2028".equals(escapedScript), "browser script escaping");
