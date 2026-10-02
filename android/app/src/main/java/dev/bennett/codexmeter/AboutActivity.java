@@ -55,7 +55,7 @@ public final class AboutActivity extends AppCompatActivity {
         menu.add(Menu.NONE, MENU_GITHUB, 0, "GitHub")
                 .setIcon(R.drawable.ic_github_24)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
-        menu.add(Menu.NONE, MENU_APP_INFO, 1, "App info")
+        menu.add(Menu.NONE, MENU_APP_INFO, 1, AppText.get(R.string.phone_app_info_64dec))
                 .setIcon(R.drawable.ic_oui_info_outline)
                 .setShowAsAction(MenuItem.SHOW_AS_ACTION_ALWAYS);
         return true;
@@ -81,20 +81,20 @@ public final class AboutActivity extends AppCompatActivity {
 
     private void build(LinearLayout content) {
         content.addView(buildAppCard());
-        content.addView(sectionTitle("Credits"));
+        content.addView(sectionTitle(AppText.get(R.string.phone_credits_bfac5)));
         RoundedLinearLayout credits = Ui.cardGroup(this, dark);
-        credits.addView(personRow("BenIt Buhner", "App creator and AI geek", R.drawable.benit_github_avatar, false,
+        credits.addView(personRow("BenIt Buhner", AppText.get(R.string.phone_app_creator_and_ai_geek_4f12a), R.drawable.benit_github_avatar, false,
                 "https://github.com/BenItBuhner"));
-        credits.addView(personRow("That Josh Guy", "App and Icon designer", R.drawable.codex_profile_avatar, true,
+        credits.addView(personRow("That Josh Guy", AppText.get(R.string.phone_app_and_icon_designer_e9fc7), R.drawable.codex_profile_avatar, true,
                 "https://tjg.gg"));
         content.addView(credits);
 
-        content.addView(sectionTitle("Dependencies"));
+        content.addView(sectionTitle(AppText.get(R.string.phone_dependencies_0562f)));
         RoundedLinearLayout dependencies = Ui.cardGroup(this, dark);
-        CardItemView oneUi = Ui.actionRow(this, "One UI Design Library", "The library that makes this app so pretty.", R.drawable.ic_oui_theme,
+        CardItemView oneUi = Ui.actionRow(this, "One UI Design Library", AppText.get(R.string.phone_the_library_that_makes_this_app_so_pretty_f579e), R.drawable.ic_oui_theme,
                 view -> openUrl("https://github.com/tribalfs/oneui-design"));
         dependencies.addView(oneUi);
-        CardItemView openAi = Ui.actionRow(this, "OpenAI API", "This app would be pretty useless without it.", R.drawable.ic_openai_figma,
+        CardItemView openAi = Ui.actionRow(this, "OpenAI API", AppText.get(R.string.phone_this_app_would_be_pretty_useless_without_it_9e6dc), R.drawable.ic_openai_figma,
                 view -> openUrl("https://openai.com"));
         openAi.setIconSize(Ui.dp(this, 24));
         openAi.setShowTopDivider(true);
@@ -125,12 +125,12 @@ public final class AboutActivity extends AppCompatActivity {
         versionTaps++;
         int remaining = DIAGNOSTIC_TAPS - versionTaps;
         if (remaining <= 0) {
-            Toast.makeText(this, "Diagnostics unlocked.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, AppText.get(R.string.phone_diagnostics_unlocked_7624e), Toast.LENGTH_SHORT).show();
             startActivity(SettingsActivity.diagnosticsIntent(this));
             versionTaps = 0;
         } else if (remaining <= 3) {
-            Toast.makeText(this, remaining + " more tap" + (remaining == 1 ? "" : "s")
-                    + " for diagnostics.", Toast.LENGTH_SHORT).show();
+            Toast.makeText(this, remaining + AppText.get(R.string.phone_more_tap_840c4) + AppText.nounSuffix(remaining)
+                    + AppText.get(R.string.phone_for_diagnostics_3ae2c), Toast.LENGTH_SHORT).show();
         }
     }
 

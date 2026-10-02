@@ -1444,8 +1444,8 @@ public final class ParserSelfTest {
         check(weeklyOnly.singleMetric() && !weeklyOnly.showsFiveHour()
                         && weeklyOnly.showsWeekly(),
                 "weekly-only widget exposes one dial");
-        check(WidgetMeters.PREF_AUTO.equals(WidgetOptions.defaults().layoutPreference()),
-                "default layout preference is adaptive");
+        check(WidgetOptions.STYLE_CARDS.equals(WidgetOptions.defaults().layoutPreference()),
+                "phone widgets default to quota cards");
         WidgetOptions dialsPref = new WidgetOptions(WidgetOptions.STYLE_DIALS,
                 WidgetOptions.DENSITY_AUTO, WidgetOptions.SURFACE_ONE_UI,
                 WidgetOptions.GRAPHIC_AUTO, WidgetOptions.THEME_SYSTEM, WidgetOptions.ACCENT_BLUE,
@@ -1652,10 +1652,10 @@ public final class ParserSelfTest {
     }
 
     private static void testGitHubReleases() throws Exception {
-        check("https://github.com/BenItBuhner/Codex-Meter".equals( // pragma: allowlist secret
+        check("https://github.com/HotKids/Codex-Meter".equals( // pragma: allowlist secret
                         GitHubReleaseSource.REPOSITORY_URL),
                 "canonical release repository");
-        check("https://api.github.com/repos/BenItBuhner/Codex-Meter/releases?per_page=30" // pragma: allowlist secret
+        check("https://api.github.com/repos/HotKids/Codex-Meter/releases?per_page=30" // pragma: allowlist secret
                         .equals(GitHubReleaseSource.RELEASES_API_URL),
                 "canonical release API endpoint");
         String json = "["

@@ -30,7 +30,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
                 finish();
             }
         });
-        content = Ui.installPage(this, "Release history", true).content;
+        content = Ui.installPage(this, AppText.get(R.string.phone_release_history_5044b), true).content;
         List<GitHubRelease> cached = UpdatePreferences.releases(this);
         if (cached.isEmpty()) {
             showLoading();
@@ -54,7 +54,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
 
     private void showLoading() {
         content.removeAllViews();
-        content.addView(Ui.indeterminateLoading(this, "Loading release history"));
+        content.addView(Ui.indeterminateLoading(this, AppText.get(R.string.phone_loading_release_history_53dbb)));
     }
 
     private void refresh() {
@@ -72,20 +72,13 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
     private void render(List<GitHubRelease> releases, boolean failed) {
         content.removeAllViews();
         LinearLayout notice = Ui.card(this, dark);
-        TextView current = Ui.text(this, "Installed version "
+        TextView current = Ui.text(this, AppText.get(R.string.phone_installed_version_baa27)
                 + UpdatePreferences.installedVersion(this), 18,
                 Ui.mainText(dark));
         current.setTypeface(Ui.mediumTypeface(this));
         notice.addView(current);
-        String note = "Newer and matching releases from Codex Meter "
-                + ReleaseUpdatePolicy.FIRST_IN_APP_UPDATE_VERSION
-                + " onward are checksum- and signature-verified in the app. Releases before "
-                + ReleaseUpdatePolicy.FIRST_IN_APP_UPDATE_VERSION
-                + " are irreversible and must be installed from GitHub because those builds lack "
-                + "working in-app updates. Other older versions still require uninstalling first, "
-                + "which removes local data and widgets. Alpha builds are the exception: they "
-                + "share the stable version code, so the newest stable release always installs "
-                + "back in place.";
+        String note = getString(R.string.phone_release_history_note,
+                ReleaseUpdatePolicy.FIRST_IN_APP_UPDATE_VERSION);
         TextView detail = Ui.text(this, note, 13, Ui.secondaryText(dark));
         LinearLayout.LayoutParams detailParams = new LinearLayout.LayoutParams(-1, -2);
         detailParams.setMargins(0, Ui.dp(this, 8), 0, 0);
@@ -101,13 +94,12 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         }
         if (releases == null || releases.isEmpty()) {
             LinearLayout empty = Ui.card(this, dark);
-            TextView title = Ui.text(this, "No installable releases yet", 18,
+            TextView title = Ui.text(this, AppText.get(R.string.phone_no_installable_releases_yet_ec6ca), 18,
                     Ui.mainText(dark));
             title.setTypeface(Ui.mediumTypeface(this));
             empty.addView(title);
             TextView detailEmpty = Ui.text(this,
-                    "GitHub currently has no published release containing both the expected APK "
-                            + "and SHA256SUMS.txt.", 14, Ui.secondaryText(dark));
+                    AppText.get(R.string.phone_github_currently_has_no_published_release_contai_b6552), 14, Ui.secondaryText(dark));
             LinearLayout.LayoutParams emptyParams = new LinearLayout.LayoutParams(-1, -2);
             emptyParams.setMargins(0, Ui.dp(this, 8), 0, 0);
             empty.addView(detailEmpty, emptyParams);
@@ -117,7 +109,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
             return;
         }
 
-        TextView heading = Ui.text(this, "Published versions", 15, Ui.secondaryText(dark));
+        TextView heading = Ui.text(this, AppText.get(R.string.phone_published_versions_bed37), 15, Ui.secondaryText(dark));
         heading.setTypeface(Ui.mediumTypeface(this));
         LinearLayout.LayoutParams headingParams = new LinearLayout.LayoutParams(-1, -2);
         headingParams.setMargins(Ui.dp(this, 4), Ui.dp(this, 24), 0, Ui.dp(this, 10));
@@ -133,15 +125,15 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         boolean irreversible = ReleaseUpdatePolicy.isIrreversible(release.version);
         boolean returnToStable = UpdateChannel.isReturnToStable(release, installedVersion);
         LinearLayout card = Ui.card(this, dark);
-        String suffix = release.prerelease ? " · Prerelease"
-                : irreversible ? " · Irreversible"
-                : comparison > 0 ? " · Update"
-                : comparison == 0 ? " · Installed" : " · Older";
+        String suffix = release.prerelease ? AppText.get(R.string.phone_prerelease_066fc)
+                : irreversible ? AppText.get(R.string.phone_irreversible_0da9d)
+                : comparison > 0 ? AppText.get(R.string.phone_update_83ea3)
+                : comparison == 0 ? AppText.get(R.string.phone_installed_d73d0) : AppText.get(R.string.phone_older_09f4a);
         TextView title = Ui.text(this, release.name, 18, Ui.mainText(dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         String published = release.publishedAt.length() >= 10
-                ? release.publishedAt.substring(0, 10) : "Unknown date";
+                ? release.publishedAt.substring(0, 10) : AppText.get(R.string.phone_unknown_date_0ad24);
         TextView summary = Ui.text(this, "v" + release.version + suffix + " · " + published,
                 13, irreversible ? Ui.danger(dark) : Ui.secondaryText(dark));
         LinearLayout.LayoutParams summaryParams = new LinearLayout.LayoutParams(-1, -2);
@@ -151,7 +143,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         if (irreversible) {
             TextView irreversibleNote = Ui.text(this,
                     ReleaseUpdatePolicy.irreversibleSummary()
-                            + ". Update manually from the GitHub release page.",
+                            + AppText.get(R.string.phone_update_manually_from_the_github_release_page_886d9),
                     13, Ui.secondaryText(dark));
             LinearLayout.LayoutParams irreversibleParams = new LinearLayout.LayoutParams(-1, -2);
             irreversibleParams.setMargins(0, 0, 0, Ui.dp(this, 14));
@@ -159,7 +151,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         }
 
         if (!release.notes.isEmpty()) {
-            TextView notesHeading = Ui.text(this, "What’s new", 13, Ui.secondaryText(dark));
+            TextView notesHeading = Ui.text(this, AppText.get(R.string.phone_what_s_new_36970), 13, Ui.secondaryText(dark));
             notesHeading.setTypeface(Ui.mediumTypeface(this));
             LinearLayout.LayoutParams notesHeadingParams = new LinearLayout.LayoutParams(-1, -2);
             notesHeadingParams.setMargins(0, 0, 0, Ui.dp(this, 8));
@@ -171,10 +163,10 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         }
 
         if (irreversible) {
-            Button github = Ui.nativePrimaryButton(this, "Open on GitHub");
+            Button github = Ui.nativePrimaryButton(this, AppText.get(R.string.phone_open_on_github_8b81a));
             github.setOnClickListener(view -> openUrl(release.pageUrl));
             card.addView(github, new LinearLayout.LayoutParams(-1, Ui.dp(this, 54)));
-            Button details = Ui.button(this, "View release details", false, dark);
+            Button details = Ui.button(this, AppText.get(R.string.phone_view_release_details_d7109), false, dark);
             details.setOnClickListener(view -> startActivity(new Intent(this, UpdateActivity.class)
                     .putExtra(UpdateActivity.EXTRA_VERSION, release.version)));
             LinearLayout.LayoutParams detailsParams =
@@ -183,9 +175,9 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
             card.addView(details, detailsParams);
         } else {
             Button action = Ui.button(this,
-                    returnToStable ? "View stable return"
-                            : comparison < 0 ? "View downgrade" : comparison == 0 ? "View reinstall"
-                            : "View update", comparison > 0 || returnToStable, dark);
+                    returnToStable ? AppText.get(R.string.phone_view_stable_return_61bcb)
+                            : comparison < 0 ? AppText.get(R.string.phone_view_downgrade_85bf3) : comparison == 0 ? AppText.get(R.string.phone_view_reinstall_dacfd)
+                            : AppText.get(R.string.phone_view_update_6fcad), comparison > 0 || returnToStable, dark);
             action.setOnClickListener(view -> startActivity(new Intent(this, UpdateActivity.class)
                     .putExtra(UpdateActivity.EXTRA_VERSION, release.version)));
             card.addView(action, new LinearLayout.LayoutParams(-1, Ui.dp(this, 54)));
@@ -199,7 +191,7 @@ public final class ReleaseHistoryActivity extends AppCompatActivity {
         try {
             startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
         } catch (RuntimeException exception) {
-            Toast.makeText(this, "No browser can open the GitHub release page.",
+            Toast.makeText(this, AppText.get(R.string.phone_no_browser_can_open_the_github_release_page_ed52f),
                     Toast.LENGTH_LONG).show();
         }
     }

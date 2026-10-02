@@ -2,65 +2,65 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Live monitor">
+    <PreferenceCategory android:title="@string/phone_live_monitor_2a883">
         <SwitchPreferenceCompat
             android:key="now_bar_monitor_ui"
             android:summary="Show remaining Codex allowance until the next usage reset"
-            android:title="Live monitor" />
+            android:title="@string/phone_live_monitor_2a883" />
         <Preference
             android:key="now_bar_permission"
-            android:title="Live notification access"
+            android:title="@string/phone_live_notification_access_f1e6f"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Display">
+    <PreferenceCategory android:title="@string/phone_display_574ff">
         <ListPreference
             android:entries="@array/now_bar_display_mode_entries"
             android:entryValues="@array/now_bar_display_mode_values"
             android:key="now_bar_display_mode_ui"
-            android:title="Live display mode"
+            android:title="@string/phone_live_display_mode_b5329"
             app:useSimpleSummaryProvider="true" />
         <ListPreference
             android:entries="@array/now_bar_percent_mode_entries"
             android:entryValues="@array/now_bar_percent_mode_values"
             android:key="now_bar_percent_mode_ui"
-            android:title="Percentage shown"
+            android:title="@string/phone_percentage_shown_254f9"
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Automatic start">
+    <PreferenceCategory android:title="@string/phone_automatic_start_b7348">
         <SwitchPreferenceCompat
             android:key="now_bar_auto_start_ui"
-            android:summary="Start the monitor when remaining allowance is low"
-            android:title="Start when allowance is low" />
+            android:summary="@string/phone_start_the_monitor_when_remaining_allowance_is_lo_b48c2"
+            android:title="@string/phone_start_when_allowance_is_low_26611" />
         <ListPreference
             android:entries="@array/settings_metric_entries"
             android:entryValues="@array/settings_metric_values"
             android:key="now_bar_metric_ui"
-            android:title="Monitor"
+            android:title="@string/phone_monitor_ec0f1"
             app:useSimpleSummaryProvider="true" />
         <ListPreference
             android:entries="@array/settings_threshold_entries"
             android:entryValues="@array/settings_threshold_values"
             android:key="now_bar_threshold_ui"
-            android:title="Start when remaining reaches"
+            android:title="@string/phone_start_when_remaining_reaches_388fc"
             app:useSimpleSummaryProvider="true" />
         <SwitchPreferenceCompat
             android:key="now_bar_accelerated_ui"
-            android:summary="Start while usage is projected to run out early"
-            android:title="Start for accelerated usage" />
+            android:summary="@string/phone_start_while_usage_is_projected_to_run_out_early_f471d"
+            android:title="@string/phone_start_for_accelerated_usage_71c25" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Troubleshooting">
+    <PreferenceCategory android:title="@string/phone_troubleshooting_285ec">
         <Preference
             android:key="now_bar_setup_help"
-            android:summary="Samsung firmware and developer-option guidance"
-            android:title="Samsung setup help"
+            android:summary="@string/phone_samsung_firmware_and_developer_option_guidance_0d702"
+            android:title="@string/phone_samsung_setup_help_d9419"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="now_bar_preview"
-            android:summary="Show a 20-minute sample activity for device testing"
-            android:title="Start sample preview"
+            android:summary="@string/phone_show_a_20_minute_sample_activity_for_device_test_be65a"
+            android:title="@string/phone_start_sample_preview_91fb5"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 

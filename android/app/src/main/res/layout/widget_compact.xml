@@ -164,7 +164,7 @@
             android:id="@+id/reset_credit_info"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:text="2 resets · next expires in 3d"
+            android:text="@string/phone_2_resets_next_expires_in_3d_b1f33"
             android:maxLines="1"
             android:layout_weight="1"/>
         <TextView
@@ -177,7 +177,7 @@
             android:layout_width="wrap_content"
             android:layout_height="30dp"
             android:minWidth="68dp"
-            android:text="Use reset"
+            android:text="@string/phone_use_reset_c3295"
             android:fontFamily="sec"
             android:layout_marginStart="6dp"/>
     </LinearLayout>

@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="QuotaWidgetShadowText" parent="ReferenceWidgetText">
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowRadius">2</item>
+        <item name="android:shadowDx">0</item>
+        <item name="android:shadowDy">1</item>
+    </style>
+</resources>

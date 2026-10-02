@@ -63,14 +63,14 @@ public final class ResetNotificationManager {
         String metric = ResetAlertPreferences.getMetric(context);
         if (!ResetAlertPreferences.METRIC_WEEKLY.equals(metric)) {
             notifyLowWindow(context, snapshot.fiveHour, snapshot.fetchedAtMillis,
-                    "5-hour", KEY_FIVE_HOUR_WINDOW, NOTIFICATION_LOW_FIVE_HOUR);
+                    AppText.get(R.string.five_hour), KEY_FIVE_HOUR_WINDOW, NOTIFICATION_LOW_FIVE_HOUR);
         }
         if (!ResetAlertPreferences.METRIC_FIVE_HOUR.equals(metric)) {
             notifyLowWindow(context, snapshot.weekly, snapshot.fetchedAtMillis,
-                    "Weekly", KEY_WEEKLY_WINDOW, NOTIFICATION_LOW_WEEKLY);
+                    AppText.get(R.string.weekly), KEY_WEEKLY_WINDOW, NOTIFICATION_LOW_WEEKLY);
             // The monthly free-tier window rides on the same long-cadence metric as weekly.
             notifyLowWindow(context, snapshot.monthly, snapshot.fetchedAtMillis,
-                    "Monthly", KEY_MONTHLY_WINDOW, NOTIFICATION_LOW_MONTHLY);
+                    AppText.get(R.string.phone_monthly_d31ed), KEY_MONTHLY_WINDOW, NOTIFICATION_LOW_MONTHLY);
         }
         if (ResetAlertPreferences.unexpectedRefillsEnabled(context)) {
             notifyUnexpectedRefill(context, unexpectedRefills);
@@ -107,10 +107,10 @@ public final class ResetNotificationManager {
             return;
         }
         String text = added == 1
-                ? "One Codex reset credit was added. You now have " + current + "."
-                : added + " Codex reset credits were added. You now have " + current + ".";
+                ? AppText.get(R.string.phone_one_codex_reset_credit_was_added_you_now_have_05a3e) + current + "."
+                : added + AppText.get(R.string.phone_codex_reset_credits_were_added_you_now_have_188ac) + current + ".";
         if (post(context, NOTIFICATION_NEW_CREDIT,
-                added == 1 ? "Codex reset credit added" : "Codex reset credits added", text,
+                added == 1 ? AppText.get(R.string.phone_codex_reset_credit_added_6f383) : AppText.get(R.string.phone_codex_reset_credits_added_7a30f), text,
                 NOTIFICATION_NEW_CREDIT)) {
             state.edit().putInt(KEY_CREDIT_COUNT, current).apply();
         }
@@ -137,17 +137,17 @@ public final class ResetNotificationManager {
         String label;
         int id;
         if (ResetAlertPreferences.METRIC_WEEKLY.equals(metric)) {
-            label = "Weekly";
+            label = AppText.get(R.string.weekly);
             id = NOTIFICATION_RESET_WEEKLY;
         } else if ("monthly".equals(metric)) {
-            label = "Monthly";
+            label = AppText.get(R.string.phone_monthly_d31ed);
             id = NOTIFICATION_RESET_MONTHLY;
         } else {
-            label = "5-hour";
+            label = AppText.get(R.string.five_hour);
             id = NOTIFICATION_RESET_FIVE_HOUR;
         }
-        post(context, id, "Codex " + label + " usage reset",
-                "Your " + label + " allowance should be available again. Refreshing usage now.",
+        post(context, id, "Codex " + label + AppText.get(R.string.phone_usage_reset_f467a),
+                AppText.get(R.string.phone_your_1cd4b) + label + AppText.get(R.string.phone_allowance_should_be_available_again_refreshing_u_d42a1),
                 id);
     }
 
@@ -164,12 +164,12 @@ public final class ResetNotificationManager {
             if (isResetCreditExpiryReminderAnnouncedLocked(context, token)) return false;
             int notificationId = notificationIdForCredit(creditId, token);
             long now = System.currentTimeMillis();
-            String text = "One reset credit expires "
+            String text = AppText.get(R.string.phone_one_reset_credit_expires_e579d)
                     + UsageFormat.absolute(context, expiresAtMillis, now) + " ("
                     + UsageFormat.relative(expiresAtMillis, now)
-                    + "). Use it before it expires.";
+                    + AppText.get(R.string.phone_use_it_before_it_expires_4da5f);
             if (!postResetCreditExpiry(context, notificationId,
-                    "Codex reset credit expires soon", text)) {
+                    AppText.get(R.string.phone_codex_reset_credit_expires_soon_31c1b), text)) {
                 return false;
             }
             Set<String> announced = new HashSet<>(state(context).getStringSet(
@@ -211,8 +211,8 @@ public final class ResetNotificationManager {
         if (context == null || !ResetAlertPreferences.enabled(context)) {
             return false;
         }
-        return post(context, NOTIFICATION_TEST, "Codex Meter notifications are working",
-                "Low usage, scheduled resets, surprise refills, and reset-credit alerts are ready.",
+        return post(context, NOTIFICATION_TEST, AppText.get(R.string.phone_codex_meter_notifications_are_working_3b46e),
+                AppText.get(R.string.phone_low_usage_scheduled_resets_surprise_refills_and_93b24),
                 NOTIFICATION_TEST);
     }
 
@@ -291,9 +291,9 @@ public final class ResetNotificationManager {
             return;
         }
         int remaining = window.remainingPercent();
-        if (post(context, notificationId, label + " Codex usage is low",
-                remaining + "% remaining in the current "
-                        + label.toLowerCase(Locale.ROOT) + " window.",
+        if (post(context, notificationId, label + AppText.get(R.string.phone_codex_usage_is_low_73247),
+                remaining + AppText.get(R.string.phone_remaining_in_the_current_d79ae)
+                        + label.toLowerCase(Locale.ROOT) + AppText.get(R.string.phone_window_4bd49),
                 notificationId, true)) {
             state.edit().putLong(stateKey, windowId).apply();
         }
@@ -305,20 +305,20 @@ public final class ResetNotificationManager {
         boolean weekly = (refills & CelebrationDetector.WEEKLY) != 0;
         boolean monthly = (refills & CelebrationDetector.MONTHLY) != 0;
         if ((fiveHour && weekly) || (fiveHour && monthly)) {
-            post(context, NOTIFICATION_REFILL_BOTH, "Surprise Codex refill",
-                    "Your Codex allowances jumped to 100% before their scheduled resets. Enjoy the bonus capacity.",
+            post(context, NOTIFICATION_REFILL_BOTH, AppText.get(R.string.phone_surprise_codex_refill_239e7),
+                    AppText.get(R.string.phone_your_codex_allowances_jumped_to_100_before_their_fd531),
                     NOTIFICATION_REFILL_BOTH);
         } else if (weekly) {
-            post(context, NOTIFICATION_REFILL_WEEKLY, "Surprise weekly Codex refill",
-                    "Your weekly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.",
+            post(context, NOTIFICATION_REFILL_WEEKLY, AppText.get(R.string.phone_surprise_weekly_codex_refill_7ccd0),
+                    AppText.get(R.string.phone_your_weekly_allowance_jumped_to_100_before_its_s_2c694),
                     NOTIFICATION_REFILL_WEEKLY);
         } else if (monthly) {
-            post(context, NOTIFICATION_REFILL_MONTHLY, "Surprise monthly Codex refill",
-                    "Your monthly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.",
+            post(context, NOTIFICATION_REFILL_MONTHLY, AppText.get(R.string.phone_surprise_monthly_codex_refill_fefa7),
+                    AppText.get(R.string.phone_your_monthly_allowance_jumped_to_100_before_its_907c9),
                     NOTIFICATION_REFILL_MONTHLY);
         } else {
-            post(context, NOTIFICATION_REFILL_FIVE_HOUR, "Surprise 5-hour Codex refill",
-                    "Your 5-hour allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.",
+            post(context, NOTIFICATION_REFILL_FIVE_HOUR, AppText.get(R.string.phone_surprise_5_hour_codex_refill_e2975),
+                    AppText.get(R.string.phone_your_5_hour_allowance_jumped_to_100_before_its_s_3255f),
                     NOTIFICATION_REFILL_FIVE_HOUR);
         }
     }
@@ -407,7 +407,7 @@ public final class ResetNotificationManager {
         PendingIntent details = PendingIntent.getActivity(context, id, detailsIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Intent useIntent = new Intent(context, ResetCreditActivity.class)
-                .setAction("dev.bennett.codexmeter.action.USE_RESET_FROM_NOTIFICATION")
+                .setAction("me.pipi.usage.action.USE_RESET_FROM_NOTIFICATION")
                 .putExtra(AppConstants.EXTRA_PROMPT_USE_RESET, true)
                 .putExtra(AppConstants.EXTRA_NOTIFICATION_ID, id)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
@@ -420,7 +420,7 @@ public final class ResetNotificationManager {
                 .setStyle(new Notification.BigTextStyle().bigText(text))
                 .setContentIntent(details)
                 .addAction(new Notification.Action.Builder(R.drawable.ic_reset_notification,
-                        "Use reset", useReset).build())
+                        AppText.get(R.string.phone_use_reset_c3295), useReset).build())
                 .setAutoCancel(true)
                 .setCategory(Notification.CATEGORY_REMINDER)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)
@@ -453,8 +453,8 @@ public final class ResetNotificationManager {
     private static String createChannel(NotificationManager manager, String style) {
         if (ResetAlertPreferences.STYLE_SILENT.equals(style)) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_SILENT,
-                    "Codex usage alerts", NotificationManager.IMPORTANCE_LOW);
-            channel.setDescription("Low usage, scheduled resets, surprise refills, and reset credits");
+                    AppText.get(R.string.phone_codex_usage_alerts_fe469), NotificationManager.IMPORTANCE_LOW);
+            channel.setDescription(AppText.get(R.string.phone_low_usage_scheduled_resets_surprise_refills_and_06d96));
             channel.setSound(null, null);
             channel.enableVibration(false);
             manager.createNotificationChannel(channel);
@@ -462,8 +462,8 @@ public final class ResetNotificationManager {
         }
         if (ResetAlertPreferences.STYLE_ALARM.equals(style)) {
             NotificationChannel channel = new NotificationChannel(CHANNEL_ALARM,
-                    "Codex usage alarms", NotificationManager.IMPORTANCE_HIGH);
-            channel.setDescription("Low usage, scheduled resets, surprise refills, and reset credits");
+                    AppText.get(R.string.phone_codex_usage_alarms_e2aca), NotificationManager.IMPORTANCE_HIGH);
+            channel.setDescription(AppText.get(R.string.phone_low_usage_scheduled_resets_surprise_refills_and_06d96));
             channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_ALARM),
                     new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_ALARM)
                             .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());
@@ -472,8 +472,8 @@ public final class ResetNotificationManager {
             return CHANNEL_ALARM;
         }
         NotificationChannel channel = new NotificationChannel(CHANNEL_NOTIFY,
-                "Codex usage alerts", NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setDescription("Low usage, scheduled resets, surprise refills, and reset credits");
+                AppText.get(R.string.phone_codex_usage_alerts_fe469), NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription(AppText.get(R.string.phone_low_usage_scheduled_resets_surprise_refills_and_06d96));
         channel.setSound(RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION),
                 new AudioAttributes.Builder().setUsage(AudioAttributes.USAGE_NOTIFICATION)
                         .setContentType(AudioAttributes.CONTENT_TYPE_SONIFICATION).build());

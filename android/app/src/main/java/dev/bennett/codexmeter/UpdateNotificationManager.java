@@ -23,8 +23,8 @@ public final class UpdateNotificationManager {
             return;
         }
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
-                "App updates", NotificationManager.IMPORTANCE_DEFAULT);
-        channel.setDescription("Alerts when a signed Codex Meter release is available");
+                AppText.get(R.string.phone_app_updates_16213), NotificationManager.IMPORTANCE_DEFAULT);
+        channel.setDescription(AppText.get(R.string.phone_alerts_when_a_signed_codex_meter_release_is_avai_74125));
         channel.enableVibration(true);
         manager.createNotificationChannel(channel);
     }
@@ -73,13 +73,13 @@ public final class UpdateNotificationManager {
         boolean returnToStable = UpdateChannel.isReturnToStable(release,
                 UpdatePreferences.installedVersion(context));
         String title = returnToStable
-                ? "Return to Codex Meter " + release.version
-                : "Codex Meter " + release.version + " is available";
+                ? AppText.get(R.string.phone_return_to_codex_meter_399f2) + release.version
+                : "Codex Meter " + release.version + AppText.get(R.string.phone_is_available_7b679);
         String text = returnToStable
-                ? "The stable release installs in place over this alpha build."
+                ? AppText.get(R.string.phone_the_stable_release_installs_in_place_over_this_a_7d63b)
                 : release.prerelease
-                ? "A signed alpha release is ready to install."
-                : "A signed GitHub release is ready to install.";
+                ? AppText.get(R.string.phone_a_signed_alpha_release_is_ready_to_install_56e5d)
+                : AppText.get(R.string.phone_a_signed_github_release_is_ready_to_install_f4385);
         PendingIntent open = activityPending(context, NOTIFICATION_ID,
                 updateIntent(context, release.version, false));
         PendingIntent update = activityPending(context, NOTIFICATION_ID + 1,
@@ -91,9 +91,9 @@ public final class UpdateNotificationManager {
                 .setStyle(new Notification.BigTextStyle().bigText(text))
                 .setContentIntent(open)
                 .addAction(new Notification.Action.Builder(R.drawable.ic_notification,
-                        "Open", open).build())
+                        AppText.get(R.string.phone_open_cf9b7), open).build())
                 .addAction(new Notification.Action.Builder(R.drawable.ic_notification,
-                        "Update", update).build())
+                        AppText.get(R.string.phone_update_fb91e), update).build())
                 .setAutoCancel(true)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setVisibility(Notification.VISIBILITY_PUBLIC)

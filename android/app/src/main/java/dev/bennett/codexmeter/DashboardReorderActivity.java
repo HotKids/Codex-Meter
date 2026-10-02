@@ -48,16 +48,14 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(state);
         this.dark = Ui.isDark(this);
-        LinearLayout content = Ui.installPage(this, "Edit dashboard", true).content;
+        LinearLayout content = Ui.installPage(this, AppText.get(R.string.phone_edit_dashboard_fbfce), true).content;
         // Pull-to-refresh would swallow downward drag gestures while rearranging rows.
         androidx.swiperefreshlayout.widget.SwipeRefreshLayout refresh =
                 findViewById(R.id.dashboard_refresh);
         refresh.setEnabled(false);
 
         TextView hint = Ui.text(this,
-                "Drag the handles to arrange your usage cards and use the switches to hide the "
-                        + "ones you don't need. Model-specific limits such as GPT-5.3-Codex-Spark "
-                        + "appear here automatically once OpenAI reports them for your account.",
+                AppText.get(R.string.phone_drag_the_handles_to_arrange_your_usage_cards_and_e90d9),
                 14.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams hintParams = new LinearLayout.LayoutParams(-1, -2);
         hintParams.setMargins(Ui.dp(this, 6), Ui.dp(this, 2), Ui.dp(this, 6), Ui.dp(this, 16));
@@ -78,11 +76,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         content.addView(listCard);
 
         TextView note = Ui.text(this,
-                "Changes are saved instantly. Usage-credit balance and reset credits stay hidden "
-                        + "when they have nothing to show (zero or below), and 5-hour, weekly, "
-                        + "monthly, and usage-history cards appear only while OpenAI reports data "
-                        + "for them — no matter where each card is placed or whether its switch "
-                        + "is on.",
+                AppText.get(R.string.phone_changes_are_saved_instantly_usage_credit_balance_c14e1),
                 12.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams noteParams = new LinearLayout.LayoutParams(-1, -2);
         noteParams.setMargins(Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6), 0);
@@ -103,21 +97,21 @@ public final class DashboardReorderActivity extends AppCompatActivity {
                 AppPreferences.getDashboardOrder(this), DashboardSections.defaultOrder(limits));
         for (String key : ordered) {
             if (DashboardSections.FIVE_HOUR.equals(key)) {
-                items.add(new SectionItem(key, "5-hour limit", "Rolling 5-hour Codex window"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_5_hour_limit_7f567), AppText.get(R.string.phone_rolling_5_hour_codex_window_0cb1f)));
             } else if (DashboardSections.WEEKLY.equals(key)) {
-                items.add(new SectionItem(key, "Weekly limit", "Rolling 7-day Codex window"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_weekly_limit_7aaf6), AppText.get(R.string.phone_rolling_7_day_codex_window_cd1bf)));
             } else if (DashboardSections.MONTHLY.equals(key)) {
-                items.add(new SectionItem(key, "Monthly limit",
-                        "Rolling ~30-day Codex window (free tier)"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_monthly_limit_9216c),
+                        AppText.get(R.string.phone_rolling_30_day_codex_window_free_tier_095d5)));
             } else if (DashboardSections.USAGE_CREDITS.equals(key)) {
-                items.add(new SectionItem(key, "Usage-credit balance",
-                        "Hidden automatically at a zero or negative balance"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_usage_credit_balance_60e2c),
+                        AppText.get(R.string.phone_hidden_automatically_at_a_zero_or_negative_balan_cc782)));
             } else if (DashboardSections.USAGE_HISTORY.equals(key)) {
-                items.add(new SectionItem(key, "Usage history",
-                        "Shown only when a 5-hour or weekly window is available"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_usage_history_b2a35),
+                        AppText.get(R.string.phone_shown_only_when_a_5_hour_or_weekly_window_is_ava_d2bcc)));
             } else if (DashboardSections.RESET_CREDITS.equals(key)) {
-                items.add(new SectionItem(key, "Reset credits",
-                        "Hidden automatically when no resets are available"));
+                items.add(new SectionItem(key, AppText.get(R.string.phone_reset_credits_ef7c0),
+                        AppText.get(R.string.phone_hidden_automatically_when_no_resets_are_availabl_9c7f7)));
             } else {
                 UsageLimit match = null;
                 for (UsageLimit limit : limits) {
@@ -127,8 +121,8 @@ public final class DashboardReorderActivity extends AppCompatActivity {
                     }
                 }
                 items.add(new SectionItem(key,
-                        match == null ? "Additional limit" : match.displayName(),
-                        "Model-specific limit · detected automatically"));
+                        match == null ? AppText.get(R.string.phone_additional_limit_e91f1) : match.displayName(),
+                        AppText.get(R.string.phone_model_specific_limit_detected_automatically_be758)));
             }
         }
     }
@@ -218,7 +212,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
             row.addView(labels, new LinearLayout.LayoutParams(0, -2, 1.0f));
 
             SwitchCompat toggle = new SwitchCompat(DashboardReorderActivity.this);
-            toggle.setContentDescription("Show on dashboard");
+            toggle.setContentDescription(AppText.get(R.string.phone_show_on_dashboard_eab7f));
             LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(-2, -2);
             toggleParams.setMargins(Ui.dp(DashboardReorderActivity.this, 8), 0,
                     Ui.dp(DashboardReorderActivity.this, 4), 0);
@@ -227,7 +221,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
             ImageView handle = new ImageView(DashboardReorderActivity.this);
             handle.setImageResource(R.drawable.ic_oui_reorder);
             handle.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(dark)));
-            handle.setContentDescription("Reorder");
+            handle.setContentDescription(AppText.get(R.string.phone_reorder_33d99));
             int pad = Ui.dp(DashboardReorderActivity.this, 12);
             handle.setPadding(pad, pad, pad, pad);
             row.addView(handle, new LinearLayout.LayoutParams(

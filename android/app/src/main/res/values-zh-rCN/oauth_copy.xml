@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="oauth_connected">已连接账户</string>
+    <string name="oauth_retry">请再试一次</string>
+    <string name="oauth_complete">登录完成</string>
+    <string name="oauth_attention">登录需要处理</string>
+    <string name="oauth_open">打开 Codex Meter</string>
+    <string name="oauth_back">返回 Codex Meter</string>
+    <string name="oauth_returning">正在自动返回应用…</string>
+    <string name="oauth_restart">请返回应用重新进行安全登录。</string>
+</resources>

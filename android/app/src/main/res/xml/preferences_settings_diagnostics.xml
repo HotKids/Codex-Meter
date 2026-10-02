@@ -2,33 +2,33 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="Log tracing">
+    <PreferenceCategory android:title="@string/phone_log_tracing_4d031">
         <SwitchPreferenceCompat
             android:key="diagnostic_logging_enabled"
-            android:summary="Record detailed app, refresh, scheduler, Wear, and network events"
-            android:title="Save diagnostic logs"
+            android:summary="@string/phone_record_detailed_app_refresh_scheduler_wear_and_n_31f16"
+            android:title="@string/phone_save_diagnostic_logs_6f1fe"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="diagnostic_log_status"
-            android:title="Saved logs"
+            android:title="@string/phone_saved_logs_fe8fe"
             app:iconSpaceReserved="false"
             app:selectable="false" />
         <Preference
             android:key="export_diagnostic_logs"
-            android:summary="Save a structured JSON Lines file"
-            android:title="Export logs"
+            android:summary="@string/phone_save_a_structured_json_lines_file_22956"
+            android:title="@string/phone_export_logs_5fd44"
             app:iconSpaceReserved="false" />
         <Preference
             android:key="clear_diagnostic_logs"
-            android:summary="Permanently delete saved diagnostic events"
-            android:title="Clear logs"
+            android:summary="@string/phone_permanently_delete_saved_diagnostic_events_6d2ee"
+            android:title="@string/phone_clear_logs_532ff"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="Privacy">
+    <PreferenceCategory android:title="@string/phone_privacy_cf014">
         <Preference
             android:summary="Logs stay in private app storage until you export or clear them. Authentication tokens, cookies, authorization codes, email addresses, URL queries, and request/response bodies are never intentionally recorded. Review an export before sharing it."
-            android:title="Sensitive data protection"
+            android:title="@string/phone_sensitive_data_protection_09de4"
             app:iconSpaceReserved="false"
             app:selectable="false" />
     </PreferenceCategory>

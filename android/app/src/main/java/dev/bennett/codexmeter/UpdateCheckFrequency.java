@@ -1,6 +1,7 @@
 package dev.bennett.codexmeter;
 
 import java.util.concurrent.TimeUnit;
+import java.util.Locale;
 
 /**
  * Supported automatic GitHub release-check intervals. Pure Java so self-tests can
@@ -72,6 +73,6 @@ public final class UpdateCheckFrequency {
     }
 
     public static String summary(int hours) {
-        return "Check signed GitHub releases " + label(normalize(hours)).toLowerCase();
+        return "Check signed GitHub releases " + label(normalize(hours)).toLowerCase(Locale.ROOT);
     }
 }

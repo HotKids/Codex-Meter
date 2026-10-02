@@ -58,17 +58,17 @@ public final class UsageWaveView extends View {
             animator.setDuration(warning ? WARNING_WAVE_DURATION_MS : NORMAL_WAVE_DURATION_MS);
         }
         phaseOffset = invertedWave ? (float) Math.PI : 0f;
-        if (reset != null && reset.startsWith("Resets in ")) {
-            resetTop = "Resets in";
-            resetBottom = reset.substring("Resets in ".length());
+        if (reset != null && reset.startsWith(AppText.get(R.string.phone_resets_in_e8c96))) {
+            resetTop = AppText.get(R.string.phone_resets_in_3f703);
+            resetBottom = reset.substring(AppText.get(R.string.phone_resets_in_e8c96).length());
         } else {
             resetTop = reset == null ? "" : reset;
             resetBottom = "";
         }
         icon = AppCompatResources.getDrawable(getContext(), iconRes);
-        String description = label + ", " + percent + " percent. " + reset;
-        if (!pace.isEmpty()) description += ". " + pace.replace("Est.", "Estimated");
-        if (warning) description += ". Accelerated usage warning";
+        String description = label + ", " + percent + AppText.get(R.string.phone_percent_5e205) + reset;
+        if (!pace.isEmpty()) description += ". " + pace.replace(AppText.get(R.string.phone_est_18b40), AppText.get(R.string.phone_estimated_ae64c));
+        if (warning) description += AppText.get(R.string.phone_accelerated_usage_warning_51e2e);
         setContentDescription(description);
         invalidate();
     }

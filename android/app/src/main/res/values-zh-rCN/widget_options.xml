@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_option_theme_0" formatted="false">跟随系统</string>
+    <string name="widget_option_theme_1" formatted="false">深色</string>
+    <string name="widget_option_theme_2" formatted="false">浅色</string>
+    <string name="widget_option_surface_0" formatted="false">One UI</string>
+    <string name="widget_option_density_0" formatted="false">自动</string>
+    <string name="widget_option_density_1" formatted="false">紧凑</string>
+    <string name="widget_option_density_2" formatted="false">宽松</string>
+    <string name="widget_option_graphic_0" formatted="false">自动适配</string>
+    <string name="widget_option_graphic_1" formatted="false">大</string>
+    <string name="widget_option_graphic_2" formatted="false">最大</string>
+    <string name="widget_option_accent_0" formatted="false">薄荷绿</string>
+    <string name="widget_option_accent_1" formatted="false">蓝色</string>
+    <string name="widget_option_accent_2" formatted="false">琥珀黄</string>
+    <string name="widget_option_accent_3" formatted="false">紫罗兰</string>
+    <string name="widget_option_accent_4" formatted="false">玫瑰红</string>
+    <string name="widget_option_accent_5" formatted="false">青色</string>
+    <string name="widget_option_accent_6" formatted="false">青柠绿</string>
+    <string name="widget_option_accent_7" formatted="false">单色</string>
+    <string name="widget_option_accent_8" formatted="false">@string/card_follow_app_color</string>
+    <string name="widget_option_opacity_0" formatted="false">56%</string>
+    <string name="widget_option_opacity_1" formatted="false">88%</string>
+    <string name="widget_option_opacity_2" formatted="false">100%</string>
+    <string name="widget_option_reset_0" formatted="false">具体时间</string>
+    <string name="widget_option_reset_1" formatted="false">倒计时</string>
+    <string name="widget_option_reset_2" formatted="false">两者都显示</string>
+    <string name="widget_option_reset_3" formatted="false">隐藏重置时间</string>
+    <string name="widget_option_metric_0" formatted="false">两个周期</string>
+    <string name="widget_option_metric_1" formatted="false">仅五小时</string>
+    <string name="widget_option_metric_2" formatted="false">仅每周</string>
+    <string name="widget_option_display_0" formatted="false">剩余百分比</string>
+    <string name="widget_option_display_1" formatted="false">已用百分比</string>
+</resources>

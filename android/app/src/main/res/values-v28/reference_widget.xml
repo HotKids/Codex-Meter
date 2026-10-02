@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="ReferenceWidgetText" parent="ReferenceWidgetTextBase">
+        <item name="android:fallbackLineSpacing">false</item>
+    </style>
+</resources>

@@ -57,6 +57,17 @@ public final class UsageApi {
                 if (!AppPreferences.saveSnapshot(context, usageSnapshot)) {
                     throw new Exception("Usage was received, but it could not be saved on this device.");
                 }
+                // Preserve every provider window for widgets when the user refreshes the App.
+                // The legacy App/Wear snapshot and its success/failure contract stay unchanged.
+                try {
+                    WidgetUsageSnapshot widgetSnapshot = WidgetUsageParser.parse(
+                            responseRequestUsage.body, usageSnapshot.fetchedAtMillis);
+                    if (!widgetSnapshot.windows.isEmpty()) {
+                        WidgetUsageStore.save(context, widgetSnapshot, authTokens);
+                    }
+                } catch (Exception exception) {
+                    DiagnosticLog.error(context, "widget", "widget_window_capture_failed", exception);
+                }
                 UsageHistoryRecorder.record(context, usageSnapshot);
                 PhoneWearSync.pushUsage(context, usageSnapshot);
                 NowBarManager.onUsageUpdated(context, usageSnapshot);

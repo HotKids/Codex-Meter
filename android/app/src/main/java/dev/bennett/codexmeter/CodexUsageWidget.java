@@ -14,8 +14,7 @@ public final class CodexUsageWidget extends AppWidgetProvider {
                 WidgetRenderer.update(context, appWidgetManager, i);
             }
         }
-        RefreshScheduler.schedulePeriodic(context);
-        RefreshScheduler.scheduleImmediate(context);
+        WidgetRefreshScheduler.schedule(context);
     }
 
     @Override // android.appwidget.AppWidgetProvider
@@ -25,13 +24,12 @@ public final class CodexUsageWidget extends AppWidgetProvider {
 
     @Override // android.appwidget.AppWidgetProvider
     public void onEnabled(Context context) {
-        RefreshScheduler.schedulePeriodic(context);
-        RefreshScheduler.scheduleImmediate(context);
+        WidgetRefreshScheduler.schedule(context);
     }
 
     @Override // android.appwidget.AppWidgetProvider
     public void onDisabled(Context context) {
-        RefreshScheduler.schedulePeriodic(context);
+        WidgetRefreshScheduler.schedule(context);
     }
 
     @Override // android.appwidget.AppWidgetProvider
@@ -41,6 +39,7 @@ public final class CodexUsageWidget extends AppWidgetProvider {
                 AppPreferences.deleteWidgetOptions(context, i);
             }
         }
+        WidgetRefreshScheduler.schedule(context);
     }
 
     @Override
@@ -52,6 +51,7 @@ public final class CodexUsageWidget extends AppWidgetProvider {
                 int newId = newWidgetIds[index];
                 AppPreferences.saveWidgetOptions(context, newId,
                         AppPreferences.loadWidgetOptions(context, oldId));
+                ReferenceWidgetPreferences.restorePending(context, oldId, newId);
                 AppPreferences.saveWidgetTapAction(context, newId,
                         AppPreferences.getWidgetTapAction(context, oldId));
                 AppPreferences.deleteWidgetOptions(context, oldId);
@@ -63,5 +63,6 @@ public final class CodexUsageWidget extends AppWidgetProvider {
                 WidgetRenderer.update(context, manager, appWidgetId);
             }
         }
+        WidgetRefreshScheduler.schedule(context);
     }
 }

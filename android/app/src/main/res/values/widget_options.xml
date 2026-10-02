@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_option_theme_0" formatted="false">Follow system</string>
+    <string name="widget_option_theme_1" formatted="false">Dark</string>
+    <string name="widget_option_theme_2" formatted="false">Light</string>
+    <string name="widget_option_surface_0" formatted="false">One UI</string>
+    <string name="widget_option_density_0" formatted="false">Auto</string>
+    <string name="widget_option_density_1" formatted="false">Compact</string>
+    <string name="widget_option_density_2" formatted="false">Comfortable</string>
+    <string name="widget_option_graphic_0" formatted="false">Fit automatically</string>
+    <string name="widget_option_graphic_1" formatted="false">Large</string>
+    <string name="widget_option_graphic_2" formatted="false">Maximum</string>
+    <string name="widget_option_accent_0" formatted="false">Mint</string>
+    <string name="widget_option_accent_1" formatted="false">Blue</string>
+    <string name="widget_option_accent_2" formatted="false">Amber</string>
+    <string name="widget_option_accent_3" formatted="false">Violet</string>
+    <string name="widget_option_accent_4" formatted="false">Rose</string>
+    <string name="widget_option_accent_5" formatted="false">Cyan</string>
+    <string name="widget_option_accent_6" formatted="false">Lime</string>
+    <string name="widget_option_accent_7" formatted="false">Monochrome</string>
+    <string name="widget_option_accent_8" formatted="false">@string/card_follow_app_color</string>
+    <string name="widget_option_opacity_0" formatted="false">56%</string>
+    <string name="widget_option_opacity_1" formatted="false">88%</string>
+    <string name="widget_option_opacity_2" formatted="false">100%</string>
+    <string name="widget_option_reset_0" formatted="false">Absolute time</string>
+    <string name="widget_option_reset_1" formatted="false">Relative time</string>
+    <string name="widget_option_reset_2" formatted="false">Both</string>
+    <string name="widget_option_reset_3" formatted="false">Hide reset time</string>
+    <string name="widget_option_metric_0" formatted="false">Both windows</string>
+    <string name="widget_option_metric_1" formatted="false">5-hour only</string>
+    <string name="widget_option_metric_2" formatted="false">Weekly only</string>
+    <string name="widget_option_display_0" formatted="false">Percent remaining</string>
+    <string name="widget_option_display_1" formatted="false">Percent used</string>
+</resources>

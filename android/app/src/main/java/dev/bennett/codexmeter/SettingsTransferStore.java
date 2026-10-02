@@ -25,7 +25,7 @@ public final class SettingsTransferStore {
         }
         if (!includeAppSettings && !includeNotifications && !includeNowBar
                 && !includeAuthentication) {
-            throw new IllegalArgumentException("Select at least one section to export.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_select_at_least_one_section_to_export_2dcfc));
         }
         Context app = context.getApplicationContext();
         JSONObject appSettings = includeAppSettings ? collectAppSettings(app) : null;
@@ -36,7 +36,7 @@ public final class SettingsTransferStore {
             AuthTokens tokens = SecureTokenStore.load(app);
             if (tokens == null || !tokens.isUsable()) {
                 throw new IllegalStateException(
-                        "No ChatGPT authentication is saved on this device to export.");
+                        AppText.get(R.string.phone_no_chatgpt_authentication_is_saved_on_this_devic_7be85));
             }
             authentication = tokens.toJson();
         }
@@ -47,15 +47,15 @@ public final class SettingsTransferStore {
     public static void write(Context context, Uri uri, SettingsTransfer.Document document)
             throws Exception {
         if (context == null || uri == null || document == null) {
-            throw new IllegalArgumentException("Export target is incomplete.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_export_target_is_incomplete_71bc1));
         }
         if (!document.hasAnySection()) {
-            throw new IllegalArgumentException("Select at least one section to export.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_select_at_least_one_section_to_export_2dcfc));
         }
         byte[] bytes = document.toJsonString().getBytes(StandardCharsets.UTF_8);
         try (OutputStream output = context.getContentResolver().openOutputStream(uri, "wt")) {
             if (output == null) {
-                throw new Exception("Could not open the export file for writing.");
+                throw new Exception(AppText.get(R.string.phone_could_not_open_the_export_file_for_writing_3dd7e));
             }
             output.write(bytes);
             output.flush();
@@ -64,11 +64,11 @@ public final class SettingsTransferStore {
 
     public static SettingsTransfer.Document read(Context context, Uri uri) throws Exception {
         if (context == null || uri == null) {
-            throw new IllegalArgumentException("Import source is incomplete.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_import_source_is_incomplete_90fa3));
         }
         try (InputStream input = context.getContentResolver().openInputStream(uri)) {
             if (input == null) {
-                throw new Exception("Could not open the import file for reading.");
+                throw new Exception(AppText.get(R.string.phone_could_not_open_the_import_file_for_reading_a8cc0));
             }
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             byte[] chunk = new byte[4096];
@@ -76,7 +76,7 @@ public final class SettingsTransferStore {
             while ((read = input.read(chunk)) >= 0) {
                 buffer.write(chunk, 0, read);
                 if (buffer.size() > 1024 * 1024) {
-                    throw new IllegalArgumentException("Transfer file is too large.");
+                    throw new IllegalArgumentException(AppText.get(R.string.phone_transfer_file_is_too_large_81b1f));
                 }
             }
             return SettingsTransfer.parse(new String(buffer.toByteArray(), StandardCharsets.UTF_8));
@@ -87,44 +87,31 @@ public final class SettingsTransferStore {
             boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
             boolean applyAuthentication) throws Exception {
         if (context == null || document == null) {
-            throw new IllegalArgumentException("Import source is incomplete.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_import_source_is_incomplete_90fa3));
         }
+        validateImport(document, applyAppSettings, applyNotifications, applyNowBar,
+                applyAuthentication);
         Context app = context.getApplicationContext();
         List<String> applied = new ArrayList<>();
         boolean themeChanged = false;
         boolean authImported = false;
 
         if (applyAppSettings) {
-            if (!document.hasAppSettings()) {
-                throw new IllegalArgumentException("This file has no app settings to import.");
-            }
             themeChanged = applyAppSettings(app, document.appSettings);
             applied.add(SettingsTransfer.SECTION_APP_SETTINGS);
         }
         if (applyNotifications) {
-            if (!document.hasNotifications()) {
-                throw new IllegalArgumentException("This file has no notification settings to import.");
-            }
             applyNotifications(app, document.notifications);
             applied.add(SettingsTransfer.SECTION_NOTIFICATIONS);
         }
         if (applyNowBar) {
-            if (!document.hasNowBar()) {
-                throw new IllegalArgumentException("This file has no Now Bar settings to import.");
-            }
             applyNowBar(app, document.nowBar);
             applied.add(SettingsTransfer.SECTION_NOW_BAR);
         }
         if (applyAuthentication) {
-            if (!document.hasAuthentication()) {
-                throw new IllegalArgumentException("This file has no authentication to import.");
-            }
             applyAuthentication(app, document.authentication);
             applied.add(SettingsTransfer.SECTION_AUTHENTICATION);
             authImported = true;
-        }
-        if (applied.isEmpty()) {
-            throw new IllegalArgumentException("Select at least one section to import.");
         }
 
         RefreshScheduler.schedulePeriodic(app);
@@ -156,7 +143,7 @@ public final class SettingsTransferStore {
                 } catch (Exception exception) {
                     String message = exception.getMessage();
                     if (message == null || message.trim().isEmpty()) {
-                        message = "Imported authentication could not refresh usage.";
+                        message = AppText.get(R.string.phone_imported_authentication_could_not_refresh_usage_d9f3e);
                     }
                     AppPreferences.setLastError(app, message);
                     WidgetRenderer.updateAll(app);
@@ -165,6 +152,32 @@ public final class SettingsTransferStore {
         }
 
         return new ApplyResult(applied, themeChanged, authImported);
+    }
+
+    /** Validate every selected section before the first preference or credential write. */
+    private static void validateImport(SettingsTransfer.Document document, boolean appSettings,
+            boolean notifications, boolean nowBar, boolean authentication) throws Exception {
+        if (!appSettings && !notifications && !nowBar && !authentication) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_select_at_least_one_section_to_import_8df3b));
+        }
+        if (appSettings && !document.hasAppSettings()) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_this_file_has_no_app_settings_to_import_602e0));
+        }
+        if (notifications && !document.hasNotifications()) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_this_file_has_no_notification_settings_to_import_e8434));
+        }
+        if (nowBar && !document.hasNowBar()) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_this_file_has_no_now_bar_settings_to_import_dbcd6));
+        }
+        if (authentication && !document.hasAuthentication()) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_this_file_has_no_authentication_to_import_18627));
+        }
+        if (notifications && document.notifications.has("reset_credit_expiry_lead_times")) {
+            SettingsTransfer.requireLeadTimes(document.notifications, "reset_credit_expiry_lead_times");
+        }
+        if (authentication && !AuthTokens.fromJson(document.authentication).isUsable()) {
+            throw new IllegalArgumentException(AppText.get(R.string.phone_imported_authentication_is_incomplete_or_invalid_2f91b));
+        }
     }
 
     private static JSONObject collectAppSettings(Context context) throws Exception {
@@ -336,7 +349,7 @@ public final class SettingsTransferStore {
         AuthTokens tokens = AuthTokens.fromJson(json);
         if (!tokens.isUsable()) {
             throw new IllegalArgumentException(
-                    "Imported authentication is incomplete or invalid.");
+                    AppText.get(R.string.phone_imported_authentication_is_incomplete_or_invalid_2f91b));
         }
         SecureTokenStore.save(context, tokens);
         AppPreferences.clearSnapshot(context);

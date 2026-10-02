@@ -29,7 +29,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
             if (confirmation == null) {
                 abandon(context, intent);
                 UpdatePreferences.setInstallError(context,
-                        "Android did not provide an update confirmation screen.");
+                        AppText.get(R.string.phone_android_did_not_provide_an_update_confirmation_s_335af));
                 return;
             }
             try {
@@ -38,7 +38,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
             } catch (RuntimeException exception) {
                 abandon(context, intent);
                 UpdatePreferences.setInstallError(context,
-                        "Could not open Android's update confirmation screen.");
+                        AppText.get(R.string.phone_could_not_open_android_s_update_confirmation_scr_cb6a2));
             }
             return;
         }
@@ -48,7 +48,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
         }
         String message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
         if (message == null || message.trim().isEmpty()) {
-            message = "Android rejected the update (status " + status + ").";
+            message = AppText.get(R.string.phone_android_rejected_the_update_status_a73f0) + status + ").";
         }
         UpdatePreferences.setInstallError(context, message);
     }

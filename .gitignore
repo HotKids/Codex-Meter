@@ -36,10 +36,3 @@ out/
 *.orig
 *.rej
 *.log
-
-# iOS / Xcode (ios/ package also has its own .gitignore)
-ios/**/DerivedData/
-ios/**/xcuserdata/
-ios/**/*.xcuserstate
-ios/**/.build/
-ios/**/.swiftpm/

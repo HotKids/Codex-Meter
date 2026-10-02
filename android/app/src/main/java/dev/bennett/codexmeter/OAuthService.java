@@ -55,18 +55,18 @@ public final class OAuthService extends Service {
         DiagnosticLog.info(this, "auth", "oauth_service_command",
                 "action", action == null ? "" : action);
         if (ACTION_CANCEL.equals(action) || ACTION_CANCEL_SILENT.equals(action)) {
-            cancelFlow("Sign-in cancelled.", ACTION_CANCEL.equals(action));
+            cancelFlow(AppText.get(R.string.phone_sign_in_cancelled_24d3d), ACTION_CANCEL.equals(action));
             return START_NOT_STICKY;
         }
         if (SecureTokenStore.isSignedIn(this)) {
             AppPreferences.setOAuthPending(this, false, "");
-            broadcastResult(true, "Already signed in.");
+            broadcastResult(true, AppText.get(R.string.phone_already_signed_in_2c7ee));
             finishService();
             return START_NOT_STICKY;
         }
         if (running.compareAndSet(false, true)) {
             cancelled = false;
-            startForegroundCompat(buildNotification("Preparing secure sign-in…", null));
+            startForegroundCompat(buildNotification(AppText.get(R.string.phone_preparing_secure_sign_in_78f0c), null));
             executor.execute(new Runnable() {
                 @Override
                 public void run() {
@@ -103,19 +103,19 @@ public final class OAuthService extends Service {
             String redirectUri = "http://localhost:" + port + "/auth/callback";
             String authUrl = buildAuthorizeUrl(redirectUri, pkce);
             AppPreferences.setOAuthPending(this, true, authUrl);
-            updateNotification("Complete sign-in in your browser", authUrl);
+            updateNotification(AppText.get(R.string.phone_complete_sign_in_in_your_browser_fb6f2), authUrl);
             broadcastReady(authUrl);
 
             while (!cancelled) {
                 try {
                     browser = serverSocket.accept();
                 } catch (SocketTimeoutException timeout) {
-                    throw new Exception("Sign-in timed out. Start again from the app.");
+                    throw new Exception(AppText.get(R.string.phone_sign_in_timed_out_start_again_from_the_app_abf8e));
                 }
                 browser.setSoTimeout(30000);
                 Callback callback = readCallback(browser);
                 if (!"/auth/callback".equals(callback.path)) {
-                    writeBrowser(browser, 404, "Not found", false);
+                    writeBrowser(browser, 404, AppText.get(R.string.phone_not_found_475c8), false);
                     closeQuietly(browser);
                     browser = null;
                     continue;
@@ -123,7 +123,7 @@ public final class OAuthService extends Service {
                 if (!secureEquals(pkce.state, callback.parameters.get("state"))) {
                     DiagnosticLog.warn(this, "auth", "oauth_callback_state_mismatch");
                     writeBrowser(browser, 400,
-                            "The sign-in state did not match. Return to Codex Meter and try again.", false);
+                            AppText.get(R.string.phone_the_sign_in_state_did_not_match_return_to_codex_39f3f), false);
                     closeQuietly(browser);
                     browser = null;
                     continue;
@@ -135,18 +135,18 @@ public final class OAuthService extends Service {
                     writeBrowser(browser, 400, message, false);
                     closeQuietly(browser);
                     browser = null;
-                    throw new Exception("Sign-in failed: " + message);
+                    throw new Exception(AppText.get(R.string.phone_sign_in_failed_77442) + message);
                 }
                 String code = callback.parameters.get("code");
                 if (code == null || code.isEmpty()) {
                     writeBrowser(browser, 400,
-                            "The authorization response did not include a code.", false);
+                            AppText.get(R.string.phone_the_authorization_response_did_not_include_a_cod_c4d91), false);
                     closeQuietly(browser);
                     browser = null;
-                    throw new Exception("Sign-in failed because no authorization code was returned.");
+                    throw new Exception(AppText.get(R.string.phone_sign_in_failed_because_no_authorization_code_was_9ae3b));
                 }
 
-                updateNotification("Securing your ChatGPT session…", null);
+                updateNotification(AppText.get(R.string.phone_securing_your_chatgpt_session_5b6b3), null);
                 AuthTokens tokens = OAuthClient.exchangeCode(this, code, redirectUri,
                         pkce.verifier);
                 SecureTokenStore.save(this, tokens);
@@ -158,16 +158,16 @@ public final class OAuthService extends Service {
                 // exchange into a misleading browser error page.
                 try {
                     writeBrowser(browser, 200,
-                            "Your ChatGPT account is connected. Returning to Codex Meter…", true);
+                            AppText.get(R.string.phone_your_chatgpt_account_is_connected_returning_to_c_463a3), true);
                 } catch (Exception ignored) {
                     // The user may have closed the browser after authorization. Authentication
                     // remains valid and the application still receives the result broadcast.
                 }
                 closeQuietly(browser);
                 browser = null;
-                broadcastResult(true, "Signed in successfully.");
+                broadcastResult(true, AppText.get(R.string.phone_signed_in_successfully_d4c69));
 
-                updateNotification("Loading Codex usage…", null);
+                updateNotification(AppText.get(R.string.phone_loading_codex_usage_0a807), null);
                 performPostAuthenticationSetup();
                 DiagnosticLog.info(this, "auth", "oauth_flow_succeeded",
                         "duration_ms", android.os.SystemClock.elapsedRealtime() - started);
@@ -183,7 +183,7 @@ public final class OAuthService extends Service {
                 // show a valid success state, and let manual refresh recover later.
                 AppPreferences.setOAuthPending(this, false, "");
                 AppPreferences.setLastError(this, cleanMessage(exception));
-                broadcastResult(true, "Signed in. Usage can be refreshed from the app.");
+                broadcastResult(true, AppText.get(R.string.phone_signed_in_usage_can_be_refreshed_from_the_app_0fe32));
                 safeWidgetUpdate();
                 finishService();
                 return;
@@ -233,7 +233,7 @@ public final class OAuthService extends Service {
                 last = exception;
             }
         }
-        throw new Exception("Could not open the local OAuth callback port (1455 or 1457).", last);
+        throw new Exception(AppText.get(R.string.phone_could_not_open_the_local_oauth_callback_port_145_c009d), last);
     }
 
     private static String buildAuthorizeUrl(String redirectUri, Pkce pkce) throws Exception {
@@ -262,7 +262,7 @@ public final class OAuthService extends Service {
         BufferedReader reader = new BufferedReader(new InputStreamReader(
                 socket.getInputStream(), StandardCharsets.US_ASCII));
         String requestLine = reader.readLine();
-        if (requestLine == null) throw new Exception("The browser callback was empty.");
+        if (requestLine == null) throw new Exception(AppText.get(R.string.phone_the_browser_callback_was_empty_5f9d1));
         String headerLine;
         while ((headerLine = reader.readLine()) != null && !headerLine.isEmpty()) {
             // Consume the request headers before writing the response.
@@ -288,8 +288,14 @@ public final class OAuthService extends Service {
     }
 
     private static void writeBrowser(Socket socket, int status, String message, boolean success) throws Exception {
-        String html = OAuthBrowserPage.render(message, success, AppConstants.APP_LINK);
+        String html = OAuthBrowserPage.render(message, success, AppConstants.APP_LINK,
+                AppText.resources().getConfiguration().getLocales().get(0).toLanguageTag(),
+                AppText.get(success ? R.string.oauth_connected : R.string.oauth_retry),
+                AppText.get(success ? R.string.oauth_complete : R.string.oauth_attention),
+                AppText.get(success ? R.string.oauth_open : R.string.oauth_back),
+                AppText.get(success ? R.string.oauth_returning : R.string.oauth_restart));
         byte[] body = html.getBytes(StandardCharsets.UTF_8);
+        // HTTP status text is protocol data, not localized UI copy.
         String reason = status >= 200 && status < 300 ? "OK" : "Error";
         ByteArrayOutputStream response = new ByteArrayOutputStream(body.length + 256);
         response.write(("HTTP/1.1 " + status + " " + reason + "\r\n").getBytes(StandardCharsets.US_ASCII));
@@ -388,11 +394,11 @@ public final class OAuthService extends Service {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         return new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_oui_notification)
-                .setContentTitle("Codex Meter sign-in")
+                .setContentTitle(AppText.get(R.string.phone_codex_meter_sign_in_2b155))
                 .setContentText(text)
                 .setContentIntent(open)
                 .addAction(new Notification.Action.Builder(
-                        Icon.createWithResource(this, R.drawable.ic_oui_close), "Cancel", cancel).build())
+                        Icon.createWithResource(this, R.drawable.ic_oui_close), AppText.get(R.string.widget_config_cancel), cancel).build())
                 .setOngoing(true)
                 .setCategory(Notification.CATEGORY_SERVICE)
                 .build();
@@ -418,7 +424,7 @@ public final class OAuthService extends Service {
 
     private static String cleanMessage(Exception exception) {
         String message = exception.getMessage();
-        if (message == null || message.trim().isEmpty()) return "Sign-in could not be completed.";
+        if (message == null || message.trim().isEmpty()) return AppText.get(R.string.phone_sign_in_could_not_be_completed_b22cf);
         return message.length() > 240 ? message.substring(0, 240) : message;
     }
 

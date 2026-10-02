@@ -27,22 +27,37 @@ public final class ResetCreditApi {
     }
 
     static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens authTokens) throws Exception {
+        return refreshAndCacheLocked(context, authTokens, false);
+    }
+
+    static ResetCreditsSnapshot refreshAndCacheForWidgetLocked(Context context, AuthTokens authTokens) throws Exception {
+        return refreshAndCacheLocked(context, authTokens, true);
+    }
+
+    private static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens authTokens,
+            boolean widgetRequest) throws Exception {
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "refresh", "reset_credit_refresh_started");
         if (authTokens == null) {
             authTokens = UsageApi.usableTokens(context);
         }
+        String requestedAccount = widgetRequest ? WidgetUsageStore.key(authTokens) : "";
         Response responseRequest = request(context, "reset_credit_list", "GET",
                 AppConstants.RESET_CREDITS_URL, authTokens, null);
         if (responseRequest.status == 401) {
             DiagnosticLog.warn(context, "auth", "reset_credit_token_rejected_refreshing");
             AuthTokens authTokensRefresh = OAuthClient.refresh(context, authTokens);
-            SecureTokenStore.save(context, authTokensRefresh);
+            if (widgetRequest) {
+                if (!SecureTokenStore.saveIfCurrent(context, authTokens, authTokensRefresh))
+                    throw new Exception("The signed-in account changed during widget refresh.");
+            } else SecureTokenStore.save(context, authTokensRefresh);
             responseRequest = request(context, "reset_credit_list", "GET",
                     AppConstants.RESET_CREDITS_URL, authTokensRefresh, null);
         }
         ensureSuccess(responseRequest, "Could not load Codex reset credits");
         ResetCreditsSnapshot resetCreditsSnapshot = ResetCreditsParser.parse(responseRequest.body, System.currentTimeMillis());
+        if (widgetRequest && (requestedAccount.isEmpty() || !requestedAccount.equals(WidgetUsageStore.key(context))))
+            throw new Exception("The signed-in account changed during widget refresh.");
         if (!AppPreferences.saveResetCredits(context, resetCreditsSnapshot)) {
             throw new Exception("Reset credits were received, but could not be saved on this device.");
         }
@@ -189,7 +204,7 @@ public final class ResetCreditApi {
 
     private static void notifyUpdated(Context context) {
         try {
-            context.sendBroadcast(new Intent(AppConstants.ACTION_RESET_CREDITS_UPDATED).setPackage(context.getPackageName()), "dev.bennett.codexmeter.permission.INTERNAL");
+            context.sendBroadcast(new Intent(AppConstants.ACTION_RESET_CREDITS_UPDATED).setPackage(context.getPackageName()), "me.pipi.usage.permission.INTERNAL");
         } catch (RuntimeException e) {
         }
     }

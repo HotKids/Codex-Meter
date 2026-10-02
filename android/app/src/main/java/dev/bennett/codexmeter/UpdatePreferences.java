@@ -114,7 +114,7 @@ public final class UpdatePreferences {
 
     public static void saveSuccess(Context context, String json, String etag) throws Exception {
         if (json == null || json.length() > MAX_CACHE_LENGTH) {
-            throw new IllegalArgumentException("GitHub returned too much release metadata.");
+            throw new IllegalArgumentException(AppText.get(R.string.phone_github_returned_too_much_release_metadata_85d68));
         }
         List<GitHubRelease> parsed = GitHubReleaseParser.parse(json, BuildConfig.DEBUG);
         SharedPreferences.Editor editor = prefs(context).edit()
@@ -147,7 +147,7 @@ public final class UpdatePreferences {
     public static void saveError(Context context, String error) {
         prefs(context).edit()
                 .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                .putString(KEY_LAST_ERROR, safe(error, "Could not check GitHub releases."))
+                .putString(KEY_LAST_ERROR, safe(error, AppText.get(R.string.phone_could_not_check_github_releases_7fde1)))
                 .apply();
         broadcast(context);
     }
@@ -218,7 +218,7 @@ public final class UpdatePreferences {
         if (error == null || error.trim().isEmpty()) {
             editor.remove(KEY_INSTALL_ERROR);
         } else {
-            editor.putString(KEY_INSTALL_ERROR, safe(error, "Update installation failed."));
+            editor.putString(KEY_INSTALL_ERROR, safe(error, AppText.get(R.string.phone_update_installation_failed_84a0f)));
         }
         editor.apply();
         broadcast(context);

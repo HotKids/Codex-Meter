@@ -272,11 +272,11 @@ public final class Ui {
     }
 
     public static Typeface regularTypeface(Context context) {
-        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif", 0);
+        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif", Typeface.NORMAL);
     }
 
     public static Typeface mediumTypeface(Context context) {
-        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif-medium", 1);
+        return Typeface.create(isOneUi(context) ? "sec" : "sans-serif-medium", Typeface.BOLD);
     }
 
     public static TextView text(Context context, String str, float f, int i) {
@@ -312,7 +312,7 @@ public final class Ui {
 
     public static LinearLayout card(Context context, boolean z) {
         RoundedLinearLayout linearLayout = new RoundedLinearLayout(context);
-        linearLayout.setOrientation(1);
+        linearLayout.setOrientation(LinearLayout.VERTICAL);
         boolean zIsOneUi = isOneUi(context);
         int i = zIsOneUi ? 22 : 20;
         int i2 = zIsOneUi ? 20 : 19;
@@ -455,16 +455,16 @@ public final class Ui {
     }
 
     private static int buttonIcon(String label) {
-        String value = label == null ? "" : label.toLowerCase();
-        if (value.contains("refresh")) return R.drawable.ic_oui_refresh;
-        if (value.contains("sign in")) return R.drawable.ic_oui_samsung_account;
-        if (value.contains("sign out")) return R.drawable.ic_oui_app_closed;
-        if (value.contains("add widget")) return R.drawable.ic_oui_add_home;
-        if (value.contains("customize") || value.contains("settings")) return R.drawable.ic_oui_settings;
-        if (value.contains("save")) return R.drawable.ic_oui_save;
-        if (value.contains("cancel") || value.contains("discard")) return R.drawable.ic_oui_close;
-        if (value.contains("reset")) return R.drawable.ic_oui_battery;
-        if (value.contains("alarm")) return R.drawable.ic_oui_alarm;
+        String value = label == null ? "" : label.toLowerCase(java.util.Locale.ROOT);
+        if (value.contains("refresh") || value.contains("刷新")) return R.drawable.ic_oui_refresh;
+        if (value.contains("sign out") || value.contains("退出登录")) return R.drawable.ic_oui_app_closed;
+        if (value.contains("sign in") || value.contains("登录")) return R.drawable.ic_oui_samsung_account;
+        if (value.contains("add widget") || value.contains("添加小组件")) return R.drawable.ic_oui_add_home;
+        if (value.contains("customize") || value.contains("settings") || value.contains("自定义") || value.contains("设置")) return R.drawable.ic_oui_settings;
+        if (value.contains("save") || value.contains("保存")) return R.drawable.ic_oui_save;
+        if (value.contains("cancel") || value.contains("discard") || value.contains("取消") || value.contains("放弃")) return R.drawable.ic_oui_close;
+        if (value.contains("reset") || value.contains("重置")) return R.drawable.ic_oui_battery;
+        if (value.contains("alarm") || value.contains("闹铃")) return R.drawable.ic_oui_alarm;
         return 0;
     }
 
@@ -480,7 +480,7 @@ public final class Ui {
 
     /** One UI circular indeterminate spinner, centered below the rounded content corners. */
     public static SeslProgressBar indeterminateLoading(Context context) {
-        return indeterminateLoading(context, "Loading");
+        return indeterminateLoading(context, AppText.get(R.string.phone_loading_8f26c));
     }
 
     /**
@@ -598,7 +598,9 @@ public final class Ui {
             window.setDecorFitsSystemWindows(false);
             WindowInsetsController insetsController = window.getInsetsController();
             if (insetsController != null) {
-                insetsController.setSystemBarsAppearance(z ? 0 : 24, 24);
+                int lightBars = android.view.WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                        | android.view.WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+                insetsController.setSystemBarsAppearance(z ? 0 : lightBars, lightBars);
             }
             final int paddingLeft = view.getPaddingLeft();
             final int paddingTop = view.getPaddingTop();
@@ -623,7 +625,7 @@ public final class Ui {
 
     public static LinearLayout horizontal(Context context, int i) {
         LinearLayout linearLayout = new LinearLayout(context);
-        linearLayout.setOrientation(0);
+        linearLayout.setOrientation(LinearLayout.HORIZONTAL);
         linearLayout.setGravity(i);
         return linearLayout;
     }

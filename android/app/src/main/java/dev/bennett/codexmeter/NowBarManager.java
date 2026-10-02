@@ -29,9 +29,9 @@ import java.util.concurrent.TimeUnit;
  * configured threshold (same metric/threshold pattern as low-usage notifications).
  */
 public final class NowBarManager {
-    static final String ACTION_END = "dev.bennett.codexmeter.action.NOW_BAR_END";
-    static final String ACTION_REFRESH = "dev.bennett.codexmeter.action.NOW_BAR_REFRESH";
-    static final String ACTION_STOP = "dev.bennett.codexmeter.action.NOW_BAR_STOP";
+    static final String ACTION_END = "me.pipi.usage.action.NOW_BAR_END";
+    static final String ACTION_REFRESH = "me.pipi.usage.action.NOW_BAR_REFRESH";
+    static final String ACTION_STOP = "me.pipi.usage.action.NOW_BAR_STOP";
 
     private static final String CHANNEL_ID = "codex_live_monitor_v2";
     private static final String EXTRA_REQUEST_PROMOTED_ONGOING = "android.requestPromotedOngoing";
@@ -425,7 +425,7 @@ public final class NowBarManager {
         // Weekly slot carries the long-cadence window; on the Free tier that is monthly.
         UsageWindow weekly = snapshot == null ? null : snapshot.longWindow();
         boolean longIsMonthly = snapshot != null && snapshot.longWindowIsMonthly();
-        String longLabel = longIsMonthly ? "Monthly" : "Weekly";
+        String longLabel = longIsMonthly ? AppText.get(R.string.phone_monthly_d31ed) : AppText.get(R.string.weekly);
         if (!preview) {
             fiveHour = UsageSnapshot.currentWindow(fiveHour,
                     snapshot == null ? 0L : snapshot.fetchedAtMillis, now);
@@ -454,12 +454,12 @@ public final class NowBarManager {
         // Preview snapshots invent their own windows without a remote observation time;
         // live monitors must use fetchedAt so reset_after_seconds stays anchored.
         long observedAt = preview || snapshot == null ? now : snapshot.fetchedAtMillis;
-        String fiveHourText = NowBarCopy.limitText("5-hour", fiveHour, observedAt, now);
-        String weeklyText = NowBarCopy.limitText(longLabel, weekly, observedAt, now);
-        String focusCritical = NowBarCopy.focusCriticalText(
+        String fiveHourText = PhoneNowBarCopy.limitText(AppText.get(R.string.five_hour), fiveHour, observedAt, now);
+        String weeklyText = PhoneNowBarCopy.limitText(longLabel, weekly, observedAt, now);
+        String focusCritical = PhoneNowBarCopy.focusCriticalText(
                 weeklyFocus ? (longIsMonthly ? "M " : "W ") : "",
                 progressWindow, observedAt, now);
-        String title = "Codex usage";
+        String title = AppText.get(R.string.widget_name);
         String estimate = UsageFormat.estimatedRemaining(pace);
         String text = fiveHourText + " · " + weeklyText
                 + (estimate.isEmpty() ? "" : " · " + estimate);
@@ -491,10 +491,10 @@ public final class NowBarManager {
                 .setColor(accelerated ? Ui.warning(false) : Color.rgb(3, 129, 254))
                 .setShowWhen(false)
                 .addAction(new Notification.Action.Builder(
-                        stopActionIcon, "Stop", stopIntent).build());
+                        stopActionIcon, AppText.get(R.string.phone_stop_9e253), stopIntent).build());
         if (!preview) {
             builder.addAction(new Notification.Action.Builder(
-                    refreshActionIcon, "Refresh", refreshIntent).build());
+                    refreshActionIcon, AppText.get(R.string.refresh), refreshIntent).build());
         }
         if (NowBarDisplayMode.SAMSUNG_COMPATIBILITY.equals(displayMode)) {
             applySamsungCompatibility(context, builder, fiveHour, weekly, longLabel, used,
@@ -584,12 +584,12 @@ public final class NowBarManager {
             UsageWindow progressWindow,
             boolean weeklyFocus, long until, long now, long observedAt, boolean preview,
             boolean accelerated, String estimate) {
-        String fiveHourText = NowBarCopy.limitText("5-hour", fiveHour, observedAt, now);
-        String weeklyText = NowBarCopy.limitText(longLabel, weekly, observedAt, now);
+        String fiveHourText = PhoneNowBarCopy.limitText(AppText.get(R.string.five_hour), fiveHour, observedAt, now);
+        String weeklyText = PhoneNowBarCopy.limitText(longLabel, weekly, observedAt, now);
         String availableWindows = fiveHour != null && weekly != null
-                ? "Both usage windows"
-                : fiveHour != null ? "5-hour window"
-                : weekly != null ? longLabel + " window" : "Usage window unavailable";
+                ? AppText.get(R.string.phone_both_usage_windows_35fd8)
+                : fiveHour != null ? AppText.get(R.string.phone_5_hour_window_5569e)
+                : weekly != null ? longLabel + AppText.get(R.string.phone_window_3621b) : AppText.get(R.string.phone_usage_window_unavailable_79e5d);
         // Chip sits on the accent fill → always-light Codex mark.
         // Expanded Now Bar: pick an explicit light/dark resource at post time. Night-qualified
         // drawables can resolve wrong inside Samsung SystemUI (separate process / config).
@@ -602,13 +602,13 @@ public final class NowBarManager {
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "chipBgColor",
                 accelerated ? Ui.warning(false) : Color.rgb(3, 129, 254));
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "chipExpandedText",
-                NowBarCopy.chipExpandedText(weeklyFocus ? longLabel : "5-hour",
+                PhoneNowBarCopy.chipExpandedText(weeklyFocus ? longLabel : AppText.get(R.string.five_hour),
                         progressWindow, observedAt, now));
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "primaryInfo",
                 fiveHourText + " · " + weeklyText);
         extras.putCharSequence(SAMSUNG_ONGOING_PREFIX + "secondaryInfo",
                 accelerated && !estimate.isEmpty() ? estimate : availableWindows);
-        extras.putString(SAMSUNG_ONGOING_PREFIX + "description", "Codex usage limits");
+        extras.putString(SAMSUNG_ONGOING_PREFIX + "description", AppText.get(R.string.phone_codex_usage_limits_7c3a0));
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "progress", used);
         extras.putInt(SAMSUNG_ONGOING_PREFIX + "progressMax", 100);
         extras.putParcelable(SAMSUNG_ONGOING_PREFIX + "progressSegments.icon", progressDot);
@@ -617,7 +617,7 @@ public final class NowBarManager {
         extras.putString(SAMSUNG_ONGOING_PREFIX + "nowbarSecondaryInfo", weeklyText);
         extras.putString(SAMSUNG_ONGOING_PREFIX + "nowbarIconType", "progress");
         builder.addExtras(extras)
-                .setSubText(preview ? "Now Bar preview" : "Until the next usage reset")
+                .setSubText(preview ? AppText.get(R.string.phone_now_bar_preview_cf6fb) : AppText.get(R.string.phone_until_the_next_usage_reset_cd8de))
                 .setProgress(100, used, false)
                 .setCategory(Notification.CATEGORY_STATUS)
                 .setShowWhen(true)
@@ -646,9 +646,9 @@ public final class NowBarManager {
 
     private static void createChannel(NotificationManager manager) {
         NotificationChannel channel = new NotificationChannel(CHANNEL_ID,
-                "Codex live monitor", NotificationManager.IMPORTANCE_DEFAULT);
+                AppText.get(R.string.phone_codex_live_monitor_cf11a), NotificationManager.IMPORTANCE_DEFAULT);
         channel.setDescription(
-                "Codex allowance monitor that ends at the next reset; may start from Settings or when remaining usage hits your threshold");
+                AppText.get(R.string.phone_codex_allowance_monitor_that_ends_at_the_next_re_e074c));
         channel.setSound(null, null);
         channel.enableVibration(false);
         channel.setLockscreenVisibility(Notification.VISIBILITY_PUBLIC);

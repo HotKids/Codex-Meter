@@ -1,8 +1,0 @@
-{
-  "credits": [
-    { "id": "one", "status": "available" },
-    { "id": "two", "status": "AVAILABLE" },
-    { "id": "three", "status": "redeeming" },
-    "not-an-object"
-  ]
-}

@@ -35,7 +35,7 @@ public final class RefreshScheduler {
         try {
             JobScheduler jobSchedulerScheduler = scheduler(contextAppContext);
             if (jobSchedulerScheduler == null) {
-                AppPreferences.setSchedulerError(contextAppContext, "Android's background scheduler is unavailable.");
+                AppPreferences.setSchedulerError(contextAppContext, AppText.get(R.string.phone_android_s_background_scheduler_is_unavailable_b3df9));
             } else {
                 jobSchedulerScheduler.cancel(PERIODIC_JOB_ID);
                 jobSchedulerScheduler.cancel(SHORT_JOB_ID_A);
@@ -96,7 +96,7 @@ public final class RefreshScheduler {
             JobScheduler jobSchedulerScheduler = scheduler(context);
             if (jobSchedulerScheduler == null) {
                 AppPreferences.setSchedulerError(context,
-                        "Android's background scheduler is unavailable.");
+                        AppText.get(R.string.phone_android_s_background_scheduler_is_unavailable_b3df9));
             } else {
                 int i2 = previousJobId == SHORT_JOB_ID_A ? SHORT_JOB_ID_B : SHORT_JOB_ID_A;
                 jobSchedulerScheduler.cancel(i2);
@@ -191,7 +191,7 @@ public final class RefreshScheduler {
     private static boolean submit(Context context, JobInfo jobInfo) {
         JobScheduler jobSchedulerScheduler = scheduler(context);
         if (jobSchedulerScheduler == null) {
-            AppPreferences.setSchedulerError(context, "Android's background scheduler is unavailable.");
+            AppPreferences.setSchedulerError(context, AppText.get(R.string.phone_android_s_background_scheduler_is_unavailable_b3df9));
             return false;
         }
         int result = jobSchedulerScheduler.schedule(jobInfo);
@@ -208,18 +208,18 @@ public final class RefreshScheduler {
                 "job_id", jobInfo.getId(),
                 "reason", reason,
                 "result", result);
-        AppPreferences.setSchedulerError(context, "Android declined the background refresh request.");
+        AppPreferences.setSchedulerError(context, AppText.get(R.string.phone_android_declined_the_background_refresh_request_033f5));
         return false;
     }
 
     private static JobInfo.Builder base(Context context, int i, String str) {
         PersistableBundle persistableBundle = new PersistableBundle();
         persistableBundle.putString("reason", str);
-        return new JobInfo.Builder(i, new ComponentName(context, (Class<?>) UsageRefreshJobService.class)).setRequiredNetworkType(1).setExtras(persistableBundle);
+        return new JobInfo.Builder(i, new ComponentName(context, (Class<?>) UsageRefreshJobService.class)).setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY).setExtras(persistableBundle);
     }
 
     private static JobScheduler scheduler(Context context) {
-        return (JobScheduler) context.getSystemService("jobscheduler");
+        return (JobScheduler) context.getSystemService(Context.JOB_SCHEDULER_SERVICE);
     }
 
     private static Context appContext(Context context) {

@@ -142,7 +142,7 @@ public final class UsageRefreshJobService extends JobService {
     public static String safeMessage(Exception exc) {
         String message = exc.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            return "Usage refresh failed.";
+            return AppText.get(R.string.phone_usage_refresh_failed_a0acd);
         }
         return message.length() > 240 ? message.substring(0, 240) : message;
     }

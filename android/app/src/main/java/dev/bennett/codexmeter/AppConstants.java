@@ -4,16 +4,16 @@ import android.os.Build;
 
 /* JADX INFO: loaded from: classes.dex */
 public final class AppConstants {
-    public static final String ACTION_OAUTH_READY = "dev.bennett.codexmeter.action.OAUTH_READY";
-    public static final String ACTION_OAUTH_RESULT = "dev.bennett.codexmeter.action.OAUTH_RESULT";
-    public static final String ACTION_INSTALL_STATUS = "dev.bennett.codexmeter.action.INSTALL_STATUS";
-    public static final String ACTION_RELEASES_UPDATED = "dev.bennett.codexmeter.action.RELEASES_UPDATED";
-    public static final String ACTION_REFRESH_WIDGET = "dev.bennett.codexmeter.action.REFRESH_WIDGET";
-    public static final String ACTION_RESET_ALERT = "dev.bennett.codexmeter.action.RESET_ALERT";
+    public static final String ACTION_OAUTH_READY = "me.pipi.usage.action.OAUTH_READY";
+    public static final String ACTION_OAUTH_RESULT = "me.pipi.usage.action.OAUTH_RESULT";
+    public static final String ACTION_INSTALL_STATUS = "me.pipi.usage.action.INSTALL_STATUS";
+    public static final String ACTION_RELEASES_UPDATED = "me.pipi.usage.action.RELEASES_UPDATED";
+    public static final String ACTION_REFRESH_WIDGET = "me.pipi.usage.action.REFRESH_WIDGET";
+    public static final String ACTION_RESET_ALERT = "me.pipi.usage.action.RESET_ALERT";
     public static final String ACTION_RESET_CREDIT_EXPIRY_ALERT =
-            "dev.bennett.codexmeter.action.RESET_CREDIT_EXPIRY_ALERT";
-    public static final String ACTION_RESET_CREDITS_UPDATED = "dev.bennett.codexmeter.action.RESET_CREDITS_UPDATED";
-    public static final String ACTION_USAGE_UPDATED = "dev.bennett.codexmeter.action.USAGE_UPDATED";
+            "me.pipi.usage.action.RESET_CREDIT_EXPIRY_ALERT";
+    public static final String ACTION_RESET_CREDITS_UPDATED = "me.pipi.usage.action.RESET_CREDITS_UPDATED";
+    public static final String ACTION_USAGE_UPDATED = "me.pipi.usage.action.USAGE_UPDATED";
     public static final String APP_LINK = "codexmeter://auth/complete";
     public static final String AUTHORIZE_URL = "https://auth.openai.com/oauth/authorize";
     public static final String AUTH_BASE = "https://auth.openai.com";
@@ -24,7 +24,7 @@ public final class AppConstants {
     public static final String EXTRA_NOTIFICATION_ID = "notification_id";
     public static final String EXTRA_PROMPT_USE_RESET = "prompt_use_reset";
     public static final String EXTRA_SUCCESS = "success";
-    public static final String INTERNAL_PERMISSION = "dev.bennett.codexmeter.permission.INTERNAL";
+    public static final String INTERNAL_PERMISSION = "me.pipi.usage.permission.INTERNAL";
     public static final String OAUTH_CLIENT_ID = "app_EMoamEEZ73f0CkXaXp7hrann";
     public static final int[] OAUTH_PORTS = {1455, 1457};
     public static final String OAUTH_SCOPE = "openid profile email offline_access";
