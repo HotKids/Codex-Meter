@@ -33,7 +33,7 @@
     <string name="widget_card_credits_line">%1$s · %2$s</string>
     <string name="widget_card_date_pattern">MM月dd日</string>
 
-    <string name="widget_card_sign_in">打开 Codex Meter 登录</string>
+    <string name="widget_card_sign_in">打开应用登录</string>
     <string name="widget_card_waiting">等待数据</string>
     <string name="widget_card_refresh_failed">刷新失败</string>
     <string name="widget_card_refresh_failed_cached">刷新失败 · 显示缓存数据</string>

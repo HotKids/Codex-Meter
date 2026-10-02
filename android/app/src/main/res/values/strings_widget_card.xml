@@ -38,7 +38,7 @@
     <string name="widget_card_date_pattern">MMM d,</string>
 
     <!-- States. -->
-    <string name="widget_card_sign_in">Open Codex Meter to sign in</string>
+    <string name="widget_card_sign_in">Open app to sign in</string>
     <string name="widget_card_waiting">Waiting for data</string>
     <string name="widget_card_refresh_failed">Refresh failed</string>
     <string name="widget_card_refresh_failed_cached">Refresh failed · showing cached data</string>
