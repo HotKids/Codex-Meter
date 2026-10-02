@@ -607,6 +607,9 @@ grep -q 'OneUiChoiceDialog.show' \
 # editor that picks up to four usage windows (including model limits) plus colour/clear style.
 grep -q 'UsageCardRenderer.build' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
+# The Clear style is the Material card; the default is the AI-Usage card.
+grep -q 'MaterialCardRenderer.build' \
+  "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
 grep -q 'DialWidgetRenderer.build' \
   "$ROOT/app/src/main/java/dev/bennett/codexmeter/WidgetRenderer.java"
 grep -q 'MAX_SELECTED = 4' \

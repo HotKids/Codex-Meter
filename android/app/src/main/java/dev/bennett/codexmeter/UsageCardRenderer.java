@@ -107,16 +107,14 @@ final class UsageCardRenderer {
         }
     }
 
-    /** Per-widget appearance chosen in the widget editor. */
+    /** Per-widget theme and background chosen in the widget editor (shared by both styles). */
     static final class Style {
         final String theme;
         final int opacity;
-        final boolean clear;
 
-        Style(String theme, int opacity, boolean clear) {
+        Style(String theme, int opacity) {
             this.theme = theme == null ? WidgetOptions.THEME_SYSTEM : theme;
             this.opacity = Math.max(0, Math.min(100, opacity));
-            this.clear = clear;
         }
 
         boolean transparent() {
@@ -317,8 +315,7 @@ final class UsageCardRenderer {
     }
 
     private Bitmap badge(String label, PlanBadge.Size size, UsageCardPalette palette) {
-        return PlanBadge.render(context, label, size, scale, density, palette.dark, style.clear,
-                palette.primary);
+        return PlanBadge.render(context, label, size, scale, density, palette.dark);
     }
 
     // ---------------------------------------------------------------------------------------
@@ -446,19 +443,6 @@ final class UsageCardRenderer {
             level = Math.round(Math.min(1f, fraction) * LEVEL_MAX);
         }
         views.setInt(FILLS[index], "setImageLevel", level);
-        if (style.clear) {
-            // Clear chrome: an outlined capsule with a monochrome fill and no severity colour.
-            views.setViewVisibility(TRACKS[index], View.GONE);
-            views.setViewVisibility(OUTLINES[index], View.VISIBLE);
-            views.setImageViewResource(OUTLINES[index], R.drawable.widget_card_capsule_outline);
-            color(OUTLINES[index], "setColorFilter", opaque(day.secondary),
-                    opaque(night.secondary));
-            views.setInt(OUTLINES[index], "setImageAlpha", Math.max(
-                    android.graphics.Color.alpha(day.secondary),
-                    android.graphics.Color.alpha(night.secondary)));
-            color(FILLS[index], "setColorFilter", day.primary, night.primary);
-            return;
-        }
         views.setViewVisibility(TRACKS[index], View.VISIBLE);
         color(TRACKS[index], "setColorFilter", day.track, night.track);
         views.setInt(TRACKS[index], "setImageAlpha", day.trackAlpha);
@@ -497,7 +481,7 @@ final class UsageCardRenderer {
         place(R.id.card_pos_meta_status, top);
         text(R.id.card_meta_status_label, resources.getString(R.string.widget_card_refresh_time),
                 size, day.secondary, night.secondary);
-        String status = statusMessage(false);
+        String status = state.statusMessage(resources, false);
         if (status.isEmpty()) {
             long fetchedAt = state.fetchedAtMillis();
             status = fetchedAt <= 0L ? UsageCardFormat.MISSING : resources.getString(
@@ -508,7 +492,7 @@ final class UsageCardRenderer {
 
     /** Medium cards keep the refresh time in the header and add a warning line at the bottom. */
     private void errorLine() {
-        String message = statusMessage(true);
+        String message = state.statusMessage(resources, true);
         if (message.isEmpty()) {
             return;
         }
@@ -524,23 +508,6 @@ final class UsageCardRenderer {
         }
         return resources.getString(R.string.widget_card_refreshed_header,
                 UsageCardFormat.time(context, fetchedAt));
-    }
-
-    /** Sign-in, empty, failure and staleness messages, or "" when the data is current. */
-    private String statusMessage(boolean medium) {
-        if (!state.signedIn) {
-            return resources.getString(R.string.widget_card_sign_in);
-        }
-        if (state.snapshot == null) {
-            return state.refreshError.isEmpty()
-                    ? resources.getString(R.string.widget_card_waiting)
-                    : resources.getString(R.string.widget_card_refresh_failed);
-        }
-        if (!state.refreshError.isEmpty()) {
-            return resources.getString(medium ? R.string.widget_card_refresh_failed_cached
-                    : R.string.widget_card_refresh_failed);
-        }
-        return state.isStale() ? resources.getString(R.string.widget_card_stale) : "";
     }
 
     private String resetText(Row row) {
@@ -604,9 +571,5 @@ final class UsageCardRenderer {
 
     private int px(float designUnits) {
         return Math.round(designUnits * scale * density);
-    }
-
-    private static int opaque(int color) {
-        return color | 0xFF000000;
     }
 }

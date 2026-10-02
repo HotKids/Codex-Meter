@@ -1,6 +1,7 @@
 package dev.bennett.codexmeter;
 
 import android.content.Context;
+import android.content.res.Resources;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -50,6 +51,26 @@ final class UsageCardState {
 
     boolean isStale() {
         return snapshot != null && nowMillis - snapshot.fetchedAtMillis >= STALE_AFTER_MS;
+    }
+
+    /**
+     * Sign-in, empty, failure and staleness message, or "" when the data is current.
+     * {@code detailed} adds "showing cached data" to a failure that kept older usage.
+     */
+    String statusMessage(Resources resources, boolean detailed) {
+        if (!signedIn) {
+            return resources.getString(R.string.widget_card_sign_in);
+        }
+        if (snapshot == null) {
+            return refreshError.isEmpty()
+                    ? resources.getString(R.string.widget_card_waiting)
+                    : resources.getString(R.string.widget_card_refresh_failed);
+        }
+        if (!refreshError.isEmpty()) {
+            return resources.getString(detailed ? R.string.widget_card_refresh_failed_cached
+                    : R.string.widget_card_refresh_failed);
+        }
+        return isStale() ? resources.getString(R.string.widget_card_stale) : "";
     }
 
     String planType() {

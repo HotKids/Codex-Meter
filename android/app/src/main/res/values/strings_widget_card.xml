@@ -52,4 +52,10 @@
     <string name="widget_card_sample_percent_high" translatable="false">64%</string>
     <string name="widget_card_sample_percent_low" translatable="false">42%</string>
     <string name="widget_card_sample_refreshed" translatable="false">14:48</string>
+    <!-- Material (Clear) style -->
+    <string name="widget_material_title" translatable="false">Codex</string>
+    <string name="widget_material_refresh">Refresh</string>
+    <string name="widget_material_resets_at">Resets %1$s</string>
+    <string name="widget_material_percent" translatable="false">%1$d%%</string>
+    <string name="widget_material_elapsed_description">%1$s of the window has passed</string>
 </resources>

@@ -100,7 +100,11 @@ public final class WidgetRenderer {
             return DialWidgetRenderer.build(context, appWidgetId, options, keys, state, widthDp);
         }
         UsageCardRenderer.Style style = new UsageCardRenderer.Style(options.theme,
-                options.opacity, options.clearCard());
+                options.opacity);
+        if (options.clearCard()) {
+            return MaterialCardRenderer.build(context, appWidgetId, style, keys, state, widthDp,
+                    heightDp);
+        }
         return UsageCardRenderer.build(context, appWidgetId, style, keys, state, widthDp,
                 heightDp);
     }
@@ -156,7 +160,7 @@ public final class WidgetRenderer {
                 System.currentTimeMillis());
         return UsageCardRenderer.build(context, appWidgetId,
                 new UsageCardRenderer.Style(WidgetOptions.THEME_SYSTEM,
-                        WidgetOptions.DEFAULT_OPACITY, false),
+                        WidgetOptions.DEFAULT_OPACITY),
                 UsageCardWindows.defaultKeys(null), signedOut, DEFAULT_WIDTH_DP,
                 DEFAULT_HEIGHT_DP);
     }

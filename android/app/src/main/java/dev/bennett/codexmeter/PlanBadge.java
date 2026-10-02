@@ -132,11 +132,10 @@ final class PlanBadge {
     }
 
     /**
-     * Draws the badge. In the clear style the capsule is omitted and the glyph and label take
-     * {@code clearForeground}, as AI-Usage's minimal chrome does.
+     * Draws the badge: the plan's gradient capsule with the OpenAI glyph and upper-case label.
      */
     static Bitmap render(Context context, String label, Size size, float scale, float density,
-            boolean dark, boolean clear, int clearForeground) {
+            boolean dark) {
         Recipe recipe = recipeFor(label);
         String text = text(label);
         float unit = scale * density;
@@ -154,22 +153,17 @@ final class PlanBadge {
 
         Bitmap bitmap = Bitmap.createBitmap(width, heightPx, Bitmap.Config.ARGB_8888);
         Canvas canvas = new Canvas(bitmap);
-        int foreground;
-        if (clear) {
-            foreground = clearForeground;
+        int[] stops = dark ? recipe.dark : recipe.light;
+        Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
+        if (stops.length == 1) {
+            fill.setColor(stops[0]);
         } else {
-            int[] stops = dark ? recipe.dark : recipe.light;
-            Paint fill = new Paint(Paint.ANTI_ALIAS_FLAG);
-            if (stops.length == 1) {
-                fill.setColor(stops[0]);
-            } else {
-                fill.setShader(new LinearGradient(0f, 0f, width, 0f, stops, null,
-                        Shader.TileMode.CLAMP));
-            }
-            float radius = heightPx / 2f;
-            canvas.drawRoundRect(new RectF(0f, 0f, width, heightPx), radius, radius, fill);
-            foreground = dark ? recipe.foregroundDark : recipe.foregroundLight;
+            fill.setShader(new LinearGradient(0f, 0f, width, 0f, stops, null,
+                    Shader.TileMode.CLAMP));
         }
+        float radius = heightPx / 2f;
+        canvas.drawRoundRect(new RectF(0f, 0f, width, heightPx), radius, radius, fill);
+        int foreground = dark ? recipe.foregroundDark : recipe.foregroundLight;
 
         Bitmap glyph = logo(context);
         if (glyph != null) {

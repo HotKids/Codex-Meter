@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!--
+        Typography for the Material home widget. Sizes and colours are applied at render time;
+        these styles fix weight and line metrics. WidgetMaterialHeader styles sit on the widget
+        background, so widget_material_shadow.xml swaps them for shadowed WidgetMaterialHeaderShadow
+        styles when the background is off. Panel texts always sit on an opaque panel.
+    -->
+    <style name="WidgetMaterialBase">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fallbackLineSpacing" tools:targetApi="28">false</item>
+        <item name="android:maxLines">1</item>
+        <item name="android:ellipsize">end</item>
+        <item name="android:fontFamily">sans-serif</item>
+        <item name="android:textColor">#ff000000</item>
+    </style>
+
+    <style name="WidgetMaterialText.Bold" parent="WidgetMaterialBase">
+        <item name="android:textStyle">bold</item>
+    </style>
+    <style name="WidgetMaterialText.Regular" parent="WidgetMaterialBase" />
+
+    <style name="WidgetMaterialHeader.Title" parent="WidgetMaterialBase" />
+    <style name="WidgetMaterialHeader.Status" parent="WidgetMaterialBase" />
+
+    <style name="WidgetMaterialHeaderShadow.Title" parent="WidgetMaterialHeader.Title">
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+    <style name="WidgetMaterialHeaderShadow.Status" parent="WidgetMaterialHeader.Status">
+        <item name="android:shadowColor">#66000000</item>
+        <item name="android:shadowDy">1.5</item>
+        <item name="android:shadowRadius">3</item>
+    </style>
+</resources>

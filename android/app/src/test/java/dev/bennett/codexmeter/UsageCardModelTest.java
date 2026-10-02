@@ -183,6 +183,13 @@ public class UsageCardModelTest {
                 .replace("@style/WidgetCardText.", "@style/WidgetCardShadow.");
         assertTrue("Run android/tools/widget-card-shadow.sh after editing widget_card.xml",
                 shadow.endsWith(body));
+
+        String material = read(new File(layouts, "widget_material.xml"));
+        String materialShadow = read(new File(layouts, "widget_material_shadow.xml"));
+        String materialBody = material.substring(material.indexOf('\n') + 1)
+                .replace("@style/WidgetMaterialHeader.", "@style/WidgetMaterialHeaderShadow.");
+        assertTrue("Run android/tools/widget-card-shadow.sh after editing widget_material.xml",
+                materialShadow.endsWith(materialBody));
     }
 
     private static String read(File file) throws Exception {
