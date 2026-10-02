@@ -144,7 +144,6 @@ final class UsageCardRenderer {
     private final List<Row> rows;
     private final UsageCardPalette day;
     private final UsageCardPalette night;
-    private final boolean dayNight;
     private final boolean showCredits;
     private final float scale;
     private final float density;
@@ -163,7 +162,6 @@ final class UsageCardRenderer {
         this.rows = rows(keys.subList(0, Math.min(keys.size(), variant.capacity())));
         this.views = new RemoteViews(context.getPackageName(),
                 style.transparent() ? R.layout.widget_card_shadow : R.layout.widget_card);
-        this.dayNight = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
         if (style.transparent()) {
             day = UsageCardPalette.TRANSPARENT;
             night = UsageCardPalette.TRANSPARENT;
@@ -257,7 +255,7 @@ final class UsageCardRenderer {
         views.setViewVisibility(R.id.card_watermark, View.VISIBLE);
         color(R.id.card_watermark, "setColorFilter", day.watermark, night.watermark);
         views.setInt(R.id.card_watermark, "setImageAlpha", UsageCardPalette.WATERMARK_ALPHA);
-        if (dayNight) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             float size = variant.medium ? 140f : 96f;
             views.setViewLayoutWidth(R.id.card_watermark, size * scale, TypedValue.COMPLEX_UNIT_DIP);
             views.setViewLayoutHeight(R.id.card_watermark, size * scale,
@@ -294,7 +292,7 @@ final class UsageCardRenderer {
         String label = UsageFormat.planLabel(state.planType());
         Bitmap dayBadge = badge(label, size, day);
         Bitmap nightBadge = day == night ? dayBadge : badge(label, size, night);
-        if (dayNight) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             views.setIcon(R.id.card_badge, "setImageIcon", Icon.createWithBitmap(dayBadge),
                     Icon.createWithBitmap(nightBadge));
             views.setViewLayoutHeight(R.id.card_badge, size.height * scale,
@@ -433,7 +431,7 @@ final class UsageCardRenderer {
 
     private void bar(int index, float top, float height, UsageWindow window) {
         place(BAR_POS[index], top);
-        if (dayNight) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             views.setViewLayoutHeight(BARS[index], height * scale, TypedValue.COMPLEX_UNIT_DIP);
         }
         int remaining = window == null ? 0 : window.remainingPercent();
@@ -553,7 +551,7 @@ final class UsageCardRenderer {
 
     /** Day/night colour pair on Android 12+, otherwise the colour for the current mode. */
     private void color(int viewId, String method, int dayColor, int nightColor) {
-        if (dayNight) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             views.setColorInt(viewId, method, dayColor, nightColor);
         } else {
             views.setInt(viewId, method, isNight() ? nightColor : dayColor);

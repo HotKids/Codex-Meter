@@ -9,6 +9,7 @@ import android.text.format.DateFormat;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
+import androidx.annotation.RequiresApi;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.List;
@@ -24,7 +25,7 @@ import java.util.concurrent.TimeUnit;
  * resolved by the launcher from the wallpaper palette and follow its night mode.
  */
 final class MaterialCardRenderer {
-    /** Reference metrics in dp at scale 1. */
+    /** Reference metrics in dp at scale 1; PANEL_HEIGHT fits a panel's three rows. */
     private static final float PANEL_WIDTH = 170f;
     private static final float PANEL_HEIGHT = 74f;
     private static final float HEADER_HEIGHT = 24f;
@@ -34,12 +35,14 @@ final class MaterialCardRenderer {
     private static final float ICON = 22f;
     private static final float TITLE_TEXT = 17f;
     private static final float STATUS_TEXT = 10.5f;
-    private static final float NAME_TEXT = 14f;
-    private static final float VALUE_TEXT = 15f;
-    private static final float DETAIL_TEXT = 11.5f;
+    private static final float NAME_TEXT = 15f;
+    private static final float VALUE_TEXT = 15.5f;
+    private static final float DETAIL_TEXT = 12f;
     private static final float PANEL_PADDING_H = 12f;
-    private static final float PANEL_PADDING_V = 10f;
-    private static final float BAR_HEIGHT = 8f;
+    private static final float PANEL_PADDING_V = 9f;
+    /** Space between a panel's title row, bar and detail row. */
+    private static final float PANEL_GAP = 7f;
+    private static final float BAR_HEIGHT = 9f;
     private static final float MIN_SCALE = 0.7f;
     private static final float MAX_SCALE = 1.25f;
     private static final int LEVEL_MAX = 10000;
@@ -107,7 +110,6 @@ final class MaterialCardRenderer {
     private final int rowCount;
     private final float scale;
     private final float panelContentWidth;
-    private final boolean scalableLayout;
 
     private MaterialCardRenderer(Context context, UsageCardRenderer.Style style,
             List<String> keys, UsageCardState state, float widthDp, float heightDp) {
@@ -129,7 +131,6 @@ final class MaterialCardRenderer {
         float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
                 / columns;
         this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
-        this.scalableLayout = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S;
         this.views = new RemoteViews(context.getPackageName(), style.transparent()
                 ? R.layout.widget_material_shadow : R.layout.widget_material);
     }
@@ -151,7 +152,7 @@ final class MaterialCardRenderer {
         renderHeader();
         for (int row = 0; row < ROWS.length; row++) {
             views.setViewVisibility(ROWS[row], row < rowCount ? View.VISIBLE : View.GONE);
-            if (scalableLayout) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
                 margin(ROWS[row], RemoteViews.MARGIN_TOP, row == 0 ? FIRST_ROW_GAP : GAP);
             }
         }
@@ -192,7 +193,7 @@ final class MaterialCardRenderer {
     }
 
     private void renderHeader() {
-        if (scalableLayout) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             for (int icon : new int[] {R.id.md_logo, R.id.md_refresh}) {
                 views.setViewLayoutWidth(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
@@ -230,7 +231,7 @@ final class MaterialCardRenderer {
         int horizontal = px(PANEL_PADDING_H);
         int vertical = px(PANEL_PADDING_V);
         views.setViewPadding(CONTENTS[slot], horizontal, vertical, horizontal, vertical);
-        if (scalableLayout && slot % 2 == 1) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && slot % 2 == 1) {
             margin(PANELS[slot], RemoteViews.MARGIN_START, GAP);
         }
 
@@ -257,16 +258,16 @@ final class MaterialCardRenderer {
             textSize(ELAPSED[slot], DETAIL_TEXT);
             color(ELAPSED[slot], "setTextColor", Role.SECONDARY);
         }
-        if (scalableLayout) {
-            margin(DETAILS[slot], RemoteViews.MARGIN_TOP, GAP);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            margin(DETAILS[slot], RemoteViews.MARGIN_TOP, PANEL_GAP);
         }
     }
 
     private void renderBar(int slot, UsageWindow window) {
-        if (scalableLayout) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
                     TypedValue.COMPLEX_UNIT_DIP);
-            margin(BARS[slot], RemoteViews.MARGIN_TOP, GAP);
+            margin(BARS[slot], RemoteViews.MARGIN_TOP, PANEL_GAP);
         }
         color(TRACKS[slot], "setColorFilter", Role.TRACK);
         color(FILLS[slot], "setColorFilter", Role.FILL);
@@ -338,6 +339,7 @@ final class MaterialCardRenderer {
         views.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_DIP, sizeDp * scale);
     }
 
+    @RequiresApi(Build.VERSION_CODES.S)
     private void margin(int viewId, int which, float valueDp) {
         views.setViewLayoutMargin(viewId, which, valueDp * scale, TypedValue.COMPLEX_UNIT_DIP);
     }

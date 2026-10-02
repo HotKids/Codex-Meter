@@ -127,6 +127,14 @@ jobs:
           set -euo pipefail
           ./lint.sh
 
+      - name: Upload lint report
+        if: always() && github.event_name == 'workflow_dispatch' && inputs.publish_widget_previews
+        uses: actions/upload-artifact@v7
+        with:
+          name: phone-lint-report
+          path: android/app/build/intermediates/lint_intermediate_text_report/release/lintReportRelease/lint-results-release.txt
+          if-no-files-found: ignore
+
       - name: Configure release signing
         if: github.ref_type == 'tag'
         shell: bash
@@ -192,6 +200,13 @@ jobs:
         with:
           name: phone-test-reports
           path: reports
+
+      - name: Download lint report
+        continue-on-error: true
+        uses: actions/download-artifact@v8
+        with:
+          name: phone-lint-report
+          path: reports/lint
 
       - name: Publish previews to ci/widget-previews
         shell: bash
