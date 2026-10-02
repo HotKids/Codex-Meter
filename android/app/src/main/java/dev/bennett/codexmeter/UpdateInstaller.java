@@ -3,7 +3,6 @@ package dev.bennett.codexmeter;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
@@ -18,6 +17,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
+import java.nio.charset.StandardCharsets;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -26,6 +26,13 @@ import java.util.Set;
 public final class UpdateInstaller {
     private static final long MAX_APK_BYTES = 150L * 1024L * 1024L;
     private static final int MAX_CHECKSUM_BYTES = 64 * 1024;
+    private static final int CHECKSUM_BUFFER_BYTES = 4096;
+    private static final int COPY_BUFFER_BYTES = 64 * 1024;
+    private static final int CONNECT_TIMEOUT_MS = 20_000;
+    private static final int READ_TIMEOUT_MS = 60_000;
+    private static final String UPDATE_DIRECTORY = "verified-updates";
+    private static final String PARTIAL_SUFFIX = ".part";
+    private static final String SESSION_APK_NAME = "base.apk";
 
     public interface ProgressListener {
         void onProgress(long downloaded, long total);
@@ -52,6 +59,11 @@ public final class UpdateInstaller {
     private UpdateInstaller() {
     }
 
+    /**
+     * Downloads the release APK into the cache and verifies, in order, its size, its SHA-256
+     * against the release checksum file, and its package name, version, signing certificate,
+     * and versionCode against the installed app. Any partial or rejected file is deleted.
+     */
     public static PreparedUpdate prepare(Context context, GitHubRelease release,
             ProgressListener listener) throws Exception {
         if (release == null) {
@@ -71,28 +83,19 @@ public final class UpdateInstaller {
             throw new SecurityException("The release checksum does not list "
                     + release.apkName + ".");
         }
-        File directory = new File(context.getCacheDir(), "verified-updates");
+        File directory = new File(context.getCacheDir(), UPDATE_DIRECTORY);
         if (!directory.exists() && !directory.mkdirs()) {
             throw new IllegalStateException("Could not prepare update storage.");
         }
-        File partial = new File(directory, release.apkName + ".part");
+        File partial = new File(directory, release.apkName + PARTIAL_SUFFIX);
         File apk = new File(directory, release.apkName);
         deleteQuietly(partial);
         deleteQuietly(apk);
         try {
             downloadFile(context, "update_apk", release.apkUrl, partial, release.apkSize,
                     listener);
-            if (partial.length() != release.apkSize) {
-                throw new SecurityException("The APK size does not match the GitHub release.");
-            }
-            String actual = ReleaseIntegrity.sha256(partial);
-            if (!MessageDigestSupport.constantTimeEquals(expected, actual)) {
-                throw new SecurityException("The downloaded APK failed SHA-256 verification.");
-            }
-            if (!partial.renameTo(apk)) {
-                copy(partial, apk);
-                deleteQuietly(partial);
-            }
+            verifyDownload(partial, release.apkSize, expected);
+            moveFile(partial, apk);
             PreparedUpdate prepared = verifyPackage(context, release, apk);
             DiagnosticLog.info(context, "update", "update_prepare_succeeded",
                     "version", prepared.versionName,
@@ -109,15 +112,20 @@ public final class UpdateInstaller {
         }
     }
 
+    /**
+     * Streams a prepared APK into a new PackageInstaller session and commits it. The session
+     * is abandoned if anything fails before the commit is handed to Android.
+     */
     public static int commit(Context context, PreparedUpdate update) throws Exception {
         if (update == null || update.apk == null || !update.apk.isFile()) {
             throw new IllegalArgumentException("The verified update APK is missing.");
         }
+        long apkBytes = update.apk.length();
         PackageInstaller installer = context.getPackageManager().getPackageInstaller();
-        PackageInstaller.SessionParams params =
-                new PackageInstaller.SessionParams(PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
+                PackageInstaller.SessionParams.MODE_FULL_INSTALL);
         params.setAppPackageName(context.getPackageName());
-        params.setSize(update.apk.length());
+        params.setSize(apkBytes);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
         }
@@ -125,26 +133,17 @@ public final class UpdateInstaller {
         DiagnosticLog.info(context, "update", "installer_session_created",
                 "session_id", sessionId,
                 "version", update.versionName,
-                "apk_bytes", update.apk.length());
+                "apk_bytes", apkBytes);
         PackageInstaller.Session session = null;
         try {
             session = installer.openSession(sessionId);
             try (InputStream input = new FileInputStream(update.apk);
-                    OutputStream output = session.openWrite("base.apk", 0L, update.apk.length())) {
-                byte[] buffer = new byte[64 * 1024];
-                int read;
-                while ((read = input.read(buffer)) != -1) {
-                    output.write(buffer, 0, read);
-                }
+                    OutputStream output = session.openWrite(SESSION_APK_NAME, 0L, apkBytes)) {
+                copyStream(input, output);
                 session.fsync(output);
             }
-            Intent result = new Intent(context, UpdateInstallReceiver.class)
-                    .setAction(AppConstants.ACTION_INSTALL_STATUS)
-                    .putExtra(UpdateInstallReceiver.EXTRA_VERSION, update.versionName);
-            PendingIntent callback = PendingIntent.getBroadcast(context, sessionId, result,
-                    PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
-            IntentSender sender = callback.getIntentSender();
-            session.commit(sender);
+            session.commit(statusCallback(context, sessionId, update.versionName)
+                    .getIntentSender());
             DiagnosticLog.info(context, "update", "installer_session_committed",
                     "session_id", sessionId,
                     "version", update.versionName);
@@ -156,6 +155,7 @@ public final class UpdateInstaller {
             try {
                 installer.abandonSession(sessionId);
             } catch (RuntimeException ignored) {
+                // The original failure is the one worth reporting.
             }
             throw exception;
         } finally {
@@ -165,11 +165,32 @@ public final class UpdateInstaller {
         }
     }
 
+    /** Broadcast that {@link UpdateInstallReceiver} receives with the session's status. */
+    private static PendingIntent statusCallback(Context context, int sessionId,
+            String versionName) {
+        Intent result = new Intent(context, UpdateInstallReceiver.class)
+                .setAction(AppConstants.ACTION_INSTALL_STATUS)
+                .putExtra(UpdateInstallReceiver.EXTRA_VERSION, versionName);
+        // Mutable so PackageInstaller can attach the status and confirmation extras.
+        return PendingIntent.getBroadcast(context, sessionId, result,
+                PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_MUTABLE);
+    }
+
+    private static void verifyDownload(File download, long expectedSize, String expectedSha256)
+            throws Exception {
+        if (download.length() != expectedSize) {
+            throw new SecurityException("The APK size does not match the GitHub release.");
+        }
+        String actual = ReleaseIntegrity.sha256(download);
+        if (!ReleaseIntegrity.digestsMatch(expectedSha256, actual)) {
+            throw new SecurityException("The downloaded APK failed SHA-256 verification.");
+        }
+    }
+
     private static PreparedUpdate verifyPackage(Context context, GitHubRelease release, File apk)
             throws Exception {
         PackageManager manager = context.getPackageManager();
-        int flags = Build.VERSION.SDK_INT >= 28
-                ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+        int flags = signingInfoFlags();
         PackageInfo archive = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
         if (archive == null) {
             throw new SecurityException("Android could not read the downloaded APK.");
@@ -187,10 +208,8 @@ public final class UpdateInstaller {
             throw new SecurityException(
                     "The APK signing certificate does not match this installation.");
         }
-        long installedCode = Build.VERSION.SDK_INT >= 28
-                ? installed.getLongVersionCode() : installed.versionCode;
-        long archiveCode = Build.VERSION.SDK_INT >= 28
-                ? archive.getLongVersionCode() : archive.versionCode;
+        long installedCode = longVersionCode(installed);
+        long archiveCode = longVersionCode(archive);
         if (archiveCode < installedCode) {
             throw new DowngradeNotSupportedException(
                     "Android cannot install an older version over the current app.");
@@ -198,13 +217,27 @@ public final class UpdateInstaller {
         return new PreparedUpdate(apk, archive.versionName, archiveCode);
     }
 
+    @SuppressWarnings("deprecation")
+    private static int signingInfoFlags() {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
+    }
+
+    @SuppressWarnings("deprecation")
+    private static long longVersionCode(PackageInfo info) {
+        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
+                ? info.getLongVersionCode() : info.versionCode;
+    }
+
+    @SuppressWarnings("deprecation")
     private static Signature[] currentSigners(PackageInfo info) {
-        if (Build.VERSION.SDK_INT >= 28 && info.signingInfo != null) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && info.signingInfo != null) {
             return info.signingInfo.getApkContentsSigners();
         }
         return info.signatures == null ? new Signature[0] : info.signatures;
     }
 
+    /** True when both sets of signers are identical and non-empty. */
     private static boolean sameSigners(Signature[] installed, Signature[] archive) {
         Set<String> installedValues = signatureValues(installed);
         Set<String> archiveValues = signatureValues(archive);
@@ -212,12 +245,13 @@ public final class UpdateInstaller {
     }
 
     private static Set<String> signatureValues(Signature[] signatures) {
-        HashSet<String> result = new HashSet<>();
-        if (signatures != null) {
-            for (Signature signature : signatures) {
-                if (signature != null) {
-                    result.add(signature.toCharsString());
-                }
+        Set<String> result = new HashSet<>();
+        if (signatures == null) {
+            return result;
+        }
+        for (Signature signature : signatures) {
+            if (signature != null) {
+                result.add(signature.toCharsString());
             }
         }
         return result;
@@ -235,7 +269,7 @@ public final class UpdateInstaller {
             int status = requireOk(connection);
             try (InputStream input = connection.getInputStream();
                     ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-                byte[] buffer = new byte[4096];
+                byte[] buffer = new byte[CHECKSUM_BUFFER_BYTES];
                 int total = 0;
                 int read;
                 while ((read = input.read(buffer)) != -1) {
@@ -245,25 +279,27 @@ public final class UpdateInstaller {
                     }
                     output.write(buffer, 0, read);
                 }
-                String result = output.toString(java.nio.charset.StandardCharsets.UTF_8.name());
+                String result = output.toString(StandardCharsets.UTF_8.name());
                 DiagnosticLog.info(context, "network", "request_finished",
                         "operation", operation,
                         "status", status,
                         "duration_ms", SystemClock.elapsedRealtime() - started,
-                        "response_bytes", result.getBytes(
-                                java.nio.charset.StandardCharsets.UTF_8).length);
+                        "response_bytes", result.getBytes(StandardCharsets.UTF_8).length);
                 return result;
             }
         } catch (Exception exception) {
-            DiagnosticLog.error(context, "network", "request_failed", exception,
-                    "operation", operation,
-                    "duration_ms", SystemClock.elapsedRealtime() - started);
+            logRequestFailed(context, operation, started, exception);
             throw exception;
         } finally {
             connection.disconnect();
         }
     }
 
+    /**
+     * Streams {@code url} into {@code destination}. Rejects a known Content-Length other than
+     * {@code expected} and stops as soon as more than {@code expected} bytes arrive.
+     * Interrupting the thread cancels the download.
+     */
     private static void downloadFile(Context context, String operation, String url,
             File destination, long expected, ProgressListener listener) throws Exception {
         long started = SystemClock.elapsedRealtime();
@@ -281,7 +317,7 @@ public final class UpdateInstaller {
             }
             try (InputStream input = connection.getInputStream();
                     OutputStream output = new FileOutputStream(destination)) {
-                byte[] buffer = new byte[64 * 1024];
+                byte[] buffer = new byte[COPY_BUFFER_BYTES];
                 long total = 0L;
                 int read;
                 while ((read = input.read(buffer)) != -1) {
@@ -304,23 +340,28 @@ public final class UpdateInstaller {
                         "response_bytes", total);
             }
         } catch (Exception exception) {
-            DiagnosticLog.error(context, "network", "request_failed", exception,
-                    "operation", operation,
-                    "duration_ms", SystemClock.elapsedRealtime() - started);
+            logRequestFailed(context, operation, started, exception);
             throw exception;
         } finally {
             connection.disconnect();
         }
     }
 
+    private static void logRequestFailed(Context context, String operation, long started,
+            Exception exception) {
+        DiagnosticLog.error(context, "network", "request_failed", exception,
+                "operation", operation,
+                "duration_ms", SystemClock.elapsedRealtime() - started);
+    }
+
     private static HttpURLConnection open(String value) throws Exception {
         URL url = new URL(value);
-        if (!trustedDownloadUrl(url)) {
+        if (!isTrustedDownloadUrl(url)) {
             throw new SecurityException("The release download URL is not trusted.");
         }
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-        connection.setConnectTimeout(20_000);
-        connection.setReadTimeout(60_000);
+        connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+        connection.setReadTimeout(READ_TIMEOUT_MS);
         connection.setInstanceFollowRedirects(true);
         connection.setRequestProperty("Accept", "application/octet-stream");
         connection.setRequestProperty("Accept-Encoding", "identity");
@@ -328,10 +369,14 @@ public final class UpdateInstaller {
         return connection;
     }
 
+    /**
+     * Connects, rejects redirects that left the trusted hosts, and requires HTTP 200. Returns the
+     * status code.
+     */
     private static int requireOk(HttpURLConnection connection) throws Exception {
         int status = connection.getResponseCode();
         URL finalUrl = connection.getURL();
-        if (!trustedDownloadUrl(finalUrl)) {
+        if (!isTrustedDownloadUrl(finalUrl)) {
             throw new SecurityException("GitHub redirected the download to an untrusted host.");
         }
         if (status != HttpURLConnection.HTTP_OK) {
@@ -340,7 +385,7 @@ public final class UpdateInstaller {
         return status;
     }
 
-    private static boolean allowedHost(String host) {
+    private static boolean isAllowedHost(String host) {
         if (host == null) {
             return false;
         }
@@ -351,41 +396,37 @@ public final class UpdateInstaller {
                 || normalized.endsWith(".githubusercontent.com");
     }
 
-    private static boolean trustedDownloadUrl(URL url) {
-        if ("https".equalsIgnoreCase(url.getProtocol()) && allowedHost(url.getHost())) {
+    private static boolean isTrustedDownloadUrl(URL url) {
+        if ("https".equalsIgnoreCase(url.getProtocol()) && isAllowedHost(url.getHost())) {
             return true;
         }
-        return BuildConfig.DEBUG
-                && "http".equalsIgnoreCase(url.getProtocol())
-                && "10.0.2.2".equals(url.getHost())
-                && url.getPort() == 8765;
+        return BuildConfig.DEBUG && GitHubReleaseSource.isLocalDebugServer(
+                url.getProtocol(), url.getHost(), url.getPort());
     }
 
-    private static void copy(File source, File destination) throws Exception {
+    /** Renames {@code source} onto {@code destination}, falling back to copy and delete. */
+    private static void moveFile(File source, File destination) throws Exception {
+        if (source.renameTo(destination)) {
+            return;
+        }
         try (InputStream input = new FileInputStream(source);
                 OutputStream output = new FileOutputStream(destination)) {
-            byte[] buffer = new byte[64 * 1024];
-            int read;
-            while ((read = input.read(buffer)) != -1) {
-                output.write(buffer, 0, read);
-            }
+            copyStream(input, output);
+        }
+        deleteQuietly(source);
+    }
+
+    private static void copyStream(InputStream input, OutputStream output) throws Exception {
+        byte[] buffer = new byte[COPY_BUFFER_BYTES];
+        int read;
+        while ((read = input.read(buffer)) != -1) {
+            output.write(buffer, 0, read);
         }
     }
 
     private static void deleteQuietly(File file) {
         if (file != null && file.exists()) {
             file.delete();
-        }
-    }
-
-    private static final class MessageDigestSupport {
-        static boolean constantTimeEquals(String left, String right) {
-            if (left == null || right == null) {
-                return false;
-            }
-            return java.security.MessageDigest.isEqual(
-                    left.toLowerCase(Locale.US).getBytes(java.nio.charset.StandardCharsets.US_ASCII),
-                    right.toLowerCase(Locale.US).getBytes(java.nio.charset.StandardCharsets.US_ASCII));
         }
     }
 }

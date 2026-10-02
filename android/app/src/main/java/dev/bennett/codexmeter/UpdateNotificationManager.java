@@ -13,6 +13,8 @@ import android.os.Build;
 public final class UpdateNotificationManager {
     static final String CHANNEL_ID = "codex_update_available";
     static final int NOTIFICATION_ID = 73450;
+    private static final int OPEN_REQUEST_CODE = NOTIFICATION_ID;
+    private static final int UPDATE_REQUEST_CODE = NOTIFICATION_ID + 1;
 
     private UpdateNotificationManager() {
     }
@@ -45,8 +47,7 @@ public final class UpdateNotificationManager {
             UpdatePreferences.clearNotifiedVersion(app);
             return;
         }
-        String already = UpdatePreferences.notifiedVersion(app);
-        if (update.version.equals(already)) {
+        if (update.version.equals(UpdatePreferences.notifiedVersion(app))) {
             return;
         }
         if (post(app, update)) {
@@ -72,17 +73,20 @@ public final class UpdateNotificationManager {
         }
         boolean returnToStable = UpdateChannel.isReturnToStable(release,
                 UpdatePreferences.installedVersion(context));
-        String title = returnToStable
-                ? "Return to Codex Meter " + release.version
-                : "Codex Meter " + release.version + " is available";
-        String text = returnToStable
-                ? "The stable release installs in place over this alpha build."
-                : release.prerelease
-                ? "A signed alpha release is ready to install."
-                : "A signed GitHub release is ready to install.";
-        PendingIntent open = activityPending(context, NOTIFICATION_ID,
+        String title;
+        String text;
+        if (returnToStable) {
+            title = "Return to Codex Meter " + release.version;
+            text = "The stable release installs in place over this alpha build.";
+        } else {
+            title = "Codex Meter " + release.version + " is available";
+            text = release.prerelease
+                    ? "A signed alpha release is ready to install."
+                    : "A signed GitHub release is ready to install.";
+        }
+        PendingIntent open = activityPending(context, OPEN_REQUEST_CODE,
                 updateIntent(context, release.version, false));
-        PendingIntent update = activityPending(context, NOTIFICATION_ID + 1,
+        PendingIntent update = activityPending(context, UPDATE_REQUEST_CODE,
                 updateIntent(context, release.version, true));
         Notification notification = new Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_notification)
@@ -104,12 +108,11 @@ public final class UpdateNotificationManager {
     }
 
     private static Intent updateIntent(Context context, String version, boolean startInstall) {
-        Intent intent = new Intent(context, UpdateActivity.class)
+        return new Intent(context, UpdateActivity.class)
                 .putExtra(UpdateActivity.EXTRA_VERSION, version)
                 .putExtra(UpdateActivity.EXTRA_START_INSTALL, startInstall)
                 .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP
                         | Intent.FLAG_ACTIVITY_NEW_TASK);
-        return intent;
     }
 
     private static PendingIntent activityPending(Context context, int requestCode, Intent intent) {
@@ -118,10 +121,12 @@ public final class UpdateNotificationManager {
     }
 
     private static boolean canPost(Context context, NotificationManager manager) {
-        if (!manager.areNotificationsEnabled()
-                || (Build.VERSION.SDK_INT >= 33
+        if (!manager.areNotificationsEnabled()) {
+            return false;
+        }
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU
                 && context.checkSelfPermission("android.permission.POST_NOTIFICATIONS")
-                != PackageManager.PERMISSION_GRANTED)) {
+                != PackageManager.PERMISSION_GRANTED) {
             return false;
         }
         NotificationChannel channel = manager.getNotificationChannel(CHANNEL_ID);

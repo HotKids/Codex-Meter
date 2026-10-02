@@ -9,7 +9,8 @@ import java.util.concurrent.Future;
 /** Executes persisted release checks without keeping an Activity alive. */
 public final class ReleaseUpdateJobService extends JobService {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
-    private volatile Future<?> active;
+    private volatile Future<?> activeTask;
+    /** Parameters of the running job; cleared once the job is finished or stopped. */
     private volatile JobParameters activeParameters;
 
     @Override
@@ -21,23 +22,7 @@ public final class ReleaseUpdateJobService extends JobService {
         DiagnosticLog.info(this, "scheduler", "release_job_started",
                 "job_id", params.getJobId());
         activeParameters = params;
-        active = executor.submit(() -> {
-            boolean retry = false;
-            try {
-                ReleaseUpdateClient.check(getApplicationContext());
-            } catch (Exception exception) {
-                DiagnosticLog.error(getApplicationContext(), "scheduler",
-                        "release_job_failed", exception,
-                        "job_id", params.getJobId());
-                retry = true;
-            } finally {
-                if (activeParameters == params) {
-                    activeParameters = null;
-                    active = null;
-                    jobFinished(params, retry);
-                }
-            }
-        });
+        activeTask = executor.submit(() -> runCheck(params));
         return true;
     }
 
@@ -45,10 +30,10 @@ public final class ReleaseUpdateJobService extends JobService {
     public boolean onStopJob(JobParameters params) {
         DiagnosticLog.warn(this, "scheduler", "release_job_stopped",
                 "job_id", params.getJobId());
-        Future<?> task = active;
+        Future<?> task = activeTask;
         if (activeParameters == params) {
             activeParameters = null;
-            active = null;
+            activeTask = null;
         }
         if (task != null) {
             task.cancel(true);
@@ -58,11 +43,30 @@ public final class ReleaseUpdateJobService extends JobService {
 
     @Override
     public void onDestroy() {
-        Future<?> task = active;
+        Future<?> task = activeTask;
         if (task != null) {
             task.cancel(true);
         }
         executor.shutdownNow();
         super.onDestroy();
+    }
+
+    /** Runs on the executor; reports completion unless the job was stopped meanwhile. */
+    private void runCheck(JobParameters params) {
+        boolean retry = false;
+        try {
+            ReleaseUpdateClient.check(getApplicationContext());
+        } catch (Exception exception) {
+            DiagnosticLog.error(getApplicationContext(), "scheduler",
+                    "release_job_failed", exception,
+                    "job_id", params.getJobId());
+            retry = true;
+        } finally {
+            if (activeParameters == params) {
+                activeParameters = null;
+                activeTask = null;
+                jobFinished(params, retry);
+            }
+        }
     }
 }

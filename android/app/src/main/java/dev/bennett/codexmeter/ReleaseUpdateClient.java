@@ -8,10 +8,16 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.List;
+import org.json.JSONObject;
 
 /** Public, unauthenticated GitHub release discovery client. */
 public final class ReleaseUpdateClient {
     private static final int MAX_RESPONSE_BYTES = 512 * 1024;
+    private static final int MAX_ERROR_BODY_BYTES = 16 * 1024;
+    private static final int READ_BUFFER_BYTES = 8192;
+    private static final int CONNECT_TIMEOUT_MS = 15_000;
+    private static final int READ_TIMEOUT_MS = 25_000;
+    private static final int HTTP_TOO_MANY_REQUESTS = 429;
     private static final Object LOCK = new Object();
 
     private ReleaseUpdateClient() {
@@ -40,6 +46,10 @@ public final class ReleaseUpdateClient {
         }
     }
 
+    /**
+     * Fetches the release list. A conditional request sends the cached ETag; when GitHub answers
+     * 304 but the cache is unusable, the ETag is dropped and the list is fetched again in full.
+     */
     private static List<GitHubRelease> request(Context app, boolean conditional)
             throws Exception {
         HttpURLConnection connection = null;
@@ -54,8 +64,8 @@ public final class ReleaseUpdateClient {
                     "method", "GET",
                     "url", DiagnosticSanitizer.safeUrl(endpoint),
                     "conditional", conditional);
-            connection.setConnectTimeout(15_000);
-            connection.setReadTimeout(25_000);
+            connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
+            connection.setReadTimeout(READ_TIMEOUT_MS);
             connection.setInstanceFollowRedirects(true);
             connection.setRequestProperty("Accept", "application/vnd.github+json");
             connection.setRequestProperty("Accept-Encoding", "identity");
@@ -72,8 +82,9 @@ public final class ReleaseUpdateClient {
                     "status", status,
                     "duration_ms", SystemClock.elapsedRealtime() - started,
                     "url", DiagnosticSanitizer.safeUrl(finalUrl.toString()));
-            if (!trustedApiUrl(finalUrl, localDebugServer)) {
-                throw new SecurityException("GitHub redirected the update check to an untrusted host.");
+            if (!isTrustedApiUrl(finalUrl, localDebugServer)) {
+                throw new SecurityException(
+                        "GitHub redirected the update check to an untrusted host.");
             }
             if (status == HttpURLConnection.HTTP_NOT_MODIFIED) {
                 if (!UpdatePreferences.hasUsableCache(app)) {
@@ -84,7 +95,7 @@ public final class ReleaseUpdateClient {
                 return UpdatePreferences.releases(app);
             }
             if (status != HttpURLConnection.HTTP_OK) {
-                String detail = read(connection.getErrorStream(), 16 * 1024);
+                String detail = read(connection.getErrorStream(), MAX_ERROR_BODY_BYTES);
                 throw new IllegalStateException(githubError(status, detail));
             }
             String json = read(connection.getInputStream(), MAX_RESPONSE_BYTES);
@@ -100,31 +111,30 @@ public final class ReleaseUpdateClient {
     private static boolean isLocalDebugServer(String value) {
         try {
             URL url = new URL(value);
-            return BuildConfig.DEBUG
-                    && "http".equalsIgnoreCase(url.getProtocol())
-                    && "10.0.2.2".equals(url.getHost())
-                    && url.getPort() == 8765;
+            return BuildConfig.DEBUG && GitHubReleaseSource.isLocalDebugServer(
+                    url.getProtocol(), url.getHost(), url.getPort());
         } catch (Exception exception) {
             return false;
         }
     }
 
-    private static boolean trustedApiUrl(URL url, boolean localDebugServer) {
+    private static boolean isTrustedApiUrl(URL url, boolean localDebugServer) {
         if (localDebugServer) {
-            return "http".equalsIgnoreCase(url.getProtocol())
-                    && "10.0.2.2".equals(url.getHost())
-                    && url.getPort() == 8765;
+            return GitHubReleaseSource.isLocalDebugServer(
+                    url.getProtocol(), url.getHost(), url.getPort());
         }
         return "https".equalsIgnoreCase(url.getProtocol())
                 && "api.github.com".equalsIgnoreCase(url.getHost());
     }
 
+    /** Reads {@code input} as UTF-8, failing once more than {@code limit} bytes arrive. */
     private static String read(InputStream input, int limit) throws Exception {
         if (input == null) {
             return "";
         }
-        try (InputStream stream = input; ByteArrayOutputStream output = new ByteArrayOutputStream()) {
-            byte[] buffer = new byte[8192];
+        try (InputStream stream = input;
+                ByteArrayOutputStream output = new ByteArrayOutputStream()) {
+            byte[] buffer = new byte[READ_BUFFER_BYTES];
             int total = 0;
             int read;
             while ((read = stream.read(buffer)) != -1) {
@@ -141,10 +151,11 @@ public final class ReleaseUpdateClient {
     private static String githubError(int status, String detail) {
         String message = "";
         try {
-            message = new org.json.JSONObject(detail).optString("message", "");
+            message = new JSONObject(detail).optString("message", "");
         } catch (Exception ignored) {
+            // Not a JSON error body; fall back to the status code alone.
         }
-        if (status == 403 || status == 429) {
+        if (status == HttpURLConnection.HTTP_FORBIDDEN || status == HTTP_TOO_MANY_REQUESTS) {
             return "GitHub temporarily limited update checks. Try again later.";
         }
         if (!message.isEmpty()) {
@@ -158,6 +169,7 @@ public final class ReleaseUpdateClient {
         if (message == null || message.trim().isEmpty()) {
             message = "Could not check GitHub releases.";
         }
-        return message.length() <= 240 ? message : message.substring(0, 240);
+        return message.length() <= UpdatePreferences.MAX_ERROR_LENGTH
+                ? message : message.substring(0, UpdatePreferences.MAX_ERROR_LENGTH);
     }
 }

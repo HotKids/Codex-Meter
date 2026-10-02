@@ -72,6 +72,6 @@ public final class UpdateCheckFrequency {
     }
 
     public static String summary(int hours) {
-        return "Check signed GitHub releases " + label(normalize(hours)).toLowerCase();
+        return "Check signed GitHub releases " + label(hours).toLowerCase();
     }
 }

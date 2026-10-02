@@ -1,12 +1,16 @@
 package dev.bennett.codexmeter;
 
 import android.content.Context;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import java.util.Collections;
 import java.util.List;
 
 /** Durable updater state, isolated from account and usage preferences. */
 public final class UpdatePreferences {
+    /** Longest check or install error message that is stored and shown. */
+    static final int MAX_ERROR_LENGTH = 240;
+
     private static final String PREFS = "codex_meter_updates_v1";
     private static final String KEY_AUTOMATIC = "automatic";
     private static final String KEY_CHANNEL = "release_channel";
@@ -19,6 +23,8 @@ public final class UpdatePreferences {
     private static final String KEY_LAST_ERROR = "last_error";
     private static final String KEY_INSTALL_ERROR = "install_error";
     private static final int MAX_CACHE_LENGTH = 512 * 1024;
+
+    /** Parsed form of the most recently seen releases JSON, guarded by {@link #CACHE_LOCK}. */
     private static final Object CACHE_LOCK = new Object();
     private static String cachedJson;
     private static List<GitHubRelease> cachedReleases;
@@ -30,6 +36,7 @@ public final class UpdatePreferences {
         return prefs(context).getBoolean(KEY_AUTOMATIC, true);
     }
 
+    /** Turning automatic checks off also turns update notifications off. */
     public static void setAutomaticChecks(Context context, boolean enabled) {
         SharedPreferences.Editor editor = prefs(context).edit().putBoolean(KEY_AUTOMATIC, enabled);
         if (!enabled) {
@@ -37,8 +44,7 @@ public final class UpdatePreferences {
         }
         editor.apply();
         if (!enabled) {
-            UpdateNotificationManager.dismiss(context);
-            clearNotifiedVersion(context);
+            resetUpdateNotification(context);
         }
     }
 
@@ -53,8 +59,7 @@ public final class UpdatePreferences {
             return;
         }
         prefs(context).edit().putString(KEY_CHANNEL, normalized).apply();
-        UpdateNotificationManager.dismiss(context);
-        clearNotifiedVersion(context);
+        resetUpdateNotification(context);
         broadcast(context);
         UpdateNotificationManager.onReleasesUpdated(context);
     }
@@ -66,8 +71,7 @@ public final class UpdatePreferences {
     public static void setNotifyUpdatesEnabled(Context context, boolean enabled) {
         prefs(context).edit().putBoolean(KEY_NOTIFY, enabled && automaticChecks(context)).apply();
         if (!enabled) {
-            UpdateNotificationManager.dismiss(context);
-            clearNotifiedVersion(context);
+            resetUpdateNotification(context);
         }
     }
 
@@ -112,6 +116,7 @@ public final class UpdatePreferences {
         return prefs(context).getString(KEY_LAST_ERROR, "");
     }
 
+    /** Validates and stores a fresh release list, then notifies listeners. */
     public static void saveSuccess(Context context, String json, String etag) throws Exception {
         if (json == null || json.length() > MAX_CACHE_LENGTH) {
             throw new IllegalArgumentException("GitHub returned too much release metadata.");
@@ -127,10 +132,7 @@ public final class UpdatePreferences {
             editor.putString(KEY_ETAG, etag.trim());
         }
         editor.apply();
-        synchronized (CACHE_LOCK) {
-            cachedJson = json;
-            cachedReleases = parsed;
-        }
+        rememberParsed(json, parsed);
         broadcast(context);
         UpdateNotificationManager.onReleasesUpdated(context);
     }
@@ -147,11 +149,12 @@ public final class UpdatePreferences {
     public static void saveError(Context context, String error) {
         prefs(context).edit()
                 .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                .putString(KEY_LAST_ERROR, safe(error, "Could not check GitHub releases."))
+                .putString(KEY_LAST_ERROR, sanitize(error, "Could not check GitHub releases."))
                 .apply();
         broadcast(context);
     }
 
+    /** Cached releases, newest first; empty when nothing valid has been stored. */
     public static List<GitHubRelease> releases(Context context) {
         String json = prefs(context).getString(KEY_RELEASES, "[]");
         synchronized (CACHE_LOCK) {
@@ -161,10 +164,7 @@ public final class UpdatePreferences {
         }
         try {
             List<GitHubRelease> parsed = GitHubReleaseParser.parse(json, BuildConfig.DEBUG);
-            synchronized (CACHE_LOCK) {
-                cachedJson = json;
-                cachedReleases = parsed;
-            }
+            rememberParsed(json, parsed);
             return parsed;
         } catch (Exception exception) {
             return Collections.emptyList();
@@ -187,10 +187,6 @@ public final class UpdatePreferences {
 
     public static void clearEtag(Context context) {
         prefs(context).edit().remove(KEY_ETAG).apply();
-    }
-
-    public static GitHubRelease latestStable(Context context) {
-        return GitHubReleaseParser.latestStable(releases(context));
     }
 
     public static GitHubRelease findVersion(Context context, String version) {
@@ -218,7 +214,7 @@ public final class UpdatePreferences {
         if (error == null || error.trim().isEmpty()) {
             editor.remove(KEY_INSTALL_ERROR);
         } else {
-            editor.putString(KEY_INSTALL_ERROR, safe(error, "Update installation failed."));
+            editor.putString(KEY_INSTALL_ERROR, sanitize(error, "Update installation failed."));
         }
         editor.apply();
         broadcast(context);
@@ -233,18 +229,33 @@ public final class UpdatePreferences {
         return (app == null ? context : app).getSharedPreferences(PREFS, Context.MODE_PRIVATE);
     }
 
+    private static void rememberParsed(String json, List<GitHubRelease> parsed) {
+        synchronized (CACHE_LOCK) {
+            cachedJson = json;
+            cachedReleases = parsed;
+        }
+    }
+
+    private static void resetUpdateNotification(Context context) {
+        UpdateNotificationManager.dismiss(context);
+        clearNotifiedVersion(context);
+    }
+
+    /** Tells in-app screens that release metadata or updater state changed. */
     private static void broadcast(Context context) {
-        context.sendBroadcast(new android.content.Intent(AppConstants.ACTION_RELEASES_UPDATED)
-                .setPackage(context.getPackageName())
-                .addFlags(android.content.Intent.FLAG_RECEIVER_REGISTERED_ONLY),
+        context.sendBroadcast(new Intent(AppConstants.ACTION_RELEASES_UPDATED)
+                        .setPackage(context.getPackageName())
+                        .addFlags(Intent.FLAG_RECEIVER_REGISTERED_ONLY),
                 AppConstants.INTERNAL_PERMISSION);
     }
 
-    private static String safe(String value, String fallback) {
+    /** Trims {@code value}, substitutes {@code fallback} when blank, and caps the length. */
+    private static String sanitize(String value, String fallback) {
         String result = value == null ? "" : value.trim();
         if (result.isEmpty()) {
             result = fallback;
         }
-        return result.length() <= 240 ? result : result.substring(0, 240);
+        return result.length() <= MAX_ERROR_LENGTH
+                ? result : result.substring(0, MAX_ERROR_LENGTH);
     }
 }

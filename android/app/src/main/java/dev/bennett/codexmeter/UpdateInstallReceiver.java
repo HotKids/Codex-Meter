@@ -18,28 +18,7 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
         int status = intent.getIntExtra(PackageInstaller.EXTRA_STATUS,
                 PackageInstaller.STATUS_FAILURE);
         if (status == PackageInstaller.STATUS_PENDING_USER_ACTION) {
-            Intent confirmation;
-            if (Build.VERSION.SDK_INT >= 33) {
-                confirmation = intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class);
-            } else {
-                @SuppressWarnings("deprecation")
-                Intent legacy = intent.getParcelableExtra(Intent.EXTRA_INTENT);
-                confirmation = legacy;
-            }
-            if (confirmation == null) {
-                abandon(context, intent);
-                UpdatePreferences.setInstallError(context,
-                        "Android did not provide an update confirmation screen.");
-                return;
-            }
-            try {
-                confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-                context.startActivity(confirmation);
-            } catch (RuntimeException exception) {
-                abandon(context, intent);
-                UpdatePreferences.setInstallError(context,
-                        "Could not open Android's update confirmation screen.");
-            }
+            showConfirmation(context, intent);
             return;
         }
         if (status == PackageInstaller.STATUS_SUCCESS) {
@@ -53,13 +32,43 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
         UpdatePreferences.setInstallError(context, message);
     }
 
+    /** Launches Android's install confirmation, abandoning the session if that is impossible. */
+    private static void showConfirmation(Context context, Intent intent) {
+        Intent confirmation = confirmationIntent(intent);
+        if (confirmation == null) {
+            abandon(context, intent);
+            UpdatePreferences.setInstallError(context,
+                    "Android did not provide an update confirmation screen.");
+            return;
+        }
+        try {
+            confirmation.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+            context.startActivity(confirmation);
+        } catch (RuntimeException exception) {
+            abandon(context, intent);
+            UpdatePreferences.setInstallError(context,
+                    "Could not open Android's update confirmation screen.");
+        }
+    }
+
+    private static Intent confirmationIntent(Intent intent) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+            return intent.getParcelableExtra(Intent.EXTRA_INTENT, Intent.class);
+        }
+        @SuppressWarnings("deprecation")
+        Intent legacy = intent.getParcelableExtra(Intent.EXTRA_INTENT);
+        return legacy;
+    }
+
     private static void abandon(Context context, Intent intent) {
         int sessionId = intent.getIntExtra(PackageInstaller.EXTRA_SESSION_ID, -1);
-        if (sessionId >= 0) {
-            try {
-                context.getPackageManager().getPackageInstaller().abandonSession(sessionId);
-            } catch (RuntimeException ignored) {
-            }
+        if (sessionId < 0) {
+            return;
+        }
+        try {
+            context.getPackageManager().getPackageInstaller().abandonSession(sessionId);
+        } catch (RuntimeException ignored) {
+            // The session is already gone or no longer ours.
         }
     }
 }
