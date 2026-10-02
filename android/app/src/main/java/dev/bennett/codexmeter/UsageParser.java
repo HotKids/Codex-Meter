@@ -44,7 +44,7 @@ public final class UsageParser {
         UsageWindow weekly = nearestWindow(windows, WEEK, WEEK_MIN, WEEK_MAX, fiveHour);
         UsageWindow monthly = nearestWindow(windows, MONTH, MONTH_MIN, MONTH_MAX,
                 fiveHour, weekly);
-        List<UsageLimit> additionalLimits = parseAdditionalLimits(root);
+        List<UsageLimit> additionalLimits = parseAdditionalLimits(root, rateLimit);
         JSONObject resetCredits = nullableObject(root, "rate_limit_reset_credits");
         UsageCredits usageCredits = UsageCredits.fromJson(nullableObject(root, "credits"));
         return new UsageSnapshot(
@@ -60,9 +60,17 @@ public final class UsageParser {
                 fetchedAtMillis);
     }
 
-    private static List<UsageLimit> parseAdditionalLimits(JSONObject root) {
+    /**
+     * Reads model-specific limits. They normally sit at the response root; some responses nest
+     * the array inside {@code rate_limit}, which is accepted as a fallback.
+     */
+    private static List<UsageLimit> parseAdditionalLimits(JSONObject root,
+            JSONObject rateLimit) {
         List<UsageLimit> limits = new ArrayList<>();
         JSONArray entries = root.optJSONArray("additional_rate_limits");
+        if (entries == null && rateLimit != null) {
+            entries = rateLimit.optJSONArray("additional_rate_limits");
+        }
         if (entries == null) {
             return limits;
         }

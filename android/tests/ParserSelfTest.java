@@ -811,6 +811,19 @@ public final class ParserSelfTest {
         check(snapshot.additionalLimits.size() == 1, "additional limit preserved");
         check(snapshot.additionalLimits.get(0).primary.remainingPercent() == 0, "upper clamp");
         check(snapshot.additionalLimits.get(0).secondary.remainingPercent() == 100, "lower clamp");
+
+        String nested = "{\"rate_limit\":{\"primary_window\":{\"used_percent\":10,"
+                + "\"limit_window_seconds\":18000,\"reset_at\":2},"
+                + "\"additional_rate_limits\":[{\"limit_id\":\"codex_bengalfox\","
+                + "\"rate_limit\":{\"primary_window\":{\"used_percent\":30,"
+                + "\"limit_window_seconds\":18000,\"reset_at\":2}}}]}}";
+        UsageSnapshot nestedSnapshot = UsageParser.parse(nested, 1L);
+        check(nestedSnapshot.fiveHour != null && nestedSnapshot.fiveHour.usedPercent == 10,
+                "nested additional limits keep the standard window");
+        check(nestedSnapshot.additionalLimits.size() == 1
+                        && "codex_bengalfox-0".equals(nestedSnapshot.additionalLimits.get(0).id)
+                        && nestedSnapshot.additionalLimits.get(0).primary.usedPercent == 30,
+                "additional limits nested in rate_limit are read with the usual id");
     }
 
 
