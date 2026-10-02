@@ -1,10 +1,11 @@
 package dev.bennett.codexmeter;
 
-import android.content.Intent;
 import android.appwidget.AppWidgetManager;
+import android.content.Intent;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.FrameLayout;
@@ -19,29 +20,40 @@ import java.util.ArrayList;
 import java.util.LinkedHashSet;
 import java.util.List;
 
+/** Configuration screen for a placed Samsung lock-screen/AOD widget. */
 public final class LockWidgetConfigActivity extends AppCompatActivity {
-    private int appWidgetId = 0;
+    private static final int MATCH_PARENT = ViewGroup.LayoutParams.MATCH_PARENT;
+    private static final int WRAP_CONTENT = ViewGroup.LayoutParams.WRAP_CONTENT;
+    /** Preview values used when the cached snapshot has nothing for a meter. */
+    private static final int SAMPLE_PRIMARY_PERCENT = 73;
+    private static final int SAMPLE_SECONDARY_PERCENT = 44;
+    private static final int PREVIEW_WIDTH_DP = 180;
+    private static final int PREVIEW_HEIGHT_DP = 82;
+
+    /** Enabled lock meters in the order the user picked them; never empty. */
+    private final LinkedHashSet<String> selectedMeters = new LinkedHashSet<>();
+    private int appWidgetId = AppWidgetManager.INVALID_APPWIDGET_ID;
     private boolean dark;
     private ImageView preview;
-    private CheckBox showCountdown;
-    private CheckBox showResetAction;
-    private CheckBox showResetCredits;
     private TextView metersHint;
-    private final LinkedHashSet<String> selectedMeters = new LinkedHashSet<>();
+    private CheckBox showCountdown;
+    private CheckBox showResetCredits;
+    private CheckBox showResetAction;
 
     @Override
-    protected void onCreate(Bundle bundle) {
+    protected void onCreate(Bundle savedInstanceState) {
         Ui.applySelectedTheme(this);
-        super.onCreate(bundle);
-        setResult(0);
-        this.appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, 0);
-        if (this.appWidgetId == 0) {
+        super.onCreate(savedInstanceState);
+        setResult(RESULT_CANCELED);
+        appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                AppWidgetManager.INVALID_APPWIDGET_ID);
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             Toast.makeText(this, "No lock-screen widget was selected.", Toast.LENGTH_LONG).show();
             finish();
-        } else {
-            this.dark = Ui.isDark(this);
-            build();
+            return;
         }
+        dark = Ui.isDark(this);
+        build();
     }
 
     @Override
@@ -52,43 +64,65 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
 
     private void build() {
         Ui.ConfigPage page = Ui.installConfigPage(this, "Lock-screen widget");
-        LinearLayout linearLayout = page.content;
-        page.preview.setBackgroundColor(Ui.controlSurface(this, this.dark));
-        this.preview = new ImageView(this);
-        this.preview.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
-        this.preview.setPadding(Ui.dp(this, 28.0f), Ui.dp(this, 28.0f), Ui.dp(this, 28.0f),
-                Ui.dp(this, 28.0f));
-        page.preview.addView(this.preview, new FrameLayout.LayoutParams(-1, -1));
+        LinearLayout content = page.content;
+        buildPreview(page.preview);
 
-        LockWidgetOptions saved = AppPreferences.loadLockWidgetOptions(this, this.appWidgetId);
-        this.selectedMeters.clear();
+        LockWidgetOptions saved = AppPreferences.loadLockWidgetOptions(this, appWidgetId);
+        selectedMeters.clear();
         for (String key : WidgetMeters.parse(saved.effectiveVisibleMeters())) {
-            if (WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key)) {
-                this.selectedMeters.add(key);
+            if (isLockMeter(key)) {
+                selectedMeters.add(key);
             }
         }
-        if (this.selectedMeters.isEmpty()) {
-            this.selectedMeters.add(WidgetMeters.FIVE_HOUR);
+        if (selectedMeters.isEmpty()) {
+            selectedMeters.add(WidgetMeters.FIVE_HOUR);
         }
 
-        linearLayout.addView(Ui.separator(this, "Meters"));
-        RoundedLinearLayout metersCard = Ui.seslCard(this, this.dark);
-        this.metersHint = Ui.text(this,
+        content.addView(Ui.separator(this, "Meters"));
+        content.addView(buildMetersCard());
+        content.addView(Ui.separator(this, "Content"));
+        content.addView(buildContentCard(saved));
+
+        CompoundButton.OnCheckedChangeListener previewCheckListener =
+                (buttonView, isChecked) -> updatePreview();
+        showCountdown.setOnCheckedChangeListener(previewCheckListener);
+        showResetCredits.setOnCheckedChangeListener(previewCheckListener);
+        showResetAction.setOnCheckedChangeListener(previewCheckListener);
+
+        page.cancel.setOnClickListener(view -> finish());
+        page.save.setOnClickListener(view -> save());
+        updateMetersHint();
+        updatePreview();
+    }
+
+    private void buildPreview(FrameLayout container) {
+        container.setBackgroundColor(Ui.controlSurface(this, dark));
+        preview = new ImageView(this);
+        preview.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+        int padding = Ui.dp(this, 28.0f);
+        preview.setPadding(padding, padding, padding, padding);
+        container.addView(preview, new FrameLayout.LayoutParams(MATCH_PARENT, MATCH_PARENT));
+    }
+
+    private RoundedLinearLayout buildMetersCard() {
+        RoundedLinearLayout card = Ui.seslCard(this, dark);
+        metersHint = Ui.text(this,
                 "Lock widgets show up to 2 meters. Extra selections are ignored.",
-                13.0f, Ui.secondaryText(this.dark));
-        this.metersHint.setPadding(0, 0, 0, Ui.dp(this, 8));
-        metersCard.addView(this.metersHint);
+                13.0f, Ui.secondaryText(dark));
+        metersHint.setPadding(0, 0, 0, Ui.dp(this, 8));
+        card.addView(metersHint);
+
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
         List<String> available = new ArrayList<>();
         for (String key : WidgetMeters.availableKeys(snapshot)) {
-            if (WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key)) {
+            if (isLockMeter(key)) {
                 available.add(key);
             }
         }
         // Prefer saved selection order so the first enabled meter stays primary.
         List<String> ordered = new ArrayList<>();
-        for (String key : this.selectedMeters) {
-            if (available.contains(key) && !ordered.contains(key)) {
+        for (String key : selectedMeters) {
+            if (available.contains(key)) {
                 ordered.add(key);
             }
         }
@@ -97,59 +131,53 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
                 ordered.add(key);
             }
         }
-        boolean first = true;
-        for (String key : ordered) {
+        for (int i = 0; i < ordered.size(); i++) {
+            String key = ordered.get(i);
             SwitchCompat toggle = new SwitchCompat(this);
-            toggle.setChecked(this.selectedMeters.contains(key));
-            metersCard.addView(buildSwitchRow(WidgetMeters.configLabel(key, snapshot), toggle,
-                    !first));
-            first = false;
-            toggle.setOnCheckedChangeListener((button, checked) -> {
-                if (checked) {
-                    this.selectedMeters.add(key);
-                } else {
-                    this.selectedMeters.remove(key);
-                    if (this.selectedMeters.isEmpty()) {
-                        this.selectedMeters.add(key);
-                        button.setChecked(true);
-                        return;
-                    }
-                }
-                updateMetersHint();
-                updatePreview();
-            });
+            toggle.setChecked(selectedMeters.contains(key));
+            card.addView(buildSwitchRow(WidgetMeters.configLabel(key, snapshot), toggle, i > 0));
+            toggle.setOnCheckedChangeListener(
+                    (button, checked) -> onMeterToggled(button, key, checked));
         }
-        linearLayout.addView(metersCard);
+        return card;
+    }
 
-        linearLayout.addView(Ui.separator(this, "Content"));
-        RoundedLinearLayout contentCard = Ui.seslCard(this, this.dark);
-        this.showCountdown = Ui.checkbox(this, "Show live time until reset", saved.showCountdown,
-                this.dark);
-        this.showResetCredits = Ui.checkbox(this, "Show reset-credit count", saved.showResetCredits,
-                this.dark);
-        this.showResetAction = Ui.checkbox(this, "Tap tile to open Use reset confirmation",
-                saved.showResetAction, this.dark);
-        contentCard.addView(this.showCountdown);
-        contentCard.addView(this.showResetCredits);
-        contentCard.addView(this.showResetAction);
-        TextView textViewText = Ui.text(this,
-                "A reset is never consumed directly from the lock screen. The tile opens a confirmation screen first.",
-                12.0f, Ui.secondaryText(this.dark));
-        LinearLayout.LayoutParams layoutParams3 = new LinearLayout.LayoutParams(-1, -2);
-        layoutParams3.setMargins(0, Ui.dp(this, 12.0f), 0, 0);
-        contentCard.addView(textViewText, layoutParams3);
-        linearLayout.addView(contentCard);
-
-        CompoundButton.OnCheckedChangeListener previewCheckListener =
-                (buttonView, isChecked) -> updatePreview();
-        this.showCountdown.setOnCheckedChangeListener(previewCheckListener);
-        this.showResetCredits.setOnCheckedChangeListener(previewCheckListener);
-        this.showResetAction.setOnCheckedChangeListener(previewCheckListener);
-
-        page.cancel.setOnClickListener(view -> finish());
-        page.save.setOnClickListener(view -> save());
+    private void onMeterToggled(CompoundButton button, String key, boolean checked) {
+        if (checked) {
+            selectedMeters.add(key);
+        } else {
+            selectedMeters.remove(key);
+            if (selectedMeters.isEmpty()) {
+                // At least one meter must stay enabled; flip the switch back on.
+                selectedMeters.add(key);
+                button.setChecked(true);
+                return;
+            }
+        }
         updateMetersHint();
         updatePreview();
+    }
+
+    private RoundedLinearLayout buildContentCard(LockWidgetOptions saved) {
+        RoundedLinearLayout card = Ui.seslCard(this, dark);
+        showCountdown = Ui.checkbox(this, "Show live time until reset", saved.showCountdown,
+                dark);
+        showResetCredits = Ui.checkbox(this, "Show reset-credit count", saved.showResetCredits,
+                dark);
+        showResetAction = Ui.checkbox(this, "Tap tile to open Use reset confirmation",
+                saved.showResetAction, dark);
+        card.addView(showCountdown);
+        card.addView(showResetCredits);
+        card.addView(showResetAction);
+        TextView resetNote = Ui.text(this,
+                "A reset is never consumed directly from the lock screen. The tile opens a "
+                        + "confirmation screen first.",
+                12.0f, Ui.secondaryText(dark));
+        LinearLayout.LayoutParams noteParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        noteParams.setMargins(0, Ui.dp(this, 12.0f), 0, 0);
+        card.addView(resetNote, noteParams);
+        return card;
     }
 
     private LinearLayout buildSwitchRow(String title, SwitchCompat toggle, boolean topDivider) {
@@ -157,59 +185,65 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         row.setOrientation(LinearLayout.VERTICAL);
         if (topDivider) {
             View divider = new View(this);
-            divider.setBackgroundColor(Ui.divider(this.dark));
-            LinearLayout.LayoutParams dividerParams = new LinearLayout.LayoutParams(-1, Ui.dp(this, 1));
+            divider.setBackgroundColor(Ui.divider(dark));
+            LinearLayout.LayoutParams dividerParams =
+                    new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 1));
             dividerParams.setMargins(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
             row.addView(divider, dividerParams);
         }
         LinearLayout content = new LinearLayout(this);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 52));
-        content.addView(Ui.text(this, title, 16, Ui.mainText(this.dark)),
-                new LinearLayout.LayoutParams(0, -2, 1));
-        content.addView(toggle, new LinearLayout.LayoutParams(-2, -2));
+        content.addView(Ui.text(this, title, 16, Ui.mainText(dark)),
+                new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
+        content.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
         content.setOnClickListener(view -> toggle.toggle());
-        row.addView(content, new LinearLayout.LayoutParams(-1, -2));
+        row.addView(content, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return row;
     }
 
     private void updateMetersHint() {
-        if (this.metersHint == null) {
+        if (metersHint == null) {
             return;
         }
-        int selected = this.selectedMeters.size();
+        int selected = selectedMeters.size();
         int capacity = WidgetMeters.lockSlotCapacity();
         String message = "Lock widgets show up to " + capacity + " meters.";
         if (selected > capacity) {
-            message += " " + (selected - capacity)
-                    + " extra selection" + (selected - capacity == 1 ? " is" : "s are")
+            int extra = selected - capacity;
+            message += " " + extra + " extra selection" + (extra == 1 ? " is" : "s are")
                     + " ignored until you deselect others.";
         }
-        this.metersHint.setText(message);
+        metersHint.setText(message);
     }
 
     private LockWidgetOptions currentOptions() {
         List<String> ordered = new ArrayList<>();
-        for (String key : this.selectedMeters) {
-            if (WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key)) {
+        for (String key : selectedMeters) {
+            if (isLockMeter(key)) {
                 ordered.add(key);
             }
         }
-        String visible = WidgetMeters.serialize(ordered);
-        boolean five = this.selectedMeters.contains(WidgetMeters.FIVE_HOUR);
-        boolean weekly = this.selectedMeters.contains(WidgetMeters.WEEKLY);
-        String metricMode = WidgetOptions.METRIC_BOTH;
-        if (five && !weekly && this.selectedMeters.size() == 1) {
-            metricMode = WidgetOptions.METRIC_FIVE_HOUR;
-        } else if (weekly && !five && this.selectedMeters.size() == 1) {
-            metricMode = WidgetOptions.METRIC_WEEKLY;
+        return new LockWidgetOptions(metricModeForSelection(), showResetCredits.isChecked(),
+                showResetAction.isChecked(), showCountdown.isChecked(),
+                WidgetMeters.serialize(ordered));
+    }
+
+    /** Legacy metric mode mirroring the selection; meter resolution falls back to it. */
+    private String metricModeForSelection() {
+        if (selectedMeters.size() == 1) {
+            if (selectedMeters.contains(WidgetMeters.FIVE_HOUR)) {
+                return WidgetOptions.METRIC_FIVE_HOUR;
+            }
+            if (selectedMeters.contains(WidgetMeters.WEEKLY)) {
+                return WidgetOptions.METRIC_WEEKLY;
+            }
         }
-        return new LockWidgetOptions(metricMode, this.showResetCredits.isChecked(),
-                this.showResetAction.isChecked(), this.showCountdown.isChecked(), visible);
+        return WidgetOptions.METRIC_BOTH;
     }
 
     private void updatePreview() {
-        if (this.preview == null || this.showCountdown == null) {
+        if (preview == null || showCountdown == null) {
             return;
         }
         LockWidgetOptions options = currentOptions();
@@ -219,22 +253,25 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
                 WidgetMeters.resolveVisibleForWidget(options.effectiveVisibleMeters(), available,
                         options.metricMode),
                 WidgetMeters.lockSlotCapacity());
-        int primary = 73;
+        int primary = SAMPLE_PRIMARY_PERCENT;
         int secondary = -1;
         int primaryIcon = R.drawable.ic_oui_time;
         int secondaryIcon = R.drawable.ic_oui_calendar_week;
         if (!visible.isEmpty()) {
-            primary = previewRemaining(visible.get(0), snapshot, 73);
+            primary = previewRemaining(visible.get(0), snapshot, SAMPLE_PRIMARY_PERCENT);
             primaryIcon = previewIcon(visible.get(0));
         }
         if (visible.size() > 1) {
-            secondary = previewRemaining(visible.get(1), snapshot, 44);
+            secondary = previewRemaining(visible.get(1), snapshot, SAMPLE_SECONDARY_PERCENT);
             secondaryIcon = previewIcon(visible.get(1));
         }
-        this.preview.setImageBitmap(SamsungLockGraphics.render(this,
-                SamsungLockWidgetSupport.Shape.WIDE, SamsungLockWidgetSupport.Style.DIALS,
-                primary, secondary, true, 180, 82, options, 2,
-                primaryIcon, secondaryIcon));
+        preview.setImageBitmap(SamsungLockGraphics.render(this,
+                SamsungLockWidgetSupport.Shape.WIDE, primary, secondary, true,
+                PREVIEW_WIDTH_DP, PREVIEW_HEIGHT_DP, primaryIcon, secondaryIcon));
+    }
+
+    private static boolean isLockMeter(String key) {
+        return WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key);
     }
 
     private static int previewIcon(String key) {
@@ -249,9 +286,11 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         if (WidgetMeters.FIVE_HOUR.equals(key) && snapshot != null && snapshot.fiveHour != null) {
             return snapshot.fiveHour.remainingPercent();
         }
-        if (WidgetMeters.WEEKLY.equals(key) && snapshot != null
-                && WidgetMeters.meterWindow(key, snapshot) != null) {
-            return WidgetMeters.meterWindow(key, snapshot).remainingPercent();
+        if (WidgetMeters.WEEKLY.equals(key)) {
+            UsageWindow longWindow = WidgetMeters.meterWindow(key, snapshot);
+            if (longWindow != null) {
+                return longWindow.remainingPercent();
+            }
         }
         UsageLimit limit = WidgetMeters.findLimit(key, snapshot);
         if (limit != null) {
@@ -263,11 +302,11 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         return fallback;
     }
 
-    public void save() {
-        AppPreferences.saveLockWidgetOptions(this, this.appWidgetId, currentOptions());
-        SamsungLockWidgetSupport.updateById(this, this.appWidgetId);
-        setResult(RESULT_OK, new Intent().putExtra(
-                AppWidgetManager.EXTRA_APPWIDGET_ID, this.appWidgetId));
+    private void save() {
+        AppPreferences.saveLockWidgetOptions(this, appWidgetId, currentOptions());
+        SamsungLockWidgetSupport.updateById(this, appWidgetId);
+        setResult(RESULT_OK, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                appWidgetId));
         Toast.makeText(this, "Lock-screen widget updated.", Toast.LENGTH_SHORT).show();
         finish();
     }

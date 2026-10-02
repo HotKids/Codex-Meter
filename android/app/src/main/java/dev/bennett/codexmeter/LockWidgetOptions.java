@@ -1,7 +1,8 @@
 package dev.bennett.codexmeter;
 
-/* JADX INFO: loaded from: classes.dex */
+/** Per-widget settings for a Samsung lock-screen/AOD widget. */
 public final class LockWidgetOptions {
+    /** Legacy single-metric mode: one of the {@code WidgetOptions.METRIC_*} values. */
     public final String metricMode;
     public final boolean showCountdown;
     public final boolean showResetAction;
@@ -9,47 +10,24 @@ public final class LockWidgetOptions {
     /** Ordered CSV of {@link WidgetMeters} keys; empty means migrate from {@link #metricMode}. */
     public final String visibleMeters;
 
-    public LockWidgetOptions(String str, boolean z, boolean z2, boolean z3) {
-        this(str, z, z2, z3, "");
-    }
-
-    public LockWidgetOptions(String str, boolean z, boolean z2, boolean z3, String visibleMeters) {
-        if (!"five_hour".equals(str) && !"weekly".equals(str)) {
-            str = "both";
-        }
-        this.metricMode = str;
-        this.showResetCredits = z;
-        this.showResetAction = z2;
-        this.showCountdown = z3;
+    public LockWidgetOptions(String metricMode, boolean showResetCredits, boolean showResetAction,
+            boolean showCountdown, String visibleMeters) {
+        boolean singleMetric = WidgetOptions.METRIC_FIVE_HOUR.equals(metricMode)
+                || WidgetOptions.METRIC_WEEKLY.equals(metricMode);
+        this.metricMode = singleMetric ? metricMode : WidgetOptions.METRIC_BOTH;
+        this.showResetCredits = showResetCredits;
+        this.showResetAction = showResetAction;
+        this.showCountdown = showCountdown;
         this.visibleMeters = visibleMeters == null ? "" : visibleMeters.trim();
     }
 
     public static LockWidgetOptions defaults() {
-        return new LockWidgetOptions("both", false, false, true,
+        return new LockWidgetOptions(WidgetOptions.METRIC_BOTH, false, false, true,
                 WidgetMeters.serialize(WidgetMeters.defaultVisible()));
     }
 
-    public LockWidgetOptions withVisibleMeters(String metersCsv) {
-        return new LockWidgetOptions(this.metricMode, this.showResetCredits, this.showResetAction,
-                this.showCountdown, metersCsv);
-    }
-
+    /** Resolved visible-meters CSV, migrating from {@link #metricMode} when unset. */
     public String effectiveVisibleMeters() {
         return WidgetMeters.effectiveVisibleCsv(this.visibleMeters, this.metricMode);
-    }
-
-    public boolean showsFiveHour() {
-        return WidgetMeters.contains(
-                WidgetMeters.parse(effectiveVisibleMeters()), WidgetMeters.FIVE_HOUR);
-    }
-
-    public boolean showsWeekly() {
-        return WidgetMeters.contains(
-                WidgetMeters.parse(effectiveVisibleMeters()), WidgetMeters.WEEKLY);
-    }
-
-    public boolean singleMetric() {
-        return WidgetMeters.resolvedSingleUsageMetric(effectiveVisibleMeters(),
-                WidgetMeters.availableKeys(null), metricMode);
     }
 }

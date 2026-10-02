@@ -1,15 +1,13 @@
 package dev.bennett.codexmeter;
 
-import dev.bennett.codexmeter.SamsungLockWidgetSupport;
-
-/* JADX INFO: loaded from: classes.dex */
+/** Square Samsung lock/AOD widget showing both allowances as bars. */
 public final class SamsungLockBarsSquareWidget extends SamsungLockWidgetProvider {
-    @Override // dev.bennett.codexmeter.SamsungLockWidgetProvider
+    @Override
     protected SamsungLockWidgetSupport.Shape shape() {
         return SamsungLockWidgetSupport.Shape.SQUARE;
     }
 
-    @Override // dev.bennett.codexmeter.SamsungLockWidgetProvider
+    @Override
     protected SamsungLockWidgetSupport.Style style() {
         return SamsungLockWidgetSupport.Style.BARS;
     }

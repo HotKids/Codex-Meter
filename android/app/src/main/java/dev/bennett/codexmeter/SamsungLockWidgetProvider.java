@@ -4,9 +4,11 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProvider;
 import android.content.Context;
 import android.os.Bundle;
-import dev.bennett.codexmeter.SamsungLockWidgetSupport;
 
-/* JADX INFO: loaded from: classes.dex */
+/**
+ * Shared lifecycle for the Samsung lock-screen/AOD widget providers. Each manifest-registered
+ * subclass only picks the shape, style and metric it renders.
+ */
 abstract class SamsungLockWidgetProvider extends AppWidgetProvider {
     protected abstract SamsungLockWidgetSupport.Shape shape();
 
@@ -16,41 +18,45 @@ abstract class SamsungLockWidgetProvider extends AppWidgetProvider {
         return SamsungLockWidgetSupport.Metric.BOTH;
     }
 
-    SamsungLockWidgetProvider() {
+    @Override
+    public final void onUpdate(Context context, AppWidgetManager appWidgetManager,
+            int[] appWidgetIds) {
+        SamsungLockWidgetSupport.updateIds(context, appWidgetManager, appWidgetIds, shape(),
+                style(), metric());
     }
 
-    @Override // android.appwidget.AppWidgetProvider
-    public final void onUpdate(Context context, AppWidgetManager appWidgetManager, int[] iArr) {
-        SamsungLockWidgetSupport.updateIds(context, appWidgetManager, iArr, shape(), style(), metric());
+    @Override
+    public final void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager,
+            int appWidgetId, Bundle newOptions) {
+        SamsungLockWidgetSupport.update(context, appWidgetManager, appWidgetId, shape(), style(),
+                metric());
     }
 
-    @Override // android.appwidget.AppWidgetProvider
-    public final void onAppWidgetOptionsChanged(Context context, AppWidgetManager appWidgetManager, int i, Bundle bundle) {
-        SamsungLockWidgetSupport.update(context, appWidgetManager, i, shape(), style(), metric());
-    }
-
-    @Override // android.appwidget.AppWidgetProvider
-    public final void onRestored(Context context, int[] iArr, int[] iArr2) {
-        if (iArr != null && iArr2 != null) {
-            int iMin = Math.min(iArr.length, iArr2.length);
-            for (int i = 0; i < iMin; i++) {
-                AppPreferences.saveLockWidgetOptions(context, iArr2[i], AppPreferences.loadLockWidgetOptions(context, iArr[i]));
-                AppPreferences.deleteLockWidgetOptions(context, iArr[i]);
+    @Override
+    public final void onRestored(Context context, int[] oldWidgetIds, int[] newWidgetIds) {
+        if (oldWidgetIds != null && newWidgetIds != null) {
+            int count = Math.min(oldWidgetIds.length, newWidgetIds.length);
+            for (int i = 0; i < count; i++) {
+                AppPreferences.saveLockWidgetOptions(context, newWidgetIds[i],
+                        AppPreferences.loadLockWidgetOptions(context, oldWidgetIds[i]));
+                AppPreferences.deleteLockWidgetOptions(context, oldWidgetIds[i]);
             }
         }
-        SamsungLockWidgetSupport.updateIds(context, AppWidgetManager.getInstance(context), iArr2, shape(), style(), metric());
+        SamsungLockWidgetSupport.updateIds(context, AppWidgetManager.getInstance(context),
+                newWidgetIds, shape(), style(), metric());
     }
 
-    @Override // android.appwidget.AppWidgetProvider
-    public final void onDeleted(Context context, int[] iArr) {
-        if (iArr != null) {
-            for (int i : iArr) {
-                AppPreferences.deleteLockWidgetOptions(context, i);
-            }
+    @Override
+    public final void onDeleted(Context context, int[] appWidgetIds) {
+        if (appWidgetIds == null) {
+            return;
+        }
+        for (int appWidgetId : appWidgetIds) {
+            AppPreferences.deleteLockWidgetOptions(context, appWidgetId);
         }
     }
 
-    @Override // android.appwidget.AppWidgetProvider
+    @Override
     public final void onEnabled(Context context) {
         SamsungLockWidgetSupport.updateAll(context);
     }

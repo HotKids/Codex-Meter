@@ -1,6 +1,9 @@
 package dev.bennett.codexmeter;
 
-/* JADX INFO: loaded from: classes.dex */
+/**
+ * Immutable appearance and content settings for a home-screen widget. Constructors validate
+ * every value, so unknown stored or imported values fall back to safe defaults.
+ */
 public final class WidgetOptions {
     public static final String ACCENT_APP = "app";
     public static final String ACCENT_AMBER = "amber";
@@ -45,6 +48,9 @@ public final class WidgetOptions {
     /** One UI 7-style discrete fill strengths when the widget background is enabled. */
     public static final int[] OPACITY_LEVELS = {56, 88, 100};
     public static final int DEFAULT_OPACITY = 88;
+    /** Opacities accepted from storage: off, legacy four-step and drawable-aligned values. */
+    private static final int[] KNOWN_OPACITIES = {0, 15, 40, 56, 70, 72, 88, 94, 100};
+
     public final String accent;
     public final String density;
     public final String displayMode;
@@ -65,87 +71,91 @@ public final class WidgetOptions {
     /** Ordered CSV of {@link WidgetMeters} keys; empty means migrate from {@link #metricMode}. */
     public final String visibleMeters;
 
-    public WidgetOptions(String str, String str2, String str3, int i, String str4, String str5) {
-        this(str, "auto", SURFACE_MATERIAL, "auto", str2, str3, i, str4, str5, "both", false, true, true, true, false, false);
+    public WidgetOptions(String layout, String theme, String accent, int opacity,
+            String resetMode, String displayMode) {
+        this(layout, DENSITY_AUTO, SURFACE_MATERIAL, GRAPHIC_AUTO, theme, accent, opacity,
+                resetMode, displayMode, METRIC_BOTH, false, true, true, true, false, false);
     }
 
-    public WidgetOptions(String str, String str2, String str3, String str4, int i, String str5, String str6, boolean z, boolean z2, boolean z3) {
-        this(str, str2, SURFACE_MATERIAL, "auto", str3, str4, i, str5, str6, "both", false, z, z2, z3, false, false);
+    public WidgetOptions(String layout, String density, String theme, String accent, int opacity,
+            String resetMode, String displayMode, boolean showPlan, boolean showUpdated,
+            boolean showRefresh) {
+        this(layout, density, SURFACE_MATERIAL, GRAPHIC_AUTO, theme, accent, opacity, resetMode,
+                displayMode, METRIC_BOTH, false, showPlan, showUpdated, showRefresh, false, false);
     }
 
-    public WidgetOptions(String str, String str2, String str3, String str4, String str5, String str6, int i, String str7, String str8, boolean z, boolean z2, boolean z3) {
-        this(str, str2, str3, str4, str5, str6, i, str7, str8, "both", false, z, z2, z3, false, false);
+    public WidgetOptions(String layout, String density, String surfaceStyle, String graphicScale,
+            String theme, String accent, int opacity, String resetMode, String displayMode,
+            boolean showPlan, boolean showUpdated, boolean showRefresh) {
+        this(layout, density, surfaceStyle, graphicScale, theme, accent, opacity, resetMode,
+                displayMode, METRIC_BOTH, false, showPlan, showUpdated, showRefresh, false, false);
     }
 
-    public WidgetOptions(String str, String str2, String str3, String str4, String str5, String str6, int i, String str7, String str8, boolean z, boolean z2, boolean z3, boolean z4) {
-        this(str, str2, str3, str4, str5, str6, i, str7, str8, "both", z, z2, z3, z4, false, false);
+    public WidgetOptions(String layout, String density, String surfaceStyle, String graphicScale,
+            String theme, String accent, int opacity, String resetMode, String displayMode,
+            boolean showTitle, boolean showPlan, boolean showUpdated, boolean showRefresh) {
+        this(layout, density, surfaceStyle, graphicScale, theme, accent, opacity, resetMode,
+                displayMode, METRIC_BOTH, showTitle, showPlan, showUpdated, showRefresh, false,
+                false);
     }
 
-    public WidgetOptions(String str, String str2, String str3, String str4, String str5, String str6, int i, String str7, String str8, String str9, boolean z, boolean z2, boolean z3, boolean z4, boolean z5, boolean z6) {
-        this(str, str2, str3, str4, str5, str6, i, str7, str8, str9, z, z2, z3,
-                z4, z5, z6, true, "");
+    public WidgetOptions(String layout, String density, String surfaceStyle, String graphicScale,
+            String theme, String accent, int opacity, String resetMode, String displayMode,
+            String metricMode, boolean showTitle, boolean showPlan, boolean showUpdated,
+            boolean showRefresh, boolean showResetCredits, boolean showResetAction) {
+        this(layout, density, surfaceStyle, graphicScale, theme, accent, opacity, resetMode,
+                displayMode, metricMode, showTitle, showPlan, showUpdated, showRefresh,
+                showResetCredits, showResetAction, true, "");
     }
 
-    private WidgetOptions(String str, String str2, String str3, String str4, String str5,
-            String str6, int i, String str7, String str8, String str9, boolean z, boolean z2,
-            boolean z3, boolean z4, boolean z5, boolean z6, boolean showPercentSymbol) {
-        this(str, str2, str3, str4, str5, str6, i, str7, str8, str9, z, z2, z3, z4, z5, z6,
-                showPercentSymbol, "");
-    }
-
-    private WidgetOptions(String str, String str2, String str3, String str4, String str5,
-            String str6, int i, String str7, String str8, String str9, boolean z, boolean z2,
-            boolean z3, boolean z4, boolean z5, boolean z6, boolean showPercentSymbol,
-            String visibleMeters) {
-        this.layout = normalizeStyle(str);
-        this.density = oneOf(str2, "auto", "compact", DENSITY_COMFORTABLE) ? str2 : "auto";
-        this.surfaceStyle = oneOf(str3, SURFACE_MATERIAL, SURFACE_ONE_UI) ? str3 : SURFACE_MATERIAL;
-        this.graphicScale = oneOf(str4, "auto", GRAPHIC_LARGE, GRAPHIC_MAX) ? str4 : "auto";
-        this.theme = oneOf(str5, THEME_SYSTEM, THEME_DARK, THEME_LIGHT) ? str5 : THEME_SYSTEM;
-        this.accent = validAccent(str6) ? str6 : ACCENT_MINT;
-        // Accept legacy four-step and drawable-aligned values, then snap to One UI's three
-        // fill strengths (or fully off) so saved widgets migrate cleanly.
-        if (i != 0 && i != 15 && i != 40 && i != 56 && i != 70 && i != 72 && i != 88 && i != 94
-                && i != 100) {
-            i = DEFAULT_OPACITY;
-        } else if (i > 0) {
-            i = snapOpacity(i);
-        }
-        this.opacity = i;
-        this.resetMode = oneOf(str7, RESET_ABSOLUTE, RESET_RELATIVE, "both", RESET_HIDDEN) ? str7 : RESET_ABSOLUTE;
-        this.displayMode = DISPLAY_USED.equals(str8) ? DISPLAY_USED : DISPLAY_REMAINING;
-        this.metricMode = oneOf(str9, "both", "five_hour", "weekly") ? str9 : "both";
-        this.showTitle = z;
-        this.showPlan = z2;
-        this.showUpdated = z3;
-        this.showRefresh = z4;
-        this.showResetCredits = z5;
-        this.showResetAction = z6;
+    private WidgetOptions(String layout, String density, String surfaceStyle,
+            String graphicScale, String theme, String accent, int opacity, String resetMode,
+            String displayMode, String metricMode, boolean showTitle, boolean showPlan,
+            boolean showUpdated, boolean showRefresh, boolean showResetCredits,
+            boolean showResetAction, boolean showPercentSymbol, String visibleMeters) {
+        this.layout = normalizeStyle(layout);
+        this.density = oneOf(density, DENSITY_AUTO, DENSITY_COMPACT, DENSITY_COMFORTABLE)
+                ? density : DENSITY_AUTO;
+        this.surfaceStyle = oneOf(surfaceStyle, SURFACE_MATERIAL, SURFACE_ONE_UI)
+                ? surfaceStyle : SURFACE_MATERIAL;
+        this.graphicScale = oneOf(graphicScale, GRAPHIC_AUTO, GRAPHIC_LARGE, GRAPHIC_MAX)
+                ? graphicScale : GRAPHIC_AUTO;
+        this.theme = oneOf(theme, THEME_SYSTEM, THEME_DARK, THEME_LIGHT) ? theme : THEME_SYSTEM;
+        this.accent = validAccent(accent) ? accent : ACCENT_MINT;
+        this.opacity = normalizeOpacity(opacity);
+        this.resetMode = oneOf(resetMode, RESET_ABSOLUTE, RESET_RELATIVE, RESET_BOTH, RESET_HIDDEN)
+                ? resetMode : RESET_ABSOLUTE;
+        this.displayMode = DISPLAY_USED.equals(displayMode) ? DISPLAY_USED : DISPLAY_REMAINING;
+        this.metricMode = oneOf(metricMode, METRIC_BOTH, METRIC_FIVE_HOUR, METRIC_WEEKLY)
+                ? metricMode : METRIC_BOTH;
+        this.showTitle = showTitle;
+        this.showPlan = showPlan;
+        this.showUpdated = showUpdated;
+        this.showRefresh = showRefresh;
+        this.showResetCredits = showResetCredits;
+        this.showResetAction = showResetAction;
         this.showPercentSymbol = showPercentSymbol;
         this.visibleMeters = visibleMeters == null ? "" : visibleMeters.trim();
     }
 
     public WidgetOptions withPercentSymbol(boolean show) {
-        return new WidgetOptions(this.layout, this.density, this.surfaceStyle,
-                this.graphicScale, this.theme, this.accent, this.opacity, this.resetMode,
-                this.displayMode, this.metricMode, this.showTitle, this.showPlan,
-                this.showUpdated, this.showRefresh, this.showResetCredits,
-                this.showResetAction, show, this.visibleMeters);
+        return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
+                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
+                showUpdated, showRefresh, showResetCredits, showResetAction,
+                show, visibleMeters);
     }
 
     public WidgetOptions withVisibleMeters(String metersCsv) {
-        return new WidgetOptions(this.layout, this.density, this.surfaceStyle,
-                this.graphicScale, this.theme, this.accent, this.opacity, this.resetMode,
-                this.displayMode, this.metricMode, this.showTitle, this.showPlan,
-                this.showUpdated, this.showRefresh, this.showResetCredits,
-                this.showResetAction, this.showPercentSymbol,
-                metersCsv == null ? "" : metersCsv);
+        return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
+                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
+                showUpdated, showRefresh, showResetCredits, showResetAction,
+                showPercentSymbol, metersCsv);
     }
 
     public static WidgetOptions defaults() {
-        return new WidgetOptions(STYLE_AUTO, "auto", SURFACE_ONE_UI, "auto", THEME_SYSTEM,
-                ACCENT_BLUE, DEFAULT_OPACITY, RESET_HIDDEN, DISPLAY_REMAINING, "both",
-                false, false, false, false, false, false)
+        return new WidgetOptions(STYLE_AUTO, DENSITY_AUTO, SURFACE_ONE_UI, GRAPHIC_AUTO,
+                THEME_SYSTEM, ACCENT_BLUE, DEFAULT_OPACITY, RESET_HIDDEN, DISPLAY_REMAINING,
+                METRIC_BOTH, false, false, false, false, false, false)
                 .withVisibleMeters(WidgetMeters.serialize(WidgetMeters.defaultVisible()));
     }
 
@@ -180,12 +190,12 @@ public final class WidgetOptions {
 
     /** Effective auto / dials / bars preference used by the renderer. */
     public String layoutPreference() {
-        return WidgetMeters.layoutPreference(this.layout);
+        return WidgetMeters.layoutPreference(layout);
     }
 
     /** Resolved visible-meters CSV, migrating from metric_mode when unset. */
     public String effectiveVisibleMeters() {
-        return WidgetMeters.effectiveVisibleCsv(this.visibleMeters, this.metricMode);
+        return WidgetMeters.effectiveVisibleCsv(visibleMeters, metricMode);
     }
 
     public boolean showsFiveHour() {
@@ -203,17 +213,17 @@ public final class WidgetOptions {
                 WidgetMeters.availableKeys(null), metricMode);
     }
 
-    public static String normalizeStyle(String str) {
-        if (LAYOUT_DETAILED.equals(str)) {
+    public static String normalizeStyle(String style) {
+        if (LAYOUT_DETAILED.equals(style)) {
             return STYLE_BARS;
         }
-        if ("compact".equals(str)) {
+        if (LAYOUT_COMPACT.equals(style)) {
             return STYLE_MINIMAL;
         }
         // Keep rings/minimal as stored values for transfer round-trips; layoutPreference()
         // maps them to adaptive auto at render time.
-        return !oneOf(str, "auto", STYLE_BARS, STYLE_RINGS, STYLE_DIALS, STYLE_MINIMAL)
-                ? "auto" : str;
+        return oneOf(style, STYLE_AUTO, STYLE_BARS, STYLE_RINGS, STYLE_DIALS, STYLE_MINIMAL)
+                ? style : STYLE_AUTO;
     }
 
     public static String normalizeTapAction(String value) {
@@ -223,17 +233,30 @@ public final class WidgetOptions {
         return TAP_OPEN_APP;
     }
 
-    private static boolean validAccent(String str) {
-        return oneOf(str, ACCENT_APP, ACCENT_MINT, ACCENT_BLUE, ACCENT_AMBER,
+    /**
+     * Accepts known stored opacities and snaps them to One UI's three fill strengths (or fully
+     * off) so saved widgets migrate cleanly; anything else becomes the default.
+     */
+    private static int normalizeOpacity(int opacity) {
+        for (int known : KNOWN_OPACITIES) {
+            if (known == opacity) {
+                return opacity > 0 ? snapOpacity(opacity) : opacity;
+            }
+        }
+        return DEFAULT_OPACITY;
+    }
+
+    private static boolean validAccent(String accent) {
+        return oneOf(accent, ACCENT_APP, ACCENT_MINT, ACCENT_BLUE, ACCENT_AMBER,
                 ACCENT_VIOLET, ACCENT_ROSE, ACCENT_CYAN, ACCENT_LIME, ACCENT_MONO);
     }
 
-    private static boolean oneOf(String str, String... strArr) {
-        if (str == null) {
+    private static boolean oneOf(String value, String... options) {
+        if (value == null) {
             return false;
         }
-        for (String str2 : strArr) {
-            if (str2.equals(str)) {
+        for (String option : options) {
+            if (option.equals(value)) {
                 return true;
             }
         }
