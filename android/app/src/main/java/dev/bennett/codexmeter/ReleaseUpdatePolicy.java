@@ -19,10 +19,20 @@ public final class ReleaseUpdatePolicy {
         return candidate != null && threshold != null && candidate.compareTo(threshold) < 0;
     }
 
+    /**
+     * English reference copy of the irreversible-release warning. Screens show it through the
+     * {@code updates_detail_irreversible} and {@code updates_history_irreversible_note} string
+     * resources.
+     */
     public static String irreversibleSummary() {
         return "Irreversible · Manual GitHub update required";
     }
 
+    /**
+     * English reference copy of the irreversible-release explanation. Screens show the
+     * {@code updates_irreversible_detail} string resource formatted with
+     * {@link #FIRST_IN_APP_UPDATE_VERSION}.
+     */
     public static String irreversibleDetail() {
         return "Builds before Codex Meter " + FIRST_IN_APP_UPDATE_VERSION
                 + " lack working in-app updates against the canonical repository. Install or "

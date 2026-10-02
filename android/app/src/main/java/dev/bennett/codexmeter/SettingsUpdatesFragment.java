@@ -58,13 +58,10 @@ public final class SettingsUpdatesFragment extends SettingsPageFragment {
 
     private void confirmAlphaChannel() {
         new AlertDialog.Builder(requireContext())
-                .setTitle("Switch to the alpha channel?")
-                .setMessage("Alpha builds ship faster with less testing and may be "
-                        + "unstable. They use the same signing key and version code "
-                        + "as stable releases, so switching back to stable later is "
-                        + "one in-place install with no uninstalling or data loss.")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Use alpha",
+                .setTitle(R.string.updates_alpha_dialog_title)
+                .setMessage(R.string.updates_alpha_dialog_message)
+                .setNegativeButton(android.R.string.cancel, null)
+                .setPositiveButton(R.string.updates_alpha_dialog_confirm,
                         (dialog, which) -> applyUpdateChannel(UpdateChannel.ALPHA))
                 .show();
     }
@@ -152,25 +149,24 @@ public final class SettingsUpdatesFragment extends SettingsPageFragment {
             return;
         }
         if (!UpdatePreferences.automaticChecks(requireContext())) {
-            automaticChecksPreference.setSummary("Automatic GitHub release checks are off");
+            automaticChecksPreference.setSummary(R.string.updates_automatic_checks_off);
             return;
         }
-        automaticChecksPreference.setSummary(UpdateCheckFrequency.summary(
-                UpdatePreferences.checkIntervalHours(requireContext())));
+        automaticChecksPreference.setSummary(UpdatePreferences.checkIntervalSummary(
+                requireContext(), UpdatePreferences.checkIntervalHours(requireContext())));
     }
 
     private boolean ensureNotificationPermission() {
         if (lacksNotificationPermission()) {
             requestNotificationPermission(REQUEST_NOTIFICATION_PERMISSION);
-            showToast("Allow notifications, then enable update alerts again.",
+            showToast(getString(R.string.updates_notification_permission_needed),
                     Toast.LENGTH_LONG);
             return false;
         }
         if (areAppNotificationsEnabled()) {
             return true;
         }
-        showToast("Enable app notifications, then turn on update alerts again.",
-                Toast.LENGTH_LONG);
+        showToast(getString(R.string.updates_notifications_disabled), Toast.LENGTH_LONG);
         return false;
     }
 

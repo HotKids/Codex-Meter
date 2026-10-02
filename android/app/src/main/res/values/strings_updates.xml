@@ -1,0 +1,147 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- In-app updater: update page, release history, installer errors, update alerts and the
+     Updates settings page. -->
+<resources>
+    <!-- Update page -->
+    <string name="updates_app_update_title">App update</string>
+    <string name="updates_checking">Checking for updates</string>
+    <string name="updates_release_history">Release history</string>
+    <string name="updates_whats_new">What’s new</string>
+    <string name="updates_open_on_github">Open on GitHub</string>
+    <string name="updates_no_browser_for_release_page">No browser can open the GitHub release page.</string>
+    <string name="updates_no_installable_releases_published">No installable GitHub releases are published yet.</string>
+    <!-- %1$s: release version, e.g. 2.8.0 -->
+    <string name="updates_version_available_title">Codex Meter %1$s is available</string>
+    <!-- %1$s: release version; title when that version is the installed one -->
+    <string name="updates_current_version_title">Codex Meter %1$s</string>
+    <!-- %1$s: stable release version that replaces the installed alpha build -->
+    <string name="updates_return_to_version_title">Return to Codex Meter %1$s</string>
+    <!-- %1$s: release version older than the installed one -->
+    <string name="updates_older_release_title">Older release %1$s</string>
+    <!-- %1$s: installed version -->
+    <string name="updates_detail_irreversible">Irreversible · Manual GitHub update required · Installed: %1$s</string>
+    <string name="updates_detail_alpha_upgrade">Installed: %1$s · Verified GitHub alpha upgrade</string>
+    <string name="updates_detail_upgrade">Installed: %1$s · Verified GitHub upgrade</string>
+    <string name="updates_detail_reinstall">This version is currently installed. You can verify and reinstall it.</string>
+    <string name="updates_detail_return_to_stable">Installed: %1$s · Alpha builds share the stable version code, so the newest stable release installs in place without uninstalling or losing data.</string>
+    <string name="updates_detail_downgrade">Installed: %1$s · Android requires uninstalling before this downgrade.</string>
+    <!-- %1$s: first version with a working in-app updater, e.g. 2.3.0 -->
+    <string name="updates_irreversible_detail">Builds before Codex Meter %1$s lack working in-app updates against the canonical repository. Install or recover from this release only via its GitHub release page; the app cannot upgrade you back afterward.</string>
+    <string name="updates_action_return_to_stable">Return to stable</string>
+    <string name="updates_action_download_older">Download older APK</string>
+    <string name="updates_action_reinstall">Verify and reinstall</string>
+    <string name="updates_action_install">Download and install</string>
+    <string name="updates_check_unavailable_title">Update check unavailable</string>
+    <string name="updates_check_again">Check again</string>
+    <string name="updates_install_permission_title">Allow app installs</string>
+    <string name="updates_install_permission_message">Android requires permission for Codex Meter to hand its verified GitHub APK to the system installer. You still approve every update.</string>
+    <string name="updates_open_settings">Open settings</string>
+    <string name="updates_install_permission_settings_failed">Could not open install permission settings.</string>
+    <string name="updates_downgrade_title">Downgrade requires uninstalling</string>
+    <string name="updates_downgrade_message">Android blocks in-place downgrades for ordinary apps. Uninstalling Codex Meter removes its account, settings, cached usage, and widgets. The older APK will open in your browser so it remains available after uninstalling.</string>
+    <string name="updates_open_apk_download">Open APK download</string>
+    <string name="updates_no_browser_for_apk">No browser can open the APK download.</string>
+
+    <!-- Release history -->
+    <string name="updates_history_loading">Loading release history</string>
+    <string name="updates_history_published_versions">Published versions</string>
+    <!-- %1$s: installed version -->
+    <string name="updates_history_installed_version">Installed version %1$s</string>
+    <!-- %1$s: first version with a working in-app updater, e.g. 2.3.0 -->
+    <string name="updates_history_note">Newer and matching releases from Codex Meter %1$s onward are checksum- and signature-verified in the app. Releases before %1$s are irreversible and must be installed from GitHub because those builds lack working in-app updates. Other older versions still require uninstalling first, which removes local data and widgets. Alpha builds are the exception: they share the stable version code, so the newest stable release always installs back in place.</string>
+    <string name="updates_history_empty_title">No installable releases yet</string>
+    <string name="updates_history_empty_detail">GitHub currently has no published release containing both the expected APK and SHA256SUMS.txt.</string>
+    <!-- %1$s: release version; %2$s: publish date (yyyy-MM-dd) -->
+    <string name="updates_history_summary_prerelease">v%1$s · Prerelease · %2$s</string>
+    <string name="updates_history_summary_irreversible">v%1$s · Irreversible · %2$s</string>
+    <string name="updates_history_summary_update">v%1$s · Update · %2$s</string>
+    <string name="updates_history_summary_installed">v%1$s · Installed · %2$s</string>
+    <string name="updates_history_summary_older">v%1$s · Older · %2$s</string>
+    <string name="updates_history_unknown_date">Unknown date</string>
+    <string name="updates_history_irreversible_note">Irreversible · Manual GitHub update required. Update manually from the GitHub release page.</string>
+    <string name="updates_history_view_details">View release details</string>
+    <string name="updates_history_action_return_to_stable">View stable return</string>
+    <string name="updates_history_action_downgrade">View downgrade</string>
+    <string name="updates_history_action_reinstall">View reinstall</string>
+    <string name="updates_history_action_update">View update</string>
+
+    <!-- Release check errors -->
+    <string name="updates_error_check_failed">Could not check GitHub releases.</string>
+    <string name="updates_error_too_much_metadata">GitHub returned too much release metadata.</string>
+    <string name="updates_error_check_redirect_untrusted">GitHub redirected the update check to an untrusted host.</string>
+    <string name="updates_error_rate_limited">GitHub temporarily limited update checks. Try again later.</string>
+    <!-- %1$d: HTTP status code; %2$s: error message returned by GitHub (not translated) -->
+    <string name="updates_error_check_http_message">GitHub update check failed (%1$d): %2$s</string>
+    <!-- %1$d: HTTP status code -->
+    <string name="updates_error_check_http">GitHub update check failed with HTTP %1$d.</string>
+
+    <!-- Download and install errors -->
+    <string name="updates_error_prepare_failed">The update could not be prepared.</string>
+    <string name="updates_error_install_failed">Update installation failed.</string>
+    <string name="updates_error_no_release_selected">No GitHub release was selected.</string>
+    <string name="updates_error_unsafe_apk_size">The release APK has an unsafe file size.</string>
+    <!-- %1$s: APK file name, e.g. CodexMeter-2.8.0.apk -->
+    <string name="updates_error_checksum_missing_apk">The release checksum does not list %1$s.</string>
+    <string name="updates_error_storage">Could not prepare update storage.</string>
+    <string name="updates_error_verified_apk_missing">The verified update APK is missing.</string>
+    <string name="updates_error_apk_size_mismatch">The APK size does not match the GitHub release.</string>
+    <string name="updates_error_sha256_mismatch">The downloaded APK failed SHA-256 verification.</string>
+    <string name="updates_error_apk_unreadable">Android could not read the downloaded APK.</string>
+    <string name="updates_error_package_name_mismatch">The APK package name is not Codex Meter.</string>
+    <string name="updates_error_version_mismatch">The APK version does not match the selected release.</string>
+    <string name="updates_error_signature_mismatch">The APK signing certificate does not match this installation.</string>
+    <string name="updates_error_downgrade_unsupported">Android cannot install an older version over the current app.</string>
+    <string name="updates_error_checksum_too_large">The checksum file is unexpectedly large.</string>
+    <string name="updates_error_download_size_changed">The APK download size changed unexpectedly.</string>
+    <string name="updates_error_download_canceled">Update download canceled.</string>
+    <string name="updates_error_download_too_large">The APK download exceeded its expected size.</string>
+    <string name="updates_error_untrusted_download_url">The release download URL is not trusted.</string>
+    <string name="updates_error_download_redirect_untrusted">GitHub redirected the download to an untrusted host.</string>
+    <!-- %1$d: HTTP status code -->
+    <string name="updates_error_download_http">GitHub download failed with HTTP %1$d.</string>
+    <!-- %1$d: PackageInstaller status code -->
+    <string name="updates_error_install_rejected">Android rejected the update (status %1$d).</string>
+    <string name="updates_error_no_confirmation_screen">Android did not provide an update confirmation screen.</string>
+    <string name="updates_error_confirmation_screen_failed">Could not open Android\'s update confirmation screen.</string>
+
+    <!-- Update notification -->
+    <string name="updates_notification_channel_name">App updates</string>
+    <string name="updates_notification_channel_description">Alerts when a signed Codex Meter release is available</string>
+    <string name="updates_notification_return_to_stable_text">The stable release installs in place over this alpha build.</string>
+    <string name="updates_notification_alpha_text">A signed alpha release is ready to install.</string>
+    <string name="updates_notification_stable_text">A signed GitHub release is ready to install.</string>
+    <string name="updates_notification_action_open">Open</string>
+    <string name="updates_notification_action_update">Update</string>
+
+    <!-- Updates settings page -->
+    <string name="updates_pref_category_channel">Release channel</string>
+    <string name="updates_pref_channel_title">Update channel</string>
+    <string name="updates_pref_category_automatic">Automatic updates</string>
+    <string name="updates_pref_automatic_title">Check automatically</string>
+    <string name="updates_pref_automatic_summary">Check signed GitHub releases on a schedule</string>
+    <string name="updates_pref_frequency_title">Check frequency</string>
+    <string name="updates_pref_notify_title">Notify when an update is available</string>
+    <string name="updates_pref_notify_summary">Show a notification with Open and Update actions</string>
+    <string name="updates_pref_category_more">More options</string>
+    <string name="updates_pref_check_now_title">Check for updates</string>
+    <string name="updates_pref_check_now_summary">Check GitHub now</string>
+    <string name="updates_pref_history_summary">Available versions and downgrade requirements</string>
+    <string name="updates_alpha_dialog_title">Switch to the alpha channel?</string>
+    <string name="updates_alpha_dialog_message">Alpha builds ship faster with less testing and may be unstable. They use the same signing key and version code as stable releases, so switching back to stable later is one in-place install with no uninstalling or data loss.</string>
+    <string name="updates_alpha_dialog_confirm">Use alpha</string>
+    <string name="updates_automatic_checks_off">Automatic GitHub release checks are off</string>
+    <string name="updates_notification_permission_needed">Allow notifications, then enable update alerts again.</string>
+    <string name="updates_notifications_disabled">Enable app notifications, then turn on update alerts again.</string>
+
+    <!-- Automatic check intervals (UpdateCheckFrequency) -->
+    <string name="updates_frequency_hourly">Every hour</string>
+    <string name="updates_frequency_every_6_hours">Every 6 hours</string>
+    <string name="updates_frequency_every_12_hours">Every 12 hours</string>
+    <string name="updates_frequency_daily">Daily</string>
+    <string name="updates_frequency_weekly">Weekly</string>
+    <string name="updates_frequency_summary_hourly">Check signed GitHub releases every hour</string>
+    <string name="updates_frequency_summary_every_6_hours">Check signed GitHub releases every 6 hours</string>
+    <string name="updates_frequency_summary_every_12_hours">Check signed GitHub releases every 12 hours</string>
+    <string name="updates_frequency_summary_daily">Check signed GitHub releases daily</string>
+    <string name="updates_frequency_summary_weekly">Check signed GitHub releases weekly</string>
+</resources>

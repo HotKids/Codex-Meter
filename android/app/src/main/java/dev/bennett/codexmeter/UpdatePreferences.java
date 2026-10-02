@@ -86,6 +86,40 @@ public final class UpdatePreferences {
                 .apply();
     }
 
+    /** Localized name of an automatic check interval, such as "Every 6 hours". */
+    public static String checkIntervalLabel(Context context, int hours) {
+        switch (UpdateCheckFrequency.normalize(hours)) {
+            case UpdateCheckFrequency.HOURLY:
+                return context.getString(R.string.updates_frequency_hourly);
+            case UpdateCheckFrequency.EVERY_6_HOURS:
+                return context.getString(R.string.updates_frequency_every_6_hours);
+            case UpdateCheckFrequency.EVERY_12_HOURS:
+                return context.getString(R.string.updates_frequency_every_12_hours);
+            case UpdateCheckFrequency.WEEKLY:
+                return context.getString(R.string.updates_frequency_weekly);
+            case UpdateCheckFrequency.DAILY:
+            default:
+                return context.getString(R.string.updates_frequency_daily);
+        }
+    }
+
+    /** Localized summary of the automatic-checks switch for an interval. */
+    public static String checkIntervalSummary(Context context, int hours) {
+        switch (UpdateCheckFrequency.normalize(hours)) {
+            case UpdateCheckFrequency.HOURLY:
+                return context.getString(R.string.updates_frequency_summary_hourly);
+            case UpdateCheckFrequency.EVERY_6_HOURS:
+                return context.getString(R.string.updates_frequency_summary_every_6_hours);
+            case UpdateCheckFrequency.EVERY_12_HOURS:
+                return context.getString(R.string.updates_frequency_summary_every_12_hours);
+            case UpdateCheckFrequency.WEEKLY:
+                return context.getString(R.string.updates_frequency_summary_weekly);
+            case UpdateCheckFrequency.DAILY:
+            default:
+                return context.getString(R.string.updates_frequency_summary_daily);
+        }
+    }
+
     public static String notifiedVersion(Context context) {
         return prefs(context).getString(KEY_NOTIFIED_VERSION, "");
     }
@@ -119,7 +153,8 @@ public final class UpdatePreferences {
     /** Validates and stores a fresh release list, then notifies listeners. */
     public static void saveSuccess(Context context, String json, String etag) throws Exception {
         if (json == null || json.length() > MAX_CACHE_LENGTH) {
-            throw new IllegalArgumentException("GitHub returned too much release metadata.");
+            throw new IllegalArgumentException(
+                    context.getString(R.string.updates_error_too_much_metadata));
         }
         List<GitHubRelease> parsed = GitHubReleaseParser.parse(json, BuildConfig.DEBUG);
         SharedPreferences.Editor editor = prefs(context).edit()
@@ -149,7 +184,8 @@ public final class UpdatePreferences {
     public static void saveError(Context context, String error) {
         prefs(context).edit()
                 .putLong(KEY_LAST_CHECK, System.currentTimeMillis())
-                .putString(KEY_LAST_ERROR, sanitize(error, "Could not check GitHub releases."))
+                .putString(KEY_LAST_ERROR, sanitize(error,
+                        context.getString(R.string.updates_error_check_failed)))
                 .apply();
         broadcast(context);
     }
@@ -214,7 +250,8 @@ public final class UpdatePreferences {
         if (error == null || error.trim().isEmpty()) {
             editor.remove(KEY_INSTALL_ERROR);
         } else {
-            editor.putString(KEY_INSTALL_ERROR, sanitize(error, "Update installation failed."));
+            editor.putString(KEY_INSTALL_ERROR, sanitize(error,
+                    context.getString(R.string.updates_error_install_failed)));
         }
         editor.apply();
         broadcast(context);

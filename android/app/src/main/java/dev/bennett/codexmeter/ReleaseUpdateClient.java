@@ -10,7 +10,10 @@ import java.nio.charset.StandardCharsets;
 import java.util.List;
 import org.json.JSONObject;
 
-/** Public, unauthenticated GitHub release discovery client. */
+/**
+ * Public, unauthenticated GitHub release discovery client. Failure messages become the stored
+ * last check error shown on the update screens, so they are read from string resources.
+ */
 public final class ReleaseUpdateClient {
     private static final int MAX_RESPONSE_BYTES = 512 * 1024;
     private static final int MAX_ERROR_BODY_BYTES = 16 * 1024;
@@ -40,7 +43,7 @@ public final class ReleaseUpdateClient {
             } catch (Exception exception) {
                 DiagnosticLog.error(app, "update", "release_check_failed", exception,
                         "duration_ms", SystemClock.elapsedRealtime() - started);
-                UpdatePreferences.saveError(app, safeMessage(exception));
+                UpdatePreferences.saveError(app, safeMessage(app, exception));
                 throw exception;
             }
         }
@@ -84,7 +87,7 @@ public final class ReleaseUpdateClient {
                     "url", DiagnosticSanitizer.safeUrl(finalUrl.toString()));
             if (!isTrustedApiUrl(finalUrl, localDebugServer)) {
                 throw new SecurityException(
-                        "GitHub redirected the update check to an untrusted host.");
+                        app.getString(R.string.updates_error_check_redirect_untrusted));
             }
             if (status == HttpURLConnection.HTTP_NOT_MODIFIED) {
                 if (!UpdatePreferences.hasUsableCache(app)) {
@@ -95,10 +98,10 @@ public final class ReleaseUpdateClient {
                 return UpdatePreferences.releases(app);
             }
             if (status != HttpURLConnection.HTTP_OK) {
-                String detail = read(connection.getErrorStream(), MAX_ERROR_BODY_BYTES);
-                throw new IllegalStateException(githubError(status, detail));
+                String detail = read(app, connection.getErrorStream(), MAX_ERROR_BODY_BYTES);
+                throw new IllegalStateException(githubError(app, status, detail));
             }
-            String json = read(connection.getInputStream(), MAX_RESPONSE_BYTES);
+            String json = read(app, connection.getInputStream(), MAX_RESPONSE_BYTES);
             UpdatePreferences.saveSuccess(app, json, connection.getHeaderField("ETag"));
             return UpdatePreferences.releases(app);
         } finally {
@@ -128,7 +131,8 @@ public final class ReleaseUpdateClient {
     }
 
     /** Reads {@code input} as UTF-8, failing once more than {@code limit} bytes arrive. */
-    private static String read(InputStream input, int limit) throws Exception {
+    private static String read(Context context, InputStream input, int limit)
+            throws Exception {
         if (input == null) {
             return "";
         }
@@ -140,7 +144,8 @@ public final class ReleaseUpdateClient {
             while ((read = stream.read(buffer)) != -1) {
                 total += read;
                 if (total > limit) {
-                    throw new IllegalStateException("GitHub returned too much release metadata.");
+                    throw new IllegalStateException(
+                            context.getString(R.string.updates_error_too_much_metadata));
                 }
                 output.write(buffer, 0, read);
             }
@@ -148,7 +153,8 @@ public final class ReleaseUpdateClient {
         }
     }
 
-    private static String githubError(int status, String detail) {
+    /** User-facing check failure; GitHub's own {@code message} is passed through untranslated. */
+    private static String githubError(Context context, int status, String detail) {
         String message = "";
         try {
             message = new JSONObject(detail).optString("message", "");
@@ -156,18 +162,18 @@ public final class ReleaseUpdateClient {
             // Not a JSON error body; fall back to the status code alone.
         }
         if (status == HttpURLConnection.HTTP_FORBIDDEN || status == HTTP_TOO_MANY_REQUESTS) {
-            return "GitHub temporarily limited update checks. Try again later.";
+            return context.getString(R.string.updates_error_rate_limited);
         }
         if (!message.isEmpty()) {
-            return "GitHub update check failed (" + status + "): " + message;
+            return context.getString(R.string.updates_error_check_http_message, status, message);
         }
-        return "GitHub update check failed with HTTP " + status + ".";
+        return context.getString(R.string.updates_error_check_http, status);
     }
 
-    static String safeMessage(Exception exception) {
+    static String safeMessage(Context context, Exception exception) {
         String message = exception == null ? "" : exception.getMessage();
         if (message == null || message.trim().isEmpty()) {
-            message = "Could not check GitHub releases.";
+            message = context.getString(R.string.updates_error_check_failed);
         }
         return message.length() <= UpdatePreferences.MAX_ERROR_LENGTH
                 ? message : message.substring(0, UpdatePreferences.MAX_ERROR_LENGTH);
