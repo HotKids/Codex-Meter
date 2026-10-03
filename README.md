@@ -62,6 +62,11 @@ Codex Meter 将 ChatGPT 账户的会话限额、每周限额和剩余额度集�
 
 更多信息可在应用的「隐私说明」中查看。
 
+## TODO
+
+- [ ] 多账号支持
+- [ ] Claude / Grok 等服务支持
+
 ## 反馈与致谢
 
 遇到问题或有功能建议，欢迎提交 [GitHub Issue](https://github.com/HotKids/Codex-Meter/issues)。请附上应用版本、设备型号、系统版本及复现步骤；界面问题可附截图。
