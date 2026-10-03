@@ -80,7 +80,7 @@
     <string name="settings_dashboard_window_summary">仅在 OpenAI 返回此周期时显示</string>
     <string name="settings_dashboard_five_hour">会话限额</string>
     <string name="settings_dashboard_weekly">每周限额</string>
-    <string name="settings_dashboard_usage_credits">额度余额</string>
+    <string name="settings_dashboard_usage_credits">剩余额度</string>
     <string name="settings_dashboard_usage_credits_summary">余额为零或负数时自动隐藏</string>
     <string name="settings_dashboard_usage_history">用量历史</string>
     <string name="settings_dashboard_usage_history_summary">查看 Work、Codex 及其他智能体任务中的套餐用量和额度消耗情况。不包括 Chat 模式中的对话。</string>

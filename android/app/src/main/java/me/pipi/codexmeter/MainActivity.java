@@ -586,6 +586,12 @@ public final class MainActivity extends AppCompatActivity {
                 Ui.mainText(this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
+        TextView detail = Ui.text(this, getString(R.string.dashboard_credits_detail),
+                12, Ui.secondaryText(this.dark));
+        LinearLayout.LayoutParams detailParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        detailParams.setMargins(0, Ui.dp(this, 4), 0, 0);
+        card.addView(detail, detailParams);
         card.addView(buildIconDetailRow(R.drawable.ic_ms_account_balance_wallet,
                 usageCreditBalance(credits), usageCreditsSummary(credits)));
         return card;

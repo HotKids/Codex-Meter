@@ -24,7 +24,7 @@
     <!-- Material (Clear) style -->
     <string name="widget_material_refresh">刷新</string>
     <string name="widget_material_resets_at">重置时间：%1$s</string>
-    <string name="widget_material_reset_credits">可用重置额度：%1$d</string>
+    <string name="widget_material_reset_credits">可用重置：%1$d</string>
 
     <string name="widget_preview_five_hour_reset">重置时间：10/03 15:24</string>
     <string name="widget_preview_weekly_reset">重置时间：10/05 12:00</string>

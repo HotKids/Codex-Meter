@@ -5,13 +5,13 @@
     <string name="dashboard_duration_days_hours">%1$dd %2$dh</string>
     <string name="dashboard_duration_hours_minutes">%1$dh %2$d 分钟</string>
     <string name="dashboard_duration_minutes">%1$d 分钟</string>
-    <string name="dashboard_relative_in">%1$s后</string>
+    <string name="dashboard_relative_in">%1$s 后</string>
     <string name="dashboard_relative_now">现在</string>
     <string name="dashboard_time_today">今天 %1$s</string>
     <string name="dashboard_time_tomorrow">明天 %1$s</string>
     <string name="dashboard_time_date">%1$s %2$s</string>
     <string name="dashboard_reset_unavailable">暂无重置时间</string>
-    <string name="dashboard_resets_relative">%1$s后重置</string>
+    <string name="dashboard_resets_relative">%1$s 后重置</string>
     <string name="dashboard_resets_now">立即重置</string>
     <string name="dashboard_resets_absolute">重置时间：%1$s</string>
     <string name="dashboard_resets_both">重置时间：%1$s（%2$s）</string>
@@ -59,9 +59,10 @@
     <string name="dashboard_credits_available">有可用额度</string>
     <string name="dashboard_credits_none_purchased">未购买额度</string>
     <string name="dashboard_credits_balance">%1$s 剩余</string>
-    <string name="dashboard_credits_uncapped">额度余额不设上限</string>
+    <string name="dashboard_credits_uncapped">剩余额度不设上限</string>
     <string name="dashboard_credits_purchase_hint">在 ChatGPT Codex 中购买额度</string>
     <string name="dashboard_credits_purchased">当前余额</string>
+    <string name="dashboard_credits_detail">购买额度或开启自动充值，即可在达到使用限额后继续使用 Work 和 Codex。</string>
     <string name="dashboard_reset_credits">重置额度</string>
     <string name="dashboard_reset_credits_detail">使用一次重置，即可恢复你的 5 小时会话限额、每周限额，或同时恢复两者</string>
     <string name="dashboard_reset_credits_none">暂无可用重置额度</string>
@@ -93,7 +94,7 @@
     </plurals>
     <string name="dashboard_chart_detail_exhaustion">%1$s，预计耗尽时间：%2$s</string>
     <string name="dashboard_chart_detail_scrub">%1$s。拖动可查看各时间点的数据</string>
-    <string name="dashboard_chart_description">%1$s的用量图表。%2$s。</string>
+    <string name="dashboard_chart_description">%1$s 的用量图表。%2$s。</string>
     <string name="dashboard_chart_building">正在积累用量记录</string>
     <plurals name="dashboard_chart_samples">
         <item quantity="other">%d 条记录</item>
@@ -113,7 +114,7 @@
     <string name="dashboard_history_clear_title">清除用量历史记录？</string>
     <string name="dashboard_history_clear_message">此操作将删除本机保存的全部用量样本，不影响当前可用额度或账户登录状态。</string>
     <string name="dashboard_history_clear_confirm">清除</string>
-    <string name="dashboard_history_section_five_hour">5h周期</string>
+    <string name="dashboard_history_section_five_hour">5h 周期</string>
     <string name="dashboard_history_section_weekly">每周用量周期</string>
     <string name="dashboard_history_section_monthly">每月用量周期</string>
     <string name="dashboard_history_drag_compare">拖动查看 · 点按周期进行比较</string>
@@ -136,7 +137,7 @@
     <string name="dashboard_history_pace_on_par">与通常水平持平</string>
     <string name="dashboard_history_included_usage">套餐包含的用量（估算）</string>
     <string name="dashboard_history_weekly_allowance">每周额度</string>
-    <string name="dashboard_history_five_hour_allowance">5h额度</string>
+    <string name="dashboard_history_five_hour_allowance">5h 额度</string>
     <string name="dashboard_history_vs_price">与订阅价格对比</string>
     <string name="dashboard_history_value_multiplier">≈ 月费的 %1$d 倍</string>
     <string name="dashboard_history_weekly_value_remaining">本周剩余价值</string>
@@ -152,16 +153,16 @@
 
     <!-- 首页编辑（DashboardReorderActivity、DashboardSections）。 -->
     <string name="dashboard_edit_hint">拖动排序手柄可调整卡片顺序；关闭开关可隐藏卡片。</string>
-    <string name="dashboard_edit_note">设置更改立即保存，关闭的显示项目可随时重新开启。首页仅显示已开启且有数据的卡片。额度余额为零或负数时隐藏额度卡片，无可用重置额度时隐藏重置卡片。</string>
+    <string name="dashboard_edit_note">设置更改立即保存，关闭的显示项目可随时重新开启。首页仅显示已开启且有数据的卡片。剩余额度为零或负数时隐藏额度卡片，无可用重置额度时隐藏重置卡片。</string>
     <string name="dashboard_edit_show">在首页显示</string>
     <string name="dashboard_edit_reorder">调整顺序</string>
     <string name="dashboard_section_five_hour_title">会话限额</string>
-    <string name="dashboard_section_five_hour_summary">Codex 5h滚动周期</string>
+    <string name="dashboard_section_five_hour_summary">Codex 5h 滚动周期</string>
     <string name="dashboard_section_weekly_title">每周限额</string>
-    <string name="dashboard_section_weekly_summary">Codex 7d滚动周期</string>
+    <string name="dashboard_section_weekly_summary">Codex 7d 滚动周期</string>
     <string name="dashboard_section_monthly_title">每月限额</string>
-    <string name="dashboard_section_monthly_summary">Codex 约 30d滚动周期（免费套餐）</string>
-    <string name="dashboard_section_usage_credits_title">额度余额</string>
+    <string name="dashboard_section_monthly_summary">Codex 约 30d 滚动周期（免费套餐）</string>
+    <string name="dashboard_section_usage_credits_title">剩余额度</string>
     <string name="dashboard_section_usage_credits_summary">余额为零或负数时自动隐藏</string>
     <string name="dashboard_section_usage_history_summary">查看 Work、Codex 及其他智能体任务中的套餐用量和额度消耗情况。不包括 Chat 模式中的对话。</string>
     <string name="dashboard_section_reset_credits_summary">没有可用重置额度时自动隐藏</string>
@@ -190,14 +191,14 @@
         <item quantity="other">当前超出显示上限的 %d 项不会显示。取消其他选项后，可显示这些项目。</item>
     </plurals>
     <string name="dashboard_lock_show_countdown">显示重置倒计时</string>
-    <string name="dashboard_lock_show_credits">显示可用重置额度</string>
+    <string name="dashboard_lock_show_credits">显示可用重置</string>
     <string name="dashboard_lock_tap_reset">点按小组件可进入重置确认页面</string>
     <string name="dashboard_lock_reset_note">点按小组件后将打开重置确认页面；仅在确认后使用重置额度。</string>
     <string name="dashboard_lock_saved">锁屏小组件已更新。</string>
     <string name="dashboard_lock_sign_in">登录</string>
     <string name="dashboard_lock_sign_in_stacked">登录</string>
     <string name="dashboard_lock_sign_in_required">Codex Meter，需要登录</string>
-    <string name="dashboard_lock_single_five_hour">Codex 5h额度剩余 %1$s</string>
+    <string name="dashboard_lock_single_five_hour">Codex 5h 额度剩余 %1$s</string>
     <string name="dashboard_lock_single_weekly">Codex 每周额度剩余 %1$s</string>
     <string name="dashboard_lock_single_monthly">Codex 每月额度剩余 %1$s</string>
     <string name="dashboard_lock_description_style">Codex %1$s</string>

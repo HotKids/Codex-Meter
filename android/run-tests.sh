@@ -240,7 +240,7 @@ grep -Fq 'Ui.text(this, getString(R.string.dashboard_section_usage_credits_title
   "$ROOT/app/src/main/java/me/pipi/codexmeter/MainActivity.java"
 grep -Fq 'return context.getString(R.string.dashboard_section_usage_credits_title);' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SharedLabels.java"
-grep -Fq '<string name="dashboard_section_usage_credits_title">Usage-credit balance</string>' \
+grep -Fq '<string name="dashboard_section_usage_credits_title">Remaining credits</string>' \
   "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 grep -q 'buildIconDetailRow' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/MainActivity.java"

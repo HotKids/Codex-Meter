@@ -62,6 +62,7 @@
     <string name="dashboard_credits_uncapped">Usage-credit balance is not capped</string>
     <string name="dashboard_credits_purchase_hint">Purchase credits in ChatGPT Codex</string>
     <string name="dashboard_credits_purchased">Current balance</string>
+    <string name="dashboard_credits_detail">Purchase credits or enable automatic top-ups to continue using Work and Codex after reaching your usage limits.</string>
     <string name="dashboard_reset_credits">Reset credits</string>
     <string name="dashboard_reset_credits_detail">Use one reset to restore your 5-hour session limit, weekly limit, or both.</string>
     <string name="dashboard_reset_credits_none">No resets available</string>
@@ -164,7 +165,7 @@
     <string name="dashboard_section_weekly_summary">Rolling 7d Codex window</string>
     <string name="dashboard_section_monthly_title">Monthly limit</string>
     <string name="dashboard_section_monthly_summary">Rolling ~30d Codex window (free tier)</string>
-    <string name="dashboard_section_usage_credits_title">Usage-credit balance</string>
+    <string name="dashboard_section_usage_credits_title">Remaining credits</string>
     <string name="dashboard_section_usage_credits_summary">Hidden automatically at a zero or negative balance</string>
     <string name="dashboard_section_usage_history_summary">View plan usage and credit consumption for Work, Codex, and other agent tasks. Excludes conversations in Chat mode.</string>
     <string name="dashboard_section_reset_credits_summary">Hidden automatically when no resets are available</string>

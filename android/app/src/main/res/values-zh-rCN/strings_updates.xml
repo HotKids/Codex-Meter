@@ -124,8 +124,8 @@
     <string name="updates_frequency_daily">每天</string>
     <string name="updates_frequency_weekly">每周</string>
     <string name="updates_frequency_summary_hourly">每小时检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_every_6_hours">每 6h检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_every_12_hours">每 12h检查一次 GitHub 上已签名的新版本</string>
+    <string name="updates_frequency_summary_every_6_hours">每 6h 检查一次 GitHub 上已签名的新版本</string>
+    <string name="updates_frequency_summary_every_12_hours">每 12h 检查一次 GitHub 上已签名的新版本</string>
     <string name="updates_frequency_summary_daily">每天检查一次 GitHub 上已签名的新版本</string>
     <string name="updates_frequency_summary_weekly">每周检查一次 GitHub 上已签名的新版本</string>
     <string name="updates_channel_stable">稳定版</string>

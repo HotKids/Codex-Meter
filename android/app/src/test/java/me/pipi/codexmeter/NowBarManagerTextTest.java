@@ -64,12 +64,12 @@ public class NowBarManagerTextTest {
         Object weekly = content(snapshot(null,
                 window(100, 604800L, TimeUnit.HOURS.toSeconds(52)), null));
         assertEquals("W 2d 4h", text(weekly, "focusCritical"));
-        assertEquals("每周：2d 4h后重置", text(weekly, "longWindowText"));
+        assertEquals("每周：2d 4h 后重置", text(weekly, "longWindowText"));
 
         Object hours = content(snapshot(window(100, 18000L,
                 TimeUnit.MINUTES.toSeconds(200)), null, null));
         assertEquals("3h 20m", text(hours, "focusCritical"));
-        assertEquals("5h：3h 20分后重置", text(hours, "fiveHourText"));
+        assertEquals("5h：3h 20分 后重置", text(hours, "fiveHourText"));
 
         Object minutes = content(snapshot(window(100, 18000L,
                 TimeUnit.MINUTES.toSeconds(12)), null, null));

@@ -30,6 +30,8 @@ Java models and policies support the phone app.
   the monochrome layer reuses that foreground. Notification identity reuses the app icon.
 - Apply the reviewed CodexBar-informed Chinese copy, preserving exact feature distinctions:
   app-owned Now Bar is 实时通知, existing monitor remains 实时监控.
+  Use 剩余额度 consistently for credit-balance labels. Insert one space between
+  Chinese and Latin text and between compact durations and adjacent Chinese copy.
 - Settings groups, inline account card and direct account actions, Home-display editor,
   appearance descriptions,
   four-character titles, About description, linked developer/avatars, names-only credits
