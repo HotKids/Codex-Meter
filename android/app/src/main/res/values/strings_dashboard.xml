@@ -196,7 +196,7 @@
         <item quantity="other">%d extra selections are ignored until you deselect others.</item>
     </plurals>
     <string name="dashboard_lock_show_countdown">Show live time until reset</string>
-    <string name="dashboard_lock_show_credits">Show reset-credit count</string>
+    <string name="dashboard_lock_show_credits">Show reset credits</string>
     <string name="dashboard_lock_tap_reset">Tap tile to open Use reset credit confirmation</string>
     <string name="dashboard_lock_reset_note">A reset is never consumed directly from the lock screen. The tile opens a confirmation screen first.</string>
     <string name="dashboard_lock_saved">Lock-screen widget updated.</string>

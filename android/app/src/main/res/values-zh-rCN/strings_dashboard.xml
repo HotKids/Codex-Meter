@@ -191,7 +191,7 @@
         <item quantity="other">当前超出显示上限的 %d 项不会显示。取消其他选项后，可显示这些项目。</item>
     </plurals>
     <string name="dashboard_lock_show_countdown">显示重置倒计时</string>
-    <string name="dashboard_lock_show_credits">显示可用重置</string>
+    <string name="dashboard_lock_show_credits">显示重置额度</string>
     <string name="dashboard_lock_tap_reset">点按小组件可进入重置确认页面</string>
     <string name="dashboard_lock_reset_note">点按小组件后将打开重置确认页面；仅在确认后使用重置额度。</string>
     <string name="dashboard_lock_saved">锁屏小组件已更新。</string>

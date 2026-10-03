@@ -27,7 +27,7 @@
     <string name="widget_material_title" translatable="false">—</string>
     <string name="widget_material_refresh">Refresh</string>
     <string name="widget_material_resets_at">Reset time: %1$s</string>
-    <string name="widget_material_reset_credits">Resets available: %1$d</string>
+    <string name="widget_material_reset_credits">Reset credits: %1$d available</string>
 
     <!-- Synthetic data for the launcher picker; never used by an installed widget. -->
     <string name="widget_preview_plan" translatable="false">Plus</string>

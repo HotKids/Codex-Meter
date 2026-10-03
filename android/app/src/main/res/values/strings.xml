@@ -5,7 +5,7 @@
     <string name="widget_background">Background</string>
     <string name="widget_opacity">Opacity</string>
     <string name="widget_next_reset">Time remaining until the next usage reset</string>
-    <string name="widget_reset_credits">Available Codex reset credits</string>
+    <string name="widget_reset_credits">Codex reset credits</string>
     <string name="app_name" translatable="false">Codex Meter</string>
     <string name="five_hour">5h</string>
     <string name="lock_widget_bars_square_description">Compact horizontal Codex allowance bars for supported Samsung lock screens</string>
