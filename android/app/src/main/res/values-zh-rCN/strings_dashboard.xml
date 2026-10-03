@@ -153,19 +153,19 @@
 
     <!-- 首页编辑（DashboardReorderActivity、DashboardSections）。 -->
     <string name="dashboard_edit_hint">拖动排序手柄可调整卡片顺序；关闭开关可隐藏卡片。</string>
-    <string name="dashboard_edit_note">设置更改立即保存，关闭的显示项目可随时重新开启。首页仅显示已开启且有数据的卡片。剩余额度为零或负数时隐藏额度卡片，无可用重置额度时隐藏重置卡片。</string>
+    <string name="dashboard_edit_note">更改立即保存，关闭的项目可重新开启。首页仅显示已开启且有可用数据的卡片。</string>
     <string name="dashboard_edit_show">在首页显示</string>
     <string name="dashboard_edit_reorder">调整顺序</string>
     <string name="dashboard_section_five_hour_title">会话限额</string>
-    <string name="dashboard_section_five_hour_summary">Codex 5h 滚动周期</string>
+    <string name="dashboard_section_five_hour_summary">5h 会话用量及重置时间</string>
     <string name="dashboard_section_weekly_title">每周限额</string>
-    <string name="dashboard_section_weekly_summary">Codex 7d 滚动周期</string>
+    <string name="dashboard_section_weekly_summary">每周用量及重置时间</string>
     <string name="dashboard_section_monthly_title">每月限额</string>
-    <string name="dashboard_section_monthly_summary">Codex 约 30d 滚动周期（免费套餐）</string>
+    <string name="dashboard_section_monthly_summary">每月用量及重置时间</string>
     <string name="dashboard_section_usage_credits_title">剩余额度</string>
-    <string name="dashboard_section_usage_credits_summary">余额为零或负数时自动隐藏</string>
-    <string name="dashboard_section_usage_history_summary">查看 Work、Codex 及其他智能体任务中的套餐用量和额度消耗情况。不包括 Chat 模式中的对话。</string>
-    <string name="dashboard_section_reset_credits_summary">没有可用重置额度时自动隐藏</string>
+    <string name="dashboard_section_usage_credits_summary">余额耗尽时自动隐藏</string>
+    <string name="dashboard_section_usage_history_summary">查看套餐用量与额度消耗</string>
+    <string name="dashboard_section_reset_credits_summary">无可用重置额度时自动隐藏</string>
 
     <!-- 小组件显示项（WidgetMeters）。 -->
     <string name="dashboard_meter_five_hour">Codex · 5h</string>

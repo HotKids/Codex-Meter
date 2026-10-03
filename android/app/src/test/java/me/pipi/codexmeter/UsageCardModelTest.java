@@ -12,12 +12,19 @@ import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
+import android.content.ComponentName;
+import android.content.Context;
 import android.content.res.Resources;
 import android.os.Bundle;
+import android.util.SizeF;
+import android.widget.RemoteViews;
 import java.io.File;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.util.Arrays;
+import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import org.json.JSONObject;
 import org.junit.Test;
@@ -25,6 +32,8 @@ import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
+import org.robolectric.util.ReflectionHelpers;
+import org.robolectric.util.ReflectionHelpers.ClassParameter;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = Application.class)
@@ -204,6 +213,85 @@ public class UsageCardModelTest {
     }
 
     @Test
+    @Config(sdk = {26, 35})
+    public void cardProviderKeepsClearAtItsLegalMinimumHeight() {
+        Application app = RuntimeEnvironment.getApplication();
+        int widgetId = 43;
+        AppWidgetManager manager = bindProvider(app, widgetId, CodexUsageWidget.class);
+        WidgetOptions options = WidgetOptions.defaults();
+        UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+        for (int height : new int[] {110, 129}) {
+            Bundle host = new Bundle();
+            host.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
+            host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height);
+            manager.updateAppWidgetOptions(widgetId, host);
+            assertEquals("The card provider must match its Clear picker preview at " + height,
+                    R.layout.widget_material, WidgetRenderer.build(app, widgetId, options, state,
+                            180f, height, manager.getAppWidgetOptions(widgetId)).getLayoutId());
+        }
+    }
+
+    @Test
+    @Config(sdk = {26, 35})
+    public void dialProviderStillChangesToClearAfterVerticalExpansion() {
+        Application app = RuntimeEnvironment.getApplication();
+        int widgetId = 44;
+        AppWidgetManager manager = bindProvider(app, widgetId, CodexDialWidget.class);
+        WidgetOptions options = WidgetOptions.defaults();
+        UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+        for (int height : new int[] {90, 170}) {
+            Bundle host = new Bundle();
+            host.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
+            host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height);
+            manager.updateAppWidgetOptions(widgetId, host);
+            assertEquals(height == 90 ? R.layout.widget_rings : R.layout.widget_material,
+                    WidgetRenderer.build(app, widgetId, options, state, 180f, height,
+                            manager.getAppWidgetOptions(widgetId)).getLayoutId());
+        }
+    }
+
+    @Test
+    public void legacyHostDimensionsKeepTheirActualResponsiveSizes() {
+        Application app = RuntimeEnvironment.getApplication();
+        int widgetId = 45;
+        AppWidgetManager manager = bindProvider(app, widgetId, CodexUsageWidget.class);
+        Bundle host = new Bundle();
+        host.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 90);
+        host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH, 180);
+        host.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT, 110);
+        host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, 190);
+        manager.updateAppWidgetOptions(widgetId, host);
+        assertFalse(manager.getAppWidgetOptions(widgetId)
+                .containsKey(AppWidgetManager.OPTION_APPWIDGET_SIZES));
+
+        WidgetRenderer.update(app, manager, widgetId);
+        RemoteViews published = publishedViews(manager, widgetId);
+        for (SizeF size : new SizeF[] {new SizeF(90f, 190f), new SizeF(180f, 110f)}) {
+            RemoteViews selected = ReflectionHelpers.callInstanceMethod(published,
+                    "getRemoteViewsToApply", ClassParameter.from(Context.class, app),
+                    ClassParameter.from(SizeF.class, size));
+            assertEquals("The selected variant must use the host's actual content size",
+                    size, ReflectionHelpers.callInstanceMethod(selected, "getIdealSize"));
+            assertEquals(R.layout.widget_material, selected.getLayoutId());
+        }
+    }
+
+    @Test
+    public void unknownHostDimensionsKeepTheExistingResponsiveFallback() {
+        Application app = RuntimeEnvironment.getApplication();
+        int widgetId = 46;
+        AppWidgetManager manager = bindProvider(app, widgetId, CodexUsageWidget.class);
+        WidgetRenderer.update(app, manager, widgetId);
+        RemoteViews selected = ReflectionHelpers.callInstanceMethod(
+                publishedViews(manager, widgetId), "getRemoteViewsToApply",
+                ClassParameter.from(Context.class, app),
+                ClassParameter.from(SizeF.class, new SizeF(110f, 60f)));
+        assertEquals(new SizeF(110f, 60f),
+                ReflectionHelpers.callInstanceMethod(selected, "getIdealSize"));
+        assertEquals(R.layout.widget_material, selected.getLayoutId());
+    }
+
+    @Test
     public void shadowLayoutIsGeneratedFromTheClearLayout() throws Exception {
         File layouts = new File("src/main/res/layout");
         String material = read(new File(layouts, "widget_material.xml"));
@@ -216,5 +304,22 @@ public class UsageCardModelTest {
 
     private static String read(File file) throws Exception {
         return new String(Files.readAllBytes(file.toPath()), StandardCharsets.UTF_8);
+    }
+
+    private static AppWidgetManager bindProvider(Application app, int widgetId, Class<?> type) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(app);
+        AppWidgetProviderInfo info = new AppWidgetProviderInfo();
+        info.provider = new ComponentName(app, type);
+        org.robolectric.Shadows.shadowOf(manager).addInstalledProvider(info);
+        org.robolectric.Shadows.shadowOf(manager).bindAppWidgetId(widgetId, info.provider);
+        assertEquals(info.provider, manager.getAppWidgetInfo(widgetId).provider);
+        return manager;
+    }
+
+    private static RemoteViews publishedViews(AppWidgetManager manager, int widgetId) {
+        // The shadow inflates without a host size; select from the published variants explicitly.
+        Map<Integer, ?> widgets = ReflectionHelpers.getField(
+                org.robolectric.Shadows.shadowOf(manager), "widgetInfos");
+        return ReflectionHelpers.getField(widgets.get(widgetId), "lastRemoteViews");
     }
 }

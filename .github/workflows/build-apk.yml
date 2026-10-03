@@ -71,7 +71,7 @@ jobs:
           set -euo pipefail
           ./lint.sh
 
-      # The fixed phone release key stays local; CI artifacts are explicitly debug builds.
+      # Branch and pull-request builds use debug signing; tag releases use android-release.yml.
       - name: Build debug APK
         shell: bash
         run: ./gradlew :app:assembleDebug --console=plain

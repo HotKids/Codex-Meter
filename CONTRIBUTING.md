@@ -32,8 +32,8 @@ From the repository root (wrappers) or from `android/`:
 ./lint.sh
 ```
 
-CI runs the core tests, phone lint (`:app:lintRelease`) and a Debug APK build without release
-signing material. It additionally runs the Robolectric unit tests:
+Branch/PR CI runs the core tests, phone lint (`:app:lintRelease`) and a Debug APK build
+without release signing material. It additionally runs the Robolectric unit tests:
 
 ```bash
 cd android && ./gradlew :app:testDebugUnitTest
@@ -62,12 +62,17 @@ by `SHA256SUMS.txt`. This identity prevents legacy-package APKs from becoming up
 when the phone version line restarts. Use the pinned fixed signer in
 [android-signing.md](docs/android-signing.md). `build.sh` builds the phone only.
 
-Build and verify official releases locally. Confirm the package, version, target
-SDK, fixed certificate and checksum, then publish the matching tag and phone
-assets with GitHub CLI after maintainer authorization. GitHub Actions validates
-branches, pull requests and manual runs; it does not decrypt the retained legacy
-keystore or automatically publish tag releases. Releases contain the Android
-phone APK and its checksum file.
+After explicit maintainer authorization, push a stable `v*` tag for the approved
+`main` commit. `.github/workflows/android-release.yml` runs tests and lint before
+restoring the existing fixed PKCS12 identity (alias `codexmeter`) from repository
+Secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_STORE_PASSWORD` into ignored
+`android/.local-signing/`. It uses the existing `./build.sh`, verifies the
+certificate pin, APK package/version/SDK and checksum, then passes only the
+phone APK and `SHA256SUMS.txt` to a separate publish job with `contents: write`.
+Release notes come from the matching `CHANGELOG.md` section. The first phone
+release is `v0.1` / code 1, without an alpha-channel activation or version bump.
+Normal local builds and the signing backup remain available; the retained
+legacy encrypted keystore is unused.
 
 Version changes require an explicit release request. Update the phone Gradle version,
 `AppConstants.java`, `android/build.sh`, the guards in `android/run-tests.sh`, and the changelog

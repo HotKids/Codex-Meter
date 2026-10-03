@@ -1,5 +1,7 @@
 package me.pipi.codexmeter;
 
+import dev.bennett.codexmeter.WidgetMeters;
+
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
@@ -54,6 +56,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         bindLowUsageAlerts();
         bindResetCreditAlerts();
         bindTroubleshooting();
+        updateMetricEntries();
         updatePermissionSummary();
         updateNotificationEnabledState();
     }
@@ -61,7 +64,16 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
     @Override
     public void onResume() {
         super.onResume();
+        updateMetricEntries();
         updatePermissionSummary();
+    }
+
+    private void updateMetricEntries() {
+        ListPreference metric = findPreference("notification_metric_ui");
+        metric.setEntries(WidgetMeters.weeklyMeterIsMonthly(
+                AppPreferences.loadSnapshot(requireContext()))
+                ? R.array.settings_metric_monthly_entries : R.array.settings_metric_entries);
+        metric.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
     }
 
     private void bindLowUsageAlerts() {

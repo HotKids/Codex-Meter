@@ -15,9 +15,9 @@ public final class WidgetGraphics {
     private WidgetGraphics() {
     }
 
-    /** Preserves upstream's 138px viewport and 18px stroke while trimming its exact SVG arc. */
+    /** Keeps the upstream arc and stroke, excluding empty pixels below its 93px + 9px end cap. */
     static Bitmap twoDialArc(int remainingPercent) {
-        Bitmap mask = Bitmap.createBitmap(138, 138, Bitmap.Config.ALPHA_8);
+        Bitmap mask = Bitmap.createBitmap(138, 102, Bitmap.Config.ALPHA_8);
         mask.setDensity(DisplayMetrics.DENSITY_MEDIUM);
         int percent = clampPercent(remainingPercent);
         if (percent == 0) return mask;

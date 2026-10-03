@@ -118,10 +118,10 @@
     <string name="updates_pref_channel_title">Update channel</string>
     <string name="updates_pref_category_automatic">Automatic updates</string>
     <string name="updates_pref_automatic_title">Check automatically</string>
-    <string name="updates_pref_automatic_summary">Check signed GitHub releases on a schedule</string>
+    <string name="updates_pref_automatic_summary">Check for new Codex Meter versions on a schedule</string>
     <string name="updates_pref_frequency_title">Check frequency</string>
     <string name="updates_pref_notify_title">Notify when an update is available</string>
-    <string name="updates_pref_notify_summary">Show a notification with Open and Update actions</string>
+    <string name="updates_pref_notify_summary">Only applies when automatic checks are enabled</string>
     <string name="updates_pref_category_more">More options</string>
     <string name="updates_pref_check_now_title">Check for updates</string>
     <string name="updates_pref_check_now_summary">Check GitHub now</string>
@@ -139,11 +139,11 @@
     <string name="updates_frequency_every_12_hours">Every 12h</string>
     <string name="updates_frequency_daily">Daily</string>
     <string name="updates_frequency_weekly">Weekly</string>
-    <string name="updates_frequency_summary_hourly">Check signed GitHub releases every hour</string>
-    <string name="updates_frequency_summary_every_6_hours">Check signed GitHub releases every 6h</string>
-    <string name="updates_frequency_summary_every_12_hours">Check signed GitHub releases every 12h</string>
-    <string name="updates_frequency_summary_daily">Check signed GitHub releases daily</string>
-    <string name="updates_frequency_summary_weekly">Check signed GitHub releases weekly</string>
+    <string name="updates_frequency_summary_hourly">Check for new Codex Meter versions every hour</string>
+    <string name="updates_frequency_summary_every_6_hours">Check for new Codex Meter versions every 6h</string>
+    <string name="updates_frequency_summary_every_12_hours">Check for new Codex Meter versions every 12h</string>
+    <string name="updates_frequency_summary_daily">Check for new Codex Meter versions daily</string>
+    <string name="updates_frequency_summary_weekly">Check for new Codex Meter versions weekly</string>
     <string name="updates_channel_stable">Stable</string>
     <string name="updates_channel_test_placeholder">Test version · Not available yet</string>
 </resources>

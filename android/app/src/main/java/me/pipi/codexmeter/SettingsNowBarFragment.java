@@ -2,6 +2,7 @@ package me.pipi.codexmeter;
 
 import dev.bennett.codexmeter.NowBarDisplayMode;
 import dev.bennett.codexmeter.NowBarPercentMode;
+import dev.bennett.codexmeter.WidgetMeters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -278,8 +279,11 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
         if (acceleratedPreference == null || getContext() == null) {
             return;
         }
-        acceleratedPreference.setEnabled(
-                UsagePacePreferences.areWarningsEnabled(requireContext()));
+        boolean enabled = UsagePacePreferences.areWarningsEnabled(requireContext());
+        acceleratedPreference.setEnabled(enabled);
+        acceleratedPreference.setSummary(enabled
+                ? R.string.alerts_now_bar_accelerated_summary
+                : R.string.alerts_now_bar_accelerated_unavailable_summary);
     }
 
     private boolean ensureNotificationPermission() {
@@ -301,6 +305,12 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             return;
         }
         Context context = requireContext();
+        boolean monthly = WidgetMeters.weeklyMeterIsMonthly(AppPreferences.loadSnapshot(context));
+        if (metricPreference != null) {
+            metricPreference.setEntries(monthly
+                    ? R.array.settings_metric_monthly_entries : R.array.settings_metric_entries);
+            metricPreference.setSummaryProvider(ListPreference.SimpleSummaryProvider.getInstance());
+        }
         boolean active = NowBarManager.isActive(context);
         monitorPreference.setChecked(active);
         monitorPreference.setSummary(monitorSummary(context, active));
@@ -316,6 +326,11 @@ public final class SettingsNowBarFragment extends SettingsPageFragment {
             displayModePreference.setValue(NowBarPreferences.getDisplayMode(context));
         }
         if (percentModePreference != null) {
+            percentModePreference.setEntries(monthly
+                    ? R.array.now_bar_percent_mode_monthly_entries
+                    : R.array.now_bar_percent_mode_entries);
+            percentModePreference.setSummaryProvider(
+                    ListPreference.SimpleSummaryProvider.getInstance());
             percentModePreference.setValue(NowBarPreferences.getPercentMode(context));
         }
         if (permissionPreference != null) {

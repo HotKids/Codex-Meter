@@ -4,6 +4,7 @@ import dev.bennett.codexmeter.UsageSnapshot;
 import dev.bennett.codexmeter.WidgetMeters;
 
 import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
@@ -105,12 +106,9 @@ public final class WidgetRenderer {
 
     static RemoteViews build(Context context, int appWidgetId, WidgetOptions options,
             UsageCardState state, float widthDp, float heightDp, Bundle host) {
-        List<String> keys = selectedKeys(options, state.snapshot);
-        if (oneRow(host, heightDp)) {
-            keys.remove(WidgetOptions.USAGE_CREDITS);
-            if (keys.isEmpty()) {
-                keys.add(WidgetMeters.WEEKLY);
-            }
+        boolean dial = oneRow(context, appWidgetId, host, heightDp);
+        List<String> keys = selectedKeys(options, state.snapshot, dial);
+        if (dial) {
             return DialWidgetRenderer.build(context, appWidgetId, options, keys, state);
         }
         return MaterialCardRenderer.build(context, appWidgetId, options, keys, state, widthDp,
@@ -121,6 +119,18 @@ public final class WidgetRenderer {
     static List<String> selectedKeys(WidgetOptions options, UsageSnapshot snapshot) {
         return WidgetMeters.resolveVisibleForWidget(options.effectiveVisibleMeters(),
                 WidgetOptions.availableMeterKeys(), options.metricMode);
+    }
+
+    /** The editor and renderer share the fallback when a card-only selection becomes one row. */
+    static List<String> selectedKeys(WidgetOptions options, UsageSnapshot snapshot, boolean dial) {
+        List<String> keys = selectedKeys(options, snapshot);
+        if (dial) {
+            keys.remove(WidgetOptions.USAGE_CREDITS);
+            if (keys.isEmpty()) {
+                keys.add(WidgetMeters.WEEKLY);
+            }
+        }
+        return keys;
     }
 
     @RequiresApi(Build.VERSION_CODES.S)
@@ -148,11 +158,38 @@ public final class WidgetRenderer {
             }
         }
         if (sizes.isEmpty()) {
+            // Legacy hosts can report orientation bounds without the precise size list.
+            int minWidth = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
+            int maxWidth = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
+            int minHeight = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
+            int maxHeight = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
+            if ((minWidth > 0 || maxWidth > 0) && (minHeight > 0 || maxHeight > 0)) {
+                sizes.add(new SizeF(firstPositive(minWidth, maxWidth),
+                        firstPositive(maxHeight, minHeight)));
+                SizeF landscape = new SizeF(firstPositive(maxWidth, minWidth),
+                        firstPositive(minHeight, maxHeight));
+                if (!sizes.contains(landscape)) {
+                    sizes.add(landscape);
+                }
+            }
+        }
+        if (sizes.isEmpty()) {
             for (SizeF size : FALLBACK_SIZES) {
                 sizes.add(size);
             }
         }
         return sizes;
+    }
+
+    /** Provider identity prevents legal short Clear cards from being mistaken for dials. */
+    static boolean oneRow(Context context, int appWidgetId, Bundle host, float heightDp) {
+        AppWidgetProviderInfo provider = AppWidgetManager.getInstance(context)
+                .getAppWidgetInfo(appWidgetId);
+        if (provider != null && new ComponentName(context, CodexUsageWidget.class)
+                .equals(provider.provider)) {
+            return false;
+        }
+        return oneRow(host, heightDp);
     }
 
     /**

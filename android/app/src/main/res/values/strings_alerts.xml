@@ -141,14 +141,15 @@
     <string name="alerts_now_bar_access_title">Live notification access</string>
     <string name="alerts_now_bar_display_category">Display</string>
     <string name="alerts_now_bar_display_mode_title">Live display mode</string>
-    <string name="alerts_now_bar_percent_mode_title">Percentage shown</string>
+    <string name="alerts_now_bar_percent_mode_title">Usage window for percentage</string>
     <string name="alerts_now_bar_auto_start_category">Automatic start</string>
     <string name="alerts_now_bar_auto_start_title">Start when allowance is low</string>
     <string name="alerts_now_bar_auto_start_summary">Start the monitor when remaining allowance is low</string>
-    <string name="alerts_now_bar_metric_title">Monitor</string>
+    <string name="alerts_now_bar_metric_title">Trigger scope</string>
     <string name="alerts_now_bar_threshold_title">Start when remaining reaches</string>
     <string name="alerts_now_bar_accelerated_title">Start for accelerated usage</string>
     <string name="alerts_now_bar_accelerated_summary">Start while usage is projected to run out early</string>
+    <string name="alerts_now_bar_accelerated_unavailable_summary">First enable \"Estimated usage time\" and set \"Warning sensitivity\" to a value other than \"Off\".</string>
     <string name="alerts_troubleshooting_category">Troubleshooting</string>
     <string name="alerts_now_bar_setup_help_title">Samsung setup help</string>
     <string name="alerts_now_bar_setup_help_summary">Samsung firmware and developer-option guidance</string>
@@ -181,12 +182,12 @@
     <string name="alerts_now_bar_state_preview_not_promoted">Sample preview active, but not promoted by the system</string>
     <!-- %1$s is the monitor state, %2$s when the session ends. -->
     <string name="alerts_now_bar_summary_active">%1$s · ends %2$s</string>
-    <string name="alerts_now_bar_summary_waiting">Waiting for a low allowance or accelerated usage trigger</string>
+    <string name="alerts_now_bar_summary_waiting">Start monitoring when an enabled condition is met</string>
     <string name="alerts_now_bar_summary_idle">Show remaining Codex allowance until the next available usage reset</string>
 
     <!-- Live notification access summary. -->
     <string name="alerts_now_bar_access_notifications_off">App or live-monitor notifications disabled · tap to enable</string>
-    <string name="alerts_now_bar_access_samsung_fallback">Automatic · using Samsung fallback until Android access is allowed</string>
+    <string name="alerts_now_bar_access_samsung_fallback">Automatic · currently using Samsung compatibility mode</string>
     <string name="alerts_now_bar_access_samsung_selected">Samsung compatibility selected · firmware support required</string>
     <string name="alerts_now_bar_access_legacy">Notifications allowed · Live display depends on your device</string>
     <string name="alerts_now_bar_access_not_allowed">Live notifications not allowed · tap to enable</string>
@@ -217,7 +218,7 @@
     <string name="alerts_notifications_test_failed">Enable notifications and allow permission first.</string>
 
     <!-- Reset credit expiry reminder times. -->
-    <string name="alerts_reminder_times_title">Reminder times</string>
+    <string name="alerts_reminder_times_title">Advance reminders</string>
     <string name="alerts_reminder_times_none">No reminder times configured</string>
     <string name="alerts_reminder_times_empty_message">No reminder times are configured. Add one to choose how long before expiry Codex Meter should notify you.</string>
     <!-- %1$s lists the reminder times, joined with alerts_reminder_times_separator. -->
@@ -225,7 +226,7 @@
     <string name="alerts_reminder_times_separator">", "</string>
     <string name="alerts_reminder_time_remove_item">%1$s before expiry — tap to remove</string>
     <string name="alerts_reminder_time_removed">%1$s reminder removed.</string>
-    <string name="alerts_reminder_add_title">Add reminder time</string>
+    <string name="alerts_reminder_add_title">Add advance reminder</string>
     <string name="alerts_reminder_add_explanation">Notify me this long before each available reset credit expires.</string>
     <string name="alerts_reminder_amount_hint">Amount</string>
     <!-- Units in the order of SettingsNotificationsFragment.LEAD_TIME_UNIT_MILLIS. -->

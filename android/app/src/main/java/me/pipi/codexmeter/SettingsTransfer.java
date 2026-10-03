@@ -334,7 +334,7 @@ public final class SettingsTransfer {
             return "App settings";
         }
         if (SECTION_NOTIFICATIONS.equals(section)) {
-            return "Notifications";
+            return "Usage alerts";
         }
         if (SECTION_NOW_BAR.equals(section)) {
             return "Now Bar";
@@ -348,7 +348,7 @@ public final class SettingsTransfer {
     /** English summary of a section id; see {@link #sectionTitle(String)}. */
     public static String sectionSummary(String section) {
         if (SECTION_APP_SETTINGS.equals(section)) {
-            return "Theme, refresh, updates, and default widget look";
+            return "Appearance, Home visibility, refresh, updates, and default widget settings";
         }
         if (SECTION_NOTIFICATIONS.equals(section)) {
             return "Low-usage alerts and reset-credit reminders";

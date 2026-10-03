@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Static picker mask uses the same upstream arc as WidgetGraphics.twoDialArc. -->
 <vector xmlns:android="http://schemas.android.com/apk/res/android"
-    android:width="56dp" android:height="56dp"
-    android:viewportWidth="138" android:viewportHeight="138">
+    android:width="138dp" android:height="102dp"
+    android:viewportWidth="138" android:viewportHeight="102">
     <path android:pathData="M 14 93 A 60 60 0 1 1 124 93"
         android:strokeColor="@color/widget_material_track" android:strokeWidth="18"
         android:strokeLineCap="round" android:trimPathEnd="1.0" />

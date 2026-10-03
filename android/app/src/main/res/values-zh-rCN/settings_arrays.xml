@@ -24,7 +24,10 @@
         <item>每周</item>
     </string-array>
     <string-array name="settings_metric_entries">
-        <item>两种限额</item><item>5h</item><item>每周</item>
+        <item>两种限额</item><item>5h</item><item>@string/dashboard_section_weekly_title</item>
+    </string-array>
+    <string-array name="settings_metric_monthly_entries">
+        <item>两种限额</item><item>5h</item><item>@string/dashboard_section_monthly_title</item>
     </string-array>
     <string-array name="settings_alert_style_entries">
         <item>静音</item><item>通知提示音</item><item>闹钟铃声</item>

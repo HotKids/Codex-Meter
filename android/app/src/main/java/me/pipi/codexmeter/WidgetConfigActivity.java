@@ -96,8 +96,10 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         content.addView(buildWindowCard());
         content.addView(Ui.separator(this, getString(R.string.widget_editor_appearance)));
         content.addView(buildAppearanceCard());
-        TextView refreshHint = Ui.text(this, getString(R.string.widget_editor_refresh_hint), 13,
-                Ui.secondaryText(dark));
+        TextView refreshHint = Ui.text(this, getString(
+                WidgetRenderer.oneRow(this, appWidgetId, widgetSize, previewHeightDp())
+                        ? R.string.widget_editor_refresh_hint_dial
+                        : R.string.widget_editor_refresh_hint), 13, Ui.secondaryText(dark));
         refreshHint.setPadding(Ui.dp(this, 24), Ui.dp(this, 12), Ui.dp(this, 24),
                 Ui.dp(this, 16));
         content.addView(refreshHint);
@@ -113,12 +115,12 @@ public final class WidgetConfigActivity extends AppCompatActivity {
 
     /** Keep all controls available even when a meter is disabled or has no data. */
     private void loadSelection() {
-        List<String> selected = WidgetRenderer.selectedKeys(saved, snapshot);
+        boolean dial = WidgetRenderer.oneRow(this, appWidgetId, widgetSize, previewHeightDp());
+        List<String> selected = WidgetRenderer.selectedKeys(saved, snapshot, dial);
         windowOrder.clear();
         List<String> catalog = new ArrayList<>(WidgetOptions.availableMeterKeys());
-        if (WidgetRenderer.oneRow(widgetSize, previewHeightDp())) {
+        if (dial) {
             catalog.remove(WidgetOptions.USAGE_CREDITS);
-            selected.remove(WidgetOptions.USAGE_CREDITS);
         }
         windowOrder.addAll(selected);
         for (String key : catalog) {
@@ -197,6 +199,23 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         return getString(R.string.widget_editor_reset_time);
     }
 
+    private String editorMeterSummary(String key) {
+        boolean dial = WidgetRenderer.oneRow(this, appWidgetId, widgetSize, previewHeightDp());
+        if (WidgetMeters.FIVE_HOUR.equals(key)) {
+            return getString(dial ? R.string.widget_editor_five_hour_summary_dial
+                    : R.string.dashboard_section_five_hour_summary);
+        }
+        if (WidgetMeters.WEEKLY.equals(key)) {
+            return getString(dial ? R.string.widget_editor_weekly_summary_dial
+                    : R.string.dashboard_section_weekly_summary);
+        }
+        if (WidgetOptions.USAGE_CREDITS.equals(key)) {
+            return getString(R.string.dashboard_credits_purchased);
+        }
+        return getString(dial ? R.string.widget_editor_reset_summary_dial
+                : R.string.widget_editor_reset_summary_card);
+    }
+
     private final class WindowAdapter extends RecyclerView.Adapter<WindowHolder> {
         private final ItemTouchHelper touchHelper;
 
@@ -260,11 +279,13 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         public void onBindViewHolder(WindowHolder holder, int position) {
             String key = windowOrder.get(position);
             holder.title.setText(editorMeterTitle(key));
-            boolean reported = (!WidgetMeters.FIVE_HOUR.equals(key)
-                    && !WidgetMeters.WEEKLY.equals(key))
-                    || WidgetMeters.meterWindow(key, snapshot) != null;
-            holder.summary.setText(R.string.widget_editor_window_missing);
-            holder.summary.setVisibility(reported ? View.GONE : View.VISIBLE);
+            String description = editorMeterSummary(key);
+            WidgetMeter meter = new WidgetMeter(WidgetConfigActivity.this, key, saved,
+                    new UsageCardState(snapshot != null, snapshot, null, "",
+                            System.currentTimeMillis()));
+            holder.summary.setText(UsageCardFormat.MISSING.equals(meter.value)
+                    ? getString(R.string.widget_editor_window_missing, description) : description);
+            holder.summary.setVisibility(View.VISIBLE);
             holder.toggle.setOnCheckedChangeListener(null);
             boolean selected = selectedWindows.contains(key);
             holder.toggle.setChecked(selected);

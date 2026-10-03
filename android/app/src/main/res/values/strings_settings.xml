@@ -24,9 +24,9 @@
     <string name="settings_about">About Codex Meter</string>
 
     <!-- Account card -->
-    <string name="settings_account_title_signed_in">ChatGPT account</string>
+    <string name="settings_account_title_signed_in">ChatGPT</string>
     <string name="settings_account_title_signed_out">Not connected</string>
-    <string name="settings_account_summary_signed_out">Sign in from the dashboard</string>
+    <string name="settings_account_summary_signed_out">Sign in to view Codex usage</string>
     <string name="settings_account_summary_connected">Connected</string>
     <string name="settings_account_plan_fallback" translatable="false">Codex</string>
     <string name="settings_account_sign_out">Sign out</string>
@@ -73,9 +73,9 @@
 
     <!-- Refresh & usage -->
     <string name="settings_refresh_category">Refresh</string>
-    <string name="settings_refresh_on_launch">Refresh on launch</string>
+    <string name="settings_refresh_on_launch">Refresh as needed on launch</string>
     <string name="settings_refresh_mode">Refresh mode</string>
-    <string name="settings_refresh_mode_summary">Adapts to remaining usage, app attention, reset timing, and recent failures</string>
+    <string name="settings_refresh_mode_summary">Automatically adjust refresh intervals, or use a manually selected fixed interval</string>
     <string name="settings_refresh_manual_interval">Manual interval</string>
     <string name="settings_dashboard_category">Dashboard</string>
     <string name="settings_dashboard_edit">Edit dashboard</string>
@@ -91,7 +91,7 @@
     <string name="settings_dashboard_reset_credits_summary">Hidden automatically when no resets are available</string>
     <string name="settings_usage_estimates_category">Usage estimates</string>
     <string name="settings_usage_estimates_enabled">Estimated usage time</string>
-    <string name="settings_usage_estimates_enabled_summary">Project how long the current allowance may last</string>
+    <string name="settings_usage_estimates_enabled_summary">Estimate remaining usable time from the rate of usage</string>
     <string name="settings_usage_estimates_sensitivity">Warning sensitivity</string>
 
     <!-- Privacy -->
@@ -138,15 +138,15 @@
     <string name="settings_transfer_export">Export settings</string>
     <string name="settings_transfer_export_summary">Save selected settings and optional sign-in data</string>
     <string name="settings_transfer_import">Import settings</string>
-    <string name="settings_transfer_import_summary">Restore selected sections from a transfer file</string>
+    <string name="settings_transfer_import_summary">Import selected content and overwrite the corresponding settings on this device</string>
     <string name="settings_transfer_category_security">Security</string>
-    <string name="settings_transfer_security_title">Protect authentication exports</string>
+    <string name="settings_transfer_security_title">Export file security</string>
     <string name="settings_transfer_security_summary">Authentication exports include ChatGPT tokens. Anyone with the file can use your account, so keep it private.</string>
 
     <!-- Transfer sections, keyed by SettingsTransfer.SECTION_* -->
     <string name="settings_transfer_section_app_settings">App settings</string>
-    <string name="settings_transfer_section_app_settings_summary">Theme, refresh, updates, and default widget look</string>
-    <string name="settings_transfer_section_notifications">Notifications</string>
+    <string name="settings_transfer_section_app_settings_summary">Appearance, Home visibility, refresh, updates, and default widget settings</string>
+    <string name="settings_transfer_section_notifications">Usage alerts</string>
     <string name="settings_transfer_section_notifications_summary">Low-usage alerts and reset-credit reminders</string>
     <string name="settings_transfer_section_now_bar">Now Bar</string>
     <string name="settings_transfer_section_now_bar_summary">Display mode, percentage mode, and auto-start</string>
@@ -164,7 +164,7 @@
     <string name="settings_transfer_export_auth_signed_out">Sign in first to export ChatGPT authentication</string>
     <string name="settings_transfer_export_auth_sign_in_first">Sign in before exporting authentication.</string>
     <string name="settings_transfer_select_export">Select at least one section to export.</string>
-    <string name="settings_transfer_export_auth_title">Authentication will be included</string>
+    <string name="settings_transfer_export_auth_title">Export sign-in information?</string>
     <string name="settings_transfer_export_auth_message">%1$s\n\nOnly continue if you are moving Codex Meter to another device you control.</string>
     <string name="settings_transfer_export_anyway">Export anyway</string>
     <string name="settings_transfer_exported_with_auth">Exported. Keep this file private — it includes ChatGPT authentication.</string>

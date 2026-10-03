@@ -9,7 +9,7 @@ models and policies used by the phone app.
 |---|---|
 | [phone-refresh.md](phone-refresh.md) | Approved phone behavior and device validation requirements |
 | [ai-usage-widgets.md](ai-usage-widgets.md) | Fixed-width 2×1 dials, larger cards, reset formatting, credits and synchronized picker previews |
-| [android-signing.md](android-signing.md) | Fixed local phone signer, recovery and authorized manual release publication |
+| [android-signing.md](android-signing.md) | Fixed phone signer, recovery and authorized tag-release publication |
 | [localization.md](localization.md) | Official terminology references and approved phone copy |
 | [material-symbols.md](material-symbols.md) | Action icon sources and preserved brand identities |
 | [launcher-icon.md](launcher-icon.md) | Adaptive launcher icon layers |
@@ -17,10 +17,13 @@ models and policies used by the phone app.
 | [refactor.md](refactor.md) | Earlier refactor scope and findings |
 
 GitHub Actions runs core and Robolectric tests, lint and a Debug APK build on
-branch pushes, pull requests and manual runs. Official phone releases are built
-locally with the fixed signer and published with GitHub CLI only after explicit
-authorization. CI does not decrypt release signing material or publish tag
-releases. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the release procedure.
+branch pushes, pull requests and manual runs without release signing material.
+After explicit authorization, stable `v*` tags on `main` trigger
+`.github/workflows/android-release.yml`. Tests and lint precede restoration of
+the same fixed signer from repository Secrets; the existing `./build.sh`
+produces verified phone artifacts for a separate publish job. Local builds and
+the signing backup remain available, while the retained legacy ciphertext is
+unused. See [CONTRIBUTING.md](../CONTRIBUTING.md) for the release procedure.
 
 ## Historical migration notes
 

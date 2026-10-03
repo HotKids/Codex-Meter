@@ -35,9 +35,13 @@ preview test renders the home widget cards with fixture data to
 `app/build/reports/widget-previews/` (Robolectric renders, not device
 screenshots).
 
-CI runs the core and Robolectric tests, phone lint and a Debug APK build.
-Its Debug APKs are test artifacts; it does not consume release signing material
-or publish GitHub releases.
+Branch/PR CI runs the core and Robolectric tests, phone lint and a Debug APK
+build without release signing material. These Debug APKs are test artifacts.
+Authorized stable `v*` tags on `main` trigger `android-release.yml`: tests and
+lint run before the same fixed signing identity is restored from repository
+Secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_STORE_PASSWORD`. The workflow calls
+the existing `./build.sh`, verifies APK identity and checksum, and publishes
+only the phone APK and `SHA256SUMS.txt` through a separate publish job.
 
 The phone version line starts at `0.1` (code 1), with compile and target SDK 37.
 `build.sh` builds only the phone. Signed local APKs land in `android/dist/` as
@@ -47,6 +51,9 @@ See the repository root
 Phone release builds require the fixed signing identity described in
 [`docs/android-signing.md`](../docs/android-signing.md). Restore its backup if
 `android/.local-signing/` is missing; builds never generate replacement keys.
+The CI release uses the same PKCS12 alias `codexmeter` and pinned certificate;
+the local build and recovery backup remain unchanged. The first tag is `v0.1`
+with code 1, and the alpha channel is not enabled.
 
 Regenerate shadow and picker layouts with `tools/widget-card-shadow.sh` after
 changing the card layout, typography or spacing. See

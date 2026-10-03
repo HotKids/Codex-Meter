@@ -11,6 +11,7 @@ import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
+import android.graphics.Rect;
 import android.os.Bundle;
 import android.view.View;
 import android.view.ViewGroup;
@@ -116,6 +117,45 @@ public class UsageCardPreviewTest {
     }
 
     @Test
+    @Config(sdk = {26, 35}, qualifiers = "zh-rCN-xhdpi")
+    public void clearTitlesKeepTheirNativeWidthWhenTheHostIsBetweenResponsiveSizes() throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+        WidgetOptions options = WidgetOptions.defaults().withVisibleMeters("weekly,next_reset");
+        float density = context.getResources().getDisplayMetrics().density;
+        PreviewSheet sheet = new PreviewSheet("clear-title-width");
+        for (int width : new int[] {90, 110, 140, 170, 280}) {
+            for (int inset : new int[] {0, 8}) {
+                View view = apply(context, MaterialCardRenderer.build(context, 1, options,
+                        List.of(WidgetMeters.WEEKLY, WidgetMeters.NEXT_RESET), state, width, 200));
+                sheet.add("card width " + width + " host narrower by " + inset, view,
+                        px(width - inset, density), px(200, density));
+                for (int id : new int[] {R.id.md_name_0,
+                        width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
+                                ? R.id.md_name_2 : R.id.md_name_1}) {
+                    TextView title = view.findViewById(id);
+                    assertEquals("Native titles must not yield their width to the value column: "
+                            + width + "dp inset " + inset + " title " + title.getText(),
+                            0, title.getLayout().getEllipsisCount(0));
+                }
+                if (inset == 0) {
+                    for (int id : new int[] {R.id.md_value_0, R.id.md_reset_0,
+                            width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
+                                    ? R.id.md_value_2 : R.id.md_value_1,
+                            width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
+                                    ? R.id.md_reset_2 : R.id.md_reset_1}) {
+                        TextView text = view.findViewById(id);
+                        assertEquals("Values and reset details stay complete at the reported width: "
+                                + width + "dp text " + text.getText(),
+                                0, text.getLayout().getEllipsisCount(0));
+                    }
+                }
+            }
+        }
+        assertTrue(sheet.writeSheet().isFile());
+    }
+
+    @Test
     @Config(qualifiers = "zh-rCN-xhdpi")
     public void rendersOneRowDials() throws Exception {
         Context context = RuntimeEnvironment.getApplication();
@@ -129,6 +169,147 @@ public class UsageCardPreviewTest {
         RemoteViews four = WidgetRenderer.build(context, 1, options, state, 260f, 90f, null);
         assertEquals(R.layout.widget_rings, four.getLayoutId());
         assertTrue(sheet.writeSheet().isFile());
+    }
+
+    @Test
+    @Config(sdk = {28, 35}, qualifiers = "zh-rCN-land-xhdpi")
+    public void dialGraphicsAdaptToShortHostsAndKeepVerticalInsets() throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+        WidgetOptions options = WidgetOptions.defaults().withVisibleMeters("weekly,next_reset");
+        float density = context.getResources().getDisplayMetrics().density;
+        PreviewSheet sheet = new PreviewSheet("dials-height");
+        int shortArcHeight = 0;
+        for (int height : new int[] {60, 75, 90}) {
+            Rect liveArc = null;
+            for (boolean picker : new boolean[] {false, true}) {
+                RemoteViews remote = picker
+                        ? new RemoteViews(context.getPackageName(), R.layout.widget_rings)
+                        : WidgetRenderer.build(context, 1, options, state, 260f, height, null);
+                ViewGroup view = (ViewGroup) apply(context, remote);
+                sheet.add((picker ? "picker" : "live") + " dials " + height + "dp",
+                        view, px(260, density), px(height, density));
+                ImageView track = view.findViewById(R.id.primary_samsung_track);
+                for (int id : new int[] {R.id.primary_samsung_fill, R.id.primary_samsung_icon}) {
+                    ImageView layer = view.findViewById(id);
+                    assertEquals("The dial layers share a canvas width",
+                            track.getDrawable().getIntrinsicWidth(),
+                            layer.getDrawable().getIntrinsicWidth());
+                    assertEquals("The dial layers share a canvas height",
+                            track.getDrawable().getIntrinsicHeight(),
+                            layer.getDrawable().getIntrinsicHeight());
+                }
+                for (int id : new int[] {R.id.primary_samsung_progress,
+                        R.id.secondary_samsung_progress, R.id.primary_samsung_value,
+                        R.id.secondary_samsung_value}) {
+                    View child = view.findViewById(id);
+                    Rect bounds = new Rect(0, 0, child.getWidth(), child.getHeight());
+                    view.offsetDescendantRectToMyCoords(child, bounds);
+                    assertTrue("The dial needs top breathing room at " + height + "dp: " + bounds,
+                            bounds.top >= px(4, density));
+                    assertTrue("The value must stay above the bottom inset at " + height + "dp",
+                            bounds.bottom <= px(height - 4, density));
+                    if (id == R.id.primary_samsung_progress) {
+                        if (!picker) {
+                            liveArc = bounds;
+                            if (height == 60) {
+                                shortArcHeight = bounds.height();
+                            } else if (height == 90) {
+                                assertTrue("The arc must shrink to fit the shortest host",
+                                        shortArcHeight < bounds.height());
+                            }
+                        } else {
+                            assertEquals("Picker and live arc positions stay synchronized",
+                                    liveArc.top, bounds.top, px(1, density));
+                            assertEquals("Picker and live arc sizes stay synchronized",
+                                    liveArc.height(), bounds.height(), px(1, density));
+                        }
+                    }
+                }
+                TextView value = view.findViewById(R.id.primary_samsung_value);
+                assertTrue("A short host must keep the value legible",
+                        value.getTextSize() >= 14f * density);
+            }
+        }
+        assertTrue(sheet.writeSheet().isFile());
+    }
+
+    @Test
+    @Config(sdk = {26, 28, 35}, qualifiers = "zh-rCN-xhdpi")
+    public void dialColumnsStayInsideTheMinimumHostWidth() throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+        float density = context.getResources().getDisplayMetrics().density;
+        PreviewSheet sheet = new PreviewSheet("dials-width");
+        for (int width : new int[] {110, 180}) {
+            for (String keys : new String[] {"weekly", "weekly,next_reset"}) {
+                WidgetOptions options = WidgetOptions.defaults().withVisibleMeters(keys);
+                ViewGroup view = (ViewGroup) apply(context, WidgetRenderer.build(context, 1,
+                        options, state, width, 90f, null));
+                sheet.add("dial width " + width + " " + keys, view,
+                        px(width, density), px(90, density));
+                for (int id : new int[] {R.id.primary_samsung_value, R.id.secondary_samsung_value}) {
+                    TextView value = view.findViewById(id);
+                    if (((View) value.getParent()).getVisibility() == View.VISIBLE) {
+                        assertEquals("A one-row dial keeps its complete value on one line",
+                                1, value.getLayout().getLineCount());
+                    }
+                }
+                for (int id : new int[] {R.id.primary_samsung_progress,
+                        R.id.secondary_samsung_progress}) {
+                    View graphic = view.findViewById(id);
+                    View cell = (View) graphic.getParent();
+                    if (cell.getVisibility() != View.VISIBLE) {
+                        continue;
+                    }
+                    Rect graphicBounds = new Rect(0, 0, graphic.getWidth(), graphic.getHeight());
+                    view.offsetDescendantRectToMyCoords(graphic, graphicBounds);
+                    Rect cellBounds = new Rect(0, 0, cell.getWidth(), cell.getHeight());
+                    view.offsetDescendantRectToMyCoords(cell, cellBounds);
+                    assertTrue("Each dial stays inside its own cell at " + width + "dp: "
+                                    + graphicBounds + " vs " + cellBounds,
+                            graphicBounds.left >= cellBounds.left
+                                    && graphicBounds.right <= cellBounds.right);
+                    assertTrue("A wide host keeps the original maximum dial size",
+                            graphicBounds.width() <= px(56, density));
+                }
+            }
+        }
+        assertTrue(sheet.writeSheet().isFile());
+    }
+
+    @Test
+    @Config(sdk = {26, 35}, qualifiers = "zh-rCN-xhdpi")
+    public void dialValuesAccommodateTheSystemFontScale() throws Exception {
+        RuntimeEnvironment.setFontScale(1.3f);
+        try {
+            Context context = RuntimeEnvironment.getApplication();
+            UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
+            WidgetOptions options = WidgetOptions.defaults().withVisibleMeters("weekly,next_reset");
+            float density = context.getResources().getDisplayMetrics().density;
+            PreviewSheet sheet = new PreviewSheet("dials-font-scale");
+            for (int width : new int[] {110, 260}) {
+                for (int height : new int[] {60, 90}) {
+                    View view = apply(context, WidgetRenderer.build(context, 1, options, state,
+                            width, height, null));
+                    sheet.add("dials font scale 1.3 width " + width + " height " + height, view,
+                            px(width, density), px(height, density));
+                    for (int id : new int[] {R.id.primary_samsung_value, R.id.secondary_samsung_value}) {
+                        TextView value = view.findViewById(id);
+                        assertTrue("The value's full text layout must fit the available height",
+                                value.getLayout().getHeight() <= value.getHeight()
+                                        - value.getCompoundPaddingTop() - value.getCompoundPaddingBottom());
+                        assertEquals("The full countdown stays on one line with larger system fonts",
+                                1, value.getLayout().getLineCount());
+                        assertTrue("The full value fits inside the column",
+                                value.getLayout().getLineWidth(0) <= value.getWidth());
+                    }
+                }
+            }
+            assertTrue(sheet.writeSheet().isFile());
+        } finally {
+            RuntimeEnvironment.setFontScale(1f);
+        }
     }
 
     @Test

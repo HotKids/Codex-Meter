@@ -11,7 +11,7 @@ import android.widget.RemoteViews;
 import java.util.List;
 import java.util.Locale;
 
-/** Two-column, one-row dials using upstream geometry and the Clear system palette. */
+/** Two-column, one-row dials using upstream arcs and the Clear system palette. */
 final class DialWidgetRenderer {
     private static final int[] DIAL_COLORS = {
             R.color.widget_material_track, R.color.widget_material_fill};
@@ -52,7 +52,10 @@ final class DialWidgetRenderer {
             String value = WidgetMeters.NEXT_RESET.equals(key) && meter.resetAtMillis > state.nowMillis
                     ? NowBarCopy.compactDuration(meter.resetAtMillis - state.nowMillis) : meter.value;
             views.setTextViewText(RING_VALUES[index], value);
-            views.setImageViewResource(RING_ICONS[index], meter.icon);
+            views.setImageViewResource(RING_ICONS[index],
+                    WidgetMeters.FIVE_HOUR.equals(key) ? R.drawable.widget_dial_icon_session
+                            : WidgetMeters.WEEKLY.equals(key) ? R.drawable.widget_dial_icon_weekly
+                            : R.drawable.widget_dial_icon_reset);
             views.setContentDescription(RING_ICONS[index],
                     description(english, meter));
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {

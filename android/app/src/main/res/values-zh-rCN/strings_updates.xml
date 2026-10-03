@@ -102,10 +102,10 @@
     <string name="updates_pref_channel_title">更新渠道</string>
     <string name="updates_pref_category_automatic">自动检查</string>
     <string name="updates_pref_automatic_title">自动检查更新</string>
-    <string name="updates_pref_automatic_summary">定期检查 GitHub 上已签名的新版本</string>
+    <string name="updates_pref_automatic_summary">定期检查 Codex Meter 新版本</string>
     <string name="updates_pref_frequency_title">检查频率</string>
     <string name="updates_pref_notify_title">有新版本时通知</string>
-    <string name="updates_pref_notify_summary">在通知中提供“打开”和“更新”操作</string>
+    <string name="updates_pref_notify_summary">仅在开启自动检查时生效</string>
     <string name="updates_pref_category_more">更多选项</string>
     <string name="updates_pref_check_now_title">检查更新</string>
     <string name="updates_pref_check_now_summary">立即检查 GitHub 上的新版本</string>
@@ -123,11 +123,11 @@
     <string name="updates_frequency_every_12_hours">每 12h</string>
     <string name="updates_frequency_daily">每天</string>
     <string name="updates_frequency_weekly">每周</string>
-    <string name="updates_frequency_summary_hourly">每小时检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_every_6_hours">每 6h 检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_every_12_hours">每 12h 检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_daily">每天检查一次 GitHub 上已签名的新版本</string>
-    <string name="updates_frequency_summary_weekly">每周检查一次 GitHub 上已签名的新版本</string>
+    <string name="updates_frequency_summary_hourly">每小时检查 Codex Meter 新版本</string>
+    <string name="updates_frequency_summary_every_6_hours">每 6h 检查 Codex Meter 新版本</string>
+    <string name="updates_frequency_summary_every_12_hours">每 12h 检查 Codex Meter 新版本</string>
+    <string name="updates_frequency_summary_daily">每天检查 Codex Meter 新版本</string>
+    <string name="updates_frequency_summary_weekly">每周检查 Codex Meter 新版本</string>
     <string name="updates_channel_stable">稳定版</string>
     <string name="updates_channel_test_placeholder">测试版 · 暂未开放</string>
 </resources>

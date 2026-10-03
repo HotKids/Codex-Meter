@@ -51,6 +51,22 @@ The Home cards display these approved explanations at 12sp below their titles:
 - 重置额度: `使用一次重置，即可恢复你的 5 小时会话限额、每周限额，或同时恢复两者`
 - 剩余额度: `购买额度或开启自动充值，即可在达到使用限额后继续使用 Work 和 Codex。`
 
+The signed-in settings account card is titled `ChatGPT`. Home-display editor
+rows use short summaries: usage history uses `查看套餐用量与额度消耗` through
+`dashboard_section_usage_history_summary`. The Home card retains its separate
+approved Work/Codex/Chat explanation in `dashboard_history_card_detail`.
+
+Session, weekly and monthly editor rows describe usage and reset times. Balance
+rows explain that exhausted credits hide automatically, and reset rows explain
+that they hide when no reset credits are available. Editor changes save
+immediately; disabled items can be enabled again. Home only displays enabled
+cards with data to show.
+
+Reminder and live-notification settings label the long window as weekly or
+monthly from the reported usage snapshot, retaining the saved `weekly` key.
+The accelerated-start switch explains both prerequisites while disabled:
+usage estimates must be enabled and warning sensitivity must not be Off.
+
 `Credits` in an acknowledgements screen still means 致谢.
 
 The requested plan labels are Free, Plus, Team, Pro 100, Pro 200 and Pro 500.

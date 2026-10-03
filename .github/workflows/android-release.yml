@@ -1,0 +1,182 @@
+name: Signed Android Release
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: signed-android-release
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    outputs:
+      version: ${{ steps.metadata.outputs.version }}
+    steps:
+      - name: Check out source
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify stable release metadata
+        id: metadata
+        shell: bash
+        run: |
+          set -euo pipefail
+          version="$(sed -nE 's/^[[:space:]]*versionName = "([^"]+)"/\1/p' android/app/build.gradle.kts)"
+          code="$(sed -nE 's/^[[:space:]]*versionCode = ([0-9]+)/\1/p' android/app/build.gradle.kts)"
+          [[ "$version" =~ ^[0-9]+\.[0-9]+(\.[0-9]+)?$ ]] || { echo "Invalid stable phone version: $version" >&2; exit 1; }
+          [[ "$code" =~ ^[1-9][0-9]*$ ]] || { echo "Invalid phone version code: $code" >&2; exit 1; }
+          [[ "$GITHUB_REPOSITORY" == HotKids/Codex-Meter ]] || { echo "Release workflow requires HotKids/Codex-Meter" >&2; exit 1; }
+          git merge-base --is-ancestor "$GITHUB_SHA" origin/main || { echo "Release commit must belong to main" >&2; exit 1; }
+          if [[ "$GITHUB_REF_TYPE" == tag ]]; then
+            [[ "$GITHUB_REF_NAME" == "v$version" ]] || { echo "Release tag $GITHUB_REF_NAME does not match v$version" >&2; exit 1; }
+          else
+            [[ "$GITHUB_REF_NAME" == main ]] || { echo "Release validation requires main" >&2; exit 1; }
+          fi
+          grep -Fxq "## $version" CHANGELOG.md
+          printf 'version=%s\ncode=%s\n' "$version" "$code" >> "$GITHUB_OUTPUT"
+
+      - name: Set up Java 21
+        uses: actions/setup-java@b6effb05e454b25005698d916606bdc6ffcbf961 # v5
+        with:
+          distribution: temurin
+          java-version: "21"
+          cache: gradle
+          cache-dependency-path: |
+            android/**/*.gradle*
+            android/**/gradle-wrapper.properties
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@9fc6c4e9069bf8d3d10b2204b1fb8f6ef7065407 # v3
+        with:
+          packages: platform-tools
+
+      - name: Install Android 37 packages
+        run: sdkmanager "platforms;android-37.0" "build-tools;36.0.0" "build-tools;37.0.0"
+
+      - name: Run tests and lint before restoring signing material
+        working-directory: android
+        run: |
+          ./run-tests.sh
+          ./gradlew :app:testDebugUnitTest :app:lintRelease --console=plain
+
+      - name: Build with the fixed phone signing identity
+        shell: bash
+        env:
+          SIGNING_KEYSTORE_BASE64: ${{ secrets.SIGNING_KEYSTORE_BASE64 }}
+          SIGNING_STORE_PASSWORD: ${{ secrets.SIGNING_STORE_PASSWORD }}
+        run: |
+          set -euo pipefail
+          umask 077
+          for name in SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD; do
+            if [[ -z "${!name:-}" ]]; then
+              echo "Required signing input is missing: $name" >&2
+              exit 1
+            fi
+          done
+          signing_dir="$GITHUB_WORKSPACE/android/.local-signing"
+          mkdir "$signing_dir"
+          trap 'rm -f "$signing_dir/codex-meter-local.p12" "$signing_dir/password"; rmdir "$signing_dir"' EXIT
+          printf '%s' "$SIGNING_KEYSTORE_BASE64" | base64 --decode > "$signing_dir/codex-meter-local.p12"
+          printf '%s' "$SIGNING_STORE_PASSWORD" > "$signing_dir/password"
+          unset SIGNING_KEYSTORE_BASE64 SIGNING_STORE_PASSWORD
+          ./build.sh
+
+      - name: Remove temporary signing material
+        if: always()
+        run: |
+          rm -f android/.local-signing/codex-meter-local.p12 android/.local-signing/password
+          rmdir android/.local-signing 2>/dev/null || true
+
+      - name: Verify APK identity and checksum
+        shell: bash
+        env:
+          RELEASE_VERSION: ${{ steps.metadata.outputs.version }}
+          RELEASE_CODE: ${{ steps.metadata.outputs.code }}
+        run: |
+          set -euo pipefail
+          apk="android/dist/CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk"
+          badging="$("$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging "$apk")"
+          grep -Fq "package: name='me.pipi.codexmeter' versionCode='$RELEASE_CODE' versionName='$RELEASE_VERSION'" <<< "$badging"
+          grep -Fxq "targetSdkVersion:'37'" <<< "$badging"
+          grep -Fq "launchable-activity: name='me.pipi.codexmeter.MainActivity'" <<< "$badging"
+          cd android/dist
+          sha256sum --check SHA256SUMS.txt
+
+      - name: Upload signed release assets
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: codex-meter-phone-release
+          path: |
+            android/dist/CodexMeter-me.pipi.codexmeter-${{ steps.metadata.outputs.version }}.apk
+            android/dist/SHA256SUMS.txt
+          if-no-files-found: error
+          overwrite: true
+          retention-days: 14
+
+  publish:
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: write
+    steps:
+      - name: Check out release notes
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download verified signed assets
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: codex-meter-phone-release
+          path: release-assets
+
+      - name: Publish stable release
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          cd release-assets
+          sha256sum --check SHA256SUMS.txt
+          cd ..
+          notes="$RUNNER_TEMP/codex-meter-release-notes.md"
+          awk -v heading="## $RELEASE_VERSION" '
+            /^## / { if (found) exit; if ($0 == heading) { found = 1; next } }
+            found { print }
+          ' CHANGELOG.md > "$notes"
+          grep -q '[^[:space:]]' "$notes"
+          apk="release-assets/CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk"
+          if gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            draft="$(gh release view "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"
+            if [[ "$draft" != true ]]; then
+              existing="$RUNNER_TEMP/codex-meter-published-assets"
+              mkdir "$existing"
+              gh release download "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+                --pattern "CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk" \
+                --pattern SHA256SUMS.txt --dir "$existing"
+              cmp "$existing/SHA256SUMS.txt" release-assets/SHA256SUMS.txt
+              cmp "$existing/CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk" "$apk"
+              exit 0
+            fi
+            gh release upload "$GITHUB_REF_NAME" "$apk" release-assets/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --clobber
+          else
+            gh release create "$GITHUB_REF_NAME" "$apk" release-assets/SHA256SUMS.txt \
+              --repo "$GITHUB_REPOSITORY" --verify-tag --draft \
+              --title "Codex Meter $RELEASE_VERSION" --notes-file "$notes"
+          fi
+          gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
+            --title "Codex Meter $RELEASE_VERSION" --notes-file "$notes" \
+            --draft=false --prerelease=false --latest

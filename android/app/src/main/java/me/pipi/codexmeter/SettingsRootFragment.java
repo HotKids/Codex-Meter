@@ -1,6 +1,7 @@
 package me.pipi.codexmeter;
 
 import dev.bennett.codexmeter.UsageSnapshot;
+import dev.bennett.codexmeter.WidgetMeters;
 
 import android.content.Context;
 import android.content.Intent;
@@ -46,6 +47,7 @@ public final class SettingsRootFragment extends SettingsPageFragment {
     @Override
     public void onResume() {
         super.onResume();
+        bindAccount();
         updateSummaries();
     }
 
@@ -217,7 +219,9 @@ public final class SettingsRootFragment extends SettingsPageFragment {
             return context.getString(R.string.settings_summary_metric_five_hour);
         }
         if ("weekly".equals(metric)) {
-            return context.getString(R.string.settings_summary_metric_weekly);
+            return context.getString(WidgetMeters.weeklyMeterIsMonthly(
+                    AppPreferences.loadSnapshot(context))
+                    ? R.string.dashboard_window_monthly : R.string.settings_summary_metric_weekly);
         }
         return context.getString(R.string.settings_summary_metric_both);
     }
@@ -229,6 +233,10 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         if (NowBarPreferences.isAutoStartEnabled(context)) {
             return context.getString(R.string.settings_summary_now_bar_automatic,
                     NowBarPreferences.getThreshold(context));
+        }
+        if (UsagePacePreferences.areWarningsEnabled(context)
+                && NowBarPreferences.isAcceleratedStartEnabled(context)) {
+            return context.getString(R.string.alerts_now_bar_summary_waiting);
         }
         return context.getString(R.string.settings_summary_now_bar_manual);
     }

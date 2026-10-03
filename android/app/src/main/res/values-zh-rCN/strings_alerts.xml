@@ -117,14 +117,15 @@
     <string name="alerts_now_bar_access_title">实时通知权限</string>
     <string name="alerts_now_bar_display_category">显示</string>
     <string name="alerts_now_bar_display_mode_title">实时显示方式</string>
-    <string name="alerts_now_bar_percent_mode_title">百分比显示方式</string>
+    <string name="alerts_now_bar_percent_mode_title">百分比对应周期</string>
     <string name="alerts_now_bar_auto_start_category">自动启动</string>
     <string name="alerts_now_bar_auto_start_title">额度偏低时自动启动</string>
     <string name="alerts_now_bar_auto_start_summary">剩余额度偏低时自动启动监控</string>
-    <string name="alerts_now_bar_metric_title">监控范围</string>
+    <string name="alerts_now_bar_metric_title">触发范围</string>
     <string name="alerts_now_bar_threshold_title">剩余额度降至以下比例时启动</string>
     <string name="alerts_now_bar_accelerated_title">额度消耗过快时启动</string>
     <string name="alerts_now_bar_accelerated_summary">预计剩余额度将在重置前耗尽时自动启动</string>
+    <string name="alerts_now_bar_accelerated_unavailable_summary">需先开启“预计可用时长”，并将“预警灵敏度”设为非关闭状态</string>
     <string name="alerts_troubleshooting_category">故障排查</string>
     <string name="alerts_now_bar_setup_help_title">三星设置帮助</string>
     <string name="alerts_now_bar_setup_help_summary">三星固件与开发者选项说明</string>
@@ -155,11 +156,11 @@
     <string name="alerts_now_bar_state_preview_promoted">示例预览已显示为 Android 实时更新</string>
     <string name="alerts_now_bar_state_preview_not_promoted">示例预览已开启，但系统未将其显示为实时更新</string>
     <string name="alerts_now_bar_summary_active">%1$s · %2$s 结束</string>
-    <string name="alerts_now_bar_summary_waiting">在剩余额度达到阈值或额度消耗过快时自动启动</string>
+    <string name="alerts_now_bar_summary_waiting">满足已开启的条件时自动启动监控</string>
     <string name="alerts_now_bar_summary_idle">持续显示 Codex 剩余额度，直到下次额度重置</string>
 
     <string name="alerts_now_bar_access_notifications_off">应用或实时监控通知已关闭 · 点按开启</string>
-    <string name="alerts_now_bar_access_samsung_fallback">自动 · 在获得 Android 权限前使用三星兼容模式</string>
+    <string name="alerts_now_bar_access_samsung_fallback">自动 · 当前使用三星兼容模式</string>
     <string name="alerts_now_bar_access_samsung_selected">已选择三星兼容模式 · 需要固件支持</string>
     <string name="alerts_now_bar_access_legacy">已允许通知 · 实时显示需设备支持</string>
     <string name="alerts_now_bar_access_not_allowed">未允许实时通知 · 点按开启</string>
@@ -188,14 +189,14 @@
     <string name="alerts_notifications_test_sent">测试通知已发送。</string>
     <string name="alerts_notifications_test_failed">请先开启通知并授予权限。</string>
 
-    <string name="alerts_reminder_times_title">提醒时间</string>
+    <string name="alerts_reminder_times_title">提前提醒</string>
     <string name="alerts_reminder_times_none">尚未设置提醒时间</string>
     <string name="alerts_reminder_times_empty_message">尚未设置提醒时间。请添加提醒，并设置距可用重置额度到期的提前提醒时长。</string>
     <string name="alerts_reminder_times_summary">到期前 %1$s</string>
     <string name="alerts_reminder_times_separator">、</string>
     <string name="alerts_reminder_time_remove_item">到期前 %1$s — 点按即可移除</string>
     <string name="alerts_reminder_time_removed">已移除到期前 %1$s 的提醒。</string>
-    <string name="alerts_reminder_add_title">添加提醒时间</string>
+    <string name="alerts_reminder_add_title">添加提前提醒</string>
     <string name="alerts_reminder_add_explanation">在每次可用重置额度到期前，按照设定的提前时间发送提醒。</string>
     <string name="alerts_reminder_amount_hint">时长</string>
     <string-array name="alerts_reminder_units">

@@ -1,6 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
     android:description="@string/widget_dial_provider_description"
     android:minWidth="110dp"
     android:minHeight="60dp"
@@ -14,7 +13,4 @@
     android:previewLayout="@layout/widget_rings"
     android:maxResizeHeight="480dp"
     android:targetCellWidth="2"
-    android:targetCellHeight="1"
-    app:previewLayoutSmall="@layout/widget_rings"
-    app:widgetSize="small"
-    app:widgetStyle="colorful" />
+    android:targetCellHeight="1" />

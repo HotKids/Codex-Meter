@@ -29,12 +29,6 @@
     </attr>
     <attr name="monotonePreviewLayoutTiny" format="reference">
     </attr>
-    <attr name="previewLayoutExtraLarge" format="reference">
-    </attr>
-    <attr name="previewLayoutExtraLargeLong" format="reference">
-    </attr>
-    <attr name="previewLayoutLarge" format="reference">
-    </attr>
     <attr name="previewLayoutMedium" format="reference">
     </attr>
     <attr name="previewLayoutSmall" format="reference">

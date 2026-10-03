@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Resizable Clear cards start at 2x2; two-column dials have their own vertically resizable provider. -->
-<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android" xmlns:app="http://schemas.android.com/apk/res-auto"
+<appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:description="@string/widget_description"
     android:minWidth="110dp"
     android:minHeight="110dp"
@@ -17,10 +17,4 @@
     android:maxResizeWidth="720dp"
     android:maxResizeHeight="480dp"
     android:targetCellWidth="2"
-    android:targetCellHeight="2"
-    app:previewLayoutExtraLarge="@layout/widget_material_preview"
-    app:previewLayoutExtraLargeLong="@layout/widget_material_preview"
-    app:previewLayoutLarge="@layout/widget_material_preview"
-    app:previewLayoutMedium="@layout/widget_material_preview"
-    app:widgetSize="extraLargeLong|extraLarge|large|medium"
-    app:widgetStyle="colorful"/>
+    android:targetCellHeight="2" />

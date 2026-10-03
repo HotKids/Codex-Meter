@@ -49,7 +49,10 @@
         <item>168</item>
     </string-array>
     <string-array name="settings_metric_entries">
-        <item>Both</item><item>5h</item><item>Weekly</item>
+        <item>Both</item><item>5h</item><item>@string/dashboard_section_weekly_title</item>
+    </string-array>
+    <string-array name="settings_metric_monthly_entries">
+        <item>Both</item><item>5h</item><item>@string/dashboard_section_monthly_title</item>
     </string-array>
     <string-array name="settings_metric_values" translatable="false">
         <item>both</item><item>five_hour</item><item>weekly</item>

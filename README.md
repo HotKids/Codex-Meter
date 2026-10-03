@@ -94,9 +94,11 @@ One UI / SESL 依赖已有本地缓存。仅在缓存不完整或需要更新 Gi
 
 ## 版本发布
 
-GitHub Actions 在分支推送、拉取请求和手动触发时执行测试、lint 及 Debug 构建。CI 安装包仅用于测试，不使用正式签名材料，也不会因推送标签而自动发布。
+分支和拉取请求由 GitHub Actions 执行测试、lint 及 Debug 构建，生成的安装包仅用于测试，不使用正式签名材料。
 
-正式版本由维护者明确授权后，在本地使用固定签名构建。核对包名、版本、目标 SDK、签名证书与校验和后，通过 GitHub CLI 发布匹配版本的标签，例如 `v0.1`，并上传安装包和 `SHA256SUMS.txt`。发布说明取自 [CHANGELOG.md](CHANGELOG.md) 中对应的版本记录。
+维护者明确授权后，推送基于 `main` 的稳定版 `v*` 标签会触发 `.github/workflows/android-release.yml`。首个手机正式版本为 `v0.1`，保留版本代码 `1`，不启用测试渠道。流程先在无签名材料的环境中完成测试与 lint，再从仓库 Secrets `SIGNING_KEYSTORE_BASE64` 和 `SIGNING_STORE_PASSWORD` 恢复现有固定签名材料，调用既有 `./build.sh` 构建。
+
+核对签名指纹、包名、版本、目标 SDK 与校验和后，流程上传 APK 和 `SHA256SUMS.txt`，由独立发布任务创建 GitHub Release。发布说明取自 [CHANGELOG.md](CHANGELOG.md) 中对应的版本记录。本地固定签名、桌面备份和本地构建方式继续保留；旧版加密签名文件不参与新流程。详情见 [签名说明](docs/android-signing.md)。
 
 已发布版本可在 [GitHub Releases](https://github.com/HotKids/Codex-Meter/releases) 查看。
 

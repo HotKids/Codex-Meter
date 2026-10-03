@@ -156,19 +156,19 @@
 
     <!-- Dashboard editor (DashboardReorderActivity, DashboardSections keys). -->
     <string name="dashboard_edit_hint">Drag the handles to arrange your usage cards and use the switches to hide the ones you don\'t need.</string>
-    <string name="dashboard_edit_note">Changes are saved instantly. Usage-credit balance and reset credits stay hidden when they have nothing to show (zero or below), and 5h, weekly, monthly, and usage-history cards appear only while OpenAI reports data for them — no matter where each card is placed or whether its switch is on.</string>
+    <string name="dashboard_edit_note">Changes are saved immediately. You can re-enable disabled items. Home only shows enabled cards with available data.</string>
     <string name="dashboard_edit_show">Show on dashboard</string>
     <string name="dashboard_edit_reorder">Reorder</string>
     <string name="dashboard_section_five_hour_title">Session limit</string>
-    <string name="dashboard_section_five_hour_summary">Rolling 5h Codex window</string>
+    <string name="dashboard_section_five_hour_summary">5h session usage and reset time</string>
     <string name="dashboard_section_weekly_title">Weekly limit</string>
-    <string name="dashboard_section_weekly_summary">Rolling 7d Codex window</string>
+    <string name="dashboard_section_weekly_summary">Weekly usage and reset time</string>
     <string name="dashboard_section_monthly_title">Monthly limit</string>
-    <string name="dashboard_section_monthly_summary">Rolling ~30d Codex window (free tier)</string>
+    <string name="dashboard_section_monthly_summary">Monthly usage and reset time</string>
     <string name="dashboard_section_usage_credits_title">Remaining credits</string>
-    <string name="dashboard_section_usage_credits_summary">Hidden automatically at a zero or negative balance</string>
-    <string name="dashboard_section_usage_history_summary">View plan usage and credit consumption for Work, Codex, and other agent tasks. Excludes conversations in Chat mode.</string>
-    <string name="dashboard_section_reset_credits_summary">Hidden automatically when no resets are available</string>
+    <string name="dashboard_section_usage_credits_summary">Hidden automatically when the balance is exhausted</string>
+    <string name="dashboard_section_usage_history_summary">View plan usage and credit consumption</string>
+    <string name="dashboard_section_reset_credits_summary">Hidden automatically when no reset credits are available</string>
 
     <!-- Widget meters (WidgetMeters keys). -->
     <string name="dashboard_meter_five_hour">Codex · 5h</string>

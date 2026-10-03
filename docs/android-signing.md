@@ -29,16 +29,28 @@ The Pixel installation previously used a temporary certificate. Its transition
 to this fixed identity required a one-time uninstall; subsequent APKs use normal
 in-place updates with the fixed certificate.
 
-GitHub Actions runs tests, lint and a Debug APK build without release signing
-material. The legacy encrypted keystore and repository secret remain unchanged
-and are not used by the current CI or release path. CI does not automatically
-publish releases when a tag is pushed.
+## GitHub Actions releases
 
-Build official phone releases locally with `./build.sh`. The build wrapper
-verifies the fixed certificate and produces
-`CodexMeter-me.pipi.codexmeter-<versionName>.apk` with `SHA256SUMS.txt`. Verify the
-package, version and target SDK, then publish those two assets with GitHub CLI
-after explicit maintainer authorization. Release notes come from the matching
-phone version in `CHANGELOG.md`. The release contains only the Android phone APK
-and its checksum file. Do not migrate remote signing credentials without a
-separate request.
+Branch and pull-request validation in `.github/workflows/build-apk.yml` runs
+tests, lint and a Debug APK build without release signing material.
+
+After explicit maintainer authorization, stable `v*` tags on `main` trigger
+`.github/workflows/android-release.yml`. The first phone tag is `v0.1`, using
+the existing version `0.1` / code 1; the alpha channel remains disabled.
+The release workflow first runs tests and lint without signing material. It
+then restores the same PKCS12 identity (alias `codexmeter`) from repository
+Secrets `SIGNING_KEYSTORE_BASE64` and `SIGNING_STORE_PASSWORD` into the existing
+ignored `android/.local-signing/` directory, and calls the existing `./build.sh`.
+The repository Secrets contain the current keystore encoded as Base64 and its
+existing password; they must never introduce a replacement signing identity.
+
+Before uploading artifacts, the workflow verifies the certificate against the
+public pin, the APK package `me.pipi.codexmeter`, the version and target SDK,
+and the checksum. A separate publish job with `contents: write` creates the
+stable GitHub release from the matching `CHANGELOG.md` section. The only release
+assets are `CodexMeter-me.pipi.codexmeter-<versionName>.apk` and `SHA256SUMS.txt`.
+Signing files are not published or included in build artifacts.
+
+The local signing source, recovery backup and normal `./build.sh` path remain
+available. The retained legacy encrypted keystore is unused by this workflow;
+do not read, decrypt or replace it as part of a phone release.

@@ -11,4 +11,9 @@
         <item>5h 用量</item>
         <item>每周用量</item>
     </string-array>
+    <string-array name="now_bar_percent_mode_monthly_entries">
+        <item>自动</item>
+        <item>5h 用量</item>
+        <item>每月用量</item>
+    </string-array>
 </resources>

@@ -11,7 +11,6 @@ import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
 import android.util.TypedValue;
-import android.view.Gravity;
 import android.view.View;
 import android.widget.RemoteViews;
 import androidx.annotation.RequiresApi;
@@ -23,7 +22,7 @@ import java.util.concurrent.TimeUnit;
  * above one tonal panel per selected meter (title, value, a thick progress bar,
  * and when the window resets). Narrow widgets stack the first two
  * windows; wide widgets lay up to four out in two columns. Panels share the height, so the card
- * fills any size; names and values have separate rows above bottom-aligned progress and resets. On Android 12+ the colours are
+ * fills any size; names and values share a row above the progress bar and reset detail. On Android 12+ the colours are
  * resolved by the launcher from the wallpaper palette and follow its night mode.
  */
 final class MaterialCardRenderer {
@@ -284,7 +283,7 @@ final class MaterialCardRenderer {
         paint.setTypeface(Typeface.DEFAULT_BOLD);
         float nameSize = NAME_TEXT * textScale;
         paint.setTextSize(nameSize);
-        // Leave one dp for rounded native bounds so the weighted title keeps every character.
+        // The value fits the estimate; the layout reserves the title's actual native width.
         float available = Math.max(1f, panelContentWidth - paint.measureText(title) - 8f - 1f);
         paint.setTextSize(100f);
         float valueWidth = paint.measureText(value) / 100f;
@@ -292,11 +291,6 @@ final class MaterialCardRenderer {
                 : Math.min(VALUE_TEXT * textScale, Math.max(1f, available - 1f) / valueWidth);
         views.setTextViewTextSize(NAMES[slot], TypedValue.COMPLEX_UNIT_DIP, nameSize);
         views.setTextViewTextSize(VALUES[slot], TypedValue.COMPLEX_UNIT_DIP, valueSize);
-        if (columns == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Bound the value column so native font measurement cannot steal the title's width.
-            views.setViewLayoutWidth(VALUES[slot], available, TypedValue.COMPLEX_UNIT_DIP);
-            views.setInt(VALUES[slot], "setGravity", Gravity.END);
-        }
     }
 
     private void renderBar(int slot, int progress) {

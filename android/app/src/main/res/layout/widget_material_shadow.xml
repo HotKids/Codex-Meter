@@ -16,8 +16,8 @@
                 <ImageView android:id="@+id/md_panel_bg_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
                 <LinearLayout android:id="@+id/md_panel_content_0" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
-                        <TextView android:id="@+id/md_name_0" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
-                        <TextView android:id="@+id/md_value_0" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
+                        <TextView android:id="@+id/md_name_0" style="@style/WidgetMaterialText.Bold" android:layout_width="wrap_content" android:textSize="15dp" />
+                        <TextView android:id="@+id/md_value_0" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="8dp" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_0" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
                         <ImageView android:id="@+id/md_track_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
@@ -32,8 +32,8 @@
                 <ImageView android:id="@+id/md_panel_bg_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
                 <LinearLayout android:id="@+id/md_panel_content_1" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
-                        <TextView android:id="@+id/md_name_1" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
-                        <TextView android:id="@+id/md_value_1" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
+                        <TextView android:id="@+id/md_name_1" style="@style/WidgetMaterialText.Bold" android:layout_width="wrap_content" android:textSize="15dp" />
+                        <TextView android:id="@+id/md_value_1" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="8dp" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_1" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
                         <ImageView android:id="@+id/md_track_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
@@ -50,8 +50,8 @@
                 <ImageView android:id="@+id/md_panel_bg_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
                 <LinearLayout android:id="@+id/md_panel_content_2" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
-                        <TextView android:id="@+id/md_name_2" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
-                        <TextView android:id="@+id/md_value_2" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
+                        <TextView android:id="@+id/md_name_2" style="@style/WidgetMaterialText.Bold" android:layout_width="wrap_content" android:textSize="15dp" />
+                        <TextView android:id="@+id/md_value_2" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="8dp" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_2" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
                         <ImageView android:id="@+id/md_track_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
@@ -66,8 +66,8 @@
                 <ImageView android:id="@+id/md_panel_bg_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
                 <LinearLayout android:id="@+id/md_panel_content_3" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
                     <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
-                        <TextView android:id="@+id/md_name_3" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
-                        <TextView android:id="@+id/md_value_3" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
+                        <TextView android:id="@+id/md_name_3" style="@style/WidgetMaterialText.Bold" android:layout_width="wrap_content" android:textSize="15dp" />
+                        <TextView android:id="@+id/md_value_3" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="8dp" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_3" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
                         <ImageView android:id="@+id/md_track_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />

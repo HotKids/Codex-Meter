@@ -24,9 +24,9 @@
     <string name="settings_about">关于 Codex Meter</string>
 
     <!-- Account card -->
-    <string name="settings_account_title_signed_in">ChatGPT 账户</string>
+    <string name="settings_account_title_signed_in">ChatGPT</string>
     <string name="settings_account_title_signed_out">未登录</string>
-    <string name="settings_account_summary_signed_out">请在首页登录</string>
+    <string name="settings_account_summary_signed_out">登录后查看 Codex 用量</string>
     <string name="settings_account_summary_connected">已登录</string>
     <string name="settings_account_sign_out">退出登录</string>
     <string name="settings_account_sign_in">使用 ChatGPT 登录</string>
@@ -70,9 +70,9 @@
 
     <!-- Refresh & usage -->
     <string name="settings_refresh_category">刷新</string>
-    <string name="settings_refresh_on_launch">启动时刷新</string>
+    <string name="settings_refresh_on_launch">启动时按需刷新</string>
     <string name="settings_refresh_mode">刷新模式</string>
-    <string name="settings_refresh_mode_summary">自适应模式根据剩余额度、应用活跃状态、重置时间及近期刷新失败情况调整刷新间隔</string>
+    <string name="settings_refresh_mode_summary">自动调整刷新间隔，或使用手动设置的固定间隔</string>
     <string name="settings_refresh_manual_interval">刷新间隔</string>
     <string name="settings_dashboard_category">首页</string>
     <string name="settings_dashboard_edit">编辑首页</string>
@@ -88,7 +88,7 @@
     <string name="settings_dashboard_reset_credits_summary">无可用重置额度时自动隐藏</string>
     <string name="settings_usage_estimates_category">用量估算</string>
     <string name="settings_usage_estimates_enabled">预计可用时长</string>
-    <string name="settings_usage_estimates_enabled_summary">估算剩余额度的可用时长</string>
+    <string name="settings_usage_estimates_enabled_summary">根据用量消耗速度估算剩余可用时长</string>
     <string name="settings_usage_estimates_sensitivity">预警灵敏度</string>
 
     <!-- Privacy -->
@@ -133,15 +133,15 @@
     <string name="settings_transfer_export">导出设置</string>
     <string name="settings_transfer_export_summary">导出所选设置，并可选择包含登录信息</string>
     <string name="settings_transfer_import">导入设置</string>
-    <string name="settings_transfer_import_summary">从迁移文件恢复所选内容</string>
+    <string name="settings_transfer_import_summary">导入所选内容，覆盖本机对应设置</string>
     <string name="settings_transfer_category_security">安全</string>
-    <string name="settings_transfer_security_title">保护含登录信息的导出文件</string>
+    <string name="settings_transfer_security_title">导出文件安全</string>
     <string name="settings_transfer_security_summary">含登录信息的导出文件包含 ChatGPT 令牌。任何持有该文件的人均可使用关联账户，请妥善保管。</string>
 
     <!-- Transfer sections, keyed by SettingsTransfer.SECTION_* -->
     <string name="settings_transfer_section_app_settings">应用设置</string>
-    <string name="settings_transfer_section_app_settings_summary">主题、刷新、更新和默认小组件外观</string>
-    <string name="settings_transfer_section_notifications">通知</string>
+    <string name="settings_transfer_section_app_settings_summary">外观、首页显示、刷新、更新与默认小组件设置</string>
+    <string name="settings_transfer_section_notifications">用量提醒</string>
     <string name="settings_transfer_section_notifications_summary">剩余用量提醒和重置额度提醒</string>
     <string name="settings_transfer_section_now_bar">实时通知</string>
     <string name="settings_transfer_section_now_bar_summary">显示模式、百分比模式和自动启动</string>
@@ -159,7 +159,7 @@
     <string name="settings_transfer_export_auth_signed_out">导出 ChatGPT 登录信息前，请先登录</string>
     <string name="settings_transfer_export_auth_sign_in_first">导出登录信息前请先登录。</string>
     <string name="settings_transfer_select_export">请至少选择一项要导出的内容。</string>
-    <string name="settings_transfer_export_auth_title">将包含登录信息</string>
+    <string name="settings_transfer_export_auth_title">导出登录信息？</string>
     <string name="settings_transfer_export_auth_message">%1$s\n\n仅在将 Codex Meter 迁移至自行控制的另一台设备时继续。</string>
     <string name="settings_transfer_export_anyway">仍然导出</string>
     <string name="settings_transfer_exported_with_auth">已导出。此文件包含 ChatGPT 登录信息，请妥善保管。</string>

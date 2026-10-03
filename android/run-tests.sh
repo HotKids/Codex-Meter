@@ -203,7 +203,7 @@ grep -q 'longWindowIsMonthly' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
 grep -q 'meterWindow' \
   "$ROOT/shared/src/main/java/dev/bennett/codexmeter/WidgetMeters.java"
-grep -q '<string name="dashboard_section_reset_credits_summary">Hidden automatically when no resets are available</string>' \
+grep -q '<string name="dashboard_section_reset_credits_summary">Hidden automatically when no reset credits are available</string>' \
   "$ROOT/app/src/main/res/values/strings_dashboard.xml"
 grep -q 'R.string.dashboard_section_reset_credits_summary' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SharedLabels.java"
@@ -380,7 +380,7 @@ grep -q 'SettingsTransferStore.apply' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SettingsTransferFragment.java"
 grep -q '@string/settings_transfer_security_title' \
   "$ROOT/app/src/main/res/xml/preferences_settings_transfer.xml"
-grep -q '"settings_transfer_security_title">Protect authentication exports<' \
+grep -q '"settings_transfer_security_title">Export file security<' \
   "$ROOT/app/src/main/res/values/strings_settings.xml"
 # Dialogs show localized copies of the pure-Java transfer text; the English resources must stay
 # identical to what SettingsTransfer writes into files and returns to the self-tests.

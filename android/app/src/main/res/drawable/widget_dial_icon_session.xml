@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Retains the upstream 23dp icon at (16.5dp, 12dp) on the cropped 56dp dial canvas. -->
+<layer-list xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:width="138dp" android:height="102dp">
+        <inset android:drawable="@drawable/ic_oui_time"
+            android:insetLeft="29.464286%" android:insetRight="29.464286%"
+            android:insetTop="28.991596%" android:insetBottom="15.441177%" />
+    </item>
+</layer-list>
