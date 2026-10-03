@@ -551,6 +551,14 @@ public final class AppPreferences {
     public static WidgetOptions loadDefaultWidgetOptions(Context context) {
         SharedPreferences prefs = prefs(context);
         String prefix = DEFAULT_WIDGET_PREFIX;
+        String defaultVisibleMeters = "";
+        if (!prefs.contains(prefix + FIELD_VISIBLE_METERS)
+                && !prefs.contains(prefix + FIELD_METRIC_MODE)) {
+            UsageSnapshot snapshot = loadSnapshot(context);
+            if (snapshot != null && UsageFormat.planLabel(snapshot.planType).startsWith("Pro ")) {
+                defaultVisibleMeters = WidgetMeters.WEEKLY + "," + WidgetMeters.NEXT_RESET;
+            }
+        }
         return normalizeLoaded(new WidgetOptions(
                 prefs.getString(prefix + FIELD_STYLE, WidgetOptions.STYLE_AUTO),
                 prefs.getString(prefix + FIELD_DENSITY, "auto"),
@@ -569,7 +577,8 @@ public final class AppPreferences {
                 prefs.getBoolean(prefix + FIELD_SHOW_RESET_CREDITS, false),
                 prefs.getBoolean(prefix + FIELD_SHOW_RESET_ACTION, false))
                 .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, true))
-                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS, ""))
+                .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
+                        defaultVisibleMeters))
                 .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
                         WidgetOptions.CARD_CLEAR)));
     }
@@ -588,6 +597,9 @@ public final class AppPreferences {
         SharedPreferences prefs = prefs(context);
         WidgetOptions defaults = loadDefaultWidgetOptions(context);
         String prefix = widgetPrefix(widgetId);
+        // A placed widget's legacy content choice takes precedence over account defaults.
+        String inheritedMeters = prefs.contains(prefix + FIELD_METRIC_MODE)
+                ? "" : defaults.visibleMeters;
         return normalizeLoaded(new WidgetOptions(
                 prefs.getString(prefix + FIELD_STYLE, defaults.layout),
                 prefs.getString(prefix + FIELD_DENSITY, defaults.density),
@@ -608,7 +620,7 @@ public final class AppPreferences {
                 .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL,
                         defaults.showPercentSymbol))
                 .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
-                        defaults.visibleMeters))
+                        inheritedMeters))
                 .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
                         defaults.cardStyle)));
     }

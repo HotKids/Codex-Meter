@@ -11,6 +11,10 @@ column that can truncate the title. Picker and transparent layouts use the same 
 
 All content switches remain visible when disabled or when data is absent. The one-row editor
 offers session usage, weekly usage and reset. Larger cards add remaining credits.
+For recognized Pro 100, Pro 200 and Pro 500 accounts, unconfigured home widgets start with
+weekly usage and reset selected, with session usage disabled but still available. Other
+accounts retain the existing defaults. Saved selections, including legacy metric-mode
+preferences, override account defaults and survive later plan changes.
 Reset uses the earliest future core-window reset. The Clear reset meter's value uses upstream
 compact countdown units such as `6d 11h`, `2h 50m` and `45m` in every locale. The followed
 live notification's reset meter uses the same countdown. Widget usage reset details retain

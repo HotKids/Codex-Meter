@@ -63,6 +63,86 @@ public class WidgetConfigActivityTest {
     }
 
     @Test
+    public void proPlansDefaultToWeeklyAndReset() {
+        for (String plan : new String[] {"prolite", "pro5x", "pro100", "pro", "pro10x",
+                "pro200", "pro25x", "pro500", " Pro_100 ", "PRO-200", "Pro 25×"}) {
+            assertTrue(AppPreferences.saveSnapshot(app,
+                    UsageCardFixtures.snapshot(plan, 20, 30, false)));
+            assertEquals(plan, "weekly,next_reset",
+                    AppPreferences.loadDefaultWidgetOptions(app).effectiveVisibleMeters());
+            assertEquals(plan, "weekly,next_reset",
+                    AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+            assertTrue(AppPreferences.showDashboardFiveHour(app));
+        }
+    }
+
+    @Test
+    public void nonProAndUnknownPlansKeepTheExistingDefault() {
+        assertTrue(AppPreferences.loadWidgetOptions(app, WIDGET_ID).showsFiveHour());
+        for (String plan : new String[] {"free", "plus", "team", "business", "enterprise",
+                "premium", "go", "pro20x", "unknown", "", null}) {
+            assertTrue(AppPreferences.saveSnapshot(app,
+                    UsageCardFixtures.snapshot(plan, 20, 30, false)));
+            assertEquals(plan, "five_hour,weekly,next_reset",
+                    AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+        }
+    }
+
+    @Test
+    public void savedSelectionsOverrideTheProDefaultAndSurvivePlanChanges() {
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro", 20, 30, false));
+        AppPreferences.saveDefaultWidgetOptions(app, WidgetOptions.defaults()
+                .withVisibleMeters("five_hour,usage_credits"));
+        assertEquals("five_hour,usage_credits",
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+
+        saveSelection(WidgetMeters.NEXT_RESET, WidgetMeters.FIVE_HOUR, WidgetMeters.WEEKLY);
+        assertEquals("next_reset,five_hour,weekly",
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("plus", 20, 30, false));
+        assertEquals("next_reset,five_hour,weekly",
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+    }
+
+    @Test
+    public void legacyContentPreferencesOverrideTheProDefault() {
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro500", 20, 30, false));
+        for (String prefix : new String[] {"default_", "widget_42_"}) {
+            for (String[] legacy : new String[][] {
+                    {"five_hour", "five_hour"}, {"both", "five_hour,weekly,next_reset"},
+                    {"weekly", "weekly"}}) {
+                app.getSharedPreferences("codex_meter_settings_v1", Context.MODE_PRIVATE)
+                        .edit().remove("default_metric_mode").remove("widget_42_metric_mode")
+                        .putString(prefix + "metric_mode", legacy[0]).commit();
+                assertEquals(prefix + legacy[0], legacy[1],
+                        AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+            }
+        }
+    }
+
+    @Test
+    public void proDefaultKeepsTheFiveHourSwitchAvailableOnBothWidgetTypes() throws Exception {
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro100", 20, 30, false));
+        for (Class<?> provider : new Class<?>[] {CodexUsageWidget.class, CodexDialWidget.class}) {
+            AppPreferences.deleteWidgetOptions(app, WIDGET_ID);
+            bindProvider(provider, provider == CodexDialWidget.class ? 90 : 180);
+            WidgetConfigActivity activity = openEditor();
+            assertEquals("weekly,next_reset", currentOptions(activity).effectiveVisibleMeters());
+            RecyclerView list = findWindowList(activity.findViewById(android.R.id.content));
+            assertEquals(provider == CodexDialWidget.class ? 3 : 4,
+                    list.getAdapter().getItemCount());
+            rowSummary(activity, 2);
+            SwitchCompat toggle = findToggle(list.findViewHolderForAdapterPosition(2).itemView);
+            assertNotNull(toggle);
+            assertFalse(toggle.isChecked());
+            toggle.performClick();
+            assertTrue(toggle.isChecked());
+            AppPreferences.saveWidgetOptions(app, WIDGET_ID, currentOptions(activity));
+            assertTrue(currentOptions(openEditor()).showsFiveHour());
+        }
+    }
+
+    @Test
     public void weeklyOnlyWithoutSnapshotStillOffersAllFourMeters() throws Exception {
         saveSelection(WidgetMeters.WEEKLY);
         WidgetConfigActivity activity = openEditor();

@@ -1,5 +1,11 @@
 # Changelog
 
+## 0.1.1
+
+- Default Pro 100, Pro 200 and Pro 500 home widgets to weekly usage and reset, with session usage disabled but still available.
+- Preserve saved and legacy widget selections when applying account defaults.
+- Rewrite the Chinese README as a user guide and add the account and provider support roadmap.
+
 ## 0.1
 
 - Start the phone app as `me.pipi.codexmeter` with SDK 37 and the fixed signing identity.
