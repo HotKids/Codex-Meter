@@ -1,16 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <string name="widget_editor_save_failed">无法保存小组件设置，请重试。</string>
     <string name="widget_editor_title">自定义小组件</string>
     <string name="widget_editor_no_widget">未选择小组件。</string>
     <string name="widget_editor_saved">小组件已更新。</string>
-    <string name="widget_editor_windows">显示内容</string>
-    <string name="widget_editor_windows_hint">最多选择 4 项额度，拖动手柄调整顺序。小尺寸显示前 2 项，宽尺寸最多显示 4 项。</string>
+    <string name="widget_editor_windows">显示</string>
+    <string name="widget_editor_five_hour_limit">会话限额</string>
+    <string name="widget_editor_weekly_limit">每周限额</string>
+    <string name="widget_editor_reset_time">重置时间</string>
+    <string name="widget_editor_remaining_credits">剩余额度</string>
+    <string name="widget_editor_windows_hint">选择显示项目，并拖动排序手柄调整顺序。2×1 小组件可显示会话、每周和重置；2×2 及以上尺寸还可显示剩余额度。</string>
+    <string name="widget_editor_next_reset">重置</string>
     <string name="widget_editor_windows_limit">最多选择 4 项。</string>
     <string name="widget_editor_windows_minimum">至少保留 1 项。</string>
-    <string name="widget_editor_window_missing">当前未返回该额度</string>
-    <string name="widget_editor_show">在小组件上显示</string>
+    <string name="widget_editor_window_missing">暂无数据</string>
+    <string name="widget_editor_show">显示在小组件中</string>
     <string name="widget_editor_reorder">调整顺序</string>
     <string name="widget_editor_appearance">外观</string>
-    <string name="widget_editor_style">样式</string>
-    <string name="widget_editor_refresh_hint">Codex Meter 刷新时小组件随之更新；点击小组件上的刷新时间可立即刷新。</string>
+    <string name="widget_editor_refresh_hint">小组件随 Codex Meter 的用量刷新同步更新。点按小组件的刷新按钮可立即刷新。</string>
 </resources>

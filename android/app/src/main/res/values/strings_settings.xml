@@ -8,7 +8,7 @@
     <string name="settings_page_now_bar">Now Bar</string>
     <string name="settings_page_updates">Updates</string>
     <string name="settings_page_transfer">Backup &amp; transfer</string>
-    <string name="settings_page_privacy">Privacy</string>
+    <string name="settings_page_privacy">Privacy information</string>
     <string name="settings_page_diagnostics">Diagnostics</string>
 
     <!-- Shared dialog buttons -->
@@ -47,15 +47,15 @@
     </plurals>
     <string name="settings_refresh_interval_hourly">Hourly</string>
     <plurals name="settings_refresh_interval_every_hours">
-        <item quantity="one">Every %1$d hour</item>
-        <item quantity="other">Every %1$d hours</item>
+        <item quantity="one">Every %1$dh</item>
+        <item quantity="other">Every %1$dh</item>
     </plurals>
     <string name="settings_summary_estimates_off">Estimates off</string>
     <string name="settings_summary_estimates_on_warnings_off">Estimates on · Warnings off</string>
     <string name="settings_summary_estimates_on">Estimates on</string>
     <string name="settings_summary_notifications_off">Off</string>
     <string name="settings_summary_notifications_on">On · %1$s at %2$d%%</string>
-    <string name="settings_summary_metric_five_hour">5-hour</string>
+    <string name="settings_summary_metric_five_hour">5h</string>
     <string name="settings_summary_metric_weekly">Weekly</string>
     <string name="settings_summary_metric_both">Both limits</string>
     <string name="settings_summary_now_bar_active">Live monitor active</string>
@@ -81,14 +81,12 @@
     <string name="settings_dashboard_edit">Edit dashboard</string>
     <string name="settings_dashboard_edit_summary">Arrange usage cards and choose which ones appear</string>
     <string name="settings_dashboard_window_summary">Shown only when OpenAI returns this window</string>
-    <string name="settings_dashboard_five_hour">5-hour limit</string>
+    <string name="settings_dashboard_five_hour">Session limit</string>
     <string name="settings_dashboard_weekly">Weekly limit</string>
-    <string name="settings_dashboard_additional_limits">Additional limits</string>
-    <string name="settings_dashboard_additional_limits_summary">Model-specific limits such as GPT-5.3-Codex-Spark</string>
     <string name="settings_dashboard_usage_credits">Usage-credit balance</string>
     <string name="settings_dashboard_usage_credits_summary">Hidden automatically at a zero or negative balance</string>
     <string name="settings_dashboard_usage_history">Usage history</string>
-    <string name="settings_dashboard_usage_history_summary">Shown only when a 5-hour or weekly window is available</string>
+    <string name="settings_dashboard_usage_history_summary">View plan usage and credit consumption for Work, Codex, and other agent tasks. Excludes conversations in Chat mode.</string>
     <string name="settings_dashboard_reset_credits">Reset credits</string>
     <string name="settings_dashboard_reset_credits_summary">Hidden automatically when no resets are available</string>
     <string name="settings_usage_estimates_category">Usage estimates</string>
@@ -98,15 +96,15 @@
 
     <!-- Privacy -->
     <string name="settings_privacy_category">Your data</string>
-    <string name="settings_privacy_storage">Encrypted local storage</string>
-    <string name="settings_privacy_storage_summary">OAuth tokens are encrypted with Android Keystore and remain on this device.</string>
-    <string name="settings_privacy_network">Direct network access</string>
-    <string name="settings_privacy_network_summary">Codex Meter connects directly to OpenAI for authentication and to ChatGPT and Codex endpoints for usage data. There is no Codex Meter backend.</string>
+    <string name="settings_privacy_storage">On-device storage</string>
+    <string name="settings_privacy_storage_summary">Sign-in credentials are stored encrypted on this device.</string>
+    <string name="settings_privacy_network">Network access</string>
+    <string name="settings_privacy_network_summary">Sign-in and usage requests connect directly to OpenAI / ChatGPT.\nUpdate checks and downloads connect to GitHub.\nThe app has no backend of its own.</string>
 
     <!-- Diagnostics -->
     <string name="settings_diagnostics_category_tracing">Log tracing</string>
     <string name="settings_diagnostics_logging">Save diagnostic logs</string>
-    <string name="settings_diagnostics_logging_summary">Record detailed app, refresh, scheduler, Wear, and network events</string>
+    <string name="settings_diagnostics_logging_summary">Record detailed app, refresh, scheduler, and network events</string>
     <string name="settings_diagnostics_saved_logs">Saved logs</string>
     <string name="settings_diagnostics_export">Export logs</string>
     <string name="settings_diagnostics_export_summary">Save a structured JSON Lines file</string>
@@ -114,7 +112,7 @@
     <string name="settings_diagnostics_clear_summary">Permanently delete saved diagnostic events</string>
     <string name="settings_diagnostics_category_privacy">Privacy</string>
     <string name="settings_diagnostics_sensitive_data">Sensitive data protection</string>
-    <string name="settings_diagnostics_sensitive_data_summary">Logs stay in private app storage until you export or clear them. Authentication tokens, cookies, authorization codes, email addresses, URL queries, and request/response bodies are never intentionally recorded. Review an export before sharing it.</string>
+    <string name="settings_diagnostics_sensitive_data_summary">Diagnostic logs are stored in private app storage and can be exported or cleared. Authentication tokens, cookies, authorization codes, email addresses, URL queries, and request/response bodies are not intentionally recorded. Review the exported file before sharing it.</string>
     <string name="settings_diagnostics_tracing_enabled">Diagnostic tracing enabled.</string>
     <string name="settings_diagnostics_tracing_disabled">Diagnostic tracing disabled. Saved logs were kept.</string>
     <plurals name="settings_diagnostics_status_tracing_on">
@@ -210,4 +208,10 @@
     <string name="settings_transfer_error_no_authentication">This file has no authentication to import.</string>
     <string name="settings_transfer_error_auth_invalid">Imported authentication is incomplete or invalid.</string>
     <string name="settings_transfer_error_refresh_failed">Imported authentication could not refresh usage.</string>
+    <string name="settings_page_home_display">Home display</string>
+    <string name="settings_home_display_summary">Usage cards and display order</string>
+    <string name="settings_about_summary">Version, development and acknowledgments</string>
+    <string name="settings_appearance_theme_system_summary">Match system appearance settings</string>
+    <string name="settings_summary_refresh_adaptive">Adaptive · %1$s</string>
+    <string name="settings_summary_refresh_fixed">Fixed · %1$s</string>
 </resources>

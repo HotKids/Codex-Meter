@@ -12,7 +12,7 @@
     <string name="auth_onboarding_usage_body">See what remains without digging through ChatGPT, then keep it visible with home-screen and supported Galaxy lock-screen widgets.</string>
     <string name="auth_onboarding_features_header">What you get</string>
     <string name="auth_onboarding_feature_limits_title">Live Codex limits</string>
-    <string name="auth_onboarding_feature_limits_summary">Five-hour and weekly allowance with reset timing</string>
+    <string name="auth_onboarding_feature_limits_summary">5h and weekly allowance with reset timing</string>
     <string name="auth_onboarding_feature_widgets_title">Native One UI widgets</string>
     <string name="auth_onboarding_feature_widgets_summary">At-a-glance usage on your home and lock screens</string>
     <string name="auth_onboarding_feature_alerts_title">Useful alerts</string>
@@ -30,7 +30,7 @@
     <string name="auth_onboarding_done_signed_in_title">You’re all set</string>
     <string name="auth_onboarding_done_signed_in_body">Your ChatGPT account is connected. Codex Meter will load your latest allowance as the app opens.</string>
     <string name="auth_onboarding_done_signed_out_title">Setup complete</string>
-    <string name="auth_onboarding_done_signed_out_body">You can connect ChatGPT later from the Codex Meter dashboard.</string>
+    <string name="auth_onboarding_done_signed_out_body">You can connect ChatGPT later from Codex Meter settings.</string>
     <string name="auth_onboarding_account_connected">ChatGPT connected</string>
     <string name="auth_onboarding_account_connected_summary">Secure sign-in complete</string>
     <string name="auth_onboarding_account_skipped">Continue without an account</string>
@@ -115,11 +115,12 @@
     <string name="auth_about_tjg_summary">App and Icon designer</string>
     <string name="auth_about_dependencies">Dependencies</string>
     <string name="auth_about_oneui_summary">The library that makes this app so pretty.</string>
-    <string name="auth_about_openai_title" translatable="false">OpenAI API</string>
+    <string name="auth_about_openai_title" translatable="false">ChatGPT Codex</string>
     <string name="auth_about_openai_summary">This app would be pretty useless without it.</string>
     <string name="auth_about_diagnostics_unlocked">Diagnostics unlocked.</string>
     <plurals name="auth_about_diagnostics_taps_remaining">
         <item quantity="one">%1$d more tap for diagnostics.</item>
         <item quantity="other">%1$d more taps for diagnostics.</item>
     </plurals>
+    <string name="auth_about_development">Development</string>
 </resources>

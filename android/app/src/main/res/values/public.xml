@@ -24,7 +24,6 @@
     <public type="attr" name="widgetStyle" id="0x7f020014" />
     <public type="drawable" name="ic_launcher_background" id="0x7f030000" />
     <public type="drawable" name="ic_launcher_foreground" id="0x7f030001" />
-    <public type="drawable" name="ic_launcher_monochrome" id="0x7f030002" />
     <public type="drawable" name="ic_notification" id="0x7f030003" />
     <public type="drawable" name="ic_refresh" id="0x7f030004" />
     <public type="drawable" name="ic_refresh_dark" id="0x7f030005" />
@@ -46,31 +45,6 @@
     <public type="drawable" name="progress_violet" id="0x7f030015" />
     <public type="drawable" name="widget_action_dark" id="0x7f030016" />
     <public type="drawable" name="widget_action_light" id="0x7f030017" />
-    <public type="drawable" name="widget_bg_dark_100" id="0x7f030018" />
-    <public type="drawable" name="widget_bg_dark_56" id="0x7f030019" />
-    <public type="drawable" name="widget_bg_dark_72" id="0x7f03001a" />
-    <public type="drawable" name="widget_bg_dark_88" id="0x7f03001b" />
-    <public type="drawable" name="widget_bg_light_100" id="0x7f03001c" />
-    <public type="drawable" name="widget_bg_light_56" id="0x7f03001d" />
-    <public type="drawable" name="widget_bg_light_72" id="0x7f03001e" />
-    <public type="drawable" name="widget_bg_light_88" id="0x7f03001f" />
-    <public type="drawable" name="widget_bg_oneui_dark_100" id="0x7f030020" />
-    <public type="drawable" name="widget_bg_oneui_dark_56" id="0x7f030021" />
-    <public type="drawable" name="widget_bg_oneui_dark_72" id="0x7f030022" />
-    <public type="drawable" name="widget_bg_oneui_dark_88" id="0x7f030023" />
-    <public type="drawable" name="widget_bg_oneui_light_100" id="0x7f030024" />
-    <public type="drawable" name="widget_bg_oneui_light_56" id="0x7f030025" />
-    <public type="drawable" name="widget_bg_oneui_light_72" id="0x7f030026" />
-    <public type="drawable" name="widget_bg_oneui_light_88" id="0x7f030027" />
-    <public type="drawable" name="widget_bg_samsung_dark_100" id="0x7f030028" />
-    <public type="drawable" name="widget_bg_samsung_dark_56" id="0x7f030029" />
-    <public type="drawable" name="widget_bg_samsung_dark_72" id="0x7f03002a" />
-    <public type="drawable" name="widget_bg_samsung_dark_88" id="0x7f03002b" />
-    <public type="drawable" name="widget_bg_samsung_light_100" id="0x7f03002c" />
-    <public type="drawable" name="widget_bg_samsung_light_56" id="0x7f03002d" />
-    <public type="drawable" name="widget_bg_samsung_light_72" id="0x7f03002e" />
-    <public type="drawable" name="widget_bg_samsung_light_88" id="0x7f03002f" />
-    <public type="drawable" name="widget_bg_transparent" id="0x7f030030" />
     <public type="drawable" name="ic_reset_notification" id="0x7f030031" />
     <public type="id" name="colorful" id="0x7f040000" />
     <public type="id" name="cover" id="0x7f040001" />

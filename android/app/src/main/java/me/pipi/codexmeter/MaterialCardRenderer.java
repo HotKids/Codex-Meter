@@ -1,0 +1,363 @@
+package me.pipi.codexmeter;
+
+import dev.bennett.codexmeter.UsageWindow;
+import dev.bennett.codexmeter.WidgetMeters;
+
+import android.app.PendingIntent;
+import android.content.Context;
+import android.content.res.Resources;
+import android.graphics.Color;
+import android.graphics.Paint;
+import android.graphics.Typeface;
+import android.os.Build;
+import android.util.TypedValue;
+import android.view.Gravity;
+import android.view.View;
+import android.widget.RemoteViews;
+import androidx.annotation.RequiresApi;
+import java.util.List;
+import java.util.concurrent.TimeUnit;
+
+/**
+ * The "Clear" home-widget style: a Material You card with an account-plan header and refresh button
+ * above one tonal panel per selected meter (title, value, a thick progress bar,
+ * and when the window resets). Narrow widgets stack the first two
+ * windows; wide widgets lay up to four out in two columns. Panels share the height, so the card
+ * fills any size; names and values have separate rows above bottom-aligned progress and resets. On Android 12+ the colours are
+ * resolved by the launcher from the wallpaper palette and follow its night mode.
+ */
+final class MaterialCardRenderer {
+    static final float MEDIUM_MIN_WIDTH_DP = 250f;
+    /** Reference metrics in dp at scale 1; panel typography also fits its actual height. */
+    private static final float PANEL_WIDTH = 170f;
+    private static final float PANEL_HEIGHT = 74f;
+    private static final float HEADER_HEIGHT = 24f;
+    private static final float PADDING = 12f;
+    private static final float FIRST_ROW_GAP = 10f;
+    private static final float GAP = 8f;
+    private static final float ICON = 22f;
+    private static final float TITLE_TEXT = 17f;
+    private static final float STATUS_TEXT = 10.5f;
+    /** Matches the pinned SESL body text size while keeping widget typography in dp. */
+    private static final float UPDATED_TEXT = 14f;
+    private static final float NAME_TEXT = 15f;
+    private static final float VALUE_TEXT = 15.5f;
+    private static final float DETAIL_TEXT = 11f;
+    private static final float PANEL_PADDING_H = 12f;
+    private static final float PANEL_PADDING_V = 4f;
+    /** Fixed spacing between title, bar and detail rows across card sizes. */
+    private static final float PANEL_GAP = 5f;
+    private static final float VALUE_GAP = 2f;
+    private static final float BAR_HEIGHT = 9f;
+    private static final float MIN_SCALE = 0.7f;
+    private static final float MIN_NARROW_TEXT_SCALE = 0.9f;
+    private static final float MAX_SCALE = 1.25f;
+    private static final int LEVEL_MAX = 10000;
+    private static final long DAY_MILLIS = TimeUnit.DAYS.toMillis(1);
+
+    private static final int[] ROWS = {R.id.md_row_0, R.id.md_row_1};
+    private static final int[] PANELS = {R.id.md_panel_0, R.id.md_panel_1, R.id.md_panel_2,
+            R.id.md_panel_3};
+    private static final int[] PANEL_BACKGROUNDS = {R.id.md_panel_bg_0, R.id.md_panel_bg_1,
+            R.id.md_panel_bg_2, R.id.md_panel_bg_3};
+    private static final int[] CONTENTS = {R.id.md_panel_content_0, R.id.md_panel_content_1,
+            R.id.md_panel_content_2, R.id.md_panel_content_3};
+    private static final int[] NAMES = {R.id.md_name_0, R.id.md_name_1, R.id.md_name_2,
+            R.id.md_name_3};
+    private static final int[] VALUES = {R.id.md_value_0, R.id.md_value_1, R.id.md_value_2,
+            R.id.md_value_3};
+    private static final int[] BARS = {R.id.md_bar_0, R.id.md_bar_1, R.id.md_bar_2,
+            R.id.md_bar_3};
+    private static final int[] TRACKS = {R.id.md_track_0, R.id.md_track_1, R.id.md_track_2,
+            R.id.md_track_3};
+    private static final int[] FILLS = {R.id.md_fill_0, R.id.md_fill_1, R.id.md_fill_2,
+            R.id.md_fill_3};
+    private static final int[] DETAILS = {R.id.md_detail_0, R.id.md_detail_1,
+            R.id.md_detail_2, R.id.md_detail_3};
+    private static final int[] RESETS = {R.id.md_reset_0, R.id.md_reset_1, R.id.md_reset_2,
+            R.id.md_reset_3};
+
+    /** Colour roles; each resource follows the night mode (see widget_material_colors). */
+    private enum Role {
+        SURFACE(R.color.widget_material_surface),
+        PANEL(R.color.widget_material_panel),
+        TRACK(R.color.widget_material_track),
+        FILL(R.color.widget_material_fill),
+        TEXT(R.color.widget_material_text),
+        SECONDARY(R.color.widget_material_secondary),
+        ACCENT(R.color.widget_material_accent);
+
+        final int resource;
+
+        Role(int resource) {
+            this.resource = resource;
+        }
+    }
+
+    private final Context context;
+    private final Resources resources;
+    private final RemoteViews views;
+    private final WidgetOptions options;
+    private final UsageCardState state;
+    private final List<String> keys;
+    private final int columns;
+    private final int rowCount;
+    private final boolean singleUsage;
+    private final float scale;
+    private final float textScale;
+    private final boolean showUpdated;
+    private final float panelContentWidth;
+    private final float panelContentHeight;
+
+    private MaterialCardRenderer(Context context, WidgetOptions options,
+            List<String> keys, UsageCardState state, float widthDp, float heightDp) {
+        this.context = context;
+        this.resources = context.getResources();
+        this.options = options;
+        this.showUpdated = widthDp >= 280f;
+        this.state = state;
+        boolean wide = widthDp >= MEDIUM_MIN_WIDTH_DP;
+        int capacity = wide ? PANELS.length : ROWS.length;
+        this.keys = keys.subList(0, Math.min(keys.size(), capacity));
+        this.singleUsage = this.keys.size() == 1 && (WidgetMeters.FIVE_HOUR.equals(this.keys.get(0))
+                || WidgetMeters.WEEKLY.equals(this.keys.get(0)));
+        int shown = Math.max(1, this.keys.size());
+        this.columns = wide && shown > 1 ? 2 : 1;
+        this.rowCount = (shown + columns - 1) / columns;
+        float neededWidth = PADDING * 2f + columns * PANEL_WIDTH + (columns - 1) * GAP;
+        float panelHeight = singleUsage ? PANEL_HEIGHT + VALUE_TEXT * 2f + PANEL_GAP : PANEL_HEIGHT;
+        float neededHeight = PADDING * 2f + HEADER_HEIGHT + FIRST_ROW_GAP
+                + rowCount * panelHeight + (rowCount - 1) * GAP;
+        float fit = Math.min(widthDp / neededWidth, heightDp / neededHeight);
+        this.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, fit));
+        // Narrow cards fit long values separately instead of shrinking every label with the card.
+        this.textScale = columns == 1 ? Math.max(scale, MIN_NARROW_TEXT_SCALE) : scale;
+        float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
+                / columns;
+        this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
+        float panelHeightDp = (heightDp - (PADDING * 2f + HEADER_HEIGHT + FIRST_ROW_GAP
+                + (rowCount - 1) * GAP) * scale) / rowCount;
+        this.panelContentHeight = Math.max(1f, panelHeightDp - PANEL_PADDING_V * 2f * scale);
+        this.views = new RemoteViews(context.getPackageName(), options.opacity <= 0
+                ? R.layout.widget_material_shadow : R.layout.widget_material);
+    }
+
+    /**
+     * Renders the Material card for one host size. {@code keys} is the widget's resolved window
+     * selection; narrow cards show the first two and wide cards up to four.
+     */
+    static RemoteViews build(Context context, int appWidgetId, WidgetOptions options,
+            List<String> keys, UsageCardState state, float widthDp, float heightDp) {
+        MaterialCardRenderer renderer = new MaterialCardRenderer(context, options, keys, state,
+                widthDp, heightDp);
+        renderer.render(appWidgetId);
+        return renderer.views;
+    }
+
+    private void render(int appWidgetId) {
+        renderSurface();
+        renderHeader();
+        for (int row = 0; row < ROWS.length; row++) {
+            views.setViewVisibility(ROWS[row], row < rowCount ? View.VISIBLE : View.GONE);
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                margin(ROWS[row], RemoteViews.MARGIN_TOP, row == 0 ? FIRST_ROW_GAP : GAP);
+            }
+        }
+        for (int slot = 0; slot < PANELS.length; slot++) {
+            int item = itemForSlot(slot);
+            if (item < 0) {
+                views.setViewVisibility(PANELS[slot], View.GONE);
+                continue;
+            }
+            views.setViewVisibility(PANELS[slot], View.VISIBLE);
+            renderPanel(slot, item);
+        }
+        bindActions(appWidgetId);
+    }
+
+    /** Index into {@link #keys} shown by a layout slot, or -1 when the slot stays hidden. */
+    private int itemForSlot(int slot) {
+        int row = slot / 2;
+        int column = slot % 2;
+        if (row >= rowCount || column >= columns) {
+            return -1;
+        }
+        int item = row * columns + column;
+        int shown = Math.max(1, keys.size());
+        return item < shown ? item : -1;
+    }
+
+    private void renderSurface() {
+        int padding = px(PADDING);
+        views.setViewPadding(R.id.md_content, padding, padding, padding, padding);
+        if (options.opacity <= 0) {
+            views.setViewVisibility(R.id.md_surface, View.GONE);
+            return;
+        }
+        views.setViewVisibility(R.id.md_surface, View.VISIBLE);
+        color(R.id.md_surface, "setColorFilter", Role.SURFACE);
+        views.setInt(R.id.md_surface, "setImageAlpha", Math.round(options.opacity * 2.55f));
+    }
+
+    private void renderHeader() {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            for (int icon : new int[] {R.id.md_logo, R.id.md_refresh}) {
+                views.setViewLayoutWidth(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
+                views.setViewLayoutHeight(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
+            }
+        }
+        textSize(R.id.md_title, TITLE_TEXT);
+        textSize(R.id.md_status, STATUS_TEXT);
+        textSize(R.id.md_updated, UPDATED_TEXT);
+        views.setTextViewText(R.id.md_updated, UsageCardFormat.time(context, state.fetchedAtMillis()));
+        views.setViewVisibility(R.id.md_updated,
+                showUpdated && state.fetchedAtMillis() > 0L ? View.VISIBLE : View.GONE);
+        String plan = UsageFormat.planLabel(state.planType());
+        views.setTextViewText(R.id.md_title,
+                plan.isEmpty() ? resources.getString(R.string.widget_material_title) : plan);
+        String status = state.statusMessage(resources, false);
+        views.setTextViewText(R.id.md_status, status);
+        views.setViewVisibility(R.id.md_status, status.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+        if (options.opacity <= 0) {
+            views.setTextColor(R.id.md_title, Color.WHITE);
+            views.setTextColor(R.id.md_status, Color.WHITE);
+            views.setTextColor(R.id.md_updated, Color.WHITE);
+            views.setInt(R.id.md_logo, "setColorFilter", Color.WHITE);
+            views.setInt(R.id.md_refresh, "setColorFilter", Color.WHITE);
+            return;
+        }
+        color(R.id.md_title, "setTextColor", Role.TEXT);
+        color(R.id.md_status, "setTextColor", Role.SECONDARY);
+        color(R.id.md_updated, "setTextColor", Role.SECONDARY);
+        color(R.id.md_logo, "setColorFilter", Role.ACCENT);
+        color(R.id.md_refresh, "setColorFilter", Role.TEXT);
+    }
+
+    private void renderPanel(int slot, int item) {
+        String key = item < keys.size() ? keys.get(item) : null;
+        WidgetMeter meter = new WidgetMeter(context, key, options, state);
+        UsageWindow window = meter.window;
+        long resetAt = meter.resetAtMillis;
+        boolean reset = WidgetMeters.NEXT_RESET.equals(key);
+        String value = reset ? UsageCardFormat.bareReset(resources, resetAt, state.nowMillis)
+                : meter.value;
+
+        color(PANEL_BACKGROUNDS[slot], "setColorFilter", Role.PANEL);
+        int horizontal = px(PANEL_PADDING_H);
+        int vertical = px(PANEL_PADDING_V);
+        views.setViewPadding(CONTENTS[slot], horizontal, vertical, horizontal, vertical);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && slot % 2 == 1) {
+            margin(PANELS[slot], RemoteViews.MARGIN_START, GAP);
+        }
+
+        views.setTextViewText(NAMES[slot], meter.title);
+        color(NAMES[slot], "setTextColor", Role.TEXT);
+        views.setTextViewText(VALUES[slot], value);
+        boolean usage = WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key);
+        fitPanelText(slot, meter.title, value);
+        color(VALUES[slot], "setTextColor", Role.TEXT);
+
+        boolean balance = WidgetOptions.USAGE_CREDITS.equals(key);
+        views.setViewVisibility(BARS[slot], balance ? View.GONE : View.VISIBLE);
+        if (!balance) {
+            renderBar(slot, meter.progress);
+        }
+        views.setViewVisibility(DETAILS[slot], usage || reset ? View.VISIBLE : View.GONE);
+        String detail = reset
+                ? resources.getString(R.string.widget_material_reset_credits, state.availableCredits())
+                : resetText(window, resetAt);
+        views.setTextViewText(RESETS[slot], detail);
+        Paint detailPaint = new Paint();
+        detailPaint.setTextSize(100f);
+        float detailWidth = detailPaint.measureText(detail) / 100f;
+        float detailSize = detailWidth <= 0f ? DETAIL_TEXT * textScale
+                : Math.min(DETAIL_TEXT * textScale, panelContentWidth / detailWidth);
+        views.setTextViewTextSize(RESETS[slot], TypedValue.COMPLEX_UNIT_DIP, detailSize);
+        color(RESETS[slot], "setTextColor", Role.SECONDARY);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            panelGap(DETAILS[slot]);
+        }
+    }
+
+    private void fitPanelText(int slot, String title, String value) {
+        Paint paint = new Paint();
+        paint.setTypeface(Typeface.DEFAULT_BOLD);
+        float nameSize = NAME_TEXT * textScale;
+        paint.setTextSize(nameSize);
+        // Leave one dp for rounded native bounds so the weighted title keeps every character.
+        float available = Math.max(1f, panelContentWidth - paint.measureText(title) - 8f - 1f);
+        paint.setTextSize(100f);
+        float valueWidth = paint.measureText(value) / 100f;
+        float valueSize = valueWidth <= 0f ? VALUE_TEXT * textScale
+                : Math.min(VALUE_TEXT * textScale, Math.max(1f, available - 1f) / valueWidth);
+        views.setTextViewTextSize(NAMES[slot], TypedValue.COMPLEX_UNIT_DIP, nameSize);
+        views.setTextViewTextSize(VALUES[slot], TypedValue.COMPLEX_UNIT_DIP, valueSize);
+        if (columns == 1 && Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Bound the value column so native font measurement cannot steal the title's width.
+            views.setViewLayoutWidth(VALUES[slot], available, TypedValue.COMPLEX_UNIT_DIP);
+            views.setInt(VALUES[slot], "setGravity", Gravity.END);
+        }
+    }
+
+    private void renderBar(int slot, int progress) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
+                    TypedValue.COMPLEX_UNIT_DIP);
+            panelGap(BARS[slot]);
+        }
+        color(TRACKS[slot], "setColorFilter", Role.TRACK);
+        color(FILLS[slot], "setColorFilter", Role.FILL);
+        int level = 0;
+        if (progress > 0) {
+            // Never thinner than a dot, so a nearly empty window still shows its colour.
+            float fraction = Math.max(progress / 100f, BAR_HEIGHT * scale / panelContentWidth);
+            level = Math.round(Math.min(1f, fraction) * LEVEL_MAX);
+        }
+        views.setInt(FILLS[slot], "setImageLevel", level);
+    }
+
+    private String resetText(UsageWindow window, long resetAt) {
+        return window == null || resetAt <= 0L ? UsageCardFormat.MISSING
+                : resources.getString(R.string.widget_material_resets_at,
+                        UsageCardFormat.absoluteReset(resetAt));
+    }
+
+    private void bindActions(int appWidgetId) {
+        PendingIntent refresh = WidgetActions.refresh(context, appWidgetId);
+        views.setOnClickPendingIntent(android.R.id.background,
+                WidgetActions.openApp(context, appWidgetId));
+        views.setOnClickPendingIntent(R.id.md_refresh, refresh);
+        views.setOnClickPendingIntent(R.id.md_status, refresh);
+    }
+
+    /**
+     * Applies a colour role. On Android 12+ the launcher resolves the resource, so wallpaper
+     * colours and night mode stay live without a re-render.
+     */
+    private void color(int viewId, String method, Role role) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setColor(viewId, method, role.resource);
+        } else {
+            views.setInt(viewId, method, context.getColor(role.resource));
+        }
+    }
+
+    private void textSize(int viewId, float sizeDp) {
+        views.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_DIP, sizeDp * textScale);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private void panelGap(int viewId) {
+        views.setViewLayoutMargin(viewId, RemoteViews.MARGIN_TOP, PANEL_GAP,
+                TypedValue.COMPLEX_UNIT_DIP);
+    }
+
+    @RequiresApi(Build.VERSION_CODES.S)
+    private void margin(int viewId, int which, float valueDp) {
+        views.setViewLayoutMargin(viewId, which, valueDp * scale, TypedValue.COMPLEX_UNIT_DIP);
+    }
+
+    private int px(float dp) {
+        return Math.round(dp * scale * resources.getDisplayMetrics().density);
+    }
+}

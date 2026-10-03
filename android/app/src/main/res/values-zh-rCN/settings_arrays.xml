@@ -7,10 +7,10 @@
 
     <string-array name="settings_refresh_entries">
         <item>5 分钟</item><item>10 分钟</item><item>15 分钟</item>
-        <item>30 分钟</item><item>60 分钟</item><item>2 小时</item>
+        <item>30 分钟</item><item>60 分钟</item><item>2h</item>
     </string-array>
     <string-array name="settings_refresh_mode_entries">
-        <item>自动</item><item>手动</item>
+        <item>自适应</item><item>固定间隔</item>
     </string-array>
     <string-array name="settings_update_channel_entries">
         <item>稳定版</item>
@@ -18,13 +18,13 @@
     </string-array>
     <string-array name="settings_update_interval_entries">
         <item>每小时</item>
-        <item>每 6 小时</item>
-        <item>每 12 小时</item>
+        <item>每 6h</item>
+        <item>每 12h</item>
         <item>每天</item>
         <item>每周</item>
     </string-array>
     <string-array name="settings_metric_entries">
-        <item>两者</item><item>5 小时</item><item>每周</item>
+        <item>两种限额</item><item>5h</item><item>每周</item>
     </string-array>
     <string-array name="settings_alert_style_entries">
         <item>静音</item><item>通知提示音</item><item>闹钟铃声</item>

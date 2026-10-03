@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_dial_name">Codex 仪表盘</string>
+    <string name="widget_dial_provider_description">以仪表盘显示用量与重置时间</string>
+</resources>

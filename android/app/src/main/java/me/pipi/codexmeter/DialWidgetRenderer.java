@@ -1,0 +1,105 @@
+package me.pipi.codexmeter;
+
+import dev.bennett.codexmeter.NowBarCopy;
+import dev.bennett.codexmeter.WidgetMeters;
+
+import android.content.Context;
+import android.content.res.Configuration;
+import android.os.Build;
+import android.view.View;
+import android.widget.RemoteViews;
+import java.util.List;
+import java.util.Locale;
+
+/** Two-column, one-row dials using upstream geometry and the Clear system palette. */
+final class DialWidgetRenderer {
+    private static final int[] DIAL_COLORS = {
+            R.color.widget_material_track, R.color.widget_material_fill};
+    private static final int[][] RING_ARC_LAYERS = {
+            {R.id.primary_samsung_track, R.id.primary_samsung_fill},
+            {R.id.secondary_samsung_track, R.id.secondary_samsung_fill}};
+    private static final int[] RING_VALUES = {
+            R.id.primary_samsung_value, R.id.secondary_samsung_value};
+    private static final int[] RING_ICONS = {
+            R.id.primary_samsung_icon, R.id.secondary_samsung_icon};
+    private static final int[] RING_SECTIONS = {R.id.primary_section, R.id.secondary_section};
+
+    private DialWidgetRenderer() {
+    }
+
+    static RemoteViews build(Context context, int appWidgetId, WidgetOptions options,
+            List<String> keys, UsageCardState state) {
+        RemoteViews views = new RemoteViews(context.getPackageName(),
+                R.layout.widget_rings);
+        applyBackground(context, views, options);
+        Context english = english(context);
+        int text = context.getColor(R.color.widget_material_text);
+        for (int index = 0; index < RING_ARC_LAYERS.length; index++) {
+            boolean shown = index < keys.size();
+            views.setViewVisibility(RING_SECTIONS[index], shown ? View.VISIBLE : View.GONE);
+            if (!shown) {
+                continue;
+            }
+            String key = keys.get(index);
+            WidgetMeter meter = new WidgetMeter(english, key, options, state);
+            // VectorDrawable does not trim its path when ProgressBar changes the level.
+            for (int layer = 0; layer < RING_ARC_LAYERS[index].length; layer++) {
+                int viewId = RING_ARC_LAYERS[index][layer];
+                views.setImageViewBitmap(viewId,
+                        WidgetGraphics.twoDialArc(layer == 0 ? 100 : meter.progress));
+                applyColor(context, views, viewId, DIAL_COLORS[layer]);
+            }
+            String value = WidgetMeters.NEXT_RESET.equals(key) && meter.resetAtMillis > state.nowMillis
+                    ? NowBarCopy.compactDuration(meter.resetAtMillis - state.nowMillis) : meter.value;
+            views.setTextViewText(RING_VALUES[index], value);
+            views.setImageViewResource(RING_ICONS[index], meter.icon);
+            views.setContentDescription(RING_ICONS[index],
+                    description(english, meter));
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+                // Resolved by the launcher, so wallpaper colours and night mode stay live.
+                views.setColor(RING_VALUES[index], "setTextColor",
+                        R.color.widget_material_text);
+                views.setColor(RING_ICONS[index], "setColorFilter",
+                        R.color.widget_material_text);
+            } else {
+                views.setTextColor(RING_VALUES[index], text);
+                views.setInt(RING_ICONS[index], "setColorFilter", text);
+            }
+        }
+        views.setOnClickPendingIntent(android.R.id.background,
+                WidgetActions.openApp(context, appWidgetId));
+        views.setOnClickPendingIntent(R.id.refresh_button,
+                WidgetActions.refresh(context, appWidgetId));
+        return views;
+    }
+
+    /** The dials are deliberately English-only; this context resolves their strings. */
+    private static Context english(Context context) {
+        Configuration config = new Configuration(context.getResources().getConfiguration());
+        config.setLocale(Locale.ENGLISH);
+        return context.createConfigurationContext(config);
+    }
+
+    /** Spoken label of one dial: the window title and its value, in English. */
+    private static String description(Context context, WidgetMeter meter) {
+        return context.getString(R.string.widget_dial_description,
+                meter.title, meter.value);
+    }
+
+    private static void applyBackground(Context context, RemoteViews views, WidgetOptions options) {
+        views.setViewVisibility(R.id.dial_surface, options.opacity <= 0 ? View.GONE : View.VISIBLE);
+        if (options.opacity <= 0) {
+            return;
+        }
+        applyColor(context, views, R.id.dial_surface, R.color.widget_material_surface);
+        views.setInt(R.id.dial_surface, "setImageAlpha", Math.round(options.opacity * 2.55f));
+    }
+
+    private static void applyColor(Context context, RemoteViews views, int viewId, int color) {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            views.setColor(viewId, "setColorFilter", color);
+        } else {
+            views.setInt(viewId, "setColorFilter", context.getColor(color));
+        }
+    }
+}

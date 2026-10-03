@@ -15,7 +15,7 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
     <application
-        android:name="dev.bennett.codexmeter.CodexMeterApplication"
+        android:name="me.pipi.codexmeter.CodexMeterApplication"
         android:theme="@style/AppTheme"
         android:label="@string/app_name"
         android:icon="@mipmap/ic_launcher"
@@ -26,7 +26,7 @@
         android:roundIcon="@mipmap/ic_launcher"
         android:dataExtractionRules="@xml/data_extraction_rules">
         <activity
-            android:name="dev.bennett.codexmeter.MainActivity"
+            android:name="me.pipi.codexmeter.MainActivity"
             android:exported="true"
             android:launchMode="singleTask">
             <intent-filter>
@@ -44,36 +44,33 @@
             </intent-filter>
         </activity>
         <activity
-            android:name="dev.bennett.codexmeter.OnboardingActivity"
+            android:name="me.pipi.codexmeter.OnboardingActivity"
             android:exported="false"
             android:launchMode="singleTop"/>
         <activity
-            android:name="dev.bennett.codexmeter.SettingsActivity"
+            android:name="me.pipi.codexmeter.SettingsActivity"
             android:exported="false"/>
         <activity
-            android:name="dev.bennett.codexmeter.UpdateActivity"
+            android:name="me.pipi.codexmeter.UpdateActivity"
             android:configChanges="orientation|screenSize"
             android:exported="false"/>
         <activity
-            android:name="dev.bennett.codexmeter.ReleaseHistoryActivity"
+            android:name="me.pipi.codexmeter.UsageHistoryActivity"
             android:exported="false"/>
         <activity
-            android:name="dev.bennett.codexmeter.UsageHistoryActivity"
+            android:name="me.pipi.codexmeter.DashboardReorderActivity"
             android:exported="false"/>
         <activity
-            android:name="dev.bennett.codexmeter.DashboardReorderActivity"
+            android:name="me.pipi.codexmeter.AboutActivity"
             android:exported="false"/>
         <activity
-            android:name="dev.bennett.codexmeter.AboutActivity"
-            android:exported="false"/>
-        <activity
-            android:name="dev.bennett.codexmeter.ResetCreditActivity"
+            android:name="me.pipi.codexmeter.ResetCreditActivity"
             android:exported="false"
             android:launchMode="singleTop"
             android:excludeFromRecents="true"/>
         <activity
             android:theme="@style/AppTheme"
-            android:name="dev.bennett.codexmeter.WidgetConfigActivity"
+            android:name="me.pipi.codexmeter.WidgetConfigActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
@@ -81,7 +78,7 @@
         </activity>
         <activity
             android:theme="@style/AppTheme"
-            android:name="dev.bennett.codexmeter.LockWidgetConfigActivity"
+            android:name="me.pipi.codexmeter.LockWidgetConfigActivity"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_CONFIGURE"/>
@@ -89,7 +86,7 @@
         </activity>
         <receiver
             android:label="@string/widget_name"
-            android:name="dev.bennett.codexmeter.CodexUsageWidget"
+            android:name="me.pipi.codexmeter.CodexUsageWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -102,8 +99,22 @@
                 android:resource="@xml/widget_supported_cell_size_info"/>
         </receiver>
         <receiver
+            android:label="@string/widget_dial_name"
+            android:name="me.pipi.codexmeter.CodexDialWidget"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/codex_dial_widget_info"/>
+            <meta-data
+                android:name="com.sec.android.appwidget.widgetinfo"
+                android:resource="@xml/widget_dial_supported_cell_size_info"/>
+        </receiver>
+        <receiver
             android:label="@string/lock_widget_square_name"
-            android:name="dev.bennett.codexmeter.SamsungLockSquareWidget"
+            android:name="me.pipi.codexmeter.SamsungLockSquareWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -117,7 +128,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_wide_name"
-            android:name="dev.bennett.codexmeter.SamsungLockWideWidget"
+            android:name="me.pipi.codexmeter.SamsungLockWideWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -131,7 +142,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_rings_square_name"
-            android:name="dev.bennett.codexmeter.SamsungLockRingsSquareWidget"
+            android:name="me.pipi.codexmeter.SamsungLockRingsSquareWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -145,7 +156,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_rings_wide_name"
-            android:name="dev.bennett.codexmeter.SamsungLockRingsWideWidget"
+            android:name="me.pipi.codexmeter.SamsungLockRingsWideWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -159,7 +170,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_dials_square_name"
-            android:name="dev.bennett.codexmeter.SamsungLockDialsSquareWidget"
+            android:name="me.pipi.codexmeter.SamsungLockDialsSquareWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -173,7 +184,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_dials_wide_name"
-            android:name="dev.bennett.codexmeter.SamsungLockDialsWideWidget"
+            android:name="me.pipi.codexmeter.SamsungLockDialsWideWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -187,7 +198,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_bars_square_name"
-            android:name="dev.bennett.codexmeter.SamsungLockBarsSquareWidget"
+            android:name="me.pipi.codexmeter.SamsungLockBarsSquareWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -201,7 +212,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_bars_wide_name"
-            android:name="dev.bennett.codexmeter.SamsungLockBarsWideWidget"
+            android:name="me.pipi.codexmeter.SamsungLockBarsWideWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -215,7 +226,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_five_hour_name"
-            android:name="dev.bennett.codexmeter.SamsungLockFiveHourWidget"
+            android:name="me.pipi.codexmeter.SamsungLockFiveHourWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -229,7 +240,7 @@
         </receiver>
         <receiver
             android:label="@string/lock_widget_weekly_name"
-            android:name="dev.bennett.codexmeter.SamsungLockWeeklyWidget"
+            android:name="me.pipi.codexmeter.SamsungLockWeeklyWidget"
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE"/>
@@ -242,29 +253,29 @@
                 android:resource="@xml/samsung_lock_weekly_oneui_info"/>
         </receiver>
         <receiver
-            android:name="dev.bennett.codexmeter.SamsungLockServiceBoxReceiver"
+            android:name="me.pipi.codexmeter.SamsungLockServiceBoxReceiver"
             android:exported="true">
             <intent-filter>
                 <action android:name="com.samsung.android.intent.action.REQUEST_SERVICEBOX_REMOTEVIEWS"/>
             </intent-filter>
         </receiver>
         <receiver
-            android:name="dev.bennett.codexmeter.WidgetRefreshReceiver"
+            android:name="me.pipi.codexmeter.WidgetRefreshReceiver"
             android:exported="false"/>
         <receiver
-            android:name="dev.bennett.codexmeter.ResetAlertReceiver"
+            android:name="me.pipi.codexmeter.ResetAlertReceiver"
             android:exported="false"/>
         <receiver
-            android:name="dev.bennett.codexmeter.UpdateInstallReceiver"
+            android:name="me.pipi.codexmeter.UpdateInstallReceiver"
             android:exported="false"/>
         <receiver
-            android:name="dev.bennett.codexmeter.ResetCreditExpiryReceiver"
+            android:name="me.pipi.codexmeter.ResetCreditExpiryReceiver"
             android:exported="false"/>
         <receiver
-            android:name="dev.bennett.codexmeter.NowBarActionReceiver"
+            android:name="me.pipi.codexmeter.NowBarActionReceiver"
             android:exported="false"/>
         <receiver
-            android:name="dev.bennett.codexmeter.BootReceiver"
+            android:name="me.pipi.codexmeter.BootReceiver"
             android:exported="false"
             android:directBootAware="false">
             <intent-filter>
@@ -279,44 +290,21 @@
             android:name="com.samsung.android.support.ongoing_activity"
             android:value="true"/>
         <service
-            android:name="dev.bennett.codexmeter.UsageRefreshJobService"
+            android:name="me.pipi.codexmeter.UsageRefreshJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false"/>
         <service
-            android:name="dev.bennett.codexmeter.ReleaseUpdateJobService"
+            android:name="me.pipi.codexmeter.ReleaseUpdateJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false"/>
         <service
-            android:name="dev.bennett.codexmeter.WidgetRepairJobService"
+            android:name="me.pipi.codexmeter.WidgetRepairJobService"
             android:permission="android.permission.BIND_JOB_SERVICE"
             android:exported="false"/>
         <service
-            android:name="dev.bennett.codexmeter.OAuthService"
+            android:name="me.pipi.codexmeter.OAuthService"
             android:exported="false"
             android:stopWithTask="false"
             android:foregroundServiceType="dataSync"/>
-        <service
-            android:name="dev.bennett.codexmeter.wear.PhoneWearListenerService"
-            android:exported="true">
-            <intent-filter>
-                <action
-                    android:name="com.google.android.gms.wearable.BIND_LISTENER"
-                    tools:ignore="WearableBindListener"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.DATA_CHANGED"/>
-                <data
-                    android:scheme="wear"
-                    android:host="*"
-                    android:pathPrefix="/codex"/>
-            </intent-filter>
-            <intent-filter>
-                <action android:name="com.google.android.gms.wearable.MESSAGE_RECEIVED"/>
-                <data
-                    android:scheme="wear"
-                    android:host="*"
-                    android:pathPrefix="/codex/msg"/>
-            </intent-filter>
-        </service>
     </application>
 </manifest>

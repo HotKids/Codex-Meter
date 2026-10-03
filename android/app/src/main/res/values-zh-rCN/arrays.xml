@@ -8,7 +8,7 @@
 
     <string-array name="now_bar_percent_mode_entries">
         <item>自动</item>
-        <item>5 小时用量</item>
+        <item>5h用量</item>
         <item>每周用量</item>
     </string-array>
 </resources>

@@ -3,13 +3,14 @@
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
     <PreferenceCategory android:title="@string/settings_privacy_category">
-        <Preference
-            android:icon="@drawable/ic_oui_privacy"
+        <me.pipi.codexmeter.InformationPreference
+            android:icon="@drawable/ic_ms_lock"
             android:summary="@string/settings_privacy_storage_summary"
             android:title="@string/settings_privacy_storage"
             app:iconSpaceReserved="false"
             app:selectable="false" />
-        <Preference
+        <me.pipi.codexmeter.InformationPreference
+            android:icon="@drawable/ic_ms_language"
             android:summary="@string/settings_privacy_network_summary"
             android:title="@string/settings_privacy_network"
             app:iconSpaceReserved="false"

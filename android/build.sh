@@ -2,11 +2,12 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-VERSION_NAME="2.8.0"
+VERSION_NAME="0.1"
 DIST="$ROOT/dist"
 SIGNING_DIR="$ROOT/.local-signing"
 KEYSTORE="$SIGNING_DIR/codex-meter-local.p12"
 PASS_FILE="$SIGNING_DIR/password"
+CERT_SHA_FILE="$ROOT/ci/phone-signing-certificate.sha256"
 
 if [[ -z "${JAVA_HOME:-}" && -d "/Applications/Android Studio.app/Contents/jbr/Contents/Home" ]]; then
   export JAVA_HOME="/Applications/Android Studio.app/Contents/jbr/Contents/Home"
@@ -15,35 +16,30 @@ if [[ -z "${ANDROID_SDK_ROOT:-}" && -d "$HOME/Library/Android/sdk" ]]; then
   export ANDROID_SDK_ROOT="$HOME/Library/Android/sdk"
 fi
 
-mkdir -p "$DIST" "$SIGNING_DIR"
-if [[ ! -f "$KEYSTORE" ]]; then
-  openssl rand -hex 24 > "$PASS_FILE"
-  chmod 600 "$PASS_FILE"
-  STORE_PASS="$(<"$PASS_FILE")"
-  "$JAVA_HOME/bin/keytool" -genkeypair \
-    -storetype PKCS12 \
-    -keystore "$KEYSTORE" -storepass "$STORE_PASS" -keypass "$STORE_PASS" \
-    -alias codexmeter -keyalg RSA -keysize 3072 -validity 10000 \
-    -dname "CN=Codex Meter Local Build, OU=Personal Android App, O=Local Build" \
-    >/dev/null 2>&1
+if [[ ! -f "$KEYSTORE" || ! -s "$PASS_FILE" ]]; then
+  echo "Fixed signing material is missing. Restore android/.local-signing from the signing backup." >&2
+  exit 1
 fi
+mkdir -p "$DIST"
 
 "$ROOT/gradlew" --project-dir "$ROOT" \
   :app:assembleRelease \
-  :wear:assembleRelease \
   --console=plain
 
 SOURCE_APK="$ROOT/app/build/outputs/apk/release/app-release.apk"
-OUT="$DIST/CodexMeter-$VERSION_NAME.apk"
-cp "$SOURCE_APK" "$OUT"
+OUT="$DIST/CodexMeter-me.pipi.codexmeter-$VERSION_NAME.apk"
 
-WEAR_SOURCE_APK="$ROOT/wear/build/outputs/apk/release/wear-release.apk"
-WEAR_OUT="$DIST/CodexMeter-Wear-$VERSION_NAME.apk"
-cp "$WEAR_SOURCE_APK" "$WEAR_OUT"
 
 APKSIGNER="$(find "$ANDROID_SDK_ROOT/build-tools" -type f -name apksigner | sort | tail -1)"
-"$APKSIGNER" verify --verbose --print-certs "$OUT"
-"$APKSIGNER" verify --verbose --print-certs "$WEAR_OUT"
-(cd "$DIST" && sha256sum "$(basename "$OUT")" "$(basename "$WEAR_OUT")") | tee "$DIST/SHA256SUMS.txt"
+PHONE_SIGNER_REPORT="$("$APKSIGNER" verify --verbose --print-certs "$SOURCE_APK")"
+EXPECTED_CERT_SHA="$(tr -d '[:space:]' < "$CERT_SHA_FILE")"
+SIGNER_COUNT="$(printf '%s\n' "$PHONE_SIGNER_REPORT" | awk '/^Number of signers:/ { print $NF }')"
+ACTUAL_CERT_SHA="$(printf '%s\n' "$PHONE_SIGNER_REPORT" | awk '/certificate SHA-256 digest:/ { print $NF }')"
+if [[ ! "$EXPECTED_CERT_SHA" =~ ^[0-9a-f]{64}$ || "$SIGNER_COUNT" != "1" || "$ACTUAL_CERT_SHA" != "$EXPECTED_CERT_SHA" ]]; then
+  echo "Phone APK must have exactly one signer matching the fixed release certificate." >&2
+  exit 1
+fi
+cp "$SOURCE_APK" "$OUT"
+printf '%s\n' "$PHONE_SIGNER_REPORT"
+(cd "$DIST" && sha256sum "$(basename "$OUT")") | tee "$DIST/SHA256SUMS.txt"
 echo "Built $OUT"
-echo "Built $WEAR_OUT"

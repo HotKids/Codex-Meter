@@ -1,5 +1,16 @@
 # Changelog
 
+## 0.1
+
+- Start the phone app as `me.pipi.codexmeter` with SDK 37 and the fixed signing identity.
+- Redesign card widgets and fixed-width 2×1 dials with system colors, remaining usage, reset dates and numeric credit balances.
+- Follow the most recently saved widget in live notifications and preserve the approved adaptive app icon and Codex marks.
+- Use compact d/h duration units and clearer estimated-exhaustion and remaining-balance text on Home.
+- Reorganize settings and Chinese copy; use Material Symbols Outlined for app actions.
+- Keep the test update channel as a placeholder and remove version history.
+- Remove additional model limits from phone displays and settings transfer.
+- Remove the Wear OS module, phone-to-watch synchronization and watch-only dependencies.
+
 ## 2.8.0 — 2026-08-14
 
 ### Added

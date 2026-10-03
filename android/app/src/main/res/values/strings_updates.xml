@@ -21,7 +21,7 @@
     <!-- %1$s: installed version -->
     <string name="updates_detail_irreversible">Irreversible · Manual GitHub update required · Installed: %1$s</string>
     <string name="updates_detail_alpha_upgrade">Installed: %1$s · Verified GitHub alpha upgrade</string>
-    <string name="updates_detail_upgrade">Installed: %1$s · Verified GitHub upgrade</string>
+    <string name="updates_detail_upgrade">Installed: %1$s · New version published on GitHub</string>
     <string name="updates_detail_reinstall">This version is currently installed. You can verify and reinstall it.</string>
     <string name="updates_detail_return_to_stable">Installed: %1$s · Alpha builds share the stable version code, so the newest stable release installs in place without uninstalling or losing data.</string>
     <string name="updates_detail_downgrade">Installed: %1$s · Android requires uninstalling before this downgrade.</string>
@@ -135,13 +135,15 @@
 
     <!-- Automatic check intervals (UpdateCheckFrequency) -->
     <string name="updates_frequency_hourly">Every hour</string>
-    <string name="updates_frequency_every_6_hours">Every 6 hours</string>
-    <string name="updates_frequency_every_12_hours">Every 12 hours</string>
+    <string name="updates_frequency_every_6_hours">Every 6h</string>
+    <string name="updates_frequency_every_12_hours">Every 12h</string>
     <string name="updates_frequency_daily">Daily</string>
     <string name="updates_frequency_weekly">Weekly</string>
     <string name="updates_frequency_summary_hourly">Check signed GitHub releases every hour</string>
-    <string name="updates_frequency_summary_every_6_hours">Check signed GitHub releases every 6 hours</string>
-    <string name="updates_frequency_summary_every_12_hours">Check signed GitHub releases every 12 hours</string>
+    <string name="updates_frequency_summary_every_6_hours">Check signed GitHub releases every 6h</string>
+    <string name="updates_frequency_summary_every_12_hours">Check signed GitHub releases every 12h</string>
     <string name="updates_frequency_summary_daily">Check signed GitHub releases daily</string>
     <string name="updates_frequency_summary_weekly">Check signed GitHub releases weekly</string>
+    <string name="updates_channel_stable">Stable</string>
+    <string name="updates_channel_test_placeholder">Test version · Not available yet</string>
 </resources>

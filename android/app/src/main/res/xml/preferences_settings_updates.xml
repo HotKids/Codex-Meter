@@ -2,15 +2,6 @@
 <PreferenceScreen xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto">
 
-    <PreferenceCategory android:title="@string/updates_pref_category_channel">
-        <ListPreference
-            android:entries="@array/settings_update_channel_entries"
-            android:entryValues="@array/settings_update_channel_values"
-            android:key="update_channel_ui"
-            android:title="@string/updates_pref_channel_title"
-            app:useSimpleSummaryProvider="true" />
-    </PreferenceCategory>
-
     <PreferenceCategory android:title="@string/updates_pref_category_automatic">
         <SwitchPreferenceCompat
             android:key="automatic_update_checks_ui"
@@ -30,14 +21,13 @@
 
     <PreferenceCategory android:title="@string/updates_pref_category_more">
         <Preference
+            android:key="update_channel_ui"
+            android:title="@string/updates_pref_channel_title"
+            app:iconSpaceReserved="false" />
+        <Preference
             android:key="check_for_updates"
             android:summary="@string/updates_pref_check_now_summary"
             android:title="@string/updates_pref_check_now_title"
-            app:iconSpaceReserved="false" />
-        <Preference
-            android:key="release_history"
-            android:summary="@string/updates_pref_history_summary"
-            android:title="@string/updates_release_history"
             app:iconSpaceReserved="false" />
     </PreferenceCategory>
 

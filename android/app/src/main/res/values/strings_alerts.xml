@@ -2,8 +2,9 @@
 <!-- Alerts: usage and reset-credit notifications, reset credits page, Now Bar live monitor,
      and the Notifications / Now Bar settings pages. -->
 <resources>
+    <string name="alerts_now_bar_meter_value">%1$s: %2$s</string>
     <!-- Usage window names. -->
-    <string name="alerts_window_five_hour">5-hour</string>
+    <string name="alerts_window_five_hour">5h</string>
     <string name="alerts_window_weekly">Weekly</string>
     <string name="alerts_window_monthly">Monthly</string>
 
@@ -18,16 +19,16 @@
     <string name="alerts_channel_description">Low usage, scheduled resets, surprise refills, and reset credits</string>
 
     <!-- Scheduled reset notifications. -->
-    <string name="alerts_reset_five_hour_title">Codex 5-hour usage reset</string>
-    <string name="alerts_reset_five_hour_text">Your 5-hour allowance should be available again. Refreshing usage now.</string>
-    <string name="alerts_reset_weekly_title">Codex Weekly usage reset</string>
+    <string name="alerts_reset_five_hour_title">Codex session limit reset reminder</string>
+    <string name="alerts_reset_five_hour_text">Your 5h allowance should be available again. Refreshing usage now.</string>
+    <string name="alerts_reset_weekly_title">Codex weekly limit reset reminder</string>
     <string name="alerts_reset_weekly_text">Your Weekly allowance should be available again. Refreshing usage now.</string>
-    <string name="alerts_reset_monthly_title">Codex Monthly usage reset</string>
+    <string name="alerts_reset_monthly_title">Codex monthly limit reset reminder</string>
     <string name="alerts_reset_monthly_text">Your Monthly allowance should be available again. Refreshing usage now.</string>
 
     <!-- Low usage notifications; the argument is the remaining percentage. -->
-    <string name="alerts_low_five_hour_title">5-hour Codex usage is low</string>
-    <string name="alerts_low_five_hour_text">%1$d%% remaining in the current 5-hour window.</string>
+    <string name="alerts_low_five_hour_title">5h Codex usage is low</string>
+    <string name="alerts_low_five_hour_text">%1$d%% remaining in the current 5h window.</string>
     <string name="alerts_low_weekly_title">Weekly Codex usage is low</string>
     <string name="alerts_low_weekly_text">%1$d%% remaining in the current weekly window.</string>
     <string name="alerts_low_monthly_title">Monthly Codex usage is low</string>
@@ -36,8 +37,8 @@
     <!-- Surprise refill notifications. -->
     <string name="alerts_refill_multiple_title">Surprise Codex refill</string>
     <string name="alerts_refill_multiple_text" formatted="false">Your Codex allowances jumped to 100% before their scheduled resets. Enjoy the bonus capacity.</string>
-    <string name="alerts_refill_five_hour_title">Surprise 5-hour Codex refill</string>
-    <string name="alerts_refill_five_hour_text" formatted="false">Your 5-hour allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
+    <string name="alerts_refill_five_hour_title">Surprise 5h Codex refill</string>
+    <string name="alerts_refill_five_hour_text" formatted="false">Your 5h allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
     <string name="alerts_refill_weekly_title">Surprise weekly Codex refill</string>
     <string name="alerts_refill_weekly_text" formatted="false">Your weekly allowance jumped to 100% before its scheduled reset. Enjoy the bonus capacity.</string>
     <string name="alerts_refill_monthly_title">Surprise monthly Codex refill</string>
@@ -56,11 +57,11 @@
     <!-- Reset credit expiry reminder: %1$s is the expiry time, %2$s the countdown. -->
     <string name="alerts_reset_credit_expiry_title">Codex reset credit expires soon</string>
     <string name="alerts_reset_credit_expiry_text">One reset credit expires %1$s (%2$s). Use it before it expires.</string>
-    <string name="alerts_use_reset_action">Use reset</string>
+    <string name="alerts_use_reset_action">Use reset credit</string>
 
     <!-- Test notification. -->
     <string name="alerts_test_title">Codex Meter notifications are working</string>
-    <string name="alerts_test_text">Low usage, scheduled resets, surprise refills, and reset-credit alerts are ready.</string>
+    <string name="alerts_test_text">Use this notification to verify its display and delivery.</string>
 
     <!-- Reset credits page. -->
     <string name="alerts_reset_credits_page_title">Codex reset</string>
@@ -87,7 +88,7 @@
     <string name="alerts_reset_credit_numbered">Reset credit %1$d</string>
     <string name="alerts_reset_credit_next">%1$s · Next</string>
     <string name="alerts_reset_credit_expiration_unavailable">Expiration unavailable</string>
-    <string name="alerts_reset_credits_use_one">Use 1 reset</string>
+    <string name="alerts_reset_credits_use_one">Use reset credit</string>
     <string name="alerts_reset_credits_confirm_title">Use one Codex reset?</string>
     <string name="alerts_reset_credits_confirm_message">The available credit expiring soonest will be used. This cannot be undone.</string>
     <string name="alerts_reset_credits_applying">Applying…</string>
@@ -109,21 +110,17 @@
     <!-- Now Bar live monitor notification. -->
     <string name="alerts_now_bar_channel_name">Codex live monitor</string>
     <string name="alerts_now_bar_channel_description">Codex allowance monitor that ends at the next reset; may start from Settings or when remaining usage hits your threshold</string>
-    <string name="alerts_now_bar_title">Codex usage</string>
+    <string name="alerts_now_bar_title" translatable="false">Codex Meter</string>
     <string name="alerts_now_bar_stop">Stop</string>
     <string name="alerts_now_bar_refresh">Refresh</string>
     <string name="alerts_now_bar_samsung_description">Codex usage limits</string>
     <string name="alerts_now_bar_preview_subtext">Now Bar preview</string>
     <string name="alerts_now_bar_until_reset_subtext">Until the next usage reset</string>
     <string name="alerts_now_bar_both_windows">Both usage windows</string>
-    <string name="alerts_now_bar_five_hour_window">5-hour window</string>
+    <string name="alerts_now_bar_five_hour_window">5h window</string>
     <string name="alerts_now_bar_weekly_window">Weekly window</string>
     <string name="alerts_now_bar_monthly_window">Monthly window</string>
     <string name="alerts_now_bar_window_unavailable">Usage window unavailable</string>
-    <!-- Short markers in front of the focused weekly / monthly value: "W 60%". -->
-    <string name="alerts_now_bar_marker_weekly">W</string>
-    <string name="alerts_now_bar_marker_monthly">M</string>
-
     <!-- Now Bar copy rules (NowBarText). The English must render exactly like NowBarCopy. -->
     <string name="alerts_now_bar_percent">%1$d%%</string>
     <string name="alerts_now_bar_duration_days_hours">%1$dd %2$dh</string>
@@ -131,9 +128,6 @@
     <string name="alerts_now_bar_duration_hours_minutes">%1$dh %2$dm</string>
     <string name="alerts_now_bar_duration_hours">%1$dh</string>
     <string name="alerts_now_bar_duration_minutes">%1$dm</string>
-    <string name="alerts_now_bar_focus_unavailable" translatable="false">—</string>
-    <!-- %1$s is a window marker, %2$s the percentage or reset countdown. -->
-    <string name="alerts_now_bar_focus_marked">%1$s %2$s</string>
     <!-- %1$s is the window name, %2$s the percentage or reset countdown. -->
     <string name="alerts_now_bar_chip">Codex · %1$s %2$s</string>
     <string name="alerts_now_bar_chip_unavailable">Codex · %1$s unavailable</string>
@@ -237,8 +231,8 @@
     <!-- Units in the order of SettingsNotificationsFragment.LEAD_TIME_UNIT_MILLIS. -->
     <string-array name="alerts_reminder_units">
         <item>Minutes</item>
-        <item>Hours</item>
-        <item>Days</item>
+        <item>h</item>
+        <item>d</item>
         <item>Weeks</item>
     </string-array>
     <string name="alerts_reminder_invalid_amount">Enter a time from 1 minute to 1 year, in whole minutes.</string>
@@ -247,12 +241,12 @@
         <item quantity="other">%d minutes</item>
     </plurals>
     <plurals name="alerts_lead_time_hours">
-        <item quantity="one">%d hour</item>
-        <item quantity="other">%d hours</item>
+        <item quantity="one">%dh</item>
+        <item quantity="other">%dh</item>
     </plurals>
     <plurals name="alerts_lead_time_days">
-        <item quantity="one">%d day</item>
-        <item quantity="other">%d days</item>
+        <item quantity="one">%dd</item>
+        <item quantity="other">%dd</item>
     </plurals>
     <plurals name="alerts_lead_time_weeks">
         <item quantity="one">%d week</item>

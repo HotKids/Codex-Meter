@@ -1,22 +1,22 @@
 <?xml version="1.0" encoding="utf-8"?>
 <!-- Home widget editor. -->
 <resources>
+    <string name="widget_editor_save_failed">Could not save widget settings. Try again.</string>
     <string name="widget_editor_title">Customize widget</string>
     <string name="widget_editor_no_widget">No widget was selected.</string>
     <string name="widget_editor_saved">Widget updated.</string>
-    <string name="widget_editor_windows">Usage windows</string>
-    <string name="widget_editor_windows_hint">Choose up to 4 windows and drag the handles to order them. Small widgets show the first 2, medium widgets up to 4.</string>
-    <string name="widget_editor_windows_limit">Choose up to 4 windows.</string>
-    <string name="widget_editor_windows_minimum">Keep at least one window.</string>
+    <string name="widget_editor_windows">Display</string>
+    <string name="widget_editor_five_hour_limit">Session limit</string>
+    <string name="widget_editor_weekly_limit">Weekly limit</string>
+    <string name="widget_editor_reset_time">Reset time</string>
+    <string name="widget_editor_remaining_credits">Remaining credits</string>
+    <string name="widget_editor_windows_hint">Choose the meters to display and drag the handles to order them. Small widgets show the first 2, wide widgets up to 4.</string>
+    <string name="widget_editor_windows_limit">Choose up to 4 items.</string>
+    <string name="widget_editor_windows_minimum">Keep at least one item.</string>
+    <string name="widget_editor_next_reset">Reset</string>
     <string name="widget_editor_window_missing">Not reported right now</string>
     <string name="widget_editor_show">Show on widget</string>
     <string name="widget_editor_reorder">Reorder</string>
     <string name="widget_editor_appearance">Appearance</string>
-    <string name="widget_editor_style">Style</string>
-    <string name="widget_editor_refresh_hint">Widgets update whenever Codex Meter refreshes. Tap the refresh time on a widget to refresh now.</string>
-    <!-- Style names stay in English in every language. -->
-    <string-array name="widget_editor_style_labels" translatable="false">
-        <item>Color</item>
-        <item>Clear</item>
-    </string-array>
+    <string name="widget_editor_refresh_hint">Widgets update whenever Codex Meter refreshes. Tap the refresh button on a widget to refresh now.</string>
 </resources>

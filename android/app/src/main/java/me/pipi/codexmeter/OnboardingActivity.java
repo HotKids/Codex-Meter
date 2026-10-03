@@ -1,0 +1,470 @@
+package me.pipi.codexmeter;
+
+import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
+
+import android.annotation.SuppressLint;
+import android.content.BroadcastReceiver;
+import android.content.Context;
+import android.content.Intent;
+import android.content.IntentFilter;
+import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.net.Uri;
+import android.os.Build;
+import android.os.Bundle;
+import android.widget.Button;
+import android.widget.ImageView;
+import android.widget.LinearLayout;
+import android.widget.ProgressBar;
+import android.widget.TextView;
+
+import androidx.activity.OnBackPressedCallback;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
+
+import dev.oneuiproject.oneui.widget.CardItemView;
+import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
+
+/** First-run setup built from the same One UI Design Library primitives as the app. */
+public final class OnboardingActivity extends AppCompatActivity {
+    public static final String EXTRA_AUTH_RETURN = "oauth_return";
+
+    private static final int MAX_ERROR_MESSAGE_LENGTH = 180;
+
+    private LinearLayout content;
+    private Ui.Page page;
+    private boolean dark;
+    private int step;
+    private boolean receiverRegistered;
+    /** True while this screen has a sign-in in flight that "Not now" must cancel. */
+    private boolean oauthRequested;
+    /** Status line shown on the account step (progress, failures). */
+    private String authMessage = "";
+    private String lastLaunchedAuthUrl = "";
+
+    private final BroadcastReceiver authReceiver = new BroadcastReceiver() {
+        @Override
+        public void onReceive(Context context, Intent intent) {
+            String action = intent == null ? null : intent.getAction();
+            if (AppConstants.ACTION_OAUTH_READY.equals(action)) {
+                onAuthUrlReady(intent.getStringExtra(AppConstants.EXTRA_AUTH_URL));
+            } else if (AppConstants.ACTION_OAUTH_RESULT.equals(action)) {
+                onOAuthResult(intent.getBooleanExtra(AppConstants.EXTRA_SUCCESS, false),
+                        intent.getStringExtra(AppConstants.EXTRA_MESSAGE));
+            }
+        }
+    };
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        Ui.applySelectedTheme(this);
+        super.onCreate(savedInstanceState);
+        if (AppPreferences.isOnboardingComplete(this)) {
+            openMain();
+            return;
+        }
+        this.dark = Ui.isDark(this);
+        this.page = Ui.installPage(this, getString(R.string.app_name), false);
+        this.content = this.page.content;
+        findViewById(R.id.dashboard_refresh).setEnabled(false);
+        boolean oauthReturn = getIntent().getBooleanExtra(EXTRA_AUTH_RETURN, false);
+        this.oauthRequested = AppPreferences.isOAuthPending(this);
+        this.step = OnboardingFlow.initialStep(
+                AppPreferences.getOnboardingStep(this),
+                SecureTokenStore.isSignedIn(this),
+                oauthReturn);
+        if (oauthReturn && !SecureTokenStore.isSignedIn(this)) {
+            this.authMessage = getString(R.string.auth_onboarding_status_did_not_complete);
+        }
+        getOnBackPressedDispatcher().addCallback(this, new OnBackPressedCallback(true) {
+            @Override
+            public void handleOnBackPressed() {
+                if (step > OnboardingFlow.STEP_WELCOME) {
+                    goBack();
+                } else {
+                    // Let the system finish the activity from the first step.
+                    setEnabled(false);
+                    getOnBackPressedDispatcher().onBackPressed();
+                }
+            }
+        });
+        render();
+    }
+
+    @Override
+    protected void onNewIntent(Intent intent) {
+        super.onNewIntent(intent);
+        setIntent(intent);
+        this.oauthRequested = AppPreferences.isOAuthPending(this);
+        if (SecureTokenStore.isSignedIn(this)) {
+            showStep(OnboardingFlow.STEP_COMPLETE);
+        } else if (intent.getBooleanExtra(EXTRA_AUTH_RETURN, false)) {
+            this.authMessage = getString(R.string.auth_onboarding_status_did_not_complete);
+            showStep(OnboardingFlow.STEP_ACCOUNT);
+        }
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (this.content != null && SecureTokenStore.isSignedIn(this)
+                && this.step != OnboardingFlow.STEP_COMPLETE) {
+            showStep(OnboardingFlow.STEP_COMPLETE);
+        }
+    }
+
+    @Override
+    @SuppressLint("UnspecifiedRegisterReceiverFlag")
+    protected void onStart() {
+        super.onStart();
+        IntentFilter filter = new IntentFilter();
+        filter.addAction(AppConstants.ACTION_OAUTH_READY);
+        filter.addAction(AppConstants.ACTION_OAUTH_RESULT);
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.TIRAMISU) {
+                registerReceiver(this.authReceiver, filter, AppConstants.INTERNAL_PERMISSION, null,
+                        Context.RECEIVER_NOT_EXPORTED);
+            } else {
+                registerReceiver(this.authReceiver, filter, AppConstants.INTERNAL_PERMISSION, null);
+            }
+            this.receiverRegistered = true;
+        } catch (RuntimeException exception) {
+            this.receiverRegistered = false;
+            this.authMessage = getString(R.string.auth_onboarding_status_updates_unavailable,
+                    safeMessage(exception));
+            render();
+        }
+    }
+
+    @Override
+    protected void onStop() {
+        if (this.receiverRegistered) {
+            try {
+                unregisterReceiver(this.authReceiver);
+            } catch (RuntimeException ignored) {
+                // Already unregistered.
+            }
+            this.receiverRegistered = false;
+        }
+        super.onStop();
+    }
+
+    @Override
+    public boolean onSupportNavigateUp() {
+        goBack();
+        return true;
+    }
+
+    private void onAuthUrlReady(String url) {
+        if (url == null || url.isEmpty()) {
+            return;
+        }
+        this.authMessage = getString(R.string.auth_onboarding_status_browser_open);
+        render();
+        openAuthUrl(url);
+    }
+
+    private void onOAuthResult(boolean success, String message) {
+        this.oauthRequested = false;
+        if (success || SecureTokenStore.isSignedIn(this)) {
+            showStep(OnboardingFlow.STEP_COMPLETE);
+            return;
+        }
+        this.authMessage = message == null || message.trim().isEmpty()
+                ? getString(R.string.auth_onboarding_status_try_again)
+                : message;
+        showStep(OnboardingFlow.STEP_ACCOUNT);
+    }
+
+    private void render() {
+        if (this.content == null) {
+            return;
+        }
+        this.content.removeAllViews();
+        this.page.toolbar.setTitle(getString(R.string.app_name));
+        Ui.setToolbarBack(this.page.toolbar, this.step > OnboardingFlow.STEP_WELCOME);
+
+        addProgress();
+        if (this.step == OnboardingFlow.STEP_WELCOME) {
+            buildWelcome();
+        } else if (this.step == OnboardingFlow.STEP_USAGE) {
+            buildUsage();
+        } else if (this.step == OnboardingFlow.STEP_ACCOUNT) {
+            buildAccount();
+        } else {
+            buildComplete();
+        }
+        NestedScrollView scroll = findViewById(R.id.dashboard_scroll);
+        scroll.post(() -> scroll.scrollTo(0, 0));
+    }
+
+    /** "STEP N OF M" label above a progress bar. */
+    private void addProgress() {
+        TextView label = Ui.text(this, getString(R.string.auth_onboarding_step_progress,
+                this.step + 1, OnboardingFlow.STEP_COUNT), 12.0f, Ui.accent(this, this.dark));
+        label.setTypeface(Ui.mediumTypeface(this));
+        label.setLetterSpacing(0.08f);
+        LinearLayout.LayoutParams labelParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        labelParams.setMargins(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 10));
+        this.content.addView(label, labelParams);
+
+        ProgressBar progress = Ui.progress(this, this.dark);
+        progress.setProgress((this.step + 1) * 100 / OnboardingFlow.STEP_COUNT);
+        LinearLayout.LayoutParams progressParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 5));
+        progressParams.setMargins(Ui.dp(this, 14), 0, Ui.dp(this, 14), Ui.dp(this, 26));
+        this.content.addView(progress, progressParams);
+    }
+
+    private void buildWelcome() {
+        addIntro(getString(R.string.auth_onboarding_welcome_title),
+                getString(R.string.auth_onboarding_welcome_body),
+                R.drawable.ic_ms_data_usage);
+
+        Ui.addSpacer(this.content, 20);
+        RoundedLinearLayout card = Ui.seslCard(this, this.dark);
+        TextView title = Ui.text(this, getString(R.string.auth_onboarding_galaxy_title), 18.0f,
+                Ui.mainText(this.dark));
+        title.setTypeface(Ui.mediumTypeface(this));
+        card.addView(title);
+        TextView body = Ui.text(this, getString(R.string.auth_onboarding_galaxy_body),
+                15.0f, Ui.secondaryText(this.dark));
+        LinearLayout.LayoutParams bodyParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        bodyParams.setMargins(0, Ui.dp(this, 10), 0, 0);
+        card.addView(body, bodyParams);
+        this.content.addView(card);
+        addPrimaryAction(getString(R.string.auth_onboarding_continue),
+                () -> showStep(OnboardingFlow.STEP_USAGE));
+    }
+
+    private void buildUsage() {
+        addIntro(getString(R.string.auth_onboarding_usage_title),
+                getString(R.string.auth_onboarding_usage_body),
+                R.drawable.ic_ms_schedule);
+
+        this.content.addView(Ui.separator(this,
+                getString(R.string.auth_onboarding_features_header)));
+        RoundedLinearLayout features = Ui.seslRowCard(this, this.dark);
+        CardItemView limits = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_limits_title),
+                getString(R.string.auth_onboarding_feature_limits_summary),
+                R.drawable.ic_ms_calendar_month, null);
+        limits.setShowBottomDivider(true);
+        features.addView(limits);
+        CardItemView widgets = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_widgets_title),
+                getString(R.string.auth_onboarding_feature_widgets_summary),
+                R.drawable.ic_ms_widgets, null);
+        widgets.setShowBottomDivider(true);
+        features.addView(widgets);
+        features.addView(Ui.actionRow(this,
+                getString(R.string.auth_onboarding_feature_alerts_title),
+                getString(R.string.auth_onboarding_feature_alerts_summary),
+                R.drawable.ic_ms_notifications, null));
+        this.content.addView(features);
+        addPrimaryAction(getString(R.string.auth_onboarding_continue),
+                () -> showStep(OnboardingFlow.STEP_ACCOUNT));
+    }
+
+    private void buildAccount() {
+        addIntro(getString(R.string.auth_onboarding_account_title),
+                getString(R.string.auth_onboarding_account_body),
+                R.drawable.ic_ms_account_circle);
+
+        this.content.addView(Ui.separator(this,
+                getString(R.string.auth_onboarding_privacy_header)));
+        RoundedLinearLayout privacy = Ui.seslRowCard(this, this.dark);
+        CardItemView encrypted = Ui.actionRow(this,
+                getString(R.string.auth_onboarding_privacy_encrypted_title),
+                getString(R.string.auth_onboarding_privacy_encrypted_summary),
+                R.drawable.ic_ms_lock, null);
+        encrypted.setShowBottomDivider(true);
+        privacy.addView(encrypted);
+        privacy.addView(Ui.actionRow(this,
+                getString(R.string.auth_onboarding_privacy_analytics_title),
+                getString(R.string.auth_onboarding_privacy_analytics_summary),
+                R.drawable.ic_ms_shield, null));
+        this.content.addView(privacy);
+
+        if (!this.authMessage.isEmpty()) {
+            Ui.addSpacer(this.content, 16);
+            RoundedLinearLayout status = Ui.seslCard(this, this.dark);
+            status.addView(Ui.text(this, this.authMessage, 14.0f, Ui.secondaryText(this.dark)));
+            this.content.addView(status);
+        }
+
+        String signInLabel = getString(AppPreferences.isOAuthPending(this)
+                ? R.string.auth_onboarding_sign_in_continue
+                : R.string.auth_onboarding_sign_in_start);
+        addPrimaryAction(signInLabel, this::startSignIn);
+        Button later = Ui.button(this, getString(R.string.auth_onboarding_not_now), false,
+                this.dark);
+        later.setOnClickListener(view -> completeAndOpenMain());
+        LinearLayout.LayoutParams laterParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 54));
+        laterParams.setMargins(0, Ui.dp(this, 10), 0, Ui.dp(this, 8));
+        this.content.addView(later, laterParams);
+    }
+
+    private void buildComplete() {
+        boolean signedIn = SecureTokenStore.isSignedIn(this);
+        addIntro(getString(signedIn
+                        ? R.string.auth_onboarding_done_signed_in_title
+                        : R.string.auth_onboarding_done_signed_out_title),
+                getString(signedIn
+                        ? R.string.auth_onboarding_done_signed_in_body
+                        : R.string.auth_onboarding_done_signed_out_body),
+                signedIn ? R.drawable.ic_ms_account_circle : R.drawable.ic_ms_info);
+
+        Ui.addSpacer(this.content, 20);
+        RoundedLinearLayout account = Ui.seslRowCard(this, this.dark);
+        AuthTokens tokens = SecureTokenStore.load(this);
+        account.addView(Ui.actionRow(this,
+                getString(signedIn
+                        ? R.string.auth_onboarding_account_connected
+                        : R.string.auth_onboarding_account_skipped),
+                accountSummary(signedIn, tokens),
+                signedIn ? R.drawable.ic_ms_account_circle : R.drawable.ic_ms_person_off,
+                null));
+        this.content.addView(account);
+        addPrimaryAction(getString(R.string.auth_onboarding_open_app), this::completeAndOpenMain);
+    }
+
+    private String accountSummary(boolean signedIn, AuthTokens tokens) {
+        if (signedIn && tokens != null && !tokens.email.isEmpty()) {
+            return tokens.email;
+        }
+        return getString(signedIn
+                ? R.string.auth_onboarding_account_connected_summary
+                : R.string.auth_onboarding_account_skipped_summary);
+    }
+
+    /** Hero card: tinted round icon, large title, and body copy. */
+    private void addIntro(String titleText, String bodyText, int iconResource) {
+        RoundedLinearLayout hero = Ui.seslCard(this, this.dark);
+        int accent = Ui.accent(this, this.dark);
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconResource);
+        icon.setColorFilter(accent);
+        icon.setPadding(Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14), Ui.dp(this, 14));
+        GradientDrawable iconBackground = new GradientDrawable();
+        iconBackground.setShape(GradientDrawable.OVAL);
+        iconBackground.setColor(Color.argb(this.dark ? 45 : 24,
+                Color.red(accent), Color.green(accent), Color.blue(accent)));
+        icon.setBackground(iconBackground);
+        hero.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 62), Ui.dp(this, 62)));
+
+        TextView title = Ui.title(this, titleText, this.dark);
+        title.setTextSize(34.0f);
+        LinearLayout.LayoutParams titleParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        titleParams.setMargins(0, Ui.dp(this, 24), 0, 0);
+        hero.addView(title, titleParams);
+
+        TextView body = Ui.text(this, bodyText, 16.0f, Ui.secondaryText(this.dark));
+        body.setLineSpacing(0.0f, 1.18f);
+        LinearLayout.LayoutParams bodyParams =
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
+        bodyParams.setMargins(0, Ui.dp(this, 12), 0, Ui.dp(this, 4));
+        hero.addView(body, bodyParams);
+        this.content.addView(hero);
+    }
+
+    private void addPrimaryAction(String label, Runnable action) {
+        Button button = Ui.nativePrimaryButton(this, label);
+        button.setOnClickListener(view -> action.run());
+        LinearLayout.LayoutParams params =
+                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60));
+        params.setMargins(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
+        this.content.addView(button, params);
+    }
+
+    private void showStep(int requestedStep) {
+        this.step = OnboardingFlow.normalizeStep(requestedStep);
+        AppPreferences.setOnboardingStep(this, this.step);
+        render();
+    }
+
+    private void goBack() {
+        showStep(OnboardingFlow.previousStep(this.step));
+    }
+
+    private void startSignIn() {
+        if (SecureTokenStore.isSignedIn(this)) {
+            showStep(OnboardingFlow.STEP_COMPLETE);
+            return;
+        }
+        boolean resuming = AppPreferences.isOAuthPending(this);
+        this.oauthRequested = true;
+        this.authMessage = getString(resuming
+                ? R.string.auth_onboarding_status_resuming
+                : R.string.auth_onboarding_status_preparing);
+        render();
+        try {
+            startForegroundService(new Intent(this, OAuthService.class)
+                    .setAction(OAuthService.ACTION_START));
+        } catch (RuntimeException exception) {
+            this.oauthRequested = false;
+            AppPreferences.setOAuthPending(this, false, "");
+            this.authMessage = getString(R.string.auth_onboarding_status_start_failed,
+                    safeMessage(exception));
+            render();
+        }
+    }
+
+    /**
+     * Opens the sign-in page in the browser. A repeated URL is only relaunched while this
+     * screen has focus, so a broadcast arriving behind the browser does not reopen it.
+     */
+    private void openAuthUrl(String url) {
+        if (url.equals(this.lastLaunchedAuthUrl) && !hasWindowFocus()) {
+            return;
+        }
+        this.lastLaunchedAuthUrl = url;
+        try {
+            startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
+        } catch (RuntimeException exception) {
+            this.authMessage = getString(R.string.auth_onboarding_status_no_browser);
+            render();
+        }
+    }
+
+    private void completeAndOpenMain() {
+        cancelPendingSignIn();
+        AppPreferences.completeOnboarding(this);
+        openMain();
+    }
+
+    private void cancelPendingSignIn() {
+        if (!this.oauthRequested && !AppPreferences.isOAuthPending(this)) {
+            return;
+        }
+        this.oauthRequested = false;
+        try {
+            startService(new Intent(this, OAuthService.class)
+                    .setAction(OAuthService.ACTION_CANCEL_SILENT));
+        } catch (RuntimeException ignored) {
+            // The service may already have stopped after the browser returned.
+        }
+        AppPreferences.setOAuthPending(this, false, "");
+    }
+
+    private void openMain() {
+        startActivity(new Intent(this, MainActivity.class)
+                .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+        finish();
+    }
+
+    private static String safeMessage(RuntimeException exception) {
+        String message = exception.getLocalizedMessage();
+        if (message == null || message.trim().isEmpty()) {
+            return exception.getClass().getSimpleName();
+        }
+        return message.length() > MAX_ERROR_MESSAGE_LENGTH
+                ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)
+                : message;
+    }
+}

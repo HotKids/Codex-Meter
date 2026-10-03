@@ -2,13 +2,13 @@
 <resources>
     <!-- Page titles (toolbar and root list rows) -->
     <string name="settings_title">设置</string>
-    <string name="settings_page_appearance">外观</string>
-    <string name="settings_page_refresh_usage">刷新与用量</string>
-    <string name="settings_page_notifications">通知</string>
-    <string name="settings_page_now_bar">Now Bar</string>
-    <string name="settings_page_updates">更新</string>
-    <string name="settings_page_transfer">备份与迁移</string>
-    <string name="settings_page_privacy">隐私</string>
+    <string name="settings_page_appearance">外观设置</string>
+    <string name="settings_page_refresh_usage">数据刷新</string>
+    <string name="settings_page_notifications">用量提醒</string>
+    <string name="settings_page_now_bar">实时通知</string>
+    <string name="settings_page_updates">应用更新</string>
+    <string name="settings_page_transfer">备份迁移</string>
+    <string name="settings_page_privacy">隐私说明</string>
     <string name="settings_page_diagnostics">诊断</string>
 
     <!-- Shared dialog buttons -->
@@ -16,164 +16,162 @@
     <string name="settings_dialog_continue">继续</string>
 
     <!-- Root list -->
-    <string name="settings_category_general">通用</string>
-    <string name="settings_category_features">功能</string>
-    <string name="settings_category_app_data">应用与数据</string>
-    <string name="settings_page_transfer_summary">在设备之间迁移设置</string>
-    <string name="settings_page_privacy_summary">本机存储、加密和网络访问</string>
+    <string name="settings_category_general">常规</string>
+    <string name="settings_category_features">通知</string>
+    <string name="settings_category_app_data">应用</string>
+    <string name="settings_page_transfer_summary">导入或导出设置</string>
+    <string name="settings_page_privacy_summary">本机存储与网络访问</string>
     <string name="settings_about">关于 Codex Meter</string>
 
     <!-- Account card -->
     <string name="settings_account_title_signed_in">ChatGPT 账户</string>
-    <string name="settings_account_title_signed_out">未连接</string>
+    <string name="settings_account_title_signed_out">未登录</string>
     <string name="settings_account_summary_signed_out">请在首页登录</string>
-    <string name="settings_account_summary_connected">已连接</string>
+    <string name="settings_account_summary_connected">已登录</string>
     <string name="settings_account_sign_out">退出登录</string>
     <string name="settings_account_sign_in">使用 ChatGPT 登录</string>
     <string name="settings_sign_out_dialog_title">退出登录？</string>
-    <string name="settings_sign_out_dialog_message">这会从此设备移除加密的 ChatGPT 令牌和缓存的用量数据。</string>
+    <string name="settings_sign_out_dialog_message">退出登录将移除此设备上加密保存的 ChatGPT 令牌及缓存的用量数据。</string>
     <string name="settings_signed_out">已退出登录。</string>
 
     <!-- Root list summaries -->
     <string name="settings_theme_system_default">跟随系统</string>
-    <string name="settings_summary_appearance_material_you_on">%1$s · Material You 已开启</string>
-    <string name="settings_summary_appearance_material_you_off">%1$s · Material You 已关闭</string>
-    <string name="settings_summary_refresh_automatic">自动 · 当前为%1$s · %2$s</string>
-    <string name="settings_summary_refresh_manual">%1$s · %2$s</string>
+    <string name="settings_summary_appearance_material_you_on">%1$s · 动态取色已开启</string>
+    <string name="settings_summary_appearance_material_you_off">%1$s · 动态取色已关闭</string>
+    <string name="settings_summary_refresh_automatic">自适应 · 当前%1$s · %2$s</string>
+    <string name="settings_summary_refresh_manual">固定间隔 · %1$s · %2$s</string>
     <plurals name="settings_refresh_interval_minutes">
         <item quantity="other">每 %1$d 分钟</item>
     </plurals>
     <string name="settings_refresh_interval_hourly">每小时</string>
     <plurals name="settings_refresh_interval_every_hours">
-        <item quantity="other">每 %1$d 小时</item>
+        <item quantity="other">每 %1$dh</item>
     </plurals>
     <string name="settings_summary_estimates_off">用量估算已关闭</string>
     <string name="settings_summary_estimates_on_warnings_off">用量估算已开启 · 预警已关闭</string>
     <string name="settings_summary_estimates_on">用量估算已开启</string>
     <string name="settings_summary_notifications_off">已关闭</string>
     <string name="settings_summary_notifications_on">已开启 · %1$s · 阈值 %2$d%%</string>
-    <string name="settings_summary_metric_five_hour">5 小时</string>
+    <string name="settings_summary_metric_five_hour">5h</string>
     <string name="settings_summary_metric_weekly">每周</string>
-    <string name="settings_summary_metric_both">两种额度</string>
+    <string name="settings_summary_metric_both">两种限额</string>
     <string name="settings_summary_now_bar_active">实时监控运行中</string>
     <string name="settings_summary_now_bar_automatic">自动 · 阈值 %1$d%% 时启动</string>
     <string name="settings_summary_now_bar_manual">手动启动</string>
-    <string name="settings_summary_updates_available">有新版本 v%1$s</string>
+    <string name="settings_summary_updates_available">新版本 v%1$s 已可用</string>
     <string name="settings_summary_updates_automatic">自动 · %1$s</string>
     <string name="settings_summary_updates_checks_off">自动检查已关闭</string>
     <string name="settings_summary_updates_alpha">%1$s · Alpha 渠道</string>
 
     <!-- Appearance -->
     <string name="settings_appearance_category_theme">主题</string>
-    <string name="settings_appearance_material_you">Material You</string>
-    <string name="settings_appearance_material_you_summary">在支持时使用系统调色板</string>
+    <string name="settings_appearance_material_you">动态取色</string>
+    <string name="settings_appearance_material_you_summary">匹配系统动态颜色</string>
 
     <!-- Refresh & usage -->
     <string name="settings_refresh_category">刷新</string>
     <string name="settings_refresh_on_launch">启动时刷新</string>
     <string name="settings_refresh_mode">刷新模式</string>
-    <string name="settings_refresh_mode_summary">根据剩余额度、应用使用情况、重置时间和近期失败自动调整</string>
-    <string name="settings_refresh_manual_interval">手动刷新间隔</string>
+    <string name="settings_refresh_mode_summary">自适应模式根据剩余额度、应用活跃状态、重置时间及近期刷新失败情况调整刷新间隔</string>
+    <string name="settings_refresh_manual_interval">刷新间隔</string>
     <string name="settings_dashboard_category">首页</string>
     <string name="settings_dashboard_edit">编辑首页</string>
-    <string name="settings_dashboard_edit_summary">排列用量卡片并选择要显示的卡片</string>
+    <string name="settings_dashboard_edit_summary">选择要显示的用量卡片，并调整顺序</string>
     <string name="settings_dashboard_window_summary">仅在 OpenAI 返回此周期时显示</string>
-    <string name="settings_dashboard_five_hour">5 小时额度</string>
-    <string name="settings_dashboard_weekly">每周额度</string>
-    <string name="settings_dashboard_additional_limits">专项额度</string>
-    <string name="settings_dashboard_additional_limits_summary">模型专属额度，例如 GPT-5.3-Codex-Spark</string>
-    <string name="settings_dashboard_usage_credits">额外额度余额</string>
+    <string name="settings_dashboard_five_hour">会话限额</string>
+    <string name="settings_dashboard_weekly">每周限额</string>
+    <string name="settings_dashboard_usage_credits">额度余额</string>
     <string name="settings_dashboard_usage_credits_summary">余额为零或负数时自动隐藏</string>
     <string name="settings_dashboard_usage_history">用量历史</string>
-    <string name="settings_dashboard_usage_history_summary">仅在有 5 小时或每周周期时显示</string>
-    <string name="settings_dashboard_reset_credits">重置券</string>
-    <string name="settings_dashboard_reset_credits_summary">没有可用重置券时自动隐藏</string>
+    <string name="settings_dashboard_usage_history_summary">查看 Work、Codex 及其他智能体任务中的套餐用量和额度消耗情况。不包括 Chat 模式中的对话。</string>
+    <string name="settings_dashboard_reset_credits">重置额度</string>
+    <string name="settings_dashboard_reset_credits_summary">无可用重置额度时自动隐藏</string>
     <string name="settings_usage_estimates_category">用量估算</string>
     <string name="settings_usage_estimates_enabled">预计可用时长</string>
-    <string name="settings_usage_estimates_enabled_summary">估算当前额度还能用多久</string>
+    <string name="settings_usage_estimates_enabled_summary">估算剩余额度的可用时长</string>
     <string name="settings_usage_estimates_sensitivity">预警灵敏度</string>
 
     <!-- Privacy -->
-    <string name="settings_privacy_category">你的数据</string>
-    <string name="settings_privacy_storage">加密的本机存储</string>
-    <string name="settings_privacy_storage_summary">OAuth 令牌经 Android Keystore 加密，仅保存在此设备上。</string>
-    <string name="settings_privacy_network">直接网络访问</string>
-    <string name="settings_privacy_network_summary">Codex Meter 直接连接 OpenAI 进行身份验证，并直接连接 ChatGPT 和 Codex 接口获取用量数据。Codex Meter 没有自己的后端服务器。</string>
+    <string name="settings_privacy_category">数据存储与访问</string>
+    <string name="settings_privacy_storage">本机存储</string>
+    <string name="settings_privacy_storage_summary">登录凭证加密保存在此设备上。</string>
+    <string name="settings_privacy_network">网络访问</string>
+    <string name="settings_privacy_network_summary">登录与用量查询直接连接 OpenAI / ChatGPT。\n更新检查与下载通过 GitHub 完成。\n应用不使用自建后端服务。</string>
 
     <!-- Diagnostics -->
     <string name="settings_diagnostics_category_tracing">日志记录</string>
     <string name="settings_diagnostics_logging">保存诊断日志</string>
-    <string name="settings_diagnostics_logging_summary">记录应用、刷新、调度器、Wear 和网络的详细事件</string>
+    <string name="settings_diagnostics_logging_summary">记录应用运行、用量刷新、任务调度和网络访问的详细事件</string>
     <string name="settings_diagnostics_saved_logs">已保存的日志</string>
     <string name="settings_diagnostics_export">导出日志</string>
-    <string name="settings_diagnostics_export_summary">保存为结构化 JSON Lines 文件</string>
+    <string name="settings_diagnostics_export_summary">将日志保存为 JSON Lines 文件</string>
     <string name="settings_diagnostics_clear">清除日志</string>
     <string name="settings_diagnostics_clear_summary">永久删除已保存的诊断事件</string>
     <string name="settings_diagnostics_category_privacy">隐私</string>
     <string name="settings_diagnostics_sensitive_data">敏感数据保护</string>
-    <string name="settings_diagnostics_sensitive_data_summary">日志会保存在应用私有存储中，直到你导出或清除。登录令牌、Cookie、授权码、电子邮件地址、URL 查询参数以及请求和响应正文都不会被有意记录。分享导出文件前请先检查内容。</string>
-    <string name="settings_diagnostics_tracing_enabled">诊断记录已开启。</string>
-    <string name="settings_diagnostics_tracing_disabled">诊断记录已关闭。已保存的日志仍会保留。</string>
+    <string name="settings_diagnostics_sensitive_data_summary">诊断日志保存在应用私有存储中，可导出或清除。不主动记录登录令牌、Cookie、授权码、电子邮件地址、URL 查询参数，以及请求和响应正文。分享导出文件前，请核查文件内容。</string>
+    <string name="settings_diagnostics_tracing_enabled">诊断日志记录已开启。</string>
+    <string name="settings_diagnostics_tracing_disabled">诊断日志记录已关闭，已保存的日志将继续保留。</string>
     <plurals name="settings_diagnostics_status_tracing_on">
-        <item quantity="other">记录已开启 · %1$s，共 %2$d 个文件</item>
+        <item quantity="other">日志记录已开启 · %1$s，共 %2$d 个文件</item>
     </plurals>
     <plurals name="settings_diagnostics_status_tracing_off">
-        <item quantity="other">记录已关闭 · %1$s，共 %2$d 个文件</item>
+        <item quantity="other">日志记录已关闭 · %1$s，共 %2$d 个文件</item>
     </plurals>
     <string name="settings_diagnostics_clear_dialog_title">清除诊断日志？</string>
-    <string name="settings_diagnostics_clear_dialog_message">这会永久删除所有已保存的诊断事件。</string>
+    <string name="settings_diagnostics_clear_dialog_message">此操作将永久删除全部已保存的诊断事件。</string>
     <string name="settings_diagnostics_clear_confirm">清除</string>
     <string name="settings_diagnostics_cleared">诊断日志已清除。</string>
-    <string name="settings_diagnostics_export_empty">没有可导出的诊断日志。</string>
-    <string name="settings_diagnostics_export_no_picker">没有可用于导出诊断日志的文件选择器。</string>
-    <string name="settings_diagnostics_exported">诊断日志已导出。分享前请先检查文件内容。</string>
+    <string name="settings_diagnostics_export_empty">暂无可导出的诊断日志。</string>
+    <string name="settings_diagnostics_export_no_picker">未找到可用于导出诊断日志的文件选择器。</string>
+    <string name="settings_diagnostics_exported">诊断日志已导出。分享前，请核查文件内容。</string>
     <string name="settings_diagnostics_export_failed">无法导出诊断日志：%1$s</string>
     <string name="settings_diagnostics_export_file_unavailable">Android 无法打开导出文件。</string>
 
     <!-- Backup & transfer page -->
     <string name="settings_transfer_category">迁移</string>
     <string name="settings_transfer_export">导出设置</string>
-    <string name="settings_transfer_export_summary">保存所选设置，并可选择包含登录数据</string>
+    <string name="settings_transfer_export_summary">导出所选设置，并可选择包含登录信息</string>
     <string name="settings_transfer_import">导入设置</string>
     <string name="settings_transfer_import_summary">从迁移文件恢复所选内容</string>
     <string name="settings_transfer_category_security">安全</string>
     <string name="settings_transfer_security_title">保护含登录信息的导出文件</string>
-    <string name="settings_transfer_security_summary">含登录信息的导出文件包含 ChatGPT 令牌。任何拿到该文件的人都能使用你的账户，请妥善保管。</string>
+    <string name="settings_transfer_security_summary">含登录信息的导出文件包含 ChatGPT 令牌。任何持有该文件的人均可使用关联账户，请妥善保管。</string>
 
     <!-- Transfer sections, keyed by SettingsTransfer.SECTION_* -->
     <string name="settings_transfer_section_app_settings">应用设置</string>
     <string name="settings_transfer_section_app_settings_summary">主题、刷新、更新和默认小组件外观</string>
     <string name="settings_transfer_section_notifications">通知</string>
-    <string name="settings_transfer_section_notifications_summary">低额度提醒和重置券提醒</string>
-    <string name="settings_transfer_section_now_bar">Now Bar</string>
+    <string name="settings_transfer_section_notifications_summary">剩余用量提醒和重置额度提醒</string>
+    <string name="settings_transfer_section_now_bar">实时通知</string>
     <string name="settings_transfer_section_now_bar_summary">显示模式、百分比模式和自动启动</string>
     <string name="settings_transfer_section_authentication">登录信息</string>
     <string name="settings_transfer_section_authentication_summary">ChatGPT 登录令牌（敏感）</string>
     <!-- Joins imported section titles in the import confirmation toast -->
     <string name="settings_transfer_section_separator">、</string>
     <!-- Dialog copy of SettingsTransfer.SECURITY_WARNING; exported files keep the English text -->
-    <string name="settings_transfer_security_warning">重要提示：此文件包含 ChatGPT 登录令牌。任何持有此文件的人都可以访问你的 ChatGPT 账户。请勿分享、上传或发送给任何人，仅将其保存在你信任的设备上。</string>
+    <string name="settings_transfer_security_warning">重要提示：此文件包含 ChatGPT 登录令牌。任何持有此文件的人均可使用其中令牌访问 ChatGPT 账户。请勿分享、上传或发送此文件，仅将其保存在可信设备上。</string>
 
     <!-- Backup & transfer dialogs and results -->
-    <string name="settings_transfer_import_no_picker">没有可用于导入迁移文件的文件选择器。</string>
-    <string name="settings_transfer_export_no_picker">没有可用于导出迁移文件的文件选择器。</string>
+    <string name="settings_transfer_import_no_picker">未找到可用于导入迁移文件的文件选择器。</string>
+    <string name="settings_transfer_export_no_picker">未找到可用于导出迁移文件的文件选择器。</string>
     <string name="settings_transfer_export_dialog_title">选择导出内容</string>
-    <string name="settings_transfer_export_auth_signed_out">请先登录，才能导出 ChatGPT 登录信息</string>
+    <string name="settings_transfer_export_auth_signed_out">导出 ChatGPT 登录信息前，请先登录</string>
     <string name="settings_transfer_export_auth_sign_in_first">导出登录信息前请先登录。</string>
     <string name="settings_transfer_select_export">请至少选择一项要导出的内容。</string>
     <string name="settings_transfer_export_auth_title">将包含登录信息</string>
-    <string name="settings_transfer_export_auth_message">%1$s\n\n仅当你要将 Codex Meter 迁移到自己控制的另一台设备时才继续。</string>
+    <string name="settings_transfer_export_auth_message">%1$s\n\n仅在将 Codex Meter 迁移至自行控制的另一台设备时继续。</string>
     <string name="settings_transfer_export_anyway">仍然导出</string>
     <string name="settings_transfer_exported_with_auth">已导出。此文件包含 ChatGPT 登录信息，请妥善保管。</string>
     <string name="settings_transfer_exported">设置已导出。</string>
     <string name="settings_transfer_export_failed">无法导出迁移文件。</string>
     <string name="settings_transfer_read_failed">无法读取迁移文件。</string>
-    <string name="settings_transfer_file_has_no_sections">此迁移文件不包含任何内容。</string>
-    <string name="settings_transfer_import_auth_warning">警告：将替换此设备上的 ChatGPT 登录</string>
+    <string name="settings_transfer_file_has_no_sections">迁移文件未包含可导入内容。</string>
+    <string name="settings_transfer_import_auth_warning">警告：将替换此设备上的 ChatGPT 登录信息</string>
     <string name="settings_transfer_import_dialog_title">选择导入内容</string>
     <string name="settings_transfer_select_import">请至少选择一项要导入的内容。</string>
     <string name="settings_transfer_import_auth_title">导入登录信息？</string>
-    <string name="settings_transfer_import_auth_message">%1$s\n\n这会用文件中的令牌替换此设备上的 ChatGPT 登录。</string>
+    <string name="settings_transfer_import_auth_message">%1$s\n\n文件中的令牌将替换此设备上现有的 ChatGPT 登录信息。</string>
     <string name="settings_transfer_import_anyway">仍然导入</string>
     <string name="settings_transfer_imported">已导入：%1$s。</string>
     <string name="settings_transfer_imported_with_auth">已导入：%1$s。登录信息已替换，请妥善保管此文件。</string>
@@ -181,9 +179,9 @@
 
     <!-- Transfer file problems (SettingsTransfer.Problem); %1$s is a JSON key or a version -->
     <string name="settings_transfer_error_empty">迁移文件为空。</string>
-    <string name="settings_transfer_error_not_transfer_file">这不是 Codex Meter 迁移文件。</string>
+    <string name="settings_transfer_error_not_transfer_file">此文件不是 Codex Meter 迁移文件。</string>
     <string name="settings_transfer_error_unsupported_version">不支持的迁移文件版本：%1$s</string>
-    <string name="settings_transfer_error_no_sections">迁移文件不包含任何内容。</string>
+    <string name="settings_transfer_error_no_sections">迁移文件未包含可导入内容。</string>
     <string name="settings_transfer_error_lead_times_not_array">%1$s 必须是 JSON 数组。</string>
     <string name="settings_transfer_error_lead_times_invalid_entry">%1$s 包含无效条目。</string>
     <string name="settings_transfer_error_lead_times_null_entry">%1$s 包含空值条目。</string>
@@ -201,8 +199,14 @@
     <string name="settings_transfer_error_too_large">迁移文件过大。</string>
     <string name="settings_transfer_error_no_app_settings">此文件中没有可导入的应用设置。</string>
     <string name="settings_transfer_error_no_notifications">此文件中没有可导入的通知设置。</string>
-    <string name="settings_transfer_error_no_now_bar">此文件中没有可导入的 Now Bar 设置。</string>
+    <string name="settings_transfer_error_no_now_bar">此文件中没有可导入的实时通知设置。</string>
     <string name="settings_transfer_error_no_authentication">此文件中没有可导入的登录信息。</string>
     <string name="settings_transfer_error_auth_invalid">导入的登录信息不完整或无效。</string>
     <string name="settings_transfer_error_refresh_failed">导入的登录信息无法刷新用量。</string>
+    <string name="settings_page_home_display">首页显示</string>
+    <string name="settings_home_display_summary">用量卡片与显示顺序</string>
+    <string name="settings_about_summary">版本信息、开发与致谢</string>
+    <string name="settings_appearance_theme_system_summary">匹配系统外观设置</string>
+    <string name="settings_summary_refresh_adaptive">自适应 · %1$s</string>
+    <string name="settings_summary_refresh_fixed">固定 · %1$s</string>
 </resources>

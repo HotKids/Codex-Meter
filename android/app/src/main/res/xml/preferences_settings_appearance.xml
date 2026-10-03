@@ -11,6 +11,7 @@
             app:viewType="image" />
         <SwitchPreferenceCompat
             android:key="theme_system_ui"
+            android:summary="@string/settings_appearance_theme_system_summary"
             android:title="@string/settings_theme_system_default" />
         <SwitchPreferenceCompat
             android:defaultValue="false"

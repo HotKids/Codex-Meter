@@ -14,6 +14,11 @@
             android:title="@string/settings_page_appearance"
             app:iconSpaceReserved="false" />
         <Preference
+            android:key="settings_home_display"
+            android:title="@string/settings_page_home_display"
+            android:summary="@string/settings_home_display_summary"
+            app:iconSpaceReserved="false" />
+        <Preference
             android:key="settings_refresh_usage"
             android:title="@string/settings_page_refresh_usage"
             app:iconSpaceReserved="false" />
@@ -45,14 +50,12 @@
             android:summary="@string/settings_page_privacy_summary"
             android:title="@string/settings_page_privacy"
             app:iconSpaceReserved="false" />
+        <Preference
+            android:key="about_codex_meter"
+            android:title="@string/settings_about"
+            android:summary="@string/settings_about_summary"
+            app:iconSpaceReserved="false" />
     </PreferenceCategory>
-
-    <dev.oneuiproject.oneui.preference.InsetPreferenceCategory app:height="20dp" />
-
-    <Preference
-        android:key="about_codex_meter"
-        android:title="@string/settings_about"
-        app:iconSpaceReserved="false" />
 
     <dev.oneuiproject.oneui.preference.InsetPreferenceCategory app:height="28dp" />
 </PreferenceScreen>

@@ -7,7 +7,7 @@
     <string name="widget_next_reset">Time remaining until the next usage reset</string>
     <string name="widget_reset_credits">Available Codex reset credits</string>
     <string name="app_name" translatable="false">Codex Meter</string>
-    <string name="five_hour">5-hour</string>
+    <string name="five_hour">5h</string>
     <string name="lock_widget_bars_square_description">Compact horizontal Codex allowance bars for supported Samsung lock screens</string>
     <string name="lock_widget_bars_square_name">Codex · Bars · Square</string>
     <string name="lock_widget_bars_wide_description">Two horizontal Codex allowance bars for supported Samsung lock screens</string>
@@ -16,18 +16,18 @@
     <string name="lock_widget_dials_square_name">Codex · Gauges · Square</string>
     <string name="lock_widget_dials_wide_description">Two Codex allowance gauges for supported Samsung lock screens</string>
     <string name="lock_widget_dials_wide_name">Codex · Gauges · Wide</string>
-    <string name="lock_widget_five_hour_description">Five-hour Codex allowance gauge for Samsung lock screens and AOD</string>
-    <string name="lock_widget_five_hour_name">Codex · 5-hour</string>
+    <string name="lock_widget_five_hour_description">5h Codex allowance gauge for Samsung lock screens and AOD</string>
+    <string name="lock_widget_five_hour_name">Codex · 5h</string>
     <string name="lock_widget_graphic_preview_description">Codex usage preview</string>
     <string name="lock_widget_rings_square_description">Compact circular Codex allowance rings for supported Samsung lock screens</string>
     <string name="lock_widget_rings_square_name">Codex · Rings · Square</string>
     <string name="lock_widget_rings_wide_description">Two circular Codex allowance rings for supported Samsung lock screens</string>
     <string name="lock_widget_rings_wide_name">Codex · Rings · Wide</string>
-    <string name="lock_widget_square_description">Square numeric five-hour and weekly Codex allowance for supported Samsung lock screens</string>
+    <string name="lock_widget_square_description">Square numeric 5h and weekly Codex allowance for supported Samsung lock screens</string>
     <string name="lock_widget_square_name">Codex · Numbers · Square</string>
     <!-- Layout placeholders mirroring the compact labels LockMeterBinding draws at runtime. -->
     <string name="lock_widget_square_preview" translatable="false">5H — W —</string>
-    <string name="lock_widget_wide_description">Wide numeric five-hour and weekly Codex allowance for supported Samsung lock screens</string>
+    <string name="lock_widget_wide_description">Wide numeric 5h and weekly Codex allowance for supported Samsung lock screens</string>
     <string name="lock_widget_wide_name">Codex · Numbers · Wide</string>
     <string name="lock_widget_wide_preview" translatable="false">5H — · W —</string>
     <string name="lock_widget_weekly_description">Weekly Codex allowance gauge for Samsung lock screens and AOD</string>
@@ -40,8 +40,8 @@
     <string name="update_opening_installer">Verified. Opening Android’s install confirmation…</string>
     <string name="update_waiting_for_installer">Waiting for Android’s install confirmation.</string>
     <string name="weekly">Weekly</string>
-    <string name="widget_description">Codex usage cards for 5-hour, weekly and model limits, with dials on one-row cells</string>
-    <string name="widget_name">Codex usage</string>
+    <string name="widget_description">View Codex usage and reset times</string>
+    <string name="widget_name">Codex Usage</string>
     <string name="widget_sample_primary_value" translatable="false">76%</string>
     <string name="widget_sample_secondary_value" translatable="false">75%</string>
     <string name="about_version">Version %1$s</string>

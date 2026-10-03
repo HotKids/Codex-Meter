@@ -1,17 +1,20 @@
+import java.security.KeyStore
+import java.security.MessageDigest
+
 plugins {
     id("com.android.application")
 }
 
 android {
-    namespace = "dev.bennett.codexmeter"
-    compileSdk = 36
+    namespace = "me.pipi.codexmeter"
+    compileSdk = 37
 
     defaultConfig {
-        applicationId = "me.pipi.usage"
+        applicationId = "me.pipi.codexmeter"
         minSdk = 26
-        targetSdk = 36
-        versionCode = 30
-        versionName = "2.8.0"
+        targetSdk = 37
+        versionCode = 1
+        versionName = "0.1"
         providers.gradleProperty("demoVersionCode").orNull?.toIntOrNull()?.let {
             versionCode = it
         }
@@ -38,9 +41,22 @@ android {
             val keyStore = signingDir.resolve("codex-meter-local.p12")
             val passwordFile = signingDir.resolve("password")
             if (keyStore.isFile && passwordFile.isFile) {
+                val password = passwordFile.readText().trim()
+                val signingStore = KeyStore.getInstance("PKCS12").apply {
+                    keyStore.inputStream().use { load(it, password.toCharArray()) }
+                }
+                val certificate = signingStore.getCertificate("codexmeter")
+                    ?: throw GradleException("The fixed signing alias codexmeter is missing")
+                val actualCertificateSha = MessageDigest.getInstance("SHA-256")
+                    .digest(certificate.encoded).joinToString("") { "%02x".format(it) }
+                val expectedCertificateSha = rootProject.file("ci/phone-signing-certificate.sha256")
+                    .readText().trim()
+                if (actualCertificateSha != expectedCertificateSha) {
+                    throw GradleException("Phone release signing certificate does not match the fixed identity")
+                }
                 storeFile = keyStore
                 storeType = "PKCS12"
-                storePassword = passwordFile.readText().trim()
+                storePassword = password
                 keyAlias = "codexmeter"
                 keyPassword = storePassword
             }
@@ -68,6 +84,17 @@ android {
     }
 }
 
+// AGP omits validateSigningRelease when the configuration is empty, so guard packaging.
+tasks.matching { it.name == "packageRelease" }.configureEach {
+    doFirst {
+        val signingDir = rootProject.file(".local-signing")
+        if (!signingDir.resolve("codex-meter-local.p12").isFile ||
+            !signingDir.resolve("password").isFile) {
+            throw GradleException("Fixed signing material is missing; restore android/.local-signing from the signing backup")
+        }
+    }
+}
+
 configurations.configureEach {
     exclude(group = "androidx.core", module = "core")
     exclude(group = "androidx.core", module = "core-ktx")
@@ -85,7 +112,6 @@ configurations.configureEach {
 
 dependencies {
     implementation(project(":shared"))
-    implementation("com.google.android.gms:play-services-wearable:19.0.0")
     implementation("io.github.tribalfs:oneui-design:0.9.14+oneui8")
     implementation("io.github.oneuiproject:icons:1.1.0")
     testImplementation("junit:junit:4.13.2")

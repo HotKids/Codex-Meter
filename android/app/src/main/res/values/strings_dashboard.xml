@@ -16,8 +16,9 @@
     <string name="dashboard_resets_absolute">Resets %1$s</string>
     <string name="dashboard_resets_both">Resets %1$s (%2$s)</string>
     <string name="dashboard_estimate_remaining">Est. %1$s</string>
+    <string name="dashboard_home_estimate_exhaustion">Estimated to run out in %1$s</string>
     <string name="dashboard_estimate_depleted">Est. depleted</string>
-    <string name="dashboard_estimate_remaining_spoken">Estimated %1$s</string>
+    <string name="dashboard_estimate_remaining_spoken">Estimated to run out in %1$s</string>
     <string name="dashboard_estimate_depleted_spoken">Estimated depleted</string>
     <string name="dashboard_percent_unavailable">Unavailable</string>
     <string name="dashboard_percent_used">%1$d%% used</string>
@@ -41,7 +42,7 @@
     <string name="dashboard_menu_settings">Settings</string>
     <string name="dashboard_sign_in">Sign in with ChatGPT</string>
     <string name="dashboard_sign_in_continue">Continue sign-in</string>
-    <string name="dashboard_empty">No dashboard items are available. Refresh usage or choose items in Settings → Refresh &amp; usage.</string>
+    <string name="dashboard_empty">No dashboard items are available. Refresh usage or select Edit dashboard to choose what to show.</string>
     <string name="dashboard_update_return_title">Return to Codex Meter %1$s</string>
     <string name="dashboard_update_ready_title">Codex Meter %1$s is ready</string>
     <string name="dashboard_update_return_summary">You are back on the stable channel. The stable APK installs in place over this alpha build after checksum verification.</string>
@@ -50,31 +51,26 @@
     <string name="dashboard_update_review">Review update</string>
     <string name="dashboard_window_monthly">Monthly</string>
     <string name="dashboard_usage_history">Usage history</string>
-    <string name="dashboard_history_card_detail">On-device burn trends improve estimates as samples accumulate.</string>
-    <string name="dashboard_history_card_waiting">Charts appear once OpenAI reports your 5-hour, weekly, or monthly usage windows.</string>
+    <string name="dashboard_history_card_detail">View plan usage and credit consumption for Work, Codex, and other agent tasks. Excludes conversations in Chat mode.</string>
+    <string name="dashboard_history_card_waiting">Charts appear once OpenAI reports your 5h, weekly, or monthly usage windows.</string>
     <string name="dashboard_history_view">View history</string>
     <string name="dashboard_usage_credits">Usage credits</string>
     <string name="dashboard_credits_unlimited">Unlimited</string>
     <string name="dashboard_credits_available">Credits available</string>
     <string name="dashboard_credits_none_purchased">No purchased credits</string>
-    <string name="dashboard_credits_balance">%1$s credits</string>
+    <string name="dashboard_credits_balance">%1$s remaining</string>
     <string name="dashboard_credits_uncapped">Usage-credit balance is not capped</string>
     <string name="dashboard_credits_purchase_hint">Purchase credits in ChatGPT Codex</string>
-    <string name="dashboard_credits_purchased">Purchased Codex usage-credit balance</string>
-    <string name="dashboard_cadence_hours">%1$d-hour</string>
-    <string name="dashboard_cadence_days">%1$d-day</string>
-    <string name="dashboard_cadence_usage">Usage</string>
-    <string name="dashboard_limit_reached">%1$s (limit reached)</string>
-    <string name="dashboard_limit_unavailable">%1$s (unavailable)</string>
+    <string name="dashboard_credits_purchased">Current balance</string>
     <string name="dashboard_reset_credits">Reset credits</string>
+    <string name="dashboard_reset_credits_detail">Use one reset to restore your 5-hour session limit, weekly limit, or both.</string>
     <string name="dashboard_reset_credits_none">No resets available</string>
     <plurals name="dashboard_reset_credits_available">
-        <item quantity="one">%d reset available</item>
-        <item quantity="other">%d resets available</item>
+        <item quantity="one">%1$d reset available</item>
+        <item quantity="other">%1$d resets available</item>
     </plurals>
-    <string name="dashboard_reset_use_one">Use 1 reset</string>
+    <string name="dashboard_reset_use_one">Use reset credit</string>
     <string name="dashboard_reset_sign_in">Sign in to view reset credits</string>
-    <string name="dashboard_reset_next_expires">Next expires %1$s</string>
     <string name="dashboard_reset_expiry_unavailable">Expiration details unavailable</string>
     <string name="dashboard_reset_earn">Earn credits from ChatGPT Codex</string>
     <string name="dashboard_signed_in">Signed in.</string>
@@ -87,7 +83,7 @@
     <string name="dashboard_operation_failed">The operation failed.</string>
 
     <!-- Usage wave card (UsageWaveView). -->
-    <string name="dashboard_wave_resets_in">Resets in</string>
+    <string name="dashboard_wave_resets_in">Reset time</string>
     <string name="dashboard_wave_description">%1$s, %2$d percent. %3$s</string>
     <string name="dashboard_wave_accelerated">Accelerated usage warning</string>
 
@@ -114,13 +110,13 @@
     <string name="dashboard_history_highlights_title">Highlights to show</string>
     <string name="dashboard_history_done">Done</string>
     <string name="dashboard_history_guide">The solid line is this window\'s usage, faint lines are previous windows, the dotted diagonal is a sustainable pace, and the dashed line is the projection. Drag a chart to inspect any moment. Samples are recorded after each successful refresh and stay on this device.</string>
-    <string name="dashboard_history_waiting">Charts appear once OpenAI reports your 5-hour, weekly, or monthly usage windows. Refresh usage from the dashboard to check again.</string>
+    <string name="dashboard_history_waiting">Charts appear once OpenAI reports your 5h, weekly, or monthly usage windows. Refresh usage from the dashboard to check again.</string>
     <string name="dashboard_history_estimated_value">Estimated value</string>
     <string name="dashboard_history_clear">Clear local history</string>
     <string name="dashboard_history_clear_title">Clear usage history?</string>
     <string name="dashboard_history_clear_message">This removes every locally stored usage sample. Your latest allowance and account sign-in stay intact.</string>
     <string name="dashboard_history_clear_confirm">Clear</string>
-    <string name="dashboard_history_section_five_hour">5-hour window</string>
+    <string name="dashboard_history_section_five_hour">5h window</string>
     <string name="dashboard_history_section_weekly">Weekly window</string>
     <string name="dashboard_history_section_monthly">Monthly window</string>
     <string name="dashboard_history_drag_compare">Drag to inspect · tap a window to compare</string>
@@ -143,7 +139,7 @@
     <string name="dashboard_history_pace_on_par">On par with typical</string>
     <string name="dashboard_history_included_usage">Est. included usage</string>
     <string name="dashboard_history_weekly_allowance">Weekly allowance</string>
-    <string name="dashboard_history_five_hour_allowance">5-hour allowance</string>
+    <string name="dashboard_history_five_hour_allowance">5h allowance</string>
     <string name="dashboard_history_vs_price">Vs. subscription price</string>
     <string name="dashboard_history_value_multiplier">≈ %1$dx the monthly cost</string>
     <string name="dashboard_history_weekly_value_remaining">Weekly value remaining</string>
@@ -158,38 +154,31 @@
     <string name="dashboard_highlight_value">Value estimates ($)</string>
 
     <!-- Dashboard editor (DashboardReorderActivity, DashboardSections keys). -->
-    <string name="dashboard_edit_hint">Drag the handles to arrange your usage cards and use the switches to hide the ones you don\'t need. Model-specific limits such as GPT-5.3-Codex-Spark appear here automatically once OpenAI reports them for your account.</string>
-    <string name="dashboard_edit_note">Changes are saved instantly. Usage-credit balance and reset credits stay hidden when they have nothing to show (zero or below), and 5-hour, weekly, monthly, and usage-history cards appear only while OpenAI reports data for them — no matter where each card is placed or whether its switch is on.</string>
+    <string name="dashboard_edit_hint">Drag the handles to arrange your usage cards and use the switches to hide the ones you don\'t need.</string>
+    <string name="dashboard_edit_note">Changes are saved instantly. Usage-credit balance and reset credits stay hidden when they have nothing to show (zero or below), and 5h, weekly, monthly, and usage-history cards appear only while OpenAI reports data for them — no matter where each card is placed or whether its switch is on.</string>
     <string name="dashboard_edit_show">Show on dashboard</string>
     <string name="dashboard_edit_reorder">Reorder</string>
-    <string name="dashboard_section_five_hour_title">5-hour limit</string>
-    <string name="dashboard_section_five_hour_summary">Rolling 5-hour Codex window</string>
+    <string name="dashboard_section_five_hour_title">Session limit</string>
+    <string name="dashboard_section_five_hour_summary">Rolling 5h Codex window</string>
     <string name="dashboard_section_weekly_title">Weekly limit</string>
-    <string name="dashboard_section_weekly_summary">Rolling 7-day Codex window</string>
+    <string name="dashboard_section_weekly_summary">Rolling 7d Codex window</string>
     <string name="dashboard_section_monthly_title">Monthly limit</string>
-    <string name="dashboard_section_monthly_summary">Rolling ~30-day Codex window (free tier)</string>
+    <string name="dashboard_section_monthly_summary">Rolling ~30d Codex window (free tier)</string>
     <string name="dashboard_section_usage_credits_title">Usage-credit balance</string>
     <string name="dashboard_section_usage_credits_summary">Hidden automatically at a zero or negative balance</string>
-    <string name="dashboard_section_usage_history_summary">Shown only when a 5-hour or weekly window is available</string>
+    <string name="dashboard_section_usage_history_summary">View plan usage and credit consumption for Work, Codex, and other agent tasks. Excludes conversations in Chat mode.</string>
     <string name="dashboard_section_reset_credits_summary">Hidden automatically when no resets are available</string>
-    <string name="dashboard_section_limit_title">Additional limit</string>
-    <string name="dashboard_section_limit_summary">Model-specific limit · detected automatically</string>
-    <string name="dashboard_limit_additional_usage">Additional usage</string>
 
     <!-- Widget meters (WidgetMeters keys). -->
-    <string name="dashboard_meter_five_hour">Codex · 5 hours</string>
+    <string name="dashboard_meter_five_hour">Codex · 5h</string>
     <string name="dashboard_meter_weekly">Codex · Weekly</string>
     <string name="dashboard_meter_monthly">Codex · Monthly</string>
     <string name="dashboard_meter_next_reset">Next reset</string>
-    <string name="dashboard_meter_limit_five_hour">%1$s · 5 hours</string>
-    <string name="dashboard_meter_limit_weekly">%1$s · Weekly</string>
     <string name="dashboard_meter_short_five_hour">5h</string>
     <string name="dashboard_meter_short_weekly">Wk</string>
     <string name="dashboard_meter_short_monthly">Mo</string>
     <string name="dashboard_meter_short_next_reset">Reset</string>
     <string name="dashboard_meter_short_reset_credits">Credits</string>
-    <string name="dashboard_meter_short_limit_five_hour">%1$s 5h</string>
-    <string name="dashboard_meter_short_limit_weekly">%1$s W</string>
     <string name="dashboard_meter_short_fallback">Meter</string>
 
     <!-- Samsung lock-screen widgets. -->
@@ -207,13 +196,13 @@
     </plurals>
     <string name="dashboard_lock_show_countdown">Show live time until reset</string>
     <string name="dashboard_lock_show_credits">Show reset-credit count</string>
-    <string name="dashboard_lock_tap_reset">Tap tile to open Use reset confirmation</string>
+    <string name="dashboard_lock_tap_reset">Tap tile to open Use reset credit confirmation</string>
     <string name="dashboard_lock_reset_note">A reset is never consumed directly from the lock screen. The tile opens a confirmation screen first.</string>
     <string name="dashboard_lock_saved">Lock-screen widget updated.</string>
     <string name="dashboard_lock_sign_in">SIGN IN</string>
     <string name="dashboard_lock_sign_in_stacked">SIGN\nIN</string>
     <string name="dashboard_lock_sign_in_required">Codex Meter, sign in required</string>
-    <string name="dashboard_lock_single_five_hour">Codex five hour %1$s remaining</string>
+    <string name="dashboard_lock_single_five_hour">Codex 5h %1$s remaining</string>
     <string name="dashboard_lock_single_weekly">Codex weekly %1$s remaining</string>
     <string name="dashboard_lock_single_monthly">Codex monthly %1$s remaining</string>
     <string name="dashboard_lock_description_style">Codex %1$s</string>

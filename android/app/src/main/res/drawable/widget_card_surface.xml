@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!-- Card surface for the AI-Usage style home widget; tinted and faded at render time. -->
+<!-- Clear card surface; tinted and faded at render time. -->
 <shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
     <solid android:color="@android:color/white" />
     <corners android:radius="@dimen/widget_card_corner_radius" />

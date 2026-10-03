@@ -1,68 +1,83 @@
-# 额度周期的解析与选择
+# Usage windows and widget selection
 
-本文说明手机端如何从 `/wham/usage` 响应得到各个额度周期，以及首页小组件如何引用它们。
-相关代码：`UsageParser`（解析）、`UsageSnapshot` / `UsageLimit` / `WidgetMeters`（`android/shared/`，冻结）、
-`UsageCardWindows`（小组件选择）。
+This document describes how the Android phone app parses `/wham/usage` and
+selects the usage windows shown on Home and widgets. `UsageParser` parses the
+response; `UsageSnapshot`, `UsageLimit` and `WidgetMeters` provide shared Java
+models and selection policies. `WidgetRenderer` and `WidgetMeter` own phone
+widget selection and presentation.
 
-## 1. 解析
+Additional model limits can still be parsed into the snapshot, but they are not
+displayed or configured on the phone. Legacy widget selections for those models
+migrate to the standard phone meters.
 
-`UsageParser.parse` 只读取下列字段，其余字段忽略：
+## Response parsing
 
-| 字段 | 用途 |
+| Field | Purpose |
 |---|---|
-| `plan_type` | 套餐，交给 `UsageFormat.planLabel` 显示（`pro` / `pro20x` / `pro10x` 显示为 Pro 10x） |
-| `rate_limit.allowed`、`rate_limit.limit_reached` | 账户是否受限 |
-| `rate_limit.primary_window`、`rate_limit.secondary_window` | 标准周期 |
-| `additional_rate_limits[]` | 模型专属额度（如 Codex Spark）；根节点没有时回退到 `rate_limit.additional_rate_limits` |
-| `rate_limit_reset_credits.available_count` | 可用重置券数量 |
-| `credits` | 余额信息 |
+| `plan_type` | Plan identifier formatted by `UsageFormat.planLabel`; `prolite`/`pro5x`/`pro100` display Pro 100, `pro`/`pro10x`/`pro200` display Pro 200, and `pro25x`/`pro500` display Pro 500; the former `pro20x` alias is unsupported |
+| `rate_limit.allowed`, `rate_limit.limit_reached` | Whether the account is currently limited |
+| `rate_limit.primary_window`, `rate_limit.secondary_window` | Standard usage windows |
+| `additional_rate_limits[]` | Additional model windows; when absent at the root, parsing falls back to `rate_limit.additional_rate_limits` |
+| `rate_limit_reset_credits.available_count` | Available reset count |
+| `credits` | Purchased usage-credit balance |
 
-### 1.1 标准周期按时长归类
+Primary and secondary windows are classified by `limit_window_seconds`, rather
+than by their position in the response. Each window is assigned to at most one
+cadence.
 
-primary / secondary 不按位置固定含义，而是按 `limit_window_seconds` 归类，每个周期只归入一类：
-
-| 类别 | 目标时长 | 接受范围 |
+| Cadence | Target duration | Accepted range |
 |---|---|---|
-| 5 小时 | 5 小时 | 3–8 小时 |
-| 每周 | 7 天 | 5–9 天 |
-| 每月 | 30 天 | 10–45 天 |
+| Session | 5 hours | 3–8 hours |
+| Weekly | 7 days | 5–9 days |
+| Monthly | 30 days | 10–45 days |
 
-同一类有多个候选时取时长最接近目标的一个，相同时取先出现的。Free 套餐只返回约 30 天的周期，
-因此 `weekly` 为空、`monthly` 有值；`UsageSnapshot.longWindow()` 在这种情况下返回月周期。
+When several windows qualify, the one nearest the target duration wins; ties
+keep the first candidate. A Free account can report only a roughly 30-day
+window. In that case `weekly` is absent, `monthly` is present and
+`UsageSnapshot.longWindow()` returns the monthly window.
 
-### 1.2 模型专属额度
+Each additional model entry reads its own `rate_limit`, or the entry itself
+when that object is absent. Entries without either primary or secondary windows
+are discarded. The ID uses the first non-empty `limit_id`, `limit_name` or
+`metered_feature`, followed by the array index; nested-array fallback does not
+change this identity rule.
 
-`additional_rate_limits` 中每一项读取自身的 `rate_limit`（没有时把这一项本身当作 `rate_limit`），
-取其中的 primary / secondary 周期；两个周期都缺失的项会被丢弃。
+## Phone meter selection
 
-额度 ID 保持上游规则：`limit_id`、`limit_name`、`metered_feature` 中第一个非空值，再加上
-`-<数组下标>`，例如 `codex_bengalfox-0`。嵌套位置的回退不改变 ID，因此首页卡片排序、显示设置和
-小组件选择不需要迁移。
+Each widget stores its ordered selection in `WidgetOptions.visibleMeters`.
 
-## 2. 小组件中的周期键
+| Key | Presentation |
+|---|---|
+| `five_hour` | Session usage; 会话 / Session |
+| `weekly` | Weekly usage, or monthly when weekly is absent; 每周 / Weekly or 每月 / Monthly |
+| `next_reset` | Earliest future reset among the session and long windows; 重置 / Reset |
+| `usage_credits` | Numeric remaining credits on cards; 剩余额度 / Credits remaining |
+| `reset_credits` | Legacy standalone reset count, migrated to `next_reset` |
 
-每个小组件保存一个有序的周期键列表（`WidgetOptions.visibleMeters`，按小组件 ID 分别保存）：
+The fixed-width 2×1 dial editor offers session, weekly/monthly and reset meters.
+Larger cards also offer remaining credits. `WidgetOptions.effectiveVisibleMeters`
+merges a legacy reset-count selection into the reset meter, preserves its first
+position and removes duplicates. `WidgetRenderer.selectedKeys` resolves the
+selection against the phone catalog and keeps the saved order.
 
-| 键 | 对应周期 | 标题（zh-CN / en） |
-|---|---|---|
-| `five_hour` | 5 小时周期 | 5 小时 / 5-hour |
-| `weekly` | 长周期：有每周时为每周，只有每月时为每月 | 每周 / Weekly，或 每月 / Monthly |
-| `monthly` | 每月周期，仅在每周和每月同时存在时单独提供 | 每月 / Monthly |
-| `limit:<identity>:primary` / `:secondary` | 模型专属额度的两个周期 | 例如 Codex Spark 5 小时 / Codex Spark 每周 |
+The editor lists selected keys before the other available keys. Disabling a
+meter does not remove its switch. Missing usage retains its selected slot with
+a dash.
 
-`<identity>` 由 `WidgetMeters.limitIdentity` 生成（额度 ID 转小写，逗号替换为下划线）。
-名称或 `metered_feature` 含 `spark` 的额度前缀显示为 “Codex Spark”，否则使用额度名称、功能名，
-最后回退为 “Codex 附加额度”（en: Codex extra limit）。
-模型额度标题后半部分按实际时长生成（5 小时、每周、N 天），时长未知时按
-primary = 5 小时、secondary = 每周处理。
+## Values and reset details
 
-### 2.1 选择规则（`UsageCardWindows`）
+`WidgetMeter` presents usage values and progress as remaining percentages. The
+reset meter considers only future, timed standard windows and ignores additional
+model windows. Its progress represents the remaining fraction of the selected
+window's duration.
 
-- `availableKeys`：当前快照实际返回的周期，顺序为 5 小时、长周期、每月（仅双长周期时）、各模型额度。
-- `defaultKeys`：未保存选择时，取前两个可用周期；没有数据时为 `five_hour`、`weekly`。
-- `resolve`：只保留周期键（上游的“下次重置”“重置券”等辅助项会被忽略），去重并保持保存顺序，
-  最多 4 个；全部无效时回退到默认值。当前缺失的周期仍保留位置，卡片显示 “—”。
-- `catalog`：编辑器列表，先列已选项（保持顺序），再列其余可用周期。
+On cards, the reset-meter value uses compact countdowns such as `6d 11h` in all
+locales. Usage reset details retain exact `MM/dd HH:mm` dates. Available reset
+counts appear below the reset bar; they do not have a separate progress bar.
+Remaining credits are numeric and use at most two fractional digits. The 2×1
+dials preserve their compact countdowns and omit reset inventory.
 
-重置时间和重置券不是周期：重置时间显示在每个周期的“X后重置”中，可用重置券（数量 > 0）
-自动显示在卡片底部，并给出最近的到期时间。
+The followed live notification's reset meter uses the compact countdown, while
+widget usage details retain exact dates. See
+[ai-usage-widgets.md](ai-usage-widgets.md) for the layout, spacing and preview
+synchronization contract.

@@ -1,458 +1,79 @@
 <?xml version="1.0" encoding="utf-8"?>
-<!--
-    Material home widget (the "Clear" style): a Codex header with a refresh button above one
-    tonal panel per usage window. Narrow widgets stack the panels (row 0 and row 1, first slot
-    only); wide widgets use two columns. Rows share the height, so panels fill any size.
-    Header texts use WidgetMaterialHeader styles, which widget_material_shadow.xml swaps for
-    shadowed ones when the background is off. Regenerate it with
-    android/tools/widget-card-shadow.sh after editing this file.
--->
-<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@android:id/background"
-    android:layout_width="match_parent"
-    android:layout_height="match_parent">
-
-    <ImageView
-        android:id="@+id/md_surface"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:importantForAccessibility="no"
-        android:scaleType="fitXY"
-        android:src="@drawable/widget_card_surface" />
-
-    <LinearLayout
-        android:id="@+id/md_content"
-        android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:orientation="vertical"
-        android:padding="12dp">
-
-        <LinearLayout
-            android:id="@+id/md_header"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:gravity="center_vertical"
-            android:orientation="horizontal">
-
-            <ImageView
-                android:id="@+id/md_logo"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:importantForAccessibility="no"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_codex_logo" />
-
-            <TextView
-                android:id="@+id/md_title"
-                style="@style/WidgetMaterialHeader.Title"
-                android:layout_marginStart="8dp"
-                android:text="@string/widget_material_title"
-                android:textSize="17dp" />
-
-            <TextView
-                android:id="@+id/md_status"
-                style="@style/WidgetMaterialHeader.Status"
-                android:layout_width="0dp"
-                android:layout_weight="1"
-                android:gravity="end"
-                android:paddingStart="8dp"
-                android:textSize="10.5dp" />
-
-            <ImageView
-                android:id="@+id/md_refresh"
-                android:layout_width="22dp"
-                android:layout_height="22dp"
-                android:layout_marginStart="8dp"
-                android:contentDescription="@string/widget_material_refresh"
-                android:scaleType="fitCenter"
-                android:src="@drawable/ic_widget_refresh" />
+<!-- Regenerate picker and transparent variants with tools/widget-card-shadow.sh. -->
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android" android:id="@android:id/background" android:layout_width="match_parent" android:layout_height="match_parent">
+    <ImageView android:id="@+id/md_surface" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_surface" />
+    <LinearLayout android:id="@+id/md_content" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
+        <LinearLayout android:id="@+id/md_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
+            <ImageView android:id="@+id/md_logo" android:layout_width="22dp" android:layout_height="22dp" android:importantForAccessibility="no" android:scaleType="fitCenter" android:src="@drawable/ic_notification" />
+            <TextView android:id="@+id/md_title" style="@style/WidgetMaterialHeader.Title" android:layout_marginStart="8dp" android:text="@string/widget_material_title" android:textSize="17dp" />
+            <TextView android:id="@+id/md_status" style="@style/WidgetMaterialHeader.Status" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:paddingStart="8dp" android:textSize="10.5dp" />
+            <TextView android:id="@+id/md_updated" style="@style/WidgetMaterialHeader.Status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:visibility="gone" android:textSize="14dp" />
+            <ImageView android:id="@+id/md_refresh" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp" android:contentDescription="@string/widget_material_refresh" android:scaleType="fitCenter" android:src="@drawable/ic_widget_refresh" />
         </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/md_row_0"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="10dp"
-            android:layout_weight="1"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:id="@+id/md_panel_0"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <ImageView
-                    android:id="@+id/md_panel_bg_0"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:importantForAccessibility="no"
-                    android:scaleType="fitXY"
-                    android:src="@drawable/widget_material_panel" />
-
-                <LinearLayout
-                    android:id="@+id/md_panel_content_0"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="9dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="9dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_name_0"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="15dp" />
-
-                        <TextView
-                            android:id="@+id/md_value_0"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:paddingStart="6dp"
-                            android:textSize="15.5dp" />
+        <LinearLayout android:id="@+id/md_row_0" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="10dp" android:layout_weight="1" android:baselineAligned="false" android:orientation="horizontal">
+            <FrameLayout android:id="@+id/md_panel_0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <ImageView android:id="@+id/md_panel_bg_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
+                <LinearLayout android:id="@+id/md_panel_content_0" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
+                        <TextView android:id="@+id/md_name_0" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
+                        <TextView android:id="@+id/md_value_0" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
                     </LinearLayout>
-
-                    <FrameLayout
-                        android:id="@+id/md_bar_0"
-                        android:layout_width="match_parent"
-                        android:layout_height="9dp"
-                        android:layout_marginTop="7dp">
-
-                        <ImageView
-                            android:id="@+id/md_track_0"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule" />
-
-                        <ImageView
-                            android:id="@+id/md_fill_0"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule_fill" />
+                    <FrameLayout android:id="@+id/md_bar_0" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
+                        <ImageView android:id="@+id/md_track_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
+                        <ImageView android:id="@+id/md_fill_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
-
-                    <LinearLayout
-                        android:id="@+id/md_detail_0"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_reset_0"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="12dp" />
-
-                        <TextView
-                            android:id="@+id/md_elapsed_0"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:paddingStart="6dp"
-                            android:textSize="12dp" />
+                    <LinearLayout android:id="@+id/md_detail_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
+                        <TextView android:id="@+id/md_reset_0" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/md_panel_1"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp">
-
-                <ImageView
-                    android:id="@+id/md_panel_bg_1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:importantForAccessibility="no"
-                    android:scaleType="fitXY"
-                    android:src="@drawable/widget_material_panel" />
-
-                <LinearLayout
-                    android:id="@+id/md_panel_content_1"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="9dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="9dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_name_1"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="15dp" />
-
-                        <TextView
-                            android:id="@+id/md_value_1"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:paddingStart="6dp"
-                            android:textSize="15.5dp" />
+            <FrameLayout android:id="@+id/md_panel_1" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="8dp">
+                <ImageView android:id="@+id/md_panel_bg_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
+                <LinearLayout android:id="@+id/md_panel_content_1" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
+                        <TextView android:id="@+id/md_name_1" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
+                        <TextView android:id="@+id/md_value_1" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
                     </LinearLayout>
-
-                    <FrameLayout
-                        android:id="@+id/md_bar_1"
-                        android:layout_width="match_parent"
-                        android:layout_height="9dp"
-                        android:layout_marginTop="7dp">
-
-                        <ImageView
-                            android:id="@+id/md_track_1"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule" />
-
-                        <ImageView
-                            android:id="@+id/md_fill_1"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule_fill" />
+                    <FrameLayout android:id="@+id/md_bar_1" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
+                        <ImageView android:id="@+id/md_track_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
+                        <ImageView android:id="@+id/md_fill_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
-
-                    <LinearLayout
-                        android:id="@+id/md_detail_1"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_reset_1"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="12dp" />
-
-                        <TextView
-                            android:id="@+id/md_elapsed_1"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:paddingStart="6dp"
-                            android:textSize="12dp" />
+                    <LinearLayout android:id="@+id/md_detail_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
+                        <TextView android:id="@+id/md_reset_1" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
         </LinearLayout>
-
-        <LinearLayout
-            android:id="@+id/md_row_1"
-            android:layout_width="match_parent"
-            android:layout_height="0dp"
-            android:layout_marginTop="8dp"
-            android:layout_weight="1"
-            android:baselineAligned="false"
-            android:orientation="horizontal">
-
-            <FrameLayout
-                android:id="@+id/md_panel_2"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1">
-
-                <ImageView
-                    android:id="@+id/md_panel_bg_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:importantForAccessibility="no"
-                    android:scaleType="fitXY"
-                    android:src="@drawable/widget_material_panel" />
-
-                <LinearLayout
-                    android:id="@+id/md_panel_content_2"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="9dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="9dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_name_2"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="15dp" />
-
-                        <TextView
-                            android:id="@+id/md_value_2"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:paddingStart="6dp"
-                            android:textSize="15.5dp" />
+        <LinearLayout android:id="@+id/md_row_1" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="8dp" android:layout_weight="1" android:baselineAligned="false" android:orientation="horizontal">
+            <FrameLayout android:id="@+id/md_panel_2" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
+                <ImageView android:id="@+id/md_panel_bg_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
+                <LinearLayout android:id="@+id/md_panel_content_2" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
+                        <TextView android:id="@+id/md_name_2" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
+                        <TextView android:id="@+id/md_value_2" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
                     </LinearLayout>
-
-                    <FrameLayout
-                        android:id="@+id/md_bar_2"
-                        android:layout_width="match_parent"
-                        android:layout_height="9dp"
-                        android:layout_marginTop="7dp">
-
-                        <ImageView
-                            android:id="@+id/md_track_2"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule" />
-
-                        <ImageView
-                            android:id="@+id/md_fill_2"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule_fill" />
+                    <FrameLayout android:id="@+id/md_bar_2" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
+                        <ImageView android:id="@+id/md_track_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
+                        <ImageView android:id="@+id/md_fill_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
-
-                    <LinearLayout
-                        android:id="@+id/md_detail_2"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_reset_2"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="12dp" />
-
-                        <TextView
-                            android:id="@+id/md_elapsed_2"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:paddingStart="6dp"
-                            android:textSize="12dp" />
+                    <LinearLayout android:id="@+id/md_detail_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
+                        <TextView android:id="@+id/md_reset_2" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
-
-            <FrameLayout
-                android:id="@+id/md_panel_3"
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:layout_marginStart="8dp">
-
-                <ImageView
-                    android:id="@+id/md_panel_bg_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:importantForAccessibility="no"
-                    android:scaleType="fitXY"
-                    android:src="@drawable/widget_material_panel" />
-
-                <LinearLayout
-                    android:id="@+id/md_panel_content_3"
-                    android:layout_width="match_parent"
-                    android:layout_height="match_parent"
-                    android:gravity="center_vertical"
-                    android:orientation="vertical"
-                    android:paddingStart="12dp"
-                    android:paddingTop="9dp"
-                    android:paddingEnd="12dp"
-                    android:paddingBottom="9dp">
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_name_3"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="15dp" />
-
-                        <TextView
-                            android:id="@+id/md_value_3"
-                            style="@style/WidgetMaterialText.Bold"
-                            android:paddingStart="6dp"
-                            android:textSize="15.5dp" />
+            <FrameLayout android:id="@+id/md_panel_3" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1" android:layout_marginStart="8dp">
+                <ImageView android:id="@+id/md_panel_bg_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_material_panel" />
+                <LinearLayout android:id="@+id/md_panel_content_3" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:paddingStart="12dp" android:paddingTop="4dp" android:paddingEnd="12dp" android:paddingBottom="4dp" android:gravity="center_vertical">
+                    <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal" android:gravity="center_vertical" android:baselineAligned="true">
+                        <TextView android:id="@+id/md_name_3" style="@style/WidgetMaterialText.Bold" android:layout_width="0dp" android:textSize="15dp" android:layout_weight="1" />
+                        <TextView android:id="@+id/md_value_3" style="@style/WidgetMaterialText.Bold" android:textSize="15.5dp" android:layout_width="wrap_content" android:layout_marginStart="8dp" />
                     </LinearLayout>
-
-                    <FrameLayout
-                        android:id="@+id/md_bar_3"
-                        android:layout_width="match_parent"
-                        android:layout_height="9dp"
-                        android:layout_marginTop="7dp">
-
-                        <ImageView
-                            android:id="@+id/md_track_3"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule" />
-
-                        <ImageView
-                            android:id="@+id/md_fill_3"
-                            android:layout_width="match_parent"
-                            android:layout_height="match_parent"
-                            android:importantForAccessibility="no"
-                            android:scaleType="fitXY"
-                            android:src="@drawable/widget_card_capsule_fill" />
+                    <FrameLayout android:id="@+id/md_bar_3" android:layout_width="match_parent" android:layout_height="9dp" android:layout_marginTop="5dp">
+                        <ImageView android:id="@+id/md_track_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" />
+                        <ImageView android:id="@+id/md_fill_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
-
-                    <LinearLayout
-                        android:id="@+id/md_detail_3"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="7dp"
-                        android:baselineAligned="true"
-                        android:orientation="horizontal">
-
-                        <TextView
-                            android:id="@+id/md_reset_3"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:layout_width="0dp"
-                            android:layout_weight="1"
-                            android:textSize="12dp" />
-
-                        <TextView
-                            android:id="@+id/md_elapsed_3"
-                            style="@style/WidgetMaterialText.Regular"
-                            android:paddingStart="6dp"
-                            android:textSize="12dp" />
+                    <LinearLayout android:id="@+id/md_detail_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
+                        <TextView android:id="@+id/md_reset_3" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>

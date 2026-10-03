@@ -1,9 +1,23 @@
-package dev.bennett.codexmeter;
+package me.pipi.codexmeter;
 
-import dev.bennett.codexmeter.wear.WearSettingsState;
-import dev.bennett.codexmeter.wear.WearSurfaceMode;
-import dev.bennett.codexmeter.wear.WearSyncStatus;
-import dev.bennett.codexmeter.wear.WearUsageState;
+import dev.bennett.codexmeter.NowBarAutoStart;
+import dev.bennett.codexmeter.UsageHistory;
+import dev.bennett.codexmeter.PlanPricing;
+import dev.bennett.codexmeter.DashboardSections;
+import dev.bennett.codexmeter.UsageCredits;
+import dev.bennett.codexmeter.UsageStats;
+import dev.bennett.codexmeter.UsageSample;
+import dev.bennett.codexmeter.NowBarPercentMode;
+import dev.bennett.codexmeter.NowBarCopy;
+import dev.bennett.codexmeter.UsagePace;
+import dev.bennett.codexmeter.HistorySections;
+import dev.bennett.codexmeter.NowBarDisplayMode;
+import dev.bennett.codexmeter.WidgetMeters;
+import dev.bennett.codexmeter.UsageLimit;
+import dev.bennett.codexmeter.AdaptiveRefreshPolicy;
+import dev.bennett.codexmeter.UsageSnapshot;
+import dev.bennett.codexmeter.UsageWindow;
+
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
 import java.util.Arrays;
@@ -39,10 +53,6 @@ public final class ParserSelfTest {
         testAdaptiveRefreshPolicy();
         testNowBarAutoStart();
         testNowBarDisplayModes();
-        testWearSurfaceModes();
-        testWearSettingsState();
-        testWearSyncState();
-        testWearGlanceFormat();
         testNowBarPercentModes();
         testNowBarCopy();
         testNowBarTextMatchesNowBarCopy();
@@ -395,160 +405,6 @@ public final class ParserSelfTest {
         System.out.println("Now Bar display mode isolates Android and Samsung notification paths.");
     }
 
-    private static void testWearSurfaceModes() {
-        check(WearSurfaceMode.ONGOING_ACTIVITY == WearSurfaceMode.resolve(
-                        NowBarDisplayMode.SAMSUNG_COMPATIBILITY, 36, true),
-                "Samsung compatibility maps to Wear Ongoing Activity");
-        check(WearSurfaceMode.LIVE_UPDATE == WearSurfaceMode.resolve(
-                        NowBarDisplayMode.ANDROID_LIVE_UPDATE, 36, true),
-                "Wear OS 7 local Live Updates can be used when available");
-        check(WearSurfaceMode.ONGOING_ACTIVITY == WearSurfaceMode.resolve(
-                        NowBarDisplayMode.ANDROID_LIVE_UPDATE, 35, true),
-                "pre-36 Wear falls back to Ongoing Activity");
-        check(WearSurfaceMode.ONGOING_ACTIVITY == WearSurfaceMode.resolve(
-                        NowBarDisplayMode.AUTO, 36, false),
-                "automatic Wear mode falls back when Live Updates are unavailable");
-        check(WearSurfaceMode.LIVE_UPDATE == WearSurfaceMode.resolve(
-                        NowBarDisplayMode.AUTO, 36, true),
-                "automatic Wear mode uses local Live Updates on API 36+");
-        System.out.println("Wear surface mode maps phone Now Bar choices to Wear-native surfaces.");
-    }
-
-    private static void testWearSettingsState() throws Exception {
-        WearSettingsState phone = new WearSettingsState(
-                NowBarDisplayMode.SAMSUNG_COMPATIBILITY,
-                NowBarPercentMode.WEEKLY,
-                true,
-                NowBarAutoStart.METRIC_WEEKLY,
-                50,
-                true,
-                15,
-                1000L,
-                WearSettingsState.SOURCE_PHONE);
-        WearSettingsState roundTrip = WearSettingsState.fromJson(phone.toJson());
-        check(phone.equals(roundTrip), "Wear settings round trip preserves content");
-        WearSettingsState newerSameContent = new WearSettingsState(
-                NowBarDisplayMode.SAMSUNG_COMPATIBILITY,
-                NowBarPercentMode.WEEKLY,
-                true,
-                NowBarAutoStart.METRIC_WEEKLY,
-                50,
-                true,
-                15,
-                2000L,
-                WearSettingsState.SOURCE_PHONE);
-        check(phone.equals(newerSameContent), "Wear settings equality ignores update time");
-        WearSettingsState normalized = WearSettingsState.fromJson(new org.json.JSONObject()
-                .put("display_mode", "bad")
-                .put("percent_mode", "bad")
-                .put("metric", "bad")
-                .put("threshold", 3)
-                .put("refresh_minutes", 7)
-                .put("source_node", "wear"));
-        check(NowBarDisplayMode.AUTO.equals(normalized.displayMode), "Wear settings normalize display mode");
-        check(NowBarPercentMode.AUTO.equals(normalized.percentMode), "Wear settings normalize percent mode");
-        check(NowBarAutoStart.METRIC_BOTH.equals(normalized.metric), "Wear settings normalize metric");
-        check(normalized.threshold == 25, "Wear settings normalize threshold");
-        check(normalized.refreshMinutes == 30, "Wear settings normalize refresh interval");
-        check(WearSettingsState.SOURCE_WEAR.equals(normalized.sourceNode), "Wear settings preserve Wear source");
-        WearSettingsState pace = new WearSettingsState(
-                NowBarDisplayMode.AUTO, NowBarPercentMode.AUTO, true,
-                NowBarAutoStart.METRIC_BOTH, 25, false, 30, 3000L,
-                WearSettingsState.SOURCE_PHONE, "dev.bennett.codexmeter",
-                true, UsagePace.SENSITIVE, true);
-        WearSettingsState paceRoundTrip = WearSettingsState.fromJson(pace.toJson());
-        check(pace.equals(paceRoundTrip), "Wear settings preserve pace and accelerated start");
-        check(paceRoundTrip.acceleratedStartEnabled,
-                "Wear accelerated monitor preference survives sync");
-        check(UsagePace.SENSITIVE.equals(paceRoundTrip.usagePaceSensitivity),
-                "Wear pace sensitivity survives sync");
-        System.out.println("Wear settings JSON preserves normalized sync preferences.");
-    }
-
-    private static void testWearSyncState() throws Exception {
-        WearUsageState clear = new WearUsageState(null, 4000L,
-                WearSettingsState.SOURCE_PHONE, false);
-        WearUsageState clearRoundTrip = WearUsageState.fromJson(clear.toJson());
-        check(clearRoundTrip != null && clearRoundTrip.snapshot == null,
-                "Wear usage clear payload preserves an empty snapshot");
-        check(!clearRoundTrip.signedIn,
-                "Wear usage clear payload preserves signed-out state");
-        WearSyncStatus status = new WearSyncStatus(true, true, 3000L,
-                "Network unavailable", "2.6.10", 4000L);
-        WearSyncStatus statusRoundTrip = WearSyncStatus.fromJson(status.toJson());
-        check(statusRoundTrip != null && statusRoundTrip.signedIn,
-                "Wear status preserves phone sign-in state");
-        check(statusRoundTrip.refreshInProgress,
-                "Wear status preserves refresh progress");
-        check("Network unavailable".equals(statusRoundTrip.lastError),
-                "Wear status preserves safe refresh errors");
-        System.out.println("Wear sync status covers clear, sign-in, refresh, and error states.");
-    }
-
-    private static void testWearGlanceFormat() {
-        UsageWindow five = new UsageWindow(62, TimeUnit.HOURS.toSeconds(5),
-                TimeUnit.MINUTES.toSeconds(84), 2_000_000_000L);
-        UsageWindow weekly = new UsageWindow(41, TimeUnit.DAYS.toSeconds(7),
-                TimeUnit.DAYS.toSeconds(3), 2_100_000_000L);
-        UsageSnapshot snapshot = new UsageSnapshot("demo", true, false, five, weekly,
-                System.currentTimeMillis());
-        check("38%".equals(WearGlanceFormat.remainingPercentText(five)),
-                "five-hour remaining percent text");
-        check("59%".equals(WearGlanceFormat.remainingPercentText(weekly)),
-                "weekly remaining percent text");
-        check("--".equals(WearGlanceFormat.remainingPercentText(null)),
-                "missing window shows placeholder");
-        check(Math.abs(WearGlanceFormat.remainingProgress(five) - 0.38f) < 0.001f,
-                "remaining progress fraction matches percent");
-        check("38·59".equals(WearGlanceFormat.dualShortText(snapshot)),
-                "dual short complication text");
-        check(WearGlanceFormat.dualLongText(snapshot).contains("5h 38%"),
-                "dual long text includes five-hour");
-        check(WearGlanceFormat.dualLongText(snapshot).contains("Week 59%"),
-                "dual long text includes weekly");
-        long now = System.currentTimeMillis();
-        UsageSnapshot timed = new UsageSnapshot("demo", true, false,
-                new UsageWindow(10, 18000L, 600L, (now + TimeUnit.HOURS.toMillis(2)) / 1000L),
-                new UsageWindow(20, 604800L, 600L, (now + TimeUnit.DAYS.toMillis(2)) / 1000L),
-                now);
-        check("5h reset".equals(WearGlanceFormat.nextResetWindowLabel(timed, now)),
-                "next reset prefers the sooner five-hour window");
-        check(WearGlanceFormat.nextResetRelativeText(timed, now).contains("h"),
-                "next reset relative text includes hours");
-        check(WearGlanceFormat.nextResetLongText(timed, now).startsWith("Resets in "),
-                "next reset long text is prefixed");
-        UsageSnapshot fallbackTimed = new UsageSnapshot("demo", true, false,
-                new UsageWindow(10, 18000L, TimeUnit.HOURS.toSeconds(2), 0L),
-                null, now);
-        check("5h reset".equals(WearGlanceFormat.nextResetWindowLabel(fallbackTimed, now)),
-                "Wear reset label uses observation-based reset-after fallback");
-        check(WearGlanceFormat.nextResetRelativeText(fallbackTimed, now).contains("h"),
-                "Wear fallback reset countdown remains finite");
-        UsageSnapshot unused = new UsageSnapshot("demo", true, false,
-                new UsageWindow(0, 18000L, 0L, 0L),
-                new UsageWindow(0, 604800L, 0L, 0L), now);
-        check("--".equals(WearGlanceFormat.nextResetWindowLabel(unused, now)),
-                "unused windows without API reset have no next-reset label");
-        check("No reset yet".equals(WearGlanceFormat.nextResetLongText(unused, now)),
-                "unused windows without API reset show no reset timeframe");
-        UsageSnapshot unusedWithReset = new UsageSnapshot("demo", true, false,
-                new UsageWindow(0, 18000L, 0L,
-                        (now + TimeUnit.HOURS.toMillis(3)) / 1000L),
-                null, now);
-        check("5h reset".equals(WearGlanceFormat.nextResetWindowLabel(unusedWithReset, now)),
-                "100% remaining still surfaces an API reset timeline");
-        UsageSnapshot account = new UsageSnapshot("plus", true, true, five, weekly, 2, now);
-        check("Limit reached".equals(WearGlanceFormat.accountStatus(account)),
-                "Wear account status surfaces a reached limit");
-        check("2 reset credits".equals(WearGlanceFormat.resetCreditsText(account)),
-                "Wear displays reset-credit count");
-        check(WearGlanceFormat.isStale(now - TimeUnit.HOURS.toMillis(2), 30, now),
-                "Wear marks old phone data stale");
-        check(!WearGlanceFormat.isStale(now - TimeUnit.MINUTES.toMillis(10), 30, now),
-                "Wear keeps recent phone data fresh");
-        System.out.println("Wear glance formatting covers tiles and complication text.");
-    }
-
     private static void testNowBarPercentModes() {
         UsageWindow high = new UsageWindow(10, 18000L, 600L, 2000000000L); // 90% remaining
         UsageWindow mid = new UsageWindow(80, 18000L, 600L, 2000000000L); // 20% remaining
@@ -670,11 +526,6 @@ public final class ParserSelfTest {
                         NowBarCopy.limitText("5-hour", null, observed, now)),
                 "missing window stays unavailable");
 
-        check("5h 60%".equals(NowBarCopy.wearLimitText("5h", remaining, observed, now)),
-                "Wear limit text keeps remaining percentage");
-        check("Week resets 2d 4h".equals(
-                        NowBarCopy.wearLimitText("Week", exhaustedDays, observed, now)),
-                "Wear exhausted weekly text uses compact reset duration");
         check("2d 4h".equals(NowBarCopy.compactDuration(
                         TimeUnit.DAYS.toMillis(2) + TimeUnit.HOURS.toMillis(4))),
                 "compact duration prefers days and hours");
@@ -692,8 +543,7 @@ public final class ParserSelfTest {
 
     /**
      * The phone's localizable NowBarText, fed the English patterns from
-     * res/values/strings_alerts.xml, must render exactly like the shared NowBarCopy that the
-     * Wear companion keeps using.
+     * res/values/strings_alerts.xml, must preserve the upstream shared NowBarCopy contract.
      */
     private static void testNowBarTextMatchesNowBarCopy() throws Exception {
         java.util.Map<String, String> res = alertStringResources();
@@ -719,12 +569,6 @@ public final class ParserSelfTest {
             }
             @Override public String minutes(long minutes) {
                 return formatAlertString(res, "alerts_now_bar_duration_minutes", minutes);
-            }
-            @Override public String focusUnavailable() {
-                return res.get("alerts_now_bar_focus_unavailable");
-            }
-            @Override public String focusMarked(String marker, String value) {
-                return formatAlertString(res, "alerts_now_bar_focus_marked", marker, value);
             }
             @Override public String chip(String windowLabel, String value) {
                 return formatAlertString(res, "alerts_now_bar_chip", windowLabel, value);
@@ -770,11 +614,8 @@ public final class ParserSelfTest {
         }
         String[] labels = {res.get("alerts_window_five_hour"), res.get("alerts_window_weekly"),
                 res.get("alerts_window_monthly")};
-        check(Arrays.asList("5-hour", "Weekly", "Monthly").equals(Arrays.asList(labels)),
-                "English Now Bar window labels match the shared copy");
-        String[][] markers = {{"", null}, {"W ", res.get("alerts_now_bar_marker_weekly")},
-                {"M ", res.get("alerts_now_bar_marker_monthly")}};
-        int compared = 0;
+        check(Arrays.asList("5h", "Weekly", "Monthly").equals(Arrays.asList(labels)),
+                "English Now Bar window labels use compact hour units");
         for (UsageWindow window : windows) {
             for (String label : labels) {
                 check(NowBarCopy.limitText(label, window, observed, now).equals(
@@ -784,27 +625,16 @@ public final class ParserSelfTest {
                                 NowBarText.chipExpandedText(english, label, window, observed,
                                         now)),
                         "NowBarText chip text matches NowBarCopy: " + label);
-                compared += 2;
             }
-            check(NowBarCopy.chipExpandedText(null, window, observed, now).equals(
+            check(NowBarCopy.chipExpandedText(english.fiveHourLabel(), window, observed, now).equals(
                             NowBarText.chipExpandedText(english, null, window, observed, now)),
-                    "NowBarText chip without a label falls back like NowBarCopy");
-            for (String[] marker : markers) {
-                check(NowBarCopy.focusCriticalText(marker[0], window, observed, now).equals(
-                                NowBarText.focusCriticalText(english, marker[1], window,
-                                        observed, now)),
-                        "NowBarText focus text matches NowBarCopy: '" + marker[0] + "'");
-                compared++;
-            }
+                    "NowBarText chip without a label uses the localized five-hour label");
         }
         for (long offset : resetOffsets) {
             check(NowBarCopy.compactDuration(offset).equals(
                             NowBarText.compactDuration(english, offset)),
                     "NowBarText compact duration matches NowBarCopy: " + offset);
         }
-        check(compared > 0 && "W 2d 4h".equals(NowBarText.focusCriticalText(english,
-                        res.get("alerts_now_bar_marker_weekly"), windows.get(11), observed, now)),
-                "NowBarText exhausted weekly focus shows days and hours until natural reset");
         System.out.println("Now Bar resource copy renders English exactly like NowBarCopy.");
     }
 
@@ -863,7 +693,7 @@ public final class ParserSelfTest {
 
     /**
      * Free-tier accounts report a single ~30-day Codex window. It must parse into the monthly
-     * slot, stay displayable, and adapt every long-window surface (widgets, Wear, Now Bar).
+     * slot, stay displayable, and adapt every long-window surface (widgets and Now Bar).
      */
     private static void testMonthlyWindow() throws Exception {
         long now = 2_000_000_000_000L;
@@ -911,7 +741,7 @@ public final class ParserSelfTest {
         check(pro.longWindow() == pro.weekly && !pro.longWindowIsMonthly(),
                 "weekly stays the long window whenever it is reported");
 
-        // Long-window consumers adapt: widgets and Wear surfaces label the monthly window.
+        // Long-window consumers adapt: widgets label the monthly window.
         check(WidgetMeters.meterWindow(WidgetMeters.WEEKLY, snapshot) == snapshot.monthly,
                 "weekly widget meter falls back to the monthly window");
         check("Mo".equals(WidgetMeters.shortLabel(WidgetMeters.WEEKLY, snapshot)),
@@ -921,20 +751,6 @@ public final class ParserSelfTest {
                 "widget config row names the monthly window");
         check("Wk".equals(WidgetMeters.shortLabel(WidgetMeters.WEEKLY, pro)),
                 "weekly widget meter keeps its label on paid tiers");
-        check("Monthly".equals(WearGlanceFormat.longWindowLabel(snapshot))
-                        && "Month".equals(WearGlanceFormat.longWindowShortLabel(snapshot)),
-                "Wear surfaces label the monthly long window");
-        check("Weekly".equals(WearGlanceFormat.longWindowLabel(pro)),
-                "Wear surfaces keep the weekly label on paid tiers");
-        check(WearGlanceFormat.dualLongText(snapshot).contains("Month 72%"),
-                "Wear dual text reports monthly remaining");
-        check(WearGlanceFormat.focusSummary(snapshot).contains("Month"),
-                "Wear focus summary includes the monthly window");
-        check("Month".equals(WearGlanceFormat.compactWindowLabel(snapshot.monthly, "5h")),
-                "compact window label recognizes month-length windows");
-        check("Month reset".equals(WearGlanceFormat.nextResetWindowLabel(snapshot, now)),
-                "next-reset label names the monthly window");
-
         // Refresh cadence and low-usage automation follow the monthly window too.
         check(AdaptiveRefreshPolicy.chooseMinutes(snapshot, 0.0d, 12, 0, now) == 30,
                 "72% remaining monthly quota refreshes at a balanced cadence");
@@ -947,8 +763,8 @@ public final class ParserSelfTest {
                 "critical monthly quota uses the fastest interval");
         check(NowBarAutoStart.shouldStart(true, "both", 25, null, lowMonthly.longWindow()),
                 "monthly window triggers low-usage auto-start through the long slot");
-        System.out.println("Monthly-window demo: Pro 20x expiring to Free swaps weekly for "
-                + "a monthly card, widgets/Wear relabel, and nothing errors.");
+        System.out.println("Monthly-window demo: Pro 200 expiring to Free swaps weekly for "
+                + "a monthly card, widgets relabel, and nothing errors.");
     }
 
     private static void testWindowIdentification() throws Exception {
@@ -1211,9 +1027,9 @@ public final class ParserSelfTest {
         check(new UsageSnapshot("pro", true, false, expiredFiveHour, weekly, now)
                         .nextResetMillis(now) == 1_200_000L,
                 "expired five-hour reset falls back to weekly");
-        check(UsageSnapshot.currentWindow(expiredFiveHour, now) == null,
+        check(PhoneUsageWindows.currentWindow(expiredFiveHour, now) == null,
                 "expired five-hour window is not displayed as current");
-        check(UsageSnapshot.currentWindow(weekly, now) == weekly,
+        check(PhoneUsageWindows.currentWindow(weekly, now) == weekly,
                 "future weekly window remains available for display");
         check(new UsageSnapshot("pro", true, false, expiredFiveHour, null, now)
                         .nextResetMillis(now) == 0L,
@@ -1223,7 +1039,7 @@ public final class ParserSelfTest {
                 "pro", true, false, fallback, null, now);
         check(fallbackSnapshot.nextResetMillis(now) == now + 600_000L,
                 "reset-after fallback schedules the monitor from observation time");
-        check(UsageSnapshot.currentWindow(fallback, now, now + 600_000L) == null,
+        check(PhoneUsageWindows.currentWindow(fallback, now, now + 600_000L) == null,
                 "reset-after fallback expires the current window consistently");
     }
 
@@ -1443,8 +1259,8 @@ public final class ParserSelfTest {
         check(WidgetOptions.THEME_DARK.equals(restored.theme), "widget theme restored");
         check(WidgetOptions.ACCENT_BLUE.equals(restored.accent), "widget accent restored");
         check(WidgetOptions.STYLE_DIALS.equals(restored.layout), "widget layout preference restored");
-        check("five_hour,limit:codex-spark:primary,weekly".equals(restored.visibleMeters),
-                "widget visible meters restored");
+        check("five_hour,weekly".equals(restored.visibleMeters),
+                "phone widget transfer removes model meters and preserves standard order");
         check(parsed.appSettings.getBoolean("material_you"), "material you preference restored");
         check(UsagePace.RELAXED.equals(
                         parsed.appSettings.getString("usage_pace_sensitivity")),
@@ -1942,11 +1758,11 @@ public final class ParserSelfTest {
         String normalized = tag.startsWith("v") ? tag.substring(1) : tag;
         StringBuilder assets = new StringBuilder();
         if (apk) {
-            assets.append("{\"name\":\"CodexMeter-").append(normalized)
+            assets.append("{\"name\":\"CodexMeter-me.pipi.codexmeter-").append(normalized)
                     .append(".apk\",\"size\":123,\"browser_download_url\":")
                     .append("\"").append(GitHubReleaseSource.REPOSITORY_URL)
                     .append("/releases/download/")
-                    .append(tag).append("/CodexMeter-").append(normalized).append(".apk\"}");
+                    .append(tag).append("/CodexMeter-me.pipi.codexmeter-").append(normalized).append(".apk\"}");
         }
         if (checksum) {
             if (assets.length() > 0) assets.append(',');
@@ -1965,18 +1781,18 @@ public final class ParserSelfTest {
 
     private static void testReleaseChecksums() {
         String digest = "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef";
-        String checksums = digest + "  CodexMeter-2.2.0.apk\n"
+        String checksums = digest + "  CodexMeter-me.pipi.codexmeter-2.2.0.apk\n"
                 + "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"
                 + "  other.apk\n";
         check(digest.equals(ReleaseIntegrity.expectedSha256(
-                        checksums, "CodexMeter-2.2.0.apk")),
+                        checksums, "CodexMeter-me.pipi.codexmeter-2.2.0.apk")),
                 "matching APK checksum selected");
         check(ReleaseIntegrity.expectedSha256(checksums, "../other.apk").isEmpty(),
                 "unsafe checksum filename rejected");
         check(ReleaseIntegrity.expectedSha256("not-a-checksum", "app.apk").isEmpty(),
                 "malformed checksum rejected");
         check(ReleaseIntegrity.expectedSha256(checksums + digest
-                        + "  CodexMeter-2.2.0.apk\n", "CodexMeter-2.2.0.apk").isEmpty(),
+                        + "  CodexMeter-me.pipi.codexmeter-2.2.0.apk\n", "CodexMeter-me.pipi.codexmeter-2.2.0.apk").isEmpty(),
                 "duplicate APK checksum rejected");
     }
 
@@ -2027,15 +1843,15 @@ public final class ParserSelfTest {
     }
 
     private static void testReleaseUpdatePolicy() {
-        check(ReleaseUpdatePolicy.isIrreversible("2.2.0"),
-                "pre-2.3.0 release is irreversible");
-        check(ReleaseUpdatePolicy.isIrreversible("v2.1.0"),
-                "tagged pre-2.3.0 release is irreversible");
-        check(ReleaseUpdatePolicy.isIrreversible("2.2.9"),
+        check(ReleaseUpdatePolicy.isIrreversible("0.0"),
+                "pre-0.1 release is irreversible");
+        check(ReleaseUpdatePolicy.isIrreversible("v0.0.1"),
+                "tagged pre-0.1 release is irreversible");
+        check(ReleaseUpdatePolicy.isIrreversible("0.0.9"),
                 "latest pre-threshold release is irreversible");
-        check(!ReleaseUpdatePolicy.isIrreversible("2.3.0"),
+        check(!ReleaseUpdatePolicy.isIrreversible("0.1"),
                 "first in-app update release is reversible");
-        check(!ReleaseUpdatePolicy.isIrreversible("2.3.1"),
+        check(!ReleaseUpdatePolicy.isIrreversible("0.2"),
                 "post-threshold release is reversible");
         check(!ReleaseUpdatePolicy.isIrreversible("not-a-version"),
                 "invalid versions are not flagged irreversible");
@@ -2097,40 +1913,50 @@ public final class ParserSelfTest {
         check(PlanPricing.forPlan("free") == null, "free plan has no researched estimates");
         check(PlanPricing.forPlan("go") == null, "go plan has no researched estimates");
         check(PlanPricing.forPlan("enterprise") == null, "unknown plans have no estimates");
+        for (String plan : new String[] {"pro20x", "pro_20x", "Pro-20x"}) {
+            check(PlanPricing.forPlan(plan) == null, "unsupported Pro 20x has no estimate: " + plan);
+        }
+        check(PlanPricing.forPlan("pro500") == null, "Pro 500 has no researched estimate");
 
         PlanPricing plus = PlanPricing.forPlan("plus");
         check(plus != null && plus.monthlyPriceUsd == 20d, "plus subscription price");
         check(plus.monthlyValueUsd == 700d, "plus monthly value backsolves from 5x anchor");
         check(plus.weeklyValueUsd() == 175d, "plus weekly value is month over four weeks");
 
-        PlanPricing pro5x = PlanPricing.forPlan("pro_5x");
-        check(pro5x != null && pro5x.monthlyPriceUsd == 100d, "pro 5x price normalizes underscores");
-        check(pro5x.monthlyValueUsd == 3500d, "pro 5x monthly value anchor");
-        check(pro5x.weeklyValueUsd() == 875d, "pro 5x weekly value");
-        check(PlanPricing.forPlan("prolite") != null
-                && PlanPricing.forPlan("prolite").monthlyValueUsd == 3500d,
-                "prolite aliases pro 5x");
+        for (String plan : new String[] {"prolite", "pro_5x", "pro100"}) {
+            PlanPricing pricing = PlanPricing.forPlan(plan);
+            check(pricing != null && "pro100".equals(pricing.planKey)
+                    && "Pro 100".equals(pricing.planLabel), "Pro 100 canonical name: " + plan);
+            check(pricing.monthlyPriceUsd == 100d, "Pro 100 subscription price: " + plan);
+            check(pricing.monthlyValueUsd == 3500d, "Pro 100 monthly value anchor: " + plan);
+            check(pricing.weeklyValueUsd() == 875d, "Pro 100 weekly value: " + plan);
+        }
 
-        PlanPricing pro20x = PlanPricing.forPlan("pro");
-        check(pro20x != null && pro20x.monthlyPriceUsd == 200d, "pro aliases pro 20x");
-        check(pro20x.monthlyValueUsd == 14000d, "pro 20x monthly value anchor");
-        check(pro20x.weeklyValueUsd() == 3500d, "pro 20x weekly value");
-        check(Math.round(pro20x.valueMultiplier()) == 70L, "pro 20x multiplier of price");
-        check(pro20x.fiveHourValueUsd() > 0d
-                && pro20x.fiveHourValueUsd() < pro20x.weeklyValueUsd(),
+        for (String plan : new String[] {"pro", "pro_10x", "pro200"}) {
+            PlanPricing pricing = PlanPricing.forPlan(plan);
+            check(pricing != null && "pro200".equals(pricing.planKey)
+                    && "Pro 200".equals(pricing.planLabel), "Pro 200 canonical name: " + plan);
+            check(pricing.monthlyPriceUsd == 200d, "Pro 200 subscription price: " + plan);
+            check(pricing.monthlyValueUsd == 14000d, "Pro 200 monthly value anchor: " + plan);
+            check(pricing.weeklyValueUsd() == 3500d, "Pro 200 weekly value: " + plan);
+            check(Math.round(pricing.valueMultiplier()) == 70L, "Pro 200 multiplier: " + plan);
+        }
+        PlanPricing pro200 = PlanPricing.forPlan("pro200");
+        check(pro200.fiveHourValueUsd() > 0d
+                && pro200.fiveHourValueUsd() < pro200.weeklyValueUsd(),
                 "5-hour burst allowance is a fraction of the weekly value");
 
-        check(pro20x.estimatedValueUsd(UsageHistory.WEEKLY, 0) == 0d, "zero percent burns nothing");
-        check(pro20x.estimatedValueUsd(UsageHistory.WEEKLY, 50) == 1750d,
+        check(pro200.estimatedValueUsd(UsageHistory.WEEKLY, 0) == 0d, "zero percent burns nothing");
+        check(pro200.estimatedValueUsd(UsageHistory.WEEKLY, 50) == 1750d,
                 "half the weekly window burns half the weekly value");
-        check(pro20x.estimatedValueUsd(UsageHistory.WEEKLY, 250)
-                == pro20x.weeklyValueUsd(), "burned value clamps at the full allowance");
+        check(pro200.estimatedValueUsd(UsageHistory.WEEKLY, 250)
+                == pro200.weeklyValueUsd(), "burned value clamps at the full allowance");
 
         check("$3,500".equals(PlanPricing.formatUsd(3500d)), "thousands formatting");
         check("$29".equals(PlanPricing.formatUsd(29.2d)), "two-digit dollars drop cents");
         check("$4.20".equals(PlanPricing.formatUsd(4.2d)), "small values keep cents");
         check("$0.00".equals(PlanPricing.formatUsd(-3d)), "negative values clamp to zero");
-        System.out.println("Plan pricing demo: Plus $700/mo, Pro 5x $3,500/mo, Pro 20x $14,000/mo.");
+        System.out.println("Plan pricing demo: Plus $700/mo, Pro 100 $3,500/mo, Pro 200 $14,000/mo.");
     }
 
     private static void testUsageStats() {

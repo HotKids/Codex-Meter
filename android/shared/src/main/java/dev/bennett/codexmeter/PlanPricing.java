@@ -5,13 +5,11 @@ import java.util.Locale;
 /**
  * Rough, community-researched value estimates for Codex subscription allowances.
  *
- * <p>Anchors: Pro 20x ($200/month) is commonly measured at roughly $14,000 of
- * equivalent API usage per month and Pro 5x ($100/month) at roughly $3,500.
- * Because OpenAI documents Pro 5x as 5x Plus usage and Pro 20x as 20x Plus,
- * Plus ($20/month) back-solves to roughly $700 of monthly usage value. Weekly
- * figures divide the month into four allowance windows, and the 5-hour figure
- * uses a rough one-sixth-of-weekly burst heuristic. Every number here is an
- * estimate, not a billing statement.
+ * <p>The existing estimate model assigns monthly usage values of $700, $3,500,
+ * and $14,000 to the Plus, Pro 100, and Pro 200 tiers respectively. Weekly figures
+ * divide the month into four allowance windows, and the 5-hour figure uses a rough
+ * one-sixth-of-weekly burst heuristic. Every number here is an estimate, not a
+ * billing statement.
  */
 public final class PlanPricing {
     /** Rough share of a weekly allowance available inside one 5-hour burst window. */
@@ -40,10 +38,12 @@ public final class PlanPricing {
                 return new PlanPricing("plus", "Plus", 20d, 700d);
             case "prolite":
             case "pro5x":
-                return new PlanPricing("pro5x", "Pro 5x", 100d, 3500d);
+            case "pro100":
+                return new PlanPricing("pro100", "Pro 100", 100d, 3500d);
             case "pro":
-            case "pro20x":
-                return new PlanPricing("pro20x", "Pro 20x", 200d, 14000d);
+            case "pro10x":
+            case "pro200":
+                return new PlanPricing("pro200", "Pro 200", 200d, 14000d);
             default:
                 return null;
         }

@@ -1,27 +1,19 @@
-name: Build Codex Meter APK
+name: Validate Codex Meter Android
 
 on:
   pull_request:
     branches: [main, alpha]
   push:
     branches: [main, alpha]
-    tags: ['v*']
   workflow_dispatch:
 
 permissions:
   contents: read
-  packages: read
 
 jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 25
-    outputs:
-      version: ${{ steps.version.outputs.name }}
-      prerelease: ${{ steps.version.outputs.prerelease }}
-    env:
-      GH_USERNAME: ${{ github.actor }}
-      GH_ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     defaults:
       run:
         working-directory: android
@@ -29,8 +21,7 @@ jobs:
       - name: Check out repository
         uses: actions/checkout@v7
         with:
-          fetch-depth: 0
-          fetch-tags: true
+          persist-credentials: false
 
       - name: Set up Java 21
         uses: actions/setup-java@v5
@@ -42,7 +33,7 @@ jobs:
             android/**/*.gradle*
             android/**/gradle-wrapper.properties
 
-      - name: Install Android phone and Wear toolchains
+      - name: Install Android toolchain
         shell: bash
         working-directory: ${{ github.workspace }}
         run: |
@@ -56,48 +47,6 @@ jobs:
             "platforms;android-36" \
             "platforms;android-37.0" \
             "build-tools;36.0.0"
-
-      - name: Validate version
-        id: version
-        shell: bash
-        run: |
-          set -euo pipefail
-          VERSION_NAME="$(awk -F'"' '/versionName = "/ { print $2; exit }' app/build.gradle.kts)"
-          if [[ -z "$VERSION_NAME" ]]; then
-            echo "::error::Unable to read versionName from android/app/build.gradle.kts"
-            exit 1
-          fi
-          if [[ "$GITHUB_REF_TYPE" == "tag" && "$GITHUB_REF_NAME" != "v$VERSION_NAME" ]]; then
-            echo "::error::Tag $GITHUB_REF_NAME does not match app version v$VERSION_NAME"
-            exit 1
-          fi
-          PRERELEASE=false
-          if [[ "$VERSION_NAME" == *-* ]]; then
-            PRERELEASE=true
-          fi
-          # Channel invariant: alpha builds must reuse the newest stable versionCode so the
-          # in-app "return to stable" install is never an Android downgrade, and stable
-          # releases must strictly increase it.
-          VERSION_CODE="$(awk '/versionCode = / { print $3; exit }' app/build.gradle.kts)"
-          if [[ "$GITHUB_REF_TYPE" == "tag" ]]; then
-            LATEST_STABLE_TAG="$(git tag -l 'v*' | grep -v -- - \
-              | grep -vx "$GITHUB_REF_NAME" | sort -V | tail -n 1 || true)"
-            if [[ -n "$LATEST_STABLE_TAG" ]]; then
-              STABLE_CODE="$(git show "$LATEST_STABLE_TAG:android/app/build.gradle.kts" \
-                2>/dev/null | awk '/versionCode = / { print $3; exit }' || true)"
-              if [[ -z "$STABLE_CODE" ]]; then
-                echo "::warning::Could not read versionCode from $LATEST_STABLE_TAG; skipping channel invariant check"
-              elif [[ "$PRERELEASE" == "true" && "$VERSION_CODE" -ne "$STABLE_CODE" ]]; then
-                echo "::error::Alpha tag $GITHUB_REF_NAME must keep versionCode $STABLE_CODE from $LATEST_STABLE_TAG (found $VERSION_CODE) so returning to stable stays an in-place install"
-                exit 1
-              elif [[ "$PRERELEASE" == "false" && "$VERSION_CODE" -le "$STABLE_CODE" ]]; then
-                echo "::error::Stable tag $GITHUB_REF_NAME must raise versionCode above $STABLE_CODE from $LATEST_STABLE_TAG (found $VERSION_CODE)"
-                exit 1
-              fi
-            fi
-          fi
-          echo "name=$VERSION_NAME" >> "$GITHUB_OUTPUT"
-          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
 
       - name: Run regression tests
         shell: bash
@@ -122,132 +71,15 @@ jobs:
           set -euo pipefail
           ./lint.sh
 
-      - name: Configure release signing
-        if: github.ref_type == 'tag'
+      # The fixed phone release key stays local; CI artifacts are explicitly debug builds.
+      - name: Build debug APK
         shell: bash
-        env:
-          ANDROID_SIGNING_PASSWORD: ${{ secrets.ANDROID_SIGNING_PASSWORD }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$ANDROID_SIGNING_PASSWORD" ]]; then
-            echo "::error::Add the ANDROID_SIGNING_PASSWORD repository Actions secret"
-            exit 1
-          fi
-          mkdir -p .local-signing
-          INTEGRITY_KEY="$(
-            printf 'Codex Meter release integrity\n%s' "$ANDROID_SIGNING_PASSWORD" |
-              sha256sum | awk '{print $1}'
-          )"
-          EXPECTED_HMAC="$(tr -d '\n' < ci/release-keystore.p12.enc.hmac)"
-          ACTUAL_HMAC="$(
-            openssl dgst -sha256 -mac HMAC -macopt "hexkey:$INTEGRITY_KEY" \
-              ci/release-keystore.p12.enc | awk '{print $NF}'
-          )"
-          if [[ "$ACTUAL_HMAC" != "$EXPECTED_HMAC" ]]; then
-            echo "::error::Release keystore authentication failed"
-            exit 1
-          fi
-          openssl enc -d -aes-256-cbc -pbkdf2 -iter 600000 \
-            -in ci/release-keystore.p12.enc \
-            -out .local-signing/codex-meter-local.p12 \
-            -pass env:ANDROID_SIGNING_PASSWORD
-          printf '%s' "$ANDROID_SIGNING_PASSWORD" > .local-signing/password
-          chmod 600 .local-signing/codex-meter-local.p12 .local-signing/password
-          "$JAVA_HOME/bin/keytool" -list \
-            -keystore .local-signing/codex-meter-local.p12 \
-            -storetype PKCS12 \
-            -storepass:env ANDROID_SIGNING_PASSWORD \
-            -alias codexmeter >/dev/null
+        run: ./gradlew :app:assembleDebug --console=plain
 
-      - name: Build and verify APK
-        shell: bash
-        run: |
-          set -euo pipefail
-          mkdir -p dist
-          ./build.sh 2>&1 | tee dist/build.log
-
-      - name: Upload APKs
+      - name: Upload debug APK
         uses: actions/upload-artifact@v7
         with:
-          name: codex-meter-${{ steps.version.outputs.name }}-ci
-          path: android/dist/
+          name: codex-meter-phone-debug
+          path: android/app/build/outputs/apk/debug/app-debug.apk
           if-no-files-found: error
           retention-days: 3
-
-
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: build
-    runs-on: ubuntu-latest
-    permissions:
-      actions: read
-      contents: write
-    steps:
-      - name: Check out release sources
-        uses: actions/checkout@v7
-
-      - name: Download verified APKs
-        uses: actions/download-artifact@v8
-        with:
-          name: codex-meter-${{ needs.build.outputs.version }}-ci
-          path: release-dist
-
-      - name: Verify release checksum
-        shell: bash
-        run: |
-          set -euo pipefail
-          cd release-dist
-          sha256sum -c SHA256SUMS.txt
-
-      - name: Prepare release notes
-        shell: bash
-        env:
-          VERSION_NAME: ${{ needs.build.outputs.version }}
-        run: |
-          set -euo pipefail
-          awk -v version="$VERSION_NAME" '
-            $0 == "## " version || index($0, "## " version " —") == 1 {
-              found = 1
-              next
-            }
-            found && /^## / { exit }
-            found { print }
-            END { if (!found) exit 2 }
-          ' CHANGELOG.md > release-notes.md
-          if ! grep -q '[^[:space:]]' release-notes.md; then
-            echo "::error::CHANGELOG.md has no release notes for $VERSION_NAME"
-            exit 1
-          fi
-
-      - name: Publish GitHub release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          GH_REPO: ${{ github.repository }}
-          VERSION_NAME: ${{ needs.build.outputs.version }}
-          PRERELEASE: ${{ needs.build.outputs.prerelease }}
-        run: |
-          set -euo pipefail
-          if ! gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
-            gh release create "$GITHUB_REF_NAME" \
-              --draft \
-              --verify-tag \
-              --prerelease="$PRERELEASE" \
-              --notes-file release-notes.md \
-              --title "Codex Meter $VERSION_NAME"
-          else
-            gh release edit "$GITHUB_REF_NAME" \
-              --prerelease="$PRERELEASE" \
-              --notes-file release-notes.md \
-              --title "Codex Meter $VERSION_NAME"
-          fi
-          gh release upload "$GITHUB_REF_NAME" \
-            "release-dist/CodexMeter-$VERSION_NAME.apk#Codex Meter $VERSION_NAME APK" \
-            "release-dist/CodexMeter-Wear-$VERSION_NAME.apk#Codex Meter Wear OS $VERSION_NAME APK" \
-            "release-dist/SHA256SUMS.txt#SHA-256 checksums" \
-            --clobber
-          if [[ "$PRERELEASE" == "true" ]]; then
-            gh release edit "$GITHUB_REF_NAME" --draft=false
-          else
-            gh release edit "$GITHUB_REF_NAME" --draft=false --latest
-          fi

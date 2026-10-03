@@ -114,8 +114,7 @@
             android:layout_width="56dp"
             android:layout_height="56dp"
             android:contentDescription="@null"
-            android:rotation="180"
-            android:src="@drawable/ic_oui_keyboard_arrow_down"
+            android:src="@drawable/ic_ms_keyboard_arrow_up"
             app:tint="?android:textColorSecondary" />
 
         <ImageView
@@ -123,8 +122,7 @@
             android:layout_height="72dp"
             android:layout_marginTop="-26dp"
             android:contentDescription="@null"
-            android:rotation="180"
-            android:src="@drawable/ic_oui_keyboard_arrow_down"
+            android:src="@drawable/ic_ms_keyboard_arrow_up"
             app:tint="?android:textColorSecondary" />
     </LinearLayout>
 </dev.oneuiproject.oneui.widget.AdaptiveCoordinatorLayout>

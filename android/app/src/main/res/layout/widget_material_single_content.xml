@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@id/md_name_0"
+        style="@style/WidgetMaterialText.Bold"
+        android:layout_width="match_parent" />
+
+    <TextView
+        android:id="@id/md_value_0"
+        style="@style/WidgetMaterialText.Bold"
+        android:layout_width="match_parent"
+        android:layout_marginTop="2dp" />
+
+    <FrameLayout
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:importantForAccessibility="no" />
+
+    <FrameLayout
+        android:id="@id/md_bar_0"
+        android:layout_width="match_parent"
+        android:layout_height="9dp"
+        android:layout_marginTop="3dp" >
+
+        <ImageView
+            android:id="@id/md_track_0"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_card_capsule" />
+
+        <ImageView
+            android:id="@id/md_fill_0"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:importantForAccessibility="no"
+            android:scaleType="fitXY"
+            android:src="@drawable/widget_card_capsule_fill" />
+    </FrameLayout>
+
+    <LinearLayout
+        android:id="@id/md_detail_0"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:baselineAligned="true"
+        android:orientation="horizontal" >
+
+        <TextView
+            android:id="@id/md_reset_0"
+            style="@style/WidgetMaterialText.Regular"
+            android:layout_width="0dp"
+            android:layout_weight="1" />
+    </LinearLayout>
+</LinearLayout>

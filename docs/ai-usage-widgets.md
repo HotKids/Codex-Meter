@@ -1,112 +1,35 @@
-# 首页小组件：AI-Usage 样式
+# Home widgets
 
-手机首页小组件（`CodexUsageWidget`）改为参照 [AI-Usage](https://github.com/StarYunLee/Scripting)
-1.7.2 的 Codex 小组件绘制的用量卡片。AI-Usage 是 iOS Scripting 脚本，采用 MIT 许可，许可文本随应用
-打包在 `android/app/src/main/assets/AI-Usage-LICENSE.txt`；水印和套餐徽章中的 OpenAI 图形
-（`res/drawable-nodpi/ai_usage_*.png`）也来自该项目。
+The phone exposes a fixed-width 2×1 dial widget and a resizable Clear card. There is no 3×1
+provider. One-row placements use the upstream two-dial geometry with Clear system colors and
+remaining percentages. Larger cards use compact title/value rows, progress bars for usage,
+and numeric remaining credits without a bar. Narrow cards stack the first two selected
+meters; wide cards show up to four in two columns.
 
-## 1. 尺寸与布局
+All content switches remain visible when disabled or when data is absent. The one-row editor
+offers five-hour usage, weekly/monthly usage and reset. Larger cards add remaining credits.
+Reset uses the earliest future core-window reset. The Clear reset meter's value uses upstream
+compact countdown units such as `6d 11h`, `2h 50m` and `45m` in every locale. The followed
+live notification's reset meter uses the same countdown. Widget usage reset details retain
+exact `MM/dd HH:mm` times. Clear places
+available resets below the bar; dials keep their existing English countdowns and omit reset
+inventory. All Clear card sizes share the same spacing between title, bar and detail rows;
+the fixed-width 2×1 dial layout remains unchanged.
+Wide cards show successful-refresh `HH:mm` before the refresh icon. Header plan labels are
+bold with the selected Free, Plus, Team, Pro 100, Pro 200 and Pro 500 casing, and reuse
+the capsule Codex mark. The static picker uses Plus. The 100/200/500 numbers are
+maintainer-selected display names, not price claims; the former 20X alias is unsupported.
 
-`WidgetRenderer` 根据宿主给出的尺寸选择布局；Android 12+ 使用按尺寸映射的 RemoteViews，
-桌面缩放时由系统直接切换，无需重新请求数据。
+The live notification follows the most recently saved widget selection and order. Home's
+five-hour visibility still applies. Saving the followed widget and its options is atomic;
+background refresh, cancellation and another widget's restore do not change the selection.
+The capsule retains upstream English text and its existing monochrome Codex mark.
+The expanded Samsung notification uses the launcher icon. Android SystemUI supplies the
+application icon for the notification row; no large icon is added on the right.
 
-| 条件 | 布局 |
-|---|---|
-| 高度 < 100dp，或三星宿主报告只占 1 行 | 保留上游的单行圆环：宽度 < 250dp 为 2×1 双圆环，否则为 4×1 四圆环。圆环始终使用英文（不随应用语言变化），颜色取自系统 |
-| 宽度 < 250dp | 小尺寸卡片：选 1 项为 S1，选 2 项及以上为 S2（只显示前 2 项） |
-| 宽度 ≥ 250dp | 宽尺寸卡片：按所选数量为 M1 / M2 / M3 / M4 |
-
-卡片的坐标、字号和进度条高度取自 AI-Usage 源码中 158pt 高画布上的数值。Android 小组件尺寸不固定，
-因此整体按 `s = clamp(min(高/158, 宽/参考宽), 0.7, 1.15)` 缩放（参考宽：小尺寸 158，宽尺寸 300），
-并在多出的高度中垂直居中。
-
-各变体内容：
-
-- **S1 / M1（单项）**：套餐徽章、周期标题、剩余百分比大字与“剩余”、进度条；底部为“重置时间”
-  （剩余时长）、可用重置券（“重置N次”与最近到期时间）和刷新时间（S1）。M1 的刷新时间在右上角。
-- **S2 / M2（两项）**：每项为标题、“X后重置”与剩余百分比、进度条；底部为重置券和刷新时间（S2），
-  M2 的刷新时间在右上角。
-- **M3 / M4（三或四项）**：每项一行“标题 … X后重置 剩余%”加细进度条；M3 在底部用一行小字显示重置券，
-  M4 不显示重置券（与 AI-Usage 一致）。
-
-数值一律显示**剩余**百分比。进度条颜色按**已用**比例：≥85% 红色，≥60% 橙色，其余绿色。
-可用重置券数量为 0 时不显示重置券行。缺失的周期占位显示“—”。
-
-## 2. 外观
-
-每个小组件单独保存以下外观设置：
-
-- **样式**（选项名在所有语言中都显示英文 Color / Clear）：
-  - **Color**（默认）：上文的 AI-Usage 卡片，渐变套餐徽章、按用量分级着色的进度条。
-  - **Clear**：Material You 卡片（`MaterialCardRenderer`、`res/layout/widget_material.xml`），见 2.1。
-- **颜色**：没有自定义颜色或主题选项，深浅色始终跟随系统。Clear 样式和单行圆环的颜色取自系统壁纸取色；
-  Color 样式保留 AI-Usage 的配色。Android 12+ 由桌面在显示时解析颜色，不需要重新渲染。
-- **背景**：开启时为卡片底色，可调不透明度（默认 100%）；关闭时为透明模式。彩色样式在透明模式下
-  使用 15% 黑色蒙层、白色文字、文字阴影（`widget_card_shadow.xml`），不显示水印；Clear 样式去掉外层底色，
-  标题栏文字和图标改为带阴影的白色（`widget_material_shadow.xml`），各周期的色块保持不变。
-
-套餐徽章按 AI-Usage 的配色绘制为位图（`PlanBadge`）：Plus、Pro 10x、Pro 5x、Team、Business、
-Enterprise、Premium、Free 各有渐变；未知套餐或未登录显示 “CODEX”。Pro 套餐（`pro`、旧缓存
-`pro20x`）显示为 PRO 10X。
-
-### 2.1 Clear 样式（Material You）
-
-- 顶部为 Codex 图标、“Codex” 标题和刷新按钮；未登录、刷新失败或数据过旧时，标题与刷新按钮之间显示状态。
-- 每个周期一个圆角色块：第一行为标题和剩余百分比，第二行为较粗的进度条（按剩余比例），第三行为重置时间
-  （一天内显示“3小时59分后重置”，更久显示星期和时间，如“周二下午12:51 重置”）和该周期已经过去的时间比例。
-- 窄尺寸纵向排列前 2 项；宽尺寸（≥ 250dp）两列排列，最多 4 项（3 项时第二行占满宽度）。
-  各行平分高度，色块随小组件尺寸拉伸，文字和间距按参考尺寸缩放（0.7–1.25 倍）。
-- Android 12+ 的颜色取自系统壁纸取色（`system_accent1/2`、`system_neutral1/2` 调色板），由桌面在显示时
-  解析，壁纸或深浅色切换后自动更新；更早的系统使用固定的蓝色配色。
-- Clear 样式不显示套餐徽章、刷新时间和重置券。
-
-## 3. 交互与刷新
-
-- Color 样式点击刷新时间（宽尺寸右上角，或小尺寸底部的“刷新时间”行）、Clear 样式点击刷新按钮或状态文字：
-  立即请求刷新用量。
-- 点击卡片其他位置：打开应用首页。
-- 单行圆环布局点击整体打开应用。
-- 自动刷新沿用应用自身的刷新设置，小组件没有单独的刷新周期。应用每次刷新成功后更新所有小组件。
-- 刷新失败时保留缓存数据，状态位置显示“刷新失败”；数据超过 6 小时未更新时显示“数据较旧”；
-  未登录时所有数值显示“—”，状态为“打开应用登录”。
-
-## 4. 编辑器
-
-添加小组件时，或在桌面长按小组件重新设置时（Android 9+），打开 `WidgetConfigActivity`（One UI 样式）：
-
-1. 预览：按当前小组件的实际尺寸实时渲染。
-2. 显示内容：列出当前账户返回的全部周期（5 小时、每周、每月、模型专属额度），开关选择、拖动手柄排序；
-   至少 1 项，最多 4 项。周期与键的对应关系见 [usage-windows.md](usage-windows.md)。
-3. 外观：样式（Color / Clear）、背景开关与不透明度。
-4. 保存后只更新本小组件的设置。
-
-上游编辑器中的布局选择、主题、圆环颜色、已用/剩余切换、百分号开关和点击动作选项已移除；旧小组件中保存的
-“下次重置”“重置券”等辅助项在读取时被忽略，旧的已用/剩余与百分号设置只影响单行圆环。
-
-## 5. 实现要点
-
-- 布局 `res/layout/widget_card.xml`：每一行放在一个铺满卡片的 FrameLayout 中，通过 padding 定位，
-  以复现 AI-Usage 的绝对坐标；不需要的行设为 GONE。
-- 透明模式的文字阴影无法在 RemoteViews 中动态设置，因此使用由
-  `android/tools/widget-card-shadow.sh` 生成的 `widget_card_shadow.xml` 和 `widget_material_shadow.xml`
-  （只把文字样式换成带阴影的版本）。修改 `widget_card.xml` 或 `widget_material.xml` 后必须重新生成，
-  `UsageCardModelTest` 会检查两者一致。
-- 进度条由轨道、填充（`<scale>` 胶囊，按 level 0–10000 缩放）和描边三层 ImageView 组成，
-  用 `setColorFilter` 着色，填充最短为一个圆点。
-- RemoteViews 不允许内联普通 `View`，弹性空白使用 FrameLayout。
-
-## 6. 测试
-
-- `UsageCardModelTest`（Robolectric）：选择与排序、标题（中英文）、重置文案、百分比、颜色分级、
-  套餐徽章与 Pro 10x 标签、变体选择、样式的保存与导入导出、阴影布局一致性。
-- `UsageCardPreviewTest`（Robolectric，原生图形模式）：用固定数据渲染两种样式的各变体、深浅色、透明背景、
-  未登录和单行圆环，输出到 `android/app/build/reports/widget-previews/`。这些是 Robolectric 渲染图，
-  字体与真机不同，只用于检查布局，不能代替真机截图。
-
-## 7. 与 AI-Usage 的差异
-
-- 字体使用系统 sans-serif，而不是 SF Pro。
-- Android 小组件尺寸可变，因此整体缩放并垂直居中；AI-Usage 的布局尺寸固定。
-- 单行高度保留上游原生圆环（AI-Usage 没有这种尺寸）。
-- Android 12+ 的圆角使用系统小组件圆角。
-- 刷新时间为绝对时间（“14:12 刷新”），与 AI-Usage 1.6.1 之后的行为一致。
+Regenerate shadow and picker layouts with `android/tools/widget-card-shadow.sh` after editing
+`widget_material.xml` or the renderer's typography and spacing metrics. The picker generator
+reads these metrics from `MaterialCardRenderer` so previews follow the installed card design.
+Unit tests render production RemoteViews with synthetic data under
+`android/app/build/reports/widget-previews/`. These previews do not replace device acceptance.
+The Android phone app owns this widget presentation contract.

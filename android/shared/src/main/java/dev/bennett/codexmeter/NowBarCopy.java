@@ -74,24 +74,6 @@ public final class NowBarCopy {
     }
 
     /**
-     * Compact Wear body fragment: {@code 5h 12%} or {@code Week resets 2d 4h}.
-     */
-    public static String wearLimitText(String label, UsageWindow window, long observedAtMillis,
-            long nowMillis) {
-        if (window == null) {
-            return label + " --";
-        }
-        int remaining = window.remainingPercent();
-        if (remaining > 0) {
-            return label + " " + remaining + "%";
-        }
-        String duration = resetDurationText(window, observedAtMillis, nowMillis);
-        return duration == null
-                ? label + " 0%"
-                : label + " resets " + duration;
-    }
-
-    /**
      * Days and/or hours until {@code window}'s natural reset. Returns null when the
      * reset time is unknown or not in the future.
      */

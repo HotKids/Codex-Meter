@@ -5,7 +5,8 @@ This repository holds the Codex Meter Android project:
 - Shared docs and release notes live at the repository root (`README.md`,
   `CHANGELOG.md`, `LICENSE`, `AGENTS.md`).
 - **Android** lives under [`android/`](android/) (Gradle, `app/`, `shared/`,
-  `wear/`, `tests/`).
+  `tests/`). It is an Android phone project; shared Java models and policies
+  support the phone app.
 
 Prefer focused commits and update tests with behavior changes. Do not commit
 credentials, tokens, or generated build artifacts.
@@ -14,15 +15,9 @@ This fork (`HotKids/Codex-Meter`) takes ordinary commits and pushes; pull
 requests are opened only when the maintainer asks for one. Keep the fork
 relationship with `BenItBuhner/Codex-Meter` so upstream changes can be merged.
 
-**Wear OS is frozen.** Leave `android/wear/` code, resources, dependencies, and
-version unchanged, and preserve the shared phone-to-watch behavior in
-`android/shared/`. Building and validating the existing companion is allowed.
-Release steps that change Wear OS require an explicit maintainer request to
-resume that work.
-
 ## Android local setup
 
-Install JDK 17 or newer and Android SDK Platform 36 with Build Tools 36.x. Set
+Install JDK 21 and Android SDK Platform 37.0 with Build Tools 36.x. Set
 `ANDROID_SDK_ROOT` or `ANDROID_HOME` to the SDK directory.
 
 The OneUI-Design dependencies are hosted on GitHub Packages. Export `GH_USERNAME`
@@ -37,7 +32,8 @@ From the repository root (wrappers) or from `android/`:
 ./lint.sh
 ```
 
-CI additionally runs the Robolectric unit tests:
+CI runs the core tests, phone lint (`:app:lintRelease`) and a Debug APK build without release
+signing material. It additionally runs the Robolectric unit tests:
 
 ```bash
 cd android && ./gradlew :app:testDebugUnitTest
@@ -48,45 +44,32 @@ translation under `res/values-zh-rCN/`; lint treats a missing translation as an
 error. Use whole-sentence format strings with positional arguments and
 `<plurals>` for counts rather than concatenating fragments.
 
-After editing `app/src/main/res/layout/widget_card.xml`, regenerate its
-text-shadow twin with `android/tools/widget-card-shadow.sh`.
+After editing `app/src/main/res/layout/widget_material.xml` or the renderer's
+typography and spacing, regenerate the shadow and picker layouts with
+`android/tools/widget-card-shadow.sh`. Picker previews must follow the current
+widget presentation.
 
 See [`android/README.md`](android/README.md) for module layout details.
 
-## Release channels (Android)
+## Phone releases
 
-Two long-lived branches feed two update channels in the app (Settings → Updates →
-Update channel):
+The phone application and namespace are `me.pipi.codexmeter`, starting at version `0.1`
+(code 1), targeting SDK 37. Only stable updates are enabled. The test channel is a disabled
+placeholder; it does not select prereleases. Version history is not exposed in the app.
 
-- `main` is the **stable** channel. Tags look like `v2.7.0`.
-- `alpha` is the **rapid-iteration** channel. Tags look like `v2.7.0-alpha.1` and
-  publish as GitHub prereleases. The branch was bootstrapped from `main` at the
-  2.7.0 rollout; if it is ever deleted, recreate it from `main` (`git push origin
-  main:refs/heads/alpha`).
+Release assets must be named `CodexMeter-me.pipi.codexmeter-<versionName>.apk` and accompanied
+by `SHA256SUMS.txt`. This identity prevents legacy-package APKs from becoming update candidates
+when the phone version line restarts. Use the pinned fixed signer in
+[android-signing.md](docs/android-signing.md). `build.sh` builds the phone only.
 
-Both channels are built by the same tag-triggered CI job and signed with the same
-release keystore, so the in-app updater's SHA-256 and signing-certificate checks
-pass when switching channels in either direction — no uninstall/reinstall.
+Build and verify official releases locally. Confirm the package, version, target
+SDK, fixed certificate and checksum, then publish the matching tag and phone
+assets with GitHub CLI after maintainer authorization. GitHub Actions validates
+branches, pull requests and manual runs; it does not decrypt the retained legacy
+keystore or automatically publish tag releases. Releases contain the Android
+phone APK and its checksum file.
 
-Versioning rules (enforced by CI on tags):
-
-- **Alpha releases** bump only `versionName` and must keep `versionCode` **equal
-  to** the newest stable release's `versionCode`. Android permits
-  equal-`versionCode` installs, which is what makes the one-tap "Return to
-  stable" flow an ordinary in-place install. The `versionName` must be the
-  **next** stable version plus `-alpha.N` (after stable `2.7.0`, the first alpha
-  is `2.8.0-alpha.1`, then `2.8.0-alpha.2`, ...). Never suffix the shipped
-  stable itself (`2.7.0-alpha.1` after `2.7.0`): SemVer orders `X.Y.Z-alpha.N`
-  *below* `X.Y.Z`, so the in-app updater would never offer it.
-- **Stable releases** drop the suffix and bump `versionCode` by one, so a stable
-  promotion is a normal upgrade for both channels.
-
-Cutting an alpha: branch work off `alpha`, set `versionName` to the next stable
-version plus the alpha suffix (for example, `2.8.0-alpha.1` while stable is
-`2.7.0`) in `android/app/build.gradle.kts`, `android/wear/build.gradle.kts`,
-`AppConstants.java`, `android/build.sh`, and the guards in `android/run-tests.sh`,
-add a `## 2.8.0-alpha.1` section to `CHANGELOG.md`, then tag `v2.8.0-alpha.1`.
-
-Promoting to stable: merge `alpha` into `main`, drop the suffix, bump
-`versionCode`, consolidate the alpha changelog sections under the stable version,
-then tag as usual.
+Version changes require an explicit release request. Update the phone Gradle version,
+`AppConstants.java`, `android/build.sh`, the guards in `android/run-tests.sh`, and the changelog
+together. Tags and public releases require explicit authorization; a local Pixel
+test build does not authorize publishing.

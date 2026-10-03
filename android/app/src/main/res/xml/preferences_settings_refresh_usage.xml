@@ -20,43 +20,6 @@
             app:useSimpleSummaryProvider="true" />
     </PreferenceCategory>
 
-    <PreferenceCategory android:title="@string/settings_dashboard_category">
-        <Preference
-            android:key="dashboard_reorder_ui"
-            android:summary="@string/settings_dashboard_edit_summary"
-            android:title="@string/settings_dashboard_edit" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_five_hour"
-            android:summary="@string/settings_dashboard_window_summary"
-            android:title="@string/settings_dashboard_five_hour" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_weekly"
-            android:summary="@string/settings_dashboard_window_summary"
-            android:title="@string/settings_dashboard_weekly" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_additional_limits"
-            android:summary="@string/settings_dashboard_additional_limits_summary"
-            android:title="@string/settings_dashboard_additional_limits" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_usage_credits"
-            android:summary="@string/settings_dashboard_usage_credits_summary"
-            android:title="@string/settings_dashboard_usage_credits" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_usage_history"
-            android:summary="@string/settings_dashboard_usage_history_summary"
-            android:title="@string/settings_dashboard_usage_history" />
-        <SwitchPreferenceCompat
-            android:defaultValue="true"
-            android:key="dashboard_reset_credits"
-            android:summary="@string/settings_dashboard_reset_credits_summary"
-            android:title="@string/settings_dashboard_reset_credits" />
-    </PreferenceCategory>
-
     <PreferenceCategory android:title="@string/settings_usage_estimates_category">
         <SwitchPreferenceCompat
             android:key="usage_pace_enabled_ui"
