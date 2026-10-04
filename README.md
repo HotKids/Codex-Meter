@@ -4,7 +4,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Android 12+](https://img.shields.io/badge/Android-12%2B-3DDC84.svg)](https://developer.android.com/about/versions/12)
 
-Codex Meter 是一款用于查看与监控 Codex 用量的开源 Android 应用。本项目基于上游 [BenItBuhner/Codex-Meter](https://github.com/BenItBuhner/Codex-Meter)，使用 Codex 和 Claude Code 进行开发。应用集中展示 ChatGPT 账户的会话限额、每周限额、剩余额度及重置时间，并提供桌面小组件、用量提醒和实时通知。
+Codex Meter 是一款用于查看与监控 Codex 用量的开源 Android 应用。基于 [BenItBuhner/Codex-Meter](https://github.com/BenItBuhner/Codex-Meter) 项目，使用 Codex 和 Claude Code 进行二次开发。应用集中展示 ChatGPT 账户的会话限额、每周限额、剩余额度及重置时间，并提供桌面小组件、用量提醒和实时通知。
 
 [下载最新版](https://github.com/HotKids/Codex-Meter/releases/latest) · [反馈问题](https://github.com/HotKids/Codex-Meter/issues) · [更新记录](CHANGELOG.md)
 
