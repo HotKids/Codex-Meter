@@ -45,7 +45,8 @@ Rules for agents:
 - The first phone release uses the existing `0.1` / code 1 without a version bump or alpha-channel activation.
 - Preparing a future **alpha release** (`X.Y.Z-alpha.N`) requires explicit authorization to enable the channel. Keep `versionCode` equal to the newest stable release for the same phone package so returning to stable remains an in-place install. `X.Y.Z` must be the next stable version, not the shipped one. Do not compare the new package's version line against inherited upstream tags.
 - Preparing a **stable release** (promotion): merge `alpha` into `main`, drop the suffix, bump `versionCode` by exactly one, and consolidate the alpha changelog sections under the stable version.
-- Any phone version change must update every synced touchpoint together: `android/app/build.gradle.kts`, `AppConstants.java` (`VERSION_NAME`, `VERSION_CODE`, and the literal user-agent string), `android/build.sh`, the version guards in `android/run-tests.sh`, and a matching `## <version>` section in root `CHANGELOG.md`.
+- Any phone version change must update every synced touchpoint together: `android/app/build.gradle.kts`, `AppConstants.java` (`VERSION_NAME`, `VERSION_CODE`, and the literal user-agent string), `android/build.sh`, the version guards in `android/run-tests.sh`, and a matching `## <version> — YYYY-MM-DD` section in root `CHANGELOG.md`.
+- Write `CHANGELOG.md` and GitHub release notes in Simplified Chinese using the concise, user-facing bullet style of version `0.2`. Keep only this fork's history, use dated version headings, and put known issues in a separate `**已知问题**` block when applicable.
 - Merging `main` into `alpha` to keep it fresh is fine; never force-push either branch, and never delete or recreate `alpha` on your own.
 
 Convenience wrappers at the repo root forward into the Android project:

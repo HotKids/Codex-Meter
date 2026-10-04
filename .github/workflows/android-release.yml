@@ -41,7 +41,7 @@ jobs:
           else
             [[ "$GITHUB_REF_NAME" == main ]] || { echo "Release validation requires main" >&2; exit 1; }
           fi
-          grep -Fxq "## $version" CHANGELOG.md
+          grep -Eq "^## ${version//./\\.} — [0-9]{4}-[0-9]{2}-[0-9]{2}$" CHANGELOG.md
           printf 'version=%s\ncode=%s\n' "$version" "$code" >> "$GITHUB_OUTPUT"
 
       - name: Set up Java 21
@@ -154,7 +154,7 @@ jobs:
           cd ..
           notes="$RUNNER_TEMP/codex-meter-release-notes.md"
           awk -v heading="## $RELEASE_VERSION" '
-            /^## / { if (found) exit; if ($0 == heading) { found = 1; next } }
+            /^## / { if (found) exit; if ("## " $2 == heading) { found = 1; next } }
             found { print }
           ' CHANGELOG.md > "$notes"
           grep -q '[^[:space:]]' "$notes"
