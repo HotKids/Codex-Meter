@@ -14,6 +14,12 @@
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE"/>
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_DATA_SYNC"/>
     <uses-permission android:name="android.permission.REQUEST_INSTALL_PACKAGES"/>
+    <queries>
+        <intent>
+            <action android:name="android.intent.action.MAIN"/>
+            <category android:name="android.intent.category.HOME"/>
+        </intent>
+    </queries>
     <application
         android:name="me.pipi.codexmeter.CodexMeterApplication"
         android:theme="@style/AppTheme"
@@ -105,6 +111,9 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/codex_dial_widget_info"/>
+            <meta-data
+                android:name="${applicationId}.COLOROS_HIDDEN_DIAL_PROVIDER_INFO"
+                android:resource="@xml/codex_dial_widget_hidden_info"/>
         </receiver>
         <receiver
             android:label="@string/lock_widget_square_name"

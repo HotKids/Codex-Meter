@@ -11,11 +11,14 @@ import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
+import android.app.Activity;
 import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.res.XmlResourceParser;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.View;
@@ -28,7 +31,9 @@ import androidx.appcompat.widget.SwitchCompat;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -39,6 +44,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.xmlpull.v1.XmlPullParser;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = Application.class)
@@ -309,6 +315,76 @@ public class WidgetConfigActivityTest {
         AppPreferences.saveWidgetOptions(app, WIDGET_ID, currentOptions(shrunk));
         WidgetConfigActivity reopened = openEditor();
         assertEquals(UsageCardFixtures.keys(WidgetMeters.WEEKLY), selection(reopened));
+    }
+
+    @Test
+    public void firstAddRequiresConfigurationAndCancellationReturnsTheAllocatedId()
+            throws Exception {
+        for (Class<?> provider : new Class<?>[] {CodexUsageWidget.class, CodexDialWidget.class}) {
+            int metadata = app.getPackageManager().getReceiverInfo(new ComponentName(app, provider),
+                    PackageManager.GET_META_DATA).metaData.getInt("android.appwidget.provider");
+            XmlResourceParser parser = app.getResources().getXml(metadata);
+            try {
+                while (parser.next() != XmlPullParser.START_TAG) {
+                    assertTrue(parser.getEventType() != XmlPullParser.END_DOCUMENT);
+                }
+                String android = "http://schemas.android.com/apk/res/android";
+                assertEquals(WidgetConfigActivity.class.getName(),
+                        parser.getAttributeValue(android, "configure"));
+                assertEquals(AppWidgetProviderInfo.WIDGET_FEATURE_RECONFIGURABLE,
+                        parser.getAttributeIntValue(android, "widgetFeatures", -1));
+            } finally {
+                parser.close();
+            }
+            bindProvider(provider, provider == CodexDialWidget.class ? 90 : 180);
+            Map<String, ?> before = new HashMap<>(app.getSharedPreferences(
+                    "codex_meter_settings_v1", Context.MODE_PRIVATE).getAll());
+            WidgetConfigActivity activity = openEditor();
+            assertFalse(activity.isFinishing());
+            assertTrue(setSelected(activity, WidgetMeters.FIVE_HOUR, false));
+            activity.findViewById(R.id.config_cancel).performClick();
+            assertTrue(activity.isFinishing());
+            assertEquals(Activity.RESULT_CANCELED,
+                    org.robolectric.Shadows.shadowOf(activity).getResultCode());
+            Intent result = org.robolectric.Shadows.shadowOf(activity).getResultIntent();
+            assertNotNull("The launcher needs its allocated ID even when setup is canceled", result);
+            assertEquals(WIDGET_ID, result.getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                    AppWidgetManager.INVALID_APPWIDGET_ID));
+            assertEquals(before, app.getSharedPreferences("codex_meter_settings_v1",
+                    Context.MODE_PRIVATE).getAll());
+        }
+    }
+
+    @Test
+    public void rotationRestoresTheAllocatedInstanceAndSaveOnlyChangesThatInstance()
+            throws Exception {
+        AppWidgetManager manager = bindProvider(CodexUsageWidget.class, 180);
+        org.robolectric.Shadows.shadowOf(manager).bindAppWidgetId(43,
+                new ComponentName(app, CodexUsageWidget.class));
+        saveSelection(WidgetMeters.FIVE_HOUR);
+        AppPreferences.saveWidgetOptions(app, 43,
+                WidgetOptions.defaults().withVisibleMeters(WidgetMeters.WEEKLY));
+        WidgetConfigActivity original = openEditor();
+        ActivityController<WidgetConfigActivity> controller = activities.remove(activities.size() - 1);
+        Bundle state = new Bundle();
+        controller.saveInstanceState(state).pause().stop().destroy();
+        Intent restoredIntent = new Intent(original.getIntent());
+        restoredIntent.removeExtra(AppWidgetManager.EXTRA_APPWIDGET_ID);
+        ActivityController<WidgetConfigActivity> restored = Robolectric
+                .buildActivity(WidgetConfigActivity.class, restoredIntent)
+                .create(state).start().resume().visible();
+        activities.add(restored);
+        WidgetConfigActivity activity = restored.get();
+        assertFalse("The saved allocation must survive a recreated launch Intent", activity.isFinishing());
+        assertEquals(UsageCardFixtures.keys(WidgetMeters.FIVE_HOUR), selection(activity));
+        assertTrue(setSelected(activity, WidgetMeters.NEXT_RESET, true));
+        activity.findViewById(R.id.config_save).performClick();
+        assertEquals(Activity.RESULT_OK, org.robolectric.Shadows.shadowOf(activity).getResultCode());
+        assertEquals(WIDGET_ID, org.robolectric.Shadows.shadowOf(activity).getResultIntent()
+                .getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID, AppWidgetManager.INVALID_APPWIDGET_ID));
+        assertEquals("five_hour,next_reset",
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+        assertEquals("weekly", AppPreferences.loadWidgetOptions(app, 43).effectiveVisibleMeters());
     }
 
     private AppWidgetManager bindProvider(Class<?> type, int height) {

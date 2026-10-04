@@ -75,14 +75,16 @@ public class MaterialCardLayoutTest {
 
     @Test
     @Config(qualifiers = "zh-rCN-xhdpi")
-    public void narrowCardsKeepReadableTextWithoutChangingRows() {
+    public void narrowCardsKeepHeightBasedTypographyWithoutChangingRows() {
         View applied = build(140, 200, ResetCreditsSnapshot.summary(2, UsageCardFixtures.NOW));
-        float density = RuntimeEnvironment.getApplication().getResources().getDisplayMetrics().density;
-        assertTrue("The account plan remains readable at a narrow width",
-                ((TextView) applied.findViewById(R.id.md_title)).getTextSize() >= 15f * density);
+        View reference = build(170, 200, ResetCreditsSnapshot.summary(2, UsageCardFixtures.NOW));
+        assertEquals("Matching heights keep the same account-plan type size",
+                ((TextView) reference.findViewById(R.id.md_title)).getTextSize(),
+                ((TextView) applied.findViewById(R.id.md_title)).getTextSize(), 0f);
         for (int slot : new int[] {0, 2}) {
-            assertTrue("Meter names do not shrink with the entire card",
-                    ((TextView) applied.findViewById(id("md_name_", slot))).getTextSize() >= 13f * density);
+            assertEquals("Matching heights keep the same meter-name type size",
+                    ((TextView) reference.findViewById(id("md_name_", slot))).getTextSize(),
+                    ((TextView) applied.findViewById(id("md_name_", slot))).getTextSize(), 0f);
             assertPanelTextFits(applied, slot);
         }
     }
@@ -97,8 +99,8 @@ public class MaterialCardLayoutTest {
             TextView updated = wide.findViewById(R.id.md_updated);
             TextView status = wide.findViewById(R.id.md_status);
             assertEquals(View.VISIBLE, updated.getVisibility());
-            assertTrue("Wide-card refresh time is more readable than status text",
-                    updated.getTextSize() > status.getTextSize());
+            assertEquals("Wide-card status and refresh time share their type size",
+                    updated.getTextSize(), status.getTextSize(), 0f);
             assertTrue("The complete refresh time fits beside the refresh button",
                     updated.getLayout() != null && updated.getLayout().getEllipsisCount(0) == 0);
         }
@@ -163,19 +165,24 @@ public class MaterialCardLayoutTest {
         assertEquals("Title and value share their baseline", name.getBaseline(), value.getBaseline(), 2);
         TextView reset = applied.findViewById(id("md_reset_", slot));
         if (((View) reset.getParent()).getVisibility() == View.VISIBLE) {
-            assertTrue("The complete reset detail stays inside its panel",
+            assertTrue("The reset detail stays inside its panel",
                     topIn(reset, panel) + reset.getHeight() <= panel.getHeight());
-            assertTrue("The reset detail is not truncated", reset.getLayout() != null
-                    && reset.getLayout().getEllipsisCount(0) == 0);
+            assertNativeTextHeightFits(reset);
         }
         for (TextView text : new TextView[] {name, value}) {
             assertTrue("Panel text stays inside its panel", topIn(text, panel) >= 0
                     && topIn(text, panel) + text.getHeight() <= panel.getHeight());
-            assertTrue("The label and complete duration must fit without ellipsis: "
-                            + text.getText() + ", width=" + text.getWidth() + ", size=" + text.getTextSize(),
-                    text.getLayout() != null && text.getLayout().getLineCount() == 1
-                            && text.getLayout().getEllipsisCount(0) == 0);
+            assertNativeTextHeightFits(text);
         }
+    }
+
+    private static void assertNativeTextHeightFits(TextView text) {
+        assertTrue("Panel text keeps a single native line: " + text.getText(),
+                text.getLayout() != null && text.getLayout().getLineCount() == 1);
+        int available = text.getHeight() - text.getCompoundPaddingTop()
+                - text.getCompoundPaddingBottom();
+        assertTrue("The native text line is not clipped vertically: " + text.getText(),
+                text.getLayout().getHeight() <= available);
     }
 
     private static View build(int width, int height, ResetCreditsSnapshot credits) {

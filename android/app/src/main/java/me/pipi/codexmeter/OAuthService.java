@@ -127,8 +127,10 @@ public final class OAuthService extends Service {
                 } catch (SocketTimeoutException timeout) {
                     throw OAuthClient.userError(this, R.string.auth_sign_in_timed_out);
                 }
+                OAuthTiming.mark(OAuthTiming.Phase.SOCKET_ACCEPTED);
                 browser.setSoTimeout(BROWSER_READ_TIMEOUT_MS);
                 Callback callback = readCallback(browser);
+                OAuthTiming.mark(OAuthTiming.Phase.REQUEST_READ);
                 if (!CALLBACK_PATH.equals(callback.path)) {
                     rejectRequest(browser, 404, getString(R.string.auth_browser_not_found));
                     browser = null;
@@ -157,11 +159,15 @@ public final class OAuthService extends Service {
                     browser = null;
                     throw OAuthClient.userError(this, R.string.auth_sign_in_failed_no_code);
                 }
+                OAuthTiming.mark(OAuthTiming.Phase.CALLBACK_VALID);
 
                 updateNotification(getString(R.string.auth_sign_in_securing_session), null);
+                OAuthTiming.mark(OAuthTiming.Phase.EXCHANGE_STARTED);
                 AuthTokens tokens = OAuthClient.exchangeCode(this, code, redirectUri,
                         pkce.verifier);
+                OAuthTiming.mark(OAuthTiming.Phase.EXCHANGE_COMPLETED);
                 SecureTokenStore.save(this, tokens);
+                OAuthTiming.mark(OAuthTiming.Phase.SAVE_COMPLETED);
                 credentialsCommitted = true;
                 AppPreferences.setOAuthPending(this, false, "");
 
@@ -171,6 +177,7 @@ public final class OAuthService extends Service {
                 try {
                     writeBrowser(browser, 200,
                             getString(R.string.auth_browser_success_message), true);
+                    OAuthTiming.mark(OAuthTiming.Phase.BROWSER_HTTP_WRITE_COMPLETED);
                 } catch (Exception ignored) {
                     // The user may have closed the browser after authorization. Authentication
                     // remains valid and the application still receives the result broadcast.

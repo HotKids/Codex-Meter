@@ -277,6 +277,9 @@ public final class MainActivity extends AppCompatActivity {
     /** Sends first-run users to onboarding; returns true when this activity is finishing. */
     private boolean routeToOnboarding(Intent intent) {
         boolean oauthReturn = isOAuthReturnIntent(intent);
+        if (oauthReturn) {
+            OAuthTiming.mark(OAuthTiming.Phase.APP_RETURN_RECEIVED);
+        }
         int action = OnboardingFlow.launchAction(
                 AppPreferences.isOnboardingComplete(this),
                 SecureTokenStore.isSignedIn(this),

@@ -180,3 +180,52 @@ jobs:
           gh release edit "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" \
             --title "Codex Meter $RELEASE_VERSION" --notes-file "$notes" \
             --draft=false --prerelease=false --latest
+
+      - name: Remove older phone releases and tags
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_VERSION: ${{ needs.build.outputs.version }}
+        run: |
+          set -euo pipefail
+          apk="CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk"
+          gh api "repos/$GITHUB_REPOSITORY/releases/tags/$GITHUB_REF_NAME" \
+            --jq '.' > "$RUNNER_TEMP/current-phone-release.json"
+          jq -e --arg tag "$GITHUB_REF_NAME" --arg apk "$apk" '
+            .tag_name == $tag and .draft == false and .prerelease == false
+            and any(.assets[]; .name == $apk and .size > 0)
+            and any(.assets[]; .name == "SHA256SUMS.txt" and .size > 0)
+          ' "$RUNNER_TEMP/current-phone-release.json"
+          gh api "repos/$GITHUB_REPOSITORY/git/matching-refs/tags/" --paginate \
+            --jq '.[].ref' > "$RUNNER_TEMP/phone-release-tags.txt"
+          gh api "repos/$GITHUB_REPOSITORY/releases?per_page=100" --paginate \
+            --jq '.[].tag_name' > "$RUNNER_TEMP/phone-release-names.txt"
+          python3 - "$RELEASE_VERSION" "$RUNNER_TEMP/phone-release-tags.txt" \
+            "$RUNNER_TEMP/phone-release-names.txt" \
+            > "$RUNNER_TEMP/older-phone-tags.txt" <<'PY'
+          import re
+          import sys
+          from pathlib import Path
+
+          def version(value):
+              match = re.fullmatch(r"v?(\d+)\.(\d+)(?:\.(\d+))?", value)
+              return tuple(int(part or 0) for part in match.groups()) if match else None
+
+          current = version(sys.argv[1])
+          if current is None:
+              raise SystemExit("Invalid current phone version")
+          tags = {ref.removeprefix("refs/tags/") for path in sys.argv[2:]
+                  for ref in Path(path).read_text().splitlines()}
+          for tag in sorted(tags):
+              candidate = version(tag)
+              if candidate is not None and candidate < current:
+                  print(tag)
+          PY
+          while IFS= read -r tag; do
+            if grep -Fxq "$tag" "$RUNNER_TEMP/phone-release-names.txt"; then
+              gh release delete "$tag" --repo "$GITHUB_REPOSITORY" --yes
+            fi
+            if grep -Fxq "refs/tags/$tag" "$RUNNER_TEMP/phone-release-tags.txt"; then
+              gh api --method DELETE "repos/$GITHUB_REPOSITORY/git/refs/tags/$tag"
+            fi
+          done < "$RUNNER_TEMP/older-phone-tags.txt"

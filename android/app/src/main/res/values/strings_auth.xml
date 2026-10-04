@@ -113,10 +113,6 @@
     <string name="auth_about_benit_summary">App creator and AI geek</string>
     <string name="auth_about_tjg_title" translatable="false">That Josh Guy</string>
     <string name="auth_about_tjg_summary">App and Icon designer</string>
-    <string name="auth_about_dependencies">Dependencies</string>
-    <string name="auth_about_oneui_summary">The library that makes this app so pretty.</string>
-    <string name="auth_about_openai_title" translatable="false">ChatGPT Codex</string>
-    <string name="auth_about_openai_summary">This app would be pretty useless without it.</string>
     <string name="auth_about_diagnostics_unlocked">Diagnostics unlocked.</string>
     <plurals name="auth_about_diagnostics_taps_remaining">
         <item quantity="one">%1$d more tap for diagnostics.</item>

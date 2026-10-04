@@ -50,6 +50,7 @@ public final class WidgetRenderer {
                 ? context : context.getApplicationContext();
         try {
             AppWidgetManager manager = AppWidgetManager.getInstance(app);
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
             int[] ids = manager.getAppWidgetIds(new ComponentName(app, CodexUsageWidget.class));
             DiagnosticLog.info(app, "widget", "update_all_started",
                     "home_widget_count", ids.length,
@@ -108,11 +109,12 @@ public final class WidgetRenderer {
             UsageCardState state, float widthDp, float heightDp, Bundle host) {
         boolean dial = oneRow(context, appWidgetId, host, heightDp);
         List<String> keys = selectedKeys(options, state.snapshot, dial);
-        if (dial) {
-            return DialWidgetRenderer.build(context, appWidgetId, options, keys, state);
-        }
-        return MaterialCardRenderer.build(context, appWidgetId, options, keys, state, widthDp,
-                heightDp);
+        RemoteViews views = dial
+                ? DialWidgetRenderer.build(context, appWidgetId, options, keys, state)
+                : MaterialCardRenderer.build(context, appWidgetId, options, keys, state, widthDp,
+                        heightDp);
+        ColorOsWidgetAppearance.apply(context, views, dial, options.opacity, widthDp, heightDp);
+        return views;
     }
 
     /** Disabled and unavailable phone meters remain configurable. */
@@ -137,11 +139,33 @@ public final class WidgetRenderer {
     private static RemoteViews buildResponsive(Context context, int appWidgetId,
             WidgetOptions options, UsageCardState state, Bundle host) {
         Map<SizeF, RemoteViews> layouts = new LinkedHashMap<>();
+        boolean colorOs = ColorOsWidgetAppearance.isStockLauncher(context);
         for (SizeF size : responsiveSizes(host)) {
-            layouts.put(size, build(context, appWidgetId, options, state, size.getWidth(),
-                    size.getHeight(), host));
+            RemoteViews views = build(context, appWidgetId, options, state, size.getWidth(),
+                    size.getHeight(), host);
+            if (colorOs && oneRow(context, appWidgetId, host, size.getHeight())) {
+                RemoteViews landscape = new RemoteViews(views);
+                RemoteViews portrait = new RemoteViews(views);
+                ColorOsWidgetAppearance.apply(orientation(context, Configuration.ORIENTATION_LANDSCAPE),
+                        landscape, true, options.opacity, size.getWidth(), size.getHeight());
+                ColorOsWidgetAppearance.apply(orientation(context, Configuration.ORIENTATION_PORTRAIT),
+                        portrait, true, options.opacity, size.getWidth(), size.getHeight());
+                // Size-map children must be plain layouts: orientation containers lose their
+                // ideal size in Parcel. An add-view action selects the nested orientation at apply.
+                views = new RemoteViews(context.getPackageName(), R.layout.widget_coloros_dial_responsive);
+                views.removeAllViews(R.id.widget_coloros_dial_container);
+                views.addView(R.id.widget_coloros_dial_container,
+                        new RemoteViews(landscape, portrait));
+            }
+            layouts.put(size, views);
         }
         return new RemoteViews(layouts);
+    }
+
+    private static Context orientation(Context context, int orientation) {
+        Configuration configuration = new Configuration(context.getResources().getConfiguration());
+        configuration.orientation = orientation;
+        return context.createConfigurationContext(configuration);
     }
 
     @SuppressWarnings("deprecation") // The typed overload needs API 33; sizes exist from 31.

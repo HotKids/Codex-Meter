@@ -5,10 +5,10 @@
     <LinearLayout android:id="@+id/md_content" android:layout_width="match_parent" android:layout_height="match_parent" android:orientation="vertical" android:padding="12dp">
         <LinearLayout android:id="@+id/md_header" android:layout_width="match_parent" android:layout_height="wrap_content" android:gravity="center_vertical" android:orientation="horizontal">
             <ImageView android:id="@+id/md_logo" android:layout_width="22dp" android:layout_height="22dp" android:importantForAccessibility="no" android:scaleType="fitCenter" android:src="@drawable/ic_notification" />
-            <TextView android:id="@+id/md_title" style="@style/WidgetMaterialHeader.Title" android:layout_marginStart="8dp" android:text="@string/widget_material_title" android:textSize="17dp" />
+            <TextView android:id="@+id/md_title" style="@style/WidgetMaterialHeader.Title" android:layout_marginStart="8dp" android:text="@string/widget_material_title" android:textSize="15.5dp" />
             <TextView android:id="@+id/md_status" style="@style/WidgetMaterialHeader.Status" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:paddingStart="8dp" android:textSize="10.5dp" />
             <TextView android:id="@+id/md_updated" style="@style/WidgetMaterialHeader.Status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:visibility="gone" android:textSize="14dp" />
-            <ImageView android:id="@+id/md_refresh" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp" android:contentDescription="@string/widget_material_refresh" android:scaleType="fitCenter" android:src="@drawable/ic_widget_refresh" />
+            <ImageView android:id="@+id/md_refresh" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp" android:contentDescription="@string/widget_material_refresh" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" />
         </LinearLayout>
         <LinearLayout android:id="@+id/md_row_0" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="10dp" android:layout_weight="1" android:baselineAligned="false" android:orientation="horizontal">
             <FrameLayout android:id="@+id/md_panel_0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
@@ -23,7 +23,7 @@
                         <ImageView android:id="@+id/md_fill_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
-                        <TextView android:id="@+id/md_reset_0" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
+                        <TextView android:id="@+id/md_reset_0" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="9.5dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
@@ -39,7 +39,7 @@
                         <ImageView android:id="@+id/md_fill_1" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_1" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
-                        <TextView android:id="@+id/md_reset_1" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
+                        <TextView android:id="@+id/md_reset_1" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="9.5dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
@@ -57,7 +57,7 @@
                         <ImageView android:id="@+id/md_fill_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
-                        <TextView android:id="@+id/md_reset_2" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
+                        <TextView android:id="@+id/md_reset_2" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="9.5dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>
@@ -73,7 +73,7 @@
                         <ImageView android:id="@+id/md_fill_3" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_3" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
-                        <TextView android:id="@+id/md_reset_3" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="12dp" />
+                        <TextView android:id="@+id/md_reset_3" style="@style/WidgetMaterialText.Regular" android:layout_width="0dp" android:layout_weight="1" android:textSize="9.5dp" />
                     </LinearLayout>
                 </LinearLayout>
             </FrameLayout>

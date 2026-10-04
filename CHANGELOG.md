@@ -1,5 +1,17 @@
 # Changelog
 
+## 0.2
+
+- Pro 套餐小组件默认关闭 5 小时会话限额。
+- 适配 ColorOS 小组件背景与圆角。
+- 首次添加小组件时自动打开设置。
+- 优化小组件布局与刷新状态显示。
+- 精简关于页面，更新致谢与项目链接。
+
+**已知问题**
+
+- 部分系统通过浏览器登录时，localhost 跳转可能耗时较长，可尝试手动返回应用。
+
 ## 0.1.1
 
 - Default Pro 100, Pro 200 and Pro 500 home widgets to weekly usage and reset, with session usage disabled but still available.

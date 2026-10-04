@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <!-- Alpha belongs to the drawable, so an ImageView SRC_ATOP filter cannot retain white. -->
+    <solid android:color="@color/widget_coloros_panel_fill" />
+    <corners android:radius="16dp" />
+</shape>

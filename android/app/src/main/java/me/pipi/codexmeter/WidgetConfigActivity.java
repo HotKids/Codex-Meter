@@ -66,16 +66,29 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         Ui.applySelectedTheme(this);
         super.onCreate(state);
         setResult(RESULT_CANCELED);
-        appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
-                AppWidgetManager.INVALID_APPWIDGET_ID);
+        appWidgetId = state == null ? AppWidgetManager.INVALID_APPWIDGET_ID
+                : state.getInt(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                        AppWidgetManager.INVALID_APPWIDGET_ID);
+        if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
+            appWidgetId = getIntent().getIntExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                    AppWidgetManager.INVALID_APPWIDGET_ID);
+        }
         if (appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             Toast.makeText(this, R.string.widget_editor_no_widget, Toast.LENGTH_LONG).show();
             finish();
             return;
         }
+        setResult(RESULT_CANCELED, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
+                appWidgetId));
         dark = Ui.isDark(this);
         refreshWidgetSize();
         build();
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle state) {
+        state.putInt(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        super.onSaveInstanceState(state);
     }
 
     @Override
@@ -543,8 +556,12 @@ public final class WidgetConfigActivity extends AppCompatActivity {
                 // RemoteViews only accepts framework widgets.
                 View widget = remote.apply(getApplicationContext(), surface);
                 widget.setClickable(false);
-                surface.addView(widget, new FrameLayout.LayoutParams(
-                        ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT));
+                FrameLayout.LayoutParams widgetParams = ColorOsWidgetAppearance.isStockLauncher(this)
+                        ? new FrameLayout.LayoutParams(widget.getLayoutParams())
+                        : new FrameLayout.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                                ViewGroup.LayoutParams.MATCH_PARENT);
+                widgetParams.gravity = Gravity.CENTER;
+                surface.addView(widget, widgetParams);
                 surface.setOnClickListener(view -> { });
 
                 int width = Ui.dp(this, widthDp);

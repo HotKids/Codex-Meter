@@ -2,6 +2,8 @@ package me.pipi.codexmeter;
 
 import android.app.job.JobInfo;
 import android.app.job.JobScheduler;
+import android.appwidget.AppWidgetManager;
+import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.pm.PackageInfo;
@@ -45,10 +47,11 @@ public final class WidgetUpgradeRepair {
         boolean clean = preferences.getBoolean(KEY_CLEAN_AFTER_REPLACE, false);
         long version = versionCode(app);
         long repaired = preferences.getLong(KEY_REPAIRED_VERSION, -1L);
+        boolean complete = true;
         if (clean || version <= 0L || repaired != version) {
-            repair(app, version);
+            complete = repair(app, version);
         }
-        if (clean) {
+        if (clean && complete) {
             clearVerifiedDownloads(app);
             preferences.edit().remove(KEY_CLEAN_AFTER_REPLACE).apply();
         }
@@ -70,7 +73,7 @@ public final class WidgetUpgradeRepair {
         }
     }
 
-    private static void repair(Context context, long version) {
+    private static boolean repair(Context context, long version) {
         try {
             context.getPackageManager().setComponentEnabledSetting(
                     new ComponentName(context, CodexUsageWidget.class),
@@ -79,11 +82,28 @@ public final class WidgetUpgradeRepair {
         } catch (RuntimeException ignored) {
         }
         SamsungLockWidgetSupport.enableAllProviders(context);
+        boolean previewsCleared = true;
+        if (Build.VERSION.SDK_INT >= 35) {
+            // Cached preview actions must match the layouts in the replacement APK.
+            AppWidgetManager manager = AppWidgetManager.getInstance(context);
+            for (Class<?> provider : new Class<?>[] {CodexUsageWidget.class, CodexDialWidget.class}) {
+                try {
+                    manager.removeWidgetPreview(new ComponentName(context, provider),
+                            AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN);
+                } catch (RuntimeException exception) {
+                    previewsCleared = false;
+                    DiagnosticLog.error(context, "widget", "picker_preview_cleanup_failed",
+                            exception, "provider", provider.getSimpleName());
+                }
+            }
+        }
         WidgetRenderer.updateAll(context);
-        if (version > 0L) {
+        // Keep repair pending if cached preview actions could still target the previous APK.
+        if (previewsCleared && version > 0L) {
             context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
                     .edit().putLong(KEY_REPAIRED_VERSION, version).apply();
         }
+        return previewsCleared;
     }
 
     private static long versionCode(Context context) {

@@ -46,6 +46,6 @@
     <string name="widget_sample_secondary_value" translatable="false">75%</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_benit_title" translatable="false">BenIt Buhner</string>
-    <string name="about_oneui_title" translatable="false">One UI Design Library</string>
+    <string name="about_oneui_title" translatable="false">Tribalfs</string>
     <string name="account_avatar">Account avatar</string>
 </resources>

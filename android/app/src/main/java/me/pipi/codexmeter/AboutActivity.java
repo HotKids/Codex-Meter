@@ -29,7 +29,7 @@ import dev.oneuiproject.oneui.utils.EdgeToEdge;
 import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 
-/** About page: app header that collapses into credits and dependency links. */
+/** About page: app header that collapses into developer and credit links. */
 public final class AboutActivity extends AppCompatActivity {
     private static final int MENU_GITHUB = 8201;
     private static final int MENU_APP_INFO = 8202;
@@ -106,27 +106,14 @@ public final class AboutActivity extends AppCompatActivity {
         RoundedLinearLayout credits = Ui.cardGroup(this, dark);
         credits.addView(personRow(getString(R.string.about_benit_title),
                 "",
-                R.drawable.benit_github_avatar, false, "https://github.com/BenItBuhner"));
+                R.drawable.benit_github_avatar, false, "https://github.com/BenItBuhner/Codex-Meter"));
+        credits.addView(personRow(getString(R.string.about_oneui_title),
+                "",
+                R.drawable.tribalfs_github_avatar, true, "https://github.com/tribalfs/oneui-design"));
         credits.addView(personRow(getString(R.string.auth_about_tjg_title),
                 "",
                 R.drawable.codex_profile_avatar, true, "https://tjg.gg"));
         content.addView(credits);
-
-        content.addView(sectionTitle(getString(R.string.auth_about_dependencies)));
-        RoundedLinearLayout dependencies = Ui.cardGroup(this, dark);
-        CardItemView oneUi = Ui.actionRow(this, getString(R.string.about_oneui_title),
-                "",
-                R.drawable.ic_ms_widgets_filled,
-                view -> openUrl("https://github.com/tribalfs/oneui-design"));
-        dependencies.addView(oneUi);
-        CardItemView openAi = Ui.actionRow(this, getString(R.string.auth_about_openai_title),
-                "",
-                R.drawable.ic_notification,
-                view -> openUrl("https://openai.com"));
-        openAi.getIconImageView().setImageTintList(ColorStateList.valueOf(Ui.mainText(dark)));
-        openAi.setShowTopDivider(true);
-        dependencies.addView(openAi);
-        content.addView(dependencies);
     }
 
     private LinearLayout buildAppCard() {

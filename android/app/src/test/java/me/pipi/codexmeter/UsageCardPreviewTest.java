@@ -73,9 +73,10 @@ public class UsageCardPreviewTest {
                 ((TextView) view.findViewById(R.id.md_name_0)).getCurrentTextColor());
         View production = apply(context, WidgetRenderer.build(context, 1,
                 WidgetOptions.defaults().withVisibleMeters("five_hour,weekly"),
-                UsageCardFixtures.state(UsageCardFixtures.plus(), 0), 140f, 200f, null));
+                UsageCardFixtures.state(UsageCardFixtures.plus(), 0), 170f, 170f, null));
         // XML dimensions round to pixels; RemoteViews can retain fractional text sizes.
-        for (int id : new int[] {R.id.md_title, R.id.md_updated, R.id.md_name_0, R.id.md_name_2}) {
+        for (int id : new int[] {R.id.md_title, R.id.md_updated, R.id.md_name_0, R.id.md_name_2,
+                R.id.md_value_0, R.id.md_value_2, R.id.md_reset_0, R.id.md_reset_2}) {
             assertEquals("Picker typography follows the narrow card",
                     ((TextView) production.findViewById(id)).getTextSize(),
                     ((TextView) view.findViewById(id)).getTextSize(), 0.5f);
@@ -118,36 +119,43 @@ public class UsageCardPreviewTest {
 
     @Test
     @Config(sdk = {26, 35}, qualifiers = "zh-rCN-xhdpi")
-    public void clearTitlesKeepTheirNativeWidthWhenTheHostIsBetweenResponsiveSizes() throws Exception {
+    public void clearTypographyKeepsItsHeightBasedSizeWhenTheHostIsBetweenResponsiveSizes()
+            throws Exception {
         Context context = RuntimeEnvironment.getApplication();
         UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
         WidgetOptions options = WidgetOptions.defaults().withVisibleMeters("weekly,next_reset");
         float density = context.getResources().getDisplayMetrics().density;
         PreviewSheet sheet = new PreviewSheet("clear-title-width");
+        View reference = apply(context, MaterialCardRenderer.build(context, 1, options,
+                List.of(WidgetMeters.WEEKLY, WidgetMeters.NEXT_RESET), state, 170, 200));
+        int[][] fields = {{R.id.md_name_0, R.id.md_value_0, R.id.md_reset_0},
+                {R.id.md_name_2, R.id.md_value_2, R.id.md_reset_2}};
         for (int width : new int[] {90, 110, 140, 170, 280}) {
             for (int inset : new int[] {0, 8}) {
                 View view = apply(context, MaterialCardRenderer.build(context, 1, options,
                         List.of(WidgetMeters.WEEKLY, WidgetMeters.NEXT_RESET), state, width, 200));
                 sheet.add("card width " + width + " host narrower by " + inset, view,
                         px(width - inset, density), px(200, density));
-                for (int id : new int[] {R.id.md_name_0,
-                        width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
-                                ? R.id.md_name_2 : R.id.md_name_1}) {
-                    TextView title = view.findViewById(id);
-                    assertEquals("Native titles must not yield their width to the value column: "
-                            + width + "dp inset " + inset + " title " + title.getText(),
-                            0, title.getLayout().getEllipsisCount(0));
-                }
-                if (inset == 0) {
-                    for (int id : new int[] {R.id.md_value_0, R.id.md_reset_0,
-                            width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
-                                    ? R.id.md_value_2 : R.id.md_value_1,
-                            width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
-                                    ? R.id.md_reset_2 : R.id.md_reset_1}) {
-                        TextView text = view.findViewById(id);
-                        assertEquals("Values and reset details stay complete at the reported width: "
-                                + width + "dp text " + text.getText(),
-                                0, text.getLayout().getEllipsisCount(0));
+                TextView referenceTitle = reference.findViewById(R.id.md_title);
+                TextView title = view.findViewById(R.id.md_title);
+                assertEquals("Header typography depends on height, not width",
+                        referenceTitle.getTextSize(), title.getTextSize(), 0f);
+                int[][] actual = {fields[0], width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
+                        ? fields[1] : new int[] {R.id.md_name_1, R.id.md_value_1, R.id.md_reset_1}};
+                for (int slot = 0; slot < fields.length; slot++) {
+                    for (int field = 0; field < fields[slot].length; field++) {
+                        TextView expected = reference.findViewById(fields[slot][field]);
+                        TextView text = view.findViewById(actual[slot][field]);
+                        String label = width + "dp inset " + inset + " text " + text.getText();
+                        assertEquals("The full data stays available: " + label,
+                                expected.getText().toString(), text.getText().toString());
+                        assertEquals("Panel typography depends on height, not width: " + label,
+                                expected.getTextSize(), text.getTextSize(), 0f);
+                        assertEquals("Native text stays on one line: " + label,
+                                1, text.getLayout().getLineCount());
+                        assertTrue("The native text layout fits its backing view: " + label,
+                                text.getLayout().getHeight() <= text.getHeight()
+                                        - text.getCompoundPaddingTop() - text.getCompoundPaddingBottom());
                     }
                 }
             }

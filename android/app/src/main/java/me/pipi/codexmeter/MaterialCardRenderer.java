@@ -10,6 +10,10 @@ import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
 import android.os.Build;
+import android.text.SpannableString;
+import android.text.Spanned;
+import android.text.style.TypefaceSpan;
+import android.text.style.StyleSpan;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
@@ -34,14 +38,18 @@ final class MaterialCardRenderer {
     private static final float PADDING = 12f;
     private static final float FIRST_ROW_GAP = 10f;
     private static final float GAP = 8f;
+    /** The XML header's start margins and status start padding do not scale with the card. */
+    private static final float HEADER_SPACING = 8f;
     private static final float ICON = 22f;
-    private static final float TITLE_TEXT = 17f;
+    /** Source glyph bounds: Sync 160..800/960; Sync Problem 120..840/960. */
+    private static final float REFRESH_END_INSET = 0.16666667f;
+    private static final float SYNC_PROBLEM_INSET = 0.125f;
     private static final float STATUS_TEXT = 10.5f;
-    /** Matches the pinned SESL body text size while keeping widget typography in dp. */
-    private static final float UPDATED_TEXT = 14f;
+    /** The native health widget's label-medium size is in sp, independent of card scale. */
+    private static final float UPDATED_TEXT = 12f;
     private static final float NAME_TEXT = 15f;
     private static final float VALUE_TEXT = 15.5f;
-    private static final float DETAIL_TEXT = 11f;
+    private static final float DETAIL_TEXT = 9.5f;
     private static final float PANEL_PADDING_H = 12f;
     private static final float PANEL_PADDING_V = 4f;
     /** Fixed spacing between title, bar and detail rows across card sizes. */
@@ -49,8 +57,10 @@ final class MaterialCardRenderer {
     private static final float VALUE_GAP = 2f;
     private static final float BAR_HEIGHT = 9f;
     private static final float MIN_SCALE = 0.7f;
-    private static final float MIN_NARROW_TEXT_SCALE = 0.9f;
     private static final float MAX_SCALE = 1.25f;
+    /** Typography matches the generic 2x2 card at its 170dp reference height. */
+    private static final float TEXT_REFERENCE_HEIGHT = 170f;
+    private static final float TEXT_REFERENCE_SCALE = 0.9f;
     private static final int LEVEL_MAX = 10000;
     private static final long DAY_MILLIS = TimeUnit.DAYS.toMillis(1);
 
@@ -102,17 +112,18 @@ final class MaterialCardRenderer {
     private final int columns;
     private final int rowCount;
     private final boolean singleUsage;
+    private final float widthDp;
     private final float scale;
     private final float textScale;
     private final boolean showUpdated;
     private final float panelContentWidth;
-    private final float panelContentHeight;
 
     private MaterialCardRenderer(Context context, WidgetOptions options,
             List<String> keys, UsageCardState state, float widthDp, float heightDp) {
         this.context = context;
         this.resources = context.getResources();
         this.options = options;
+        this.widthDp = widthDp;
         this.showUpdated = widthDp >= 280f;
         this.state = state;
         boolean wide = widthDp >= MEDIUM_MIN_WIDTH_DP;
@@ -129,14 +140,11 @@ final class MaterialCardRenderer {
                 + rowCount * panelHeight + (rowCount - 1) * GAP;
         float fit = Math.min(widthDp / neededWidth, heightDp / neededHeight);
         this.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, fit));
-        // Narrow cards fit long values separately instead of shrinking every label with the card.
-        this.textScale = columns == 1 ? Math.max(scale, MIN_NARROW_TEXT_SCALE) : scale;
+        this.textScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE,
+                TEXT_REFERENCE_SCALE * heightDp / TEXT_REFERENCE_HEIGHT));
         float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
                 / columns;
         this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
-        float panelHeightDp = (heightDp - (PADDING * 2f + HEADER_HEIGHT + FIRST_ROW_GAP
-                + (rowCount - 1) * GAP) * scale) / rowCount;
-        this.panelContentHeight = Math.max(1f, panelHeightDp - PANEL_PADDING_V * 2f * scale);
         this.views = new RemoteViews(context.getPackageName(), options.opacity <= 0
                 ? R.layout.widget_material_shadow : R.layout.widget_material);
     }
@@ -199,24 +207,73 @@ final class MaterialCardRenderer {
     }
 
     private void renderHeader() {
+        boolean failure = state.signedIn && !state.refreshError.isEmpty();
+        boolean mediumStatus = showUpdated || failure;
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            // Reapply can retain a host view's previous offset; the header shares the panel edge.
+            views.setViewLayoutMargin(R.id.md_header, RemoteViews.MARGIN_START, 0,
+                    TypedValue.COMPLEX_UNIT_PX);
             for (int icon : new int[] {R.id.md_logo, R.id.md_refresh}) {
                 views.setViewLayoutWidth(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
                 views.setViewLayoutHeight(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
             }
         }
-        textSize(R.id.md_title, TITLE_TEXT);
-        textSize(R.id.md_status, STATUS_TEXT);
-        textSize(R.id.md_updated, UPDATED_TEXT);
-        views.setTextViewText(R.id.md_updated, UsageCardFormat.time(context, state.fetchedAtMillis()));
+        int iconWidth = Math.round(ICON * resources.getDisplayMetrics().density
+                * (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? scale : 1f));
+        boolean rtl = resources.getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
+        float inset = failure ? SYNC_PROBLEM_INSET : REFRESH_END_INSET;
+        int shift = Math.round(iconWidth * inset) * (rtl ? -1 : 1);
+        // Equal and opposite padding preserves fitCenter scale and the click target.
+        views.setViewPadding(R.id.md_refresh, shift, 0, -shift, 0);
+        textSize(R.id.md_title, VALUE_TEXT);
+        if (mediumStatus) {
+            views.setTextViewTextSize(R.id.md_status, TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT);
+        } else {
+            textSize(R.id.md_status, STATUS_TEXT);
+        }
+        views.setTextViewTextSize(R.id.md_updated, TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT);
+        String updated = UsageCardFormat.time(context, state.fetchedAtMillis());
+        boolean updatedVisible = showUpdated && state.fetchedAtMillis() > 0L && !failure;
+        views.setTextViewText(R.id.md_updated, metadataText(updated, showUpdated));
         views.setViewVisibility(R.id.md_updated,
-                showUpdated && state.fetchedAtMillis() > 0L ? View.VISIBLE : View.GONE);
+                updatedVisible ? View.VISIBLE : View.GONE);
         String plan = UsageFormat.planLabel(state.planType());
-        views.setTextViewText(R.id.md_title,
-                plan.isEmpty() ? resources.getString(R.string.widget_material_title) : plan);
+        String title = plan.isEmpty() ? resources.getString(R.string.widget_material_title) : plan;
+        views.setTextViewText(R.id.md_title, title);
         String status = state.statusMessage(resources, false);
-        views.setTextViewText(R.id.md_status, status);
-        views.setViewVisibility(R.id.md_status, status.isEmpty() ? View.INVISIBLE : View.VISIBLE);
+        boolean statusVisible = !status.isEmpty();
+        float density = resources.getDisplayMetrics().density;
+        int spacing = Math.round(HEADER_SPACING * density);
+        int available = Math.round(widthDp * density) - 2 * px(PADDING)
+                - 2 * iconWidth - 2 * spacing;
+        Paint paint = new Paint();
+        Typeface metadataFace = Typeface.create("sans-serif-medium", Typeface.NORMAL);
+        float metadataSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
+                UPDATED_TEXT, resources.getDisplayMetrics());
+        int titleMaxWidth = Math.max(1, available);
+        if (updatedVisible) {
+            paint.setTypeface(metadataFace);
+            paint.setTextSize(metadataSize);
+            titleMaxWidth = Math.max(1, available - spacing
+                    - (int) Math.ceil(paint.measureText(updated)));
+        }
+        if (failure) {
+            paint.setTypeface(Typeface.DEFAULT_BOLD);
+            paint.setTextSize(VALUE_TEXT * textScale * density);
+            int titleWidth = Math.min(titleMaxWidth, (int) Math.ceil(paint.measureText(title)));
+            paint.setTypeface(metadataFace);
+            paint.setTextSize(metadataSize);
+            statusVisible = available - titleWidth - spacing >= Math.ceil(paint.measureText(status));
+        }
+        views.setInt(R.id.md_title, "setMaxWidth", titleMaxWidth);
+        views.setTextViewText(R.id.md_status, metadataText(statusVisible ? status : "", mediumStatus));
+        views.setContentDescription(R.id.md_status, null);
+        views.setViewVisibility(R.id.md_status,
+                statusVisible ? View.VISIBLE : View.INVISIBLE);
+        views.setImageViewResource(R.id.md_refresh,
+                failure ? R.drawable.ic_ms_sync_problem : R.drawable.ic_ms_sync);
+        views.setContentDescription(R.id.md_refresh, failure ? status
+                : resources.getString(R.string.widget_material_refresh));
         if (options.opacity <= 0) {
             views.setTextColor(R.id.md_title, Color.WHITE);
             views.setTextColor(R.id.md_status, Color.WHITE);
@@ -230,6 +287,16 @@ final class MaterialCardRenderer {
         color(R.id.md_updated, "setTextColor", Role.SECONDARY);
         color(R.id.md_logo, "setColorFilter", Role.ACCENT);
         color(R.id.md_refresh, "setColorFilter", Role.TEXT);
+    }
+
+    private CharSequence metadataText(String text, boolean medium) {
+        if (!medium || text.isEmpty()) {
+            return text;
+        }
+        SpannableString value = new SpannableString(text);
+        value.setSpan(new TypefaceSpan("sans-serif-medium"), 0, value.length(),
+                Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+        return value;
     }
 
     private void renderPanel(int slot, int item) {
@@ -253,44 +320,51 @@ final class MaterialCardRenderer {
         color(NAMES[slot], "setTextColor", Role.TEXT);
         views.setTextViewText(VALUES[slot], value);
         boolean usage = WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key);
-        fitPanelText(slot, meter.title, value);
+        textSize(NAMES[slot], NAME_TEXT);
+        textSize(VALUES[slot], VALUE_TEXT);
         color(VALUES[slot], "setTextColor", Role.TEXT);
 
         boolean balance = WidgetOptions.USAGE_CREDITS.equals(key);
+        boolean stackedBalance = balance && balanceNeedsSecondLine(slot, meter.title, value);
+        views.setViewVisibility(VALUES[slot], stackedBalance ? View.GONE : View.VISIBLE);
         views.setViewVisibility(BARS[slot], balance ? View.GONE : View.VISIBLE);
         if (!balance) {
             renderBar(slot, meter.progress);
         }
-        views.setViewVisibility(DETAILS[slot], usage || reset ? View.VISIBLE : View.GONE);
-        String detail = reset
+        views.setViewVisibility(DETAILS[slot], usage || reset || stackedBalance
+                ? View.VISIBLE : View.GONE);
+        String detail = stackedBalance ? value : reset
                 ? resources.getString(R.string.widget_material_reset_credits, state.availableCredits())
                 : resetText(window, resetAt);
-        views.setTextViewText(RESETS[slot], detail);
-        Paint detailPaint = new Paint();
-        detailPaint.setTextSize(100f);
-        float detailWidth = detailPaint.measureText(detail) / 100f;
-        float detailSize = detailWidth <= 0f ? DETAIL_TEXT * textScale
-                : Math.min(DETAIL_TEXT * textScale, panelContentWidth / detailWidth);
-        views.setTextViewTextSize(RESETS[slot], TypedValue.COMPLEX_UNIT_DIP, detailSize);
-        color(RESETS[slot], "setTextColor", Role.SECONDARY);
+        if (stackedBalance) {
+            SpannableString amount = new SpannableString(detail);
+            amount.setSpan(new StyleSpan(Typeface.BOLD), 0, amount.length(),
+                    Spanned.SPAN_EXCLUSIVE_EXCLUSIVE);
+            views.setTextViewText(RESETS[slot], amount);
+        } else {
+            views.setTextViewText(RESETS[slot], detail);
+        }
+        textSize(RESETS[slot], stackedBalance ? VALUE_TEXT : DETAIL_TEXT);
+        color(RESETS[slot], "setTextColor", stackedBalance ? Role.TEXT : Role.SECONDARY);
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
             panelGap(DETAILS[slot]);
         }
     }
 
-    private void fitPanelText(int slot, String title, String value) {
-        Paint paint = new Paint();
+    private boolean balanceNeedsSecondLine(int slot, String title, String value) {
+        float density = resources.getDisplayMetrics().density;
+        int rowColumns = itemForSlot(slot / 2 * 2 + 1) >= 0 ? 2 : 1;
+        float gap = rowColumns == 1 ? 0f : Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
+                ? px(GAP) : GAP * density;
+        float available = (widthDp * density - 2 * px(PADDING) - gap) / rowColumns
+                - 2 * px(PANEL_PADDING_H);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
         paint.setTypeface(Typeface.DEFAULT_BOLD);
-        float nameSize = NAME_TEXT * textScale;
-        paint.setTextSize(nameSize);
-        // The value fits the estimate; the layout reserves the title's actual native width.
-        float available = Math.max(1f, panelContentWidth - paint.measureText(title) - 8f - 1f);
-        paint.setTextSize(100f);
-        float valueWidth = paint.measureText(value) / 100f;
-        float valueSize = valueWidth <= 0f ? VALUE_TEXT * textScale
-                : Math.min(VALUE_TEXT * textScale, Math.max(1f, available - 1f) / valueWidth);
-        views.setTextViewTextSize(NAMES[slot], TypedValue.COMPLEX_UNIT_DIP, nameSize);
-        views.setTextViewTextSize(VALUES[slot], TypedValue.COMPLEX_UNIT_DIP, valueSize);
+        paint.setTextSize(NAME_TEXT * textScale * density);
+        float nameWidth = paint.measureText(title);
+        paint.setTextSize(VALUE_TEXT * textScale * density);
+        // The XML name/value margin is fixed at 8dp, including on pre-Android 12 hosts.
+        return nameWidth + 8f * density + paint.measureText(value) > available;
     }
 
     private void renderBar(int slot, int progress) {

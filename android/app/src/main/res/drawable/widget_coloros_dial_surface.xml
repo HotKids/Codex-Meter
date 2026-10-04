@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android" android:shape="rectangle">
+    <gradient android:angle="315"
+        android:startColor="@color/widget_coloros_surface_start"
+        android:endColor="@color/widget_coloros_surface_end" />
+    <!-- Round-rect radii saturate at half the shorter drawable bound. -->
+    <corners android:radius="10000dp" />
+    <smoothG2-weight android:gradientRadius="3.0" />
+</shape>

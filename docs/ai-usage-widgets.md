@@ -26,6 +26,21 @@ Wide cards show successful-refresh `HH:mm` before the refresh icon. Header plan 
 bold with the selected Free, Plus, Team, Pro 100, Pro 200 and Pro 500 casing, and reuse
 the capsule Codex mark. The static picker uses Plus. The 100/200/500 numbers are
 maintainer-selected display names, not price claims; the former 20X alias is unsupported.
+The card header's logo aligns with the content panels' leading edge at every card size.
+The refresh glyph aligns with their trailing edge: equal and opposite image padding
+compensates for the official vector's transparent viewport inset without changing its
+scale, height or click target. Runtime and static picker previews share that adjustment.
+The header and panels share the outer content padding. Android 12 and newer explicitly
+reset the header's start margin on reapply; its top, height, trailing edge and the body
+remain unchanged. ColorOS overlays apply after the shared renderer, so they inherit
+the same alignment. Wide-card time
+and status share the native label-medium metrics: 12sp and the system 500-weight
+`sans-serif-medium` alias. All visible failure statuses use the same metrics; narrow
+non-failure status keeps its existing typography. Refresh failures use
+the Sync Problem icon and show the complete status only when it fits beside the plan and icon;
+the refresh button always exposes the full failure message to accessibility services.
+Failure hides the previous successful-refresh timestamp; the next successful refresh restores
+it. ColorOS one-column cards show only the failure icon, even when the status text would fit.
 
 The live notification follows the most recently saved widget selection and order. Home's
 five-hour visibility still applies. Saving the followed widget and its options is atomic;
@@ -68,3 +83,38 @@ Launcher chrome and preview measurement remain host-controlled and require devic
 If a host omits its precise size list, rendering uses the portrait and landscape content
 bounds from its MIN/MAX options. The predefined size buckets apply only when no usable
 host dimensions are available.
+
+ColorOS background parameters live in `ColorOsWidgetAppearance` and independent resources.
+They apply only to OPPO's stock launcher after the existing renderer builds its RemoteViews;
+the original layouts, foreground and spacing remain shared. Cards use the same adaptive
+typography for every launcher and column count, based on the generic 2×2 card at 170dp
+height. The plan header shares the percentage value size, and all panel detail rows
+share the smaller 9.5dp reference size. Font sizes follow height only, never width;
+narrow cards have no separate enlargement or width-based text shrinking. A remaining
+credit balance that cannot fit beside its label uses the existing second line at
+the same numeric type size; a wider card keeps both fields on one line. The 2×2 ColorOS card
+uses the generic narrow style. One-row backgrounds form a capsule, with portrait height
+bounded by the launcher's published icon size. Cards scale their 28dp reference background
+to the launcher's icon-size-derived radius and request the inspected framework's native
+G2 curve. The original layouts remain unchanged. See
+[the ColorOS source contract and platform boundary](coloros-widget-appearance.md) for the
+read-only metadata, geometry, reapply rules and device validation requirements.
+The stock ColorOS picker hides the 2×1 provider because its ordinary one-row widgets
+require OEM admission for desktop labels and stacking. Existing instances remain enabled;
+other launchers retain the generic entry. Its alternate provider definition is generated
+from the current generic XML and changes only `hide_from_picker`.
+
+The background layers follow the installed ColorOS calendar: a top-left to bottom-right
+gradient (`#F2F3F4` to `#FAFAFA` in light mode; `#252627` to `#282929` in dark mode), with
+inner panels using the existing system accent RGB and alpha `0x19`. The panel alpha belongs
+to the drawable fill; an XML ImageView tint defaults to SRC_ATOP and would retain an opaque
+white shape. Picker previews share the colors and drawable resources; their unknown host
+bounds retain MATCH_PARENT geometry.
+API 35 generated previews contain static samples only. APK replacement invalidates this
+application's two home-screen previews; other widget categories remain untouched.
+
+Home providers require configuration on first addition so launchers without an edit menu
+still open the existing editor. Saving completes placement; cancellation returns the actual
+instance ID, and recreation preserves it. Standard reconfiguration remains available on
+hosts that support it. ColorOS 17.3.12 restricts its proprietary widget shortcut metadata
+to built-in search providers, so that metadata cannot add an edit menu for Codex Meter.

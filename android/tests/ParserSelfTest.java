@@ -65,6 +65,7 @@ public final class ParserSelfTest {
         testReleaseVersions();
         testGitHubReleases();
         testUpdateChannel();
+        testPhoneReleaseUpdates();
         testReleaseChecksums();
         testReleaseNotesMarkdown();
         testReleaseUpdatePolicy();
@@ -1751,6 +1752,42 @@ public final class ParserSelfTest {
         check(UpdateChannel.selectUpdate(GitHubReleaseParser.parse(staleAlpha),
                 "2.7.0", UpdateChannel.ALPHA) == null,
                 "alpha suffixing the shipped stable is invisible to the updater");
+    }
+
+    private static void testPhoneReleaseUpdates() throws Exception {
+        java.util.List<GitHubRelease> releases = GitHubReleaseParser.parse(
+                "[" + releaseJson("v0.2", false, false, true, true) + "]");
+        GitHubRelease update = UpdateChannel.selectUpdate(releases, "0.1", UpdateChannel.STABLE);
+        check(update != null && "0.2.0".equals(update.version),
+                "phone 0.1 discovers stable 0.2");
+        check(UpdateChannel.selectUpdate(releases, "0.1.1", UpdateChannel.STABLE) == update,
+                "phone 0.1.1 discovers stable 0.2");
+        check("CodexMeter-me.pipi.codexmeter-0.2.apk".equals(update.apkName)
+                        && (GitHubReleaseSource.REPOSITORY_URL
+                        + "/releases/download/v0.2/CodexMeter-me.pipi.codexmeter-0.2.apk")
+                        .equals(update.apkUrl)
+                        && (GitHubReleaseSource.REPOSITORY_URL
+                        + "/releases/download/v0.2/SHA256SUMS.txt").equals(update.checksumUrl),
+                "short phone tag preserves canonical 0.2 release asset names and URLs");
+        check(UpdateChannel.selectUpdate(releases, "0.2", UpdateChannel.STABLE) == null,
+                "phone stable 0.2 does not offer the installed version");
+        java.util.List<GitHubRelease> older = GitHubReleaseParser.parse(
+                "[" + releaseJson("v0.1.1", false, false, true, true) + "]");
+        check(UpdateChannel.selectUpdate(older, "0.2", UpdateChannel.STABLE) == null,
+                "phone stable 0.2 does not offer an older release");
+
+        String[][] ignored = {
+                {"draft", releaseJson("v0.3", true, false, true, true)},
+                {"prerelease flag", releaseJson("v0.3", false, true, true, true)},
+                {"prerelease tag", releaseJson("v0.3-alpha.1", false, false, true, true)},
+                {"missing APK", releaseJson("v0.3", false, false, false, true)},
+                {"missing checksum", releaseJson("v0.3", false, false, true, false)}
+        };
+        for (String[] candidate : ignored) {
+            check(UpdateChannel.selectUpdate(GitHubReleaseParser.parse("[" + candidate[1] + "]"),
+                            "0.1.1", UpdateChannel.STABLE) == null,
+                    "phone stable ignores " + candidate[0]);
+        }
     }
 
     private static String releaseJson(String tag, boolean draft, boolean prerelease,

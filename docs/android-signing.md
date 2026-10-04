@@ -51,6 +51,10 @@ stable GitHub release from the matching `CHANGELOG.md` section. The only release
 assets are `CodexMeter-me.pipi.codexmeter-<versionName>.apk` and `SHA256SUMS.txt`.
 Signing files are not published or included in build artifacts.
 
+After the new stable release and both assets are confirmed, the publish job deletes
+older stable phone releases and their tags, including older version tags without a
+release. The current version and newer version tags remain intact.
+
 The local signing source, recovery backup and normal `./build.sh` path remain
 available. The retained legacy encrypted keystore is unused by this workflow;
 do not read, decrypt or replace it as part of a phone release.
