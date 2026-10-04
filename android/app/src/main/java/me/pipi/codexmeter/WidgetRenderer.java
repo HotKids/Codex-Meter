@@ -8,12 +8,10 @@ import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.os.Bundle;
 import android.util.Log;
 import android.util.SizeF;
 import android.widget.RemoteViews;
-import androidx.annotation.RequiresApi;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -21,7 +19,7 @@ import java.util.Map;
 
 /**
  * Renders home-screen widgets. One-row cells keep upstream's One UI dials; every larger cell
- * shows the Clear card. On Android 12+ each size the launcher reports gets its own
+ * shows the Clear card. Each size the launcher reports gets its own
  * layout, so resizing never waits for an app refresh.
  */
 public final class WidgetRenderer {
@@ -79,10 +77,7 @@ public final class WidgetRenderer {
             WidgetOptions options = AppPreferences.loadWidgetOptions(context, appWidgetId);
             Bundle host = manager.getAppWidgetOptions(appWidgetId);
             UsageCardState state = UsageCardState.load(context);
-            RemoteViews views = Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                    ? buildResponsive(context, appWidgetId, options, state, host)
-                    : build(context, appWidgetId, options, state, currentWidth(context, host),
-                            currentHeight(context, host), host);
+            RemoteViews views = buildResponsive(context, appWidgetId, options, state, host);
             manager.updateAppWidget(appWidgetId, views);
         } catch (RuntimeException exception) {
             DiagnosticLog.error(context, "widget", "render_failed", exception,
@@ -97,7 +92,7 @@ public final class WidgetRenderer {
         }
     }
 
-    /** Renders the widget for one size, as the editor preview and pre-12 hosts need. */
+    /** Renders the widget for one size in the editor preview. */
     static RemoteViews buildPreview(Context context, int appWidgetId, WidgetOptions options,
             float widthDp, float heightDp) {
         Bundle host = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId);
@@ -135,7 +130,6 @@ public final class WidgetRenderer {
         return keys;
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private static RemoteViews buildResponsive(Context context, int appWidgetId,
             WidgetOptions options, UsageCardState state, Bundle host) {
         Map<SizeF, RemoteViews> layouts = new LinkedHashMap<>();
@@ -231,26 +225,6 @@ public final class WidgetRenderer {
         return MaterialCardRenderer.build(context, appWidgetId,
                 WidgetOptions.defaults(), WidgetMeters.defaultVisible(), signedOut, DEFAULT_WIDTH_DP,
                 DEFAULT_HEIGHT_DP);
-    }
-
-    /** Portrait hosts are min width x max height; landscape hosts the reverse. */
-    private static float currentWidth(Context context, Bundle host) {
-        int min = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH);
-        int max = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH);
-        int width = landscape(context) ? firstPositive(max, min) : firstPositive(min, max);
-        return width > 0 ? width : DEFAULT_WIDTH_DP;
-    }
-
-    private static float currentHeight(Context context, Bundle host) {
-        int min = option(host, AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT);
-        int max = option(host, AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT);
-        int height = landscape(context) ? firstPositive(min, max) : firstPositive(max, min);
-        return height > 0 ? height : DEFAULT_HEIGHT_DP;
-    }
-
-    private static boolean landscape(Context context) {
-        return context.getResources().getConfiguration().orientation
-                == Configuration.ORIENTATION_LANDSCAPE;
     }
 
     private static int option(Bundle host, String key) {

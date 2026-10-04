@@ -9,7 +9,6 @@ import android.content.res.Resources;
 import android.graphics.Color;
 import android.graphics.Paint;
 import android.graphics.Typeface;
-import android.os.Build;
 import android.text.SpannableString;
 import android.text.Spanned;
 import android.text.style.TypefaceSpan;
@@ -17,7 +16,6 @@ import android.text.style.StyleSpan;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
-import androidx.annotation.RequiresApi;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
 
@@ -26,7 +24,7 @@ import java.util.concurrent.TimeUnit;
  * above one tonal panel per selected meter (title, value, a thick progress bar,
  * and when the window resets). Narrow widgets stack the first two
  * windows; wide widgets lay up to four out in two columns. Panels share the height, so the card
- * fills any size; names and values share a row above the progress bar and reset detail. On Android 12+ the colours are
+ * fills any size; names and values share a row above the progress bar and reset detail. The colours are
  * resolved by the launcher from the wallpaper palette and follow its night mode.
  */
 final class MaterialCardRenderer {
@@ -166,9 +164,7 @@ final class MaterialCardRenderer {
         renderHeader();
         for (int row = 0; row < ROWS.length; row++) {
             views.setViewVisibility(ROWS[row], row < rowCount ? View.VISIBLE : View.GONE);
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                margin(ROWS[row], RemoteViews.MARGIN_TOP, row == 0 ? FIRST_ROW_GAP : GAP);
-            }
+            margin(ROWS[row], RemoteViews.MARGIN_TOP, row == 0 ? FIRST_ROW_GAP : GAP);
         }
         for (int slot = 0; slot < PANELS.length; slot++) {
             int item = itemForSlot(slot);
@@ -209,17 +205,15 @@ final class MaterialCardRenderer {
     private void renderHeader() {
         boolean failure = state.signedIn && !state.refreshError.isEmpty();
         boolean mediumStatus = showUpdated || failure;
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            // Reapply can retain a host view's previous offset; the header shares the panel edge.
-            views.setViewLayoutMargin(R.id.md_header, RemoteViews.MARGIN_START, 0,
-                    TypedValue.COMPLEX_UNIT_PX);
-            for (int icon : new int[] {R.id.md_logo, R.id.md_refresh}) {
-                views.setViewLayoutWidth(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
-                views.setViewLayoutHeight(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
-            }
+        // Reapply can retain a host view's previous offset; the header shares the panel edge.
+        views.setViewLayoutMargin(R.id.md_header, RemoteViews.MARGIN_START, 0,
+                TypedValue.COMPLEX_UNIT_PX);
+        for (int icon : new int[] {R.id.md_logo, R.id.md_refresh}) {
+            views.setViewLayoutWidth(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
+            views.setViewLayoutHeight(icon, ICON * scale, TypedValue.COMPLEX_UNIT_DIP);
         }
         int iconWidth = Math.round(ICON * resources.getDisplayMetrics().density
-                * (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S ? scale : 1f));
+                * scale);
         boolean rtl = resources.getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
         float inset = failure ? SYNC_PROBLEM_INSET : REFRESH_END_INSET;
         int shift = Math.round(iconWidth * inset) * (rtl ? -1 : 1);
@@ -312,7 +306,7 @@ final class MaterialCardRenderer {
         int horizontal = px(PANEL_PADDING_H);
         int vertical = px(PANEL_PADDING_V);
         views.setViewPadding(CONTENTS[slot], horizontal, vertical, horizontal, vertical);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S && slot % 2 == 1) {
+        if (slot % 2 == 1) {
             margin(PANELS[slot], RemoteViews.MARGIN_START, GAP);
         }
 
@@ -346,16 +340,13 @@ final class MaterialCardRenderer {
         }
         textSize(RESETS[slot], stackedBalance ? VALUE_TEXT : DETAIL_TEXT);
         color(RESETS[slot], "setTextColor", stackedBalance ? Role.TEXT : Role.SECONDARY);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            panelGap(DETAILS[slot]);
-        }
+        panelGap(DETAILS[slot]);
     }
 
     private boolean balanceNeedsSecondLine(int slot, String title, String value) {
         float density = resources.getDisplayMetrics().density;
         int rowColumns = itemForSlot(slot / 2 * 2 + 1) >= 0 ? 2 : 1;
-        float gap = rowColumns == 1 ? 0f : Build.VERSION.SDK_INT >= Build.VERSION_CODES.S
-                ? px(GAP) : GAP * density;
+        float gap = rowColumns == 1 ? 0f : px(GAP);
         float available = (widthDp * density - 2 * px(PADDING) - gap) / rowColumns
                 - 2 * px(PANEL_PADDING_H);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -363,16 +354,14 @@ final class MaterialCardRenderer {
         paint.setTextSize(NAME_TEXT * textScale * density);
         float nameWidth = paint.measureText(title);
         paint.setTextSize(VALUE_TEXT * textScale * density);
-        // The XML name/value margin is fixed at 8dp, including on pre-Android 12 hosts.
+        // The XML name/value margin is fixed at 8dp.
         return nameWidth + 8f * density + paint.measureText(value) > available;
     }
 
     private void renderBar(int slot, int progress) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
-                    TypedValue.COMPLEX_UNIT_DIP);
-            panelGap(BARS[slot]);
-        }
+        views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
+                TypedValue.COMPLEX_UNIT_DIP);
+        panelGap(BARS[slot]);
         color(TRACKS[slot], "setColorFilter", Role.TRACK);
         color(FILLS[slot], "setColorFilter", Role.FILL);
         int level = 0;
@@ -399,28 +388,22 @@ final class MaterialCardRenderer {
     }
 
     /**
-     * Applies a colour role. On Android 12+ the launcher resolves the resource, so wallpaper
+     * Applies a colour role. The launcher resolves the resource, so wallpaper
      * colours and night mode stay live without a re-render.
      */
     private void color(int viewId, String method, Role role) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColor(viewId, method, role.resource);
-        } else {
-            views.setInt(viewId, method, context.getColor(role.resource));
-        }
+        views.setColor(viewId, method, role.resource);
     }
 
     private void textSize(int viewId, float sizeDp) {
         views.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_DIP, sizeDp * textScale);
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private void panelGap(int viewId) {
         views.setViewLayoutMargin(viewId, RemoteViews.MARGIN_TOP, PANEL_GAP,
                 TypedValue.COMPLEX_UNIT_DIP);
     }
 
-    @RequiresApi(Build.VERSION_CODES.S)
     private void margin(int viewId, int which, float valueDp) {
         views.setViewLayoutMargin(viewId, which, valueDp * scale, TypedValue.COMPLEX_UNIT_DIP);
     }

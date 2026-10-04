@@ -118,17 +118,6 @@ public class DialWidgetPaletteTest {
     }
 
     @Test
-    @Config(sdk = 30)
-    public void preAndroid12DialsUseTheSameResolvedNightRolesAsTheirSurface() {
-        Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);
-        View applied = apply(night, build(night, 100));
-        assertForegroundPalette(night, applied);
-        Bitmap widget = draw(applied);
-        assertEquals(night.getColor(R.color.widget_material_surface), widget.getPixel(130, 4));
-        widget.recycle();
-    }
-
-    @Test
     public void theRetainedRemoteViewsKeepTheirBackgroundOffInNightMode() {
         Context light = themedContext(Configuration.UI_MODE_NIGHT_NO);
         Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);

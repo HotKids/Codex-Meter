@@ -201,16 +201,6 @@ public class ColorOsWidgetAvailabilityTest {
     }
 
     @Test
-    @Config(sdk = 30)
-    public void devicesBeforeStockLauncherBranchDoNotOverrideProviderMetadata() {
-        ColorOsWidgetAppearance.publishPreviews(app, manager);
-
-        assertFalse(hidden(dial));
-        assertEquals(0, service.enumerations);
-        assertTrue(service.updates.isEmpty());
-    }
-
-    @Test
     public void hiddenMetadataPreservesEveryGenericAttributeExceptAddedPickerFlag()
             throws Exception {
         Definition generic = definition(dial.provider, DEFAULT_METADATA);

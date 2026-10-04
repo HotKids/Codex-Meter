@@ -43,7 +43,7 @@ final class ColorOsWidgetAppearance {
             // Transparent SRC_ATOP preserves the drawable's own RGB and alpha.
             views.setInt(surface, "setColorFilter", Color.TRANSPARENT);
         } else {
-            color(context, views, surface, R.color.widget_material_surface);
+            views.setColor(surface, "setColorFilter", R.color.widget_material_surface);
         }
         views.setInt(surface, "setImageAlpha", Math.round(opacity * 2.55f));
         geometry(context, views, surface, colorOs, dial, widthDp, heightDp);
@@ -54,7 +54,7 @@ final class ColorOsWidgetAppearance {
                 if (colorOs) {
                     views.setInt(panel, "setColorFilter", Color.TRANSPARENT);
                 } else {
-                    color(context, views, panel, R.color.widget_material_panel);
+                    views.setColor(panel, "setColorFilter", R.color.widget_material_panel);
                 }
             }
         }
@@ -62,9 +62,6 @@ final class ColorOsWidgetAppearance {
 
     private static void geometry(Context context, RemoteViews views, int surface, boolean colorOs,
             boolean dial, float widthDp, float heightDp) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return;
-        }
         // Reapply may reuse views after a host, orientation, or icon-size change.
         views.setViewLayoutHeight(android.R.id.background, ViewGroup.LayoutParams.MATCH_PARENT,
                 TypedValue.COMPLEX_UNIT_PX);
@@ -124,8 +121,7 @@ final class ColorOsWidgetAppearance {
     }
 
     static boolean isStockLauncher(Context context) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S
-                || !"oppo".equalsIgnoreCase(Build.MANUFACTURER)) {
+        if (!"oppo".equalsIgnoreCase(Build.MANUFACTURER)) {
             return false;
         }
         Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
@@ -174,9 +170,6 @@ final class ColorOsWidgetAppearance {
 
     private static void reconcileDialAvailability(Context context, AppWidgetManager manager,
             boolean colorOs) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return;
-        }
         try {
             ComponentName component = new ComponentName(context, CodexDialWidget.class);
             java.util.List<AppWidgetProviderInfo> providers = manager.getInstalledProvidersForPackage(
@@ -201,14 +194,6 @@ final class ColorOsWidgetAppearance {
         } catch (RuntimeException exception) {
             Log.w(TAG, "Widget picker availability update failed: "
                     + exception.getClass().getSimpleName());
-        }
-    }
-
-    private static void color(Context context, RemoteViews views, int id, int color) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColor(id, "setColorFilter", color);
-        } else {
-            views.setInt(id, "setColorFilter", context.getColor(color));
         }
     }
 }

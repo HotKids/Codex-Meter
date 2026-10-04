@@ -213,7 +213,7 @@ public class UsageCardModelTest {
     }
 
     @Test
-    @Config(sdk = {30, 35})
+    @Config(sdk = {31, 35})
     public void cardProviderKeepsClearAtItsLegalMinimumHeight() {
         Application app = RuntimeEnvironment.getApplication();
         int widgetId = 43;
@@ -232,7 +232,7 @@ public class UsageCardModelTest {
     }
 
     @Test
-    @Config(sdk = {30, 35})
+    @Config(sdk = {31, 35})
     public void dialProviderStillChangesToClearAfterVerticalExpansion() {
         Application app = RuntimeEnvironment.getApplication();
         int widgetId = 44;

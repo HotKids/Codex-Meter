@@ -650,7 +650,7 @@ public final class Ui {
     // ---------------------------------------------------------------------------------------
 
     /**
-     * Paints the system bars with the page background and, on Android 11+, draws edge to edge
+     * Paints the system bars with the page background and draws edge to edge
      * while padding {@code root} by the system-bar insets.
      */
     public static void configureSystemBars(Activity activity, View root, boolean dark) {
@@ -662,33 +662,24 @@ public final class Ui {
         window.setNavigationBarColor(barColor);
         window.setBackgroundDrawable(new ColorDrawable(barColor));
         window.getDecorView().setBackgroundColor(barColor);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
-            window.setNavigationBarContrastEnforced(false);
-            window.setDecorFitsSystemWindows(false);
-            WindowInsetsController insetsController = window.getInsetsController();
-            if (insetsController != null) {
-                int lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
-                        | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
-                insetsController.setSystemBarsAppearance(dark ? 0 : lightBars, lightBars);
-            }
-            int paddingLeft = root.getPaddingLeft();
-            int paddingTop = root.getPaddingTop();
-            int paddingRight = root.getPaddingRight();
-            int paddingBottom = root.getPaddingBottom();
-            root.setOnApplyWindowInsetsListener((view, windowInsets) -> {
-                Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
-                view.setPadding(paddingLeft + insets.left, paddingTop + insets.top,
-                        paddingRight + insets.right, insets.bottom + paddingBottom);
-                return windowInsets;
-            });
-            return;
+        window.setNavigationBarContrastEnforced(false);
+        window.setDecorFitsSystemWindows(false);
+        WindowInsetsController insetsController = window.getInsetsController();
+        if (insetsController != null) {
+            int lightBars = WindowInsetsController.APPEARANCE_LIGHT_STATUS_BARS
+                    | WindowInsetsController.APPEARANCE_LIGHT_NAVIGATION_BARS;
+            insetsController.setSystemBarsAppearance(dark ? 0 : lightBars, lightBars);
         }
-        int flags = View.SYSTEM_UI_FLAG_LAYOUT_STABLE;
-        if (!dark) {
-            flags |= View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
-                    | View.SYSTEM_UI_FLAG_LIGHT_NAVIGATION_BAR;
-        }
-        window.getDecorView().setSystemUiVisibility(flags);
+        int paddingLeft = root.getPaddingLeft();
+        int paddingTop = root.getPaddingTop();
+        int paddingRight = root.getPaddingRight();
+        int paddingBottom = root.getPaddingBottom();
+        root.setOnApplyWindowInsetsListener((view, windowInsets) -> {
+            Insets insets = windowInsets.getInsets(WindowInsets.Type.systemBars());
+            view.setPadding(paddingLeft + insets.left, paddingTop + insets.top,
+                    paddingRight + insets.right, insets.bottom + paddingBottom);
+            return windowInsets;
+        });
     }
 
     // ---------------------------------------------------------------------------------------
@@ -730,9 +721,6 @@ public final class Ui {
 
     /** Android 12+ system palette color by resource name, or {@code fallback}. */
     private static int systemColor(Context context, String name, int fallback) {
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.S) {
-            return fallback;
-        }
         int identifier = context.getResources().getIdentifier(name, "color", "android");
         if (identifier == 0) {
             return fallback;

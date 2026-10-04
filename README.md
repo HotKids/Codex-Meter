@@ -8,7 +8,7 @@ Codex Meter 将 ChatGPT 账户的会话限额、每周限额和剩余额度集�
 
 ## 下载与安装
 
-支持 **Android 11 及以上**。
+支持 **Android 12 及以上**。
 
 在 [发布页面](https://github.com/HotKids/Codex-Meter/releases/latest) 下载 `.apk` 文件并安装。如果系统提示安装来源受限，请允许当前浏览器或文件管理器安装应用。
 

@@ -7,7 +7,6 @@ import android.content.pm.PackageInfo;
 import android.content.pm.PackageInstaller;
 import android.content.pm.PackageManager;
 import android.content.pm.Signature;
-import android.os.Build;
 import android.os.SystemClock;
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -132,9 +131,7 @@ public final class UpdateInstaller {
                 PackageInstaller.SessionParams.MODE_FULL_INSTALL);
         params.setAppPackageName(context.getPackageName());
         params.setSize(apkBytes);
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
-        }
+        params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
         int sessionId = installer.createSession(params);
         DiagnosticLog.info(context, "update", "installer_session_created",
                 "session_id", sessionId,
@@ -198,7 +195,7 @@ public final class UpdateInstaller {
     private static PreparedUpdate verifyPackage(Context context, GitHubRelease release, File apk)
             throws Exception {
         PackageManager manager = context.getPackageManager();
-        int flags = signingInfoFlags();
+        int flags = PackageManager.GET_SIGNING_CERTIFICATES;
         PackageInfo archive = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
         if (archive == null) {
             throw new SecurityException(context.getString(R.string.updates_error_apk_unreadable));
@@ -218,8 +215,8 @@ public final class UpdateInstaller {
             throw new SecurityException(
                     context.getString(R.string.updates_error_signature_mismatch));
         }
-        long installedCode = longVersionCode(installed);
-        long archiveCode = longVersionCode(archive);
+        long installedCode = installed.getLongVersionCode();
+        long archiveCode = archive.getLongVersionCode();
         if (archiveCode < installedCode) {
             throw new DowngradeNotSupportedException(
                     context.getString(R.string.updates_error_downgrade_unsupported));
@@ -227,24 +224,9 @@ public final class UpdateInstaller {
         return new PreparedUpdate(apk, archive.versionName, archiveCode);
     }
 
-    @SuppressWarnings("deprecation")
-    private static int signingInfoFlags() {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                ? PackageManager.GET_SIGNING_CERTIFICATES : PackageManager.GET_SIGNATURES;
-    }
-
-    @SuppressWarnings("deprecation")
-    private static long longVersionCode(PackageInfo info) {
-        return Build.VERSION.SDK_INT >= Build.VERSION_CODES.P
-                ? info.getLongVersionCode() : info.versionCode;
-    }
-
-    @SuppressWarnings("deprecation")
     private static Signature[] currentSigners(PackageInfo info) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.P && info.signingInfo != null) {
-            return info.signingInfo.getApkContentsSigners();
-        }
-        return info.signatures == null ? new Signature[0] : info.signatures;
+        return info.signingInfo == null ? new Signature[0]
+                : info.signingInfo.getApkContentsSigners();
     }
 
     /** True when both sets of signers are identical and non-empty. */

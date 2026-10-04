@@ -105,15 +105,6 @@ public class ColorOsWidgetAppearanceTest {
     }
 
     @Test
-    @Config(sdk = 30)
-    public void preAndroidTwelveOppoHostsKeepTheOriginalPixels() {
-        for (Size size : SIZES) {
-            assertPixelsEqual(apply(size, original(size, options(100))),
-                    apply(size, dispatched(size, options(100))));
-        }
-    }
-
-    @Test
     @Config(qualifiers = "zh-rCN-notnight-xhdpi")
     public void colorOsLightLayersKeepAllForegroundPixelsAndRenderReviewImages() throws Exception {
         assertColorOsLayers(0xFFF2F3F4, 0xFFFAFAFA, "light");

@@ -7,7 +7,6 @@ import android.app.AlarmManager;
 import android.app.PendingIntent;
 import android.content.Context;
 import android.content.Intent;
-import android.os.Build;
 
 /** Schedules an alarm at each usage window's reset for {@link ResetAlertReceiver}. */
 public final class ResetAlertScheduler {
@@ -62,9 +61,6 @@ public final class ResetAlertScheduler {
     }
 
     public static boolean canScheduleExact(Context context) {
-        if (Build.VERSION.SDK_INT < 31) {
-            return true;
-        }
         AlarmManager alarmManager = (AlarmManager) context.getSystemService(Context.ALARM_SERVICE);
         return alarmManager != null && alarmManager.canScheduleExactAlarms();
     }
@@ -76,7 +72,7 @@ public final class ResetAlertScheduler {
     static void setWakeUpAlarm(AlarmManager alarmManager, long triggerAtMillis,
             PendingIntent operation) {
         try {
-            if (Build.VERSION.SDK_INT < 31 || alarmManager.canScheduleExactAlarms()) {
+            if (alarmManager.canScheduleExactAlarms()) {
                 alarmManager.setExactAndAllowWhileIdle(AlarmManager.RTC_WAKEUP, triggerAtMillis,
                         operation);
             } else {

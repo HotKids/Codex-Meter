@@ -74,11 +74,11 @@ description also covers available reset credits. Missing data adds a status afte
 description instead of removing the item. Editor changes take effect only after saving.
 Dials describe manual refresh in the app; cards also describe their visible refresh button.
 
-Home providers use the standard Android picker contract on all launchers. Android 12 and
-later use one `previewLayout` per provider: the 2×1 dials or the populated 2×2 card. Larger
+Home providers use the standard Android picker contract on all supported launchers, with
+one `previewLayout` per provider: the 2×1 dials or the populated 2×2 card. Larger
 placements use the same card provider and its standard resize bounds. Home providers do not
 declare Samsung-specific preview sizes or supported-cell metadata; Samsung lock-screen
-providers retain their separate integration. Android 11 uses the platform preview fallback.
+providers retain their separate integration.
 Launcher chrome and preview measurement remain host-controlled and require device acceptance.
 If a host omits its precise size list, rendering uses the portrait and landscape content
 bounds from its MIN/MAX options. The predefined size buckets apply only when no usable

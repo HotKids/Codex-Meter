@@ -45,8 +45,6 @@ final class SamsungLockWidgetSupport {
     private static final int SQUARE_WIDTH_DP = 56;
     private static final int WIDE_WIDTH_DP = 124;
     private static final float WIDE_ASPECT_RATIO = (float) WIDE_WIDTH_DP / DEFAULT_HEIGHT_DP;
-    /** {@code AppWidgetManager.OPTION_APPWIDGET_SIZES}, which only exists on API 31+. */
-    private static final String OPTION_APPWIDGET_SIZES = "appWidgetSizes";
 
     private static final String ACTION_OPEN = AppConstants.action("LOCK_WIDGET_OPEN");
     private static final String ACTION_RESET = AppConstants.action("LOCK_WIDGET_RESET");
@@ -586,7 +584,7 @@ final class SamsungLockWidgetSupport {
         }
         try {
             Bundle options = manager.getAppWidgetOptions(appWidgetId);
-            List<SizeF> sizes = options.getParcelableArrayList(OPTION_APPWIDGET_SIZES);
+            List<SizeF> sizes = options.getParcelableArrayList(AppWidgetManager.OPTION_APPWIDGET_SIZES);
             SizeF best = sizes == null || sizes.isEmpty() ? null : bestSize(sizes, shape);
             if (best != null) {
                 return new int[] {Math.round(best.getWidth()), Math.round(best.getHeight())};

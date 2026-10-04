@@ -5,7 +5,6 @@ import dev.bennett.codexmeter.WidgetMeters;
 
 import android.content.Context;
 import android.content.res.Configuration;
-import android.os.Build;
 import android.view.View;
 import android.widget.RemoteViews;
 import java.util.List;
@@ -31,9 +30,8 @@ final class DialWidgetRenderer {
             List<String> keys, UsageCardState state) {
         RemoteViews views = new RemoteViews(context.getPackageName(),
                 R.layout.widget_rings);
-        applyBackground(context, views, options);
+        applyBackground(views, options);
         Context english = english(context);
-        int text = context.getColor(R.color.widget_material_text);
         for (int index = 0; index < RING_ARC_LAYERS.length; index++) {
             boolean shown = index < keys.size();
             views.setViewVisibility(RING_SECTIONS[index], shown ? View.VISIBLE : View.GONE);
@@ -47,7 +45,7 @@ final class DialWidgetRenderer {
                 int viewId = RING_ARC_LAYERS[index][layer];
                 views.setImageViewBitmap(viewId,
                         WidgetGraphics.twoDialArc(layer == 0 ? 100 : meter.progress));
-                applyColor(context, views, viewId, DIAL_COLORS[layer]);
+                views.setColor(viewId, "setColorFilter", DIAL_COLORS[layer]);
             }
             String value = WidgetMeters.NEXT_RESET.equals(key) && meter.resetAtMillis > state.nowMillis
                     ? NowBarCopy.compactDuration(meter.resetAtMillis - state.nowMillis) : meter.value;
@@ -58,16 +56,11 @@ final class DialWidgetRenderer {
                             : R.drawable.widget_dial_icon_reset);
             views.setContentDescription(RING_ICONS[index],
                     description(english, meter));
-            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-                // Resolved by the launcher, so wallpaper colours and night mode stay live.
-                views.setColor(RING_VALUES[index], "setTextColor",
-                        R.color.widget_material_text);
-                views.setColor(RING_ICONS[index], "setColorFilter",
-                        R.color.widget_material_text);
-            } else {
-                views.setTextColor(RING_VALUES[index], text);
-                views.setInt(RING_ICONS[index], "setColorFilter", text);
-            }
+            // Resolved by the launcher, so wallpaper colours and night mode stay live.
+            views.setColor(RING_VALUES[index], "setTextColor",
+                    R.color.widget_material_text);
+            views.setColor(RING_ICONS[index], "setColorFilter",
+                    R.color.widget_material_text);
         }
         views.setOnClickPendingIntent(android.R.id.background,
                 WidgetActions.openApp(context, appWidgetId));
@@ -89,20 +82,12 @@ final class DialWidgetRenderer {
                 meter.title, meter.value);
     }
 
-    private static void applyBackground(Context context, RemoteViews views, WidgetOptions options) {
+    private static void applyBackground(RemoteViews views, WidgetOptions options) {
         views.setViewVisibility(R.id.dial_surface, options.opacity <= 0 ? View.GONE : View.VISIBLE);
         if (options.opacity <= 0) {
             return;
         }
-        applyColor(context, views, R.id.dial_surface, R.color.widget_material_surface);
+        views.setColor(R.id.dial_surface, "setColorFilter", R.color.widget_material_surface);
         views.setInt(R.id.dial_surface, "setImageAlpha", Math.round(options.opacity * 2.55f));
-    }
-
-    private static void applyColor(Context context, RemoteViews views, int viewId, int color) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
-            views.setColor(viewId, "setColorFilter", color);
-        } else {
-            views.setInt(viewId, "setColorFilter", context.getColor(color));
-        }
     }
 }

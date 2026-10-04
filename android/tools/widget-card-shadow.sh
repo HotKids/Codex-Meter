@@ -91,7 +91,7 @@ output = ('<?xml version="1.0" encoding="utf-8"?>\n'
 (layouts / "widget_material_preview.xml").write_text(output + ET.tostring(root, encoding="unicode") + "\n")
 
 # Preserve the current generic provider contract while hiding only the ColorOS picker entry.
-providers = layouts.parent / "xml-v31"
+providers = layouts.parent / "xml"
 dial = (providers / "codex_dial_widget_info.xml").read_text()
 def hidden_features(match):
     features = match.group(1).split("|")

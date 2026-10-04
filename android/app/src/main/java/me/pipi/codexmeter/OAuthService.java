@@ -11,7 +11,6 @@ import android.content.Intent;
 import android.content.pm.ServiceInfo;
 import android.graphics.drawable.Icon;
 import android.net.Uri;
-import android.os.Build;
 import android.os.IBinder;
 import android.os.SystemClock;
 import java.io.BufferedReader;
@@ -82,7 +81,7 @@ public final class OAuthService extends Service {
         }
         if (running.compareAndSet(false, true)) {
             cancelled = false;
-            startForegroundCompat(buildNotification(getString(R.string.auth_sign_in_preparing),
+            startSignInForeground(buildNotification(getString(R.string.auth_sign_in_preparing),
                     null));
             executor.execute(this::runFlow);
         } else {
@@ -477,16 +476,12 @@ public final class OAuthService extends Service {
     }
 
     private void updateNotification(String text, String authUrl) {
-        startForegroundCompat(buildNotification(text, authUrl));
+        startSignInForeground(buildNotification(text, authUrl));
     }
 
-    private void startForegroundCompat(Notification notification) {
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-            startForeground(NOTIFICATION_ID, notification,
-                    ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
-        } else {
-            startForeground(NOTIFICATION_ID, notification);
-        }
+    private void startSignInForeground(Notification notification) {
+        startForeground(NOTIFICATION_ID, notification,
+                ServiceInfo.FOREGROUND_SERVICE_TYPE_DATA_SYNC);
     }
 
     /** Constant-time comparison so the OAuth state cannot be probed byte by byte. */

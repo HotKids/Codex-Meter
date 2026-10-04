@@ -110,7 +110,7 @@ public final class WidgetUpgradeRepair {
         try {
             PackageInfo info = context.getPackageManager()
                     .getPackageInfo(context.getPackageName(), 0);
-            return Build.VERSION.SDK_INT >= 28 ? info.getLongVersionCode() : info.versionCode;
+            return info.getLongVersionCode();
         } catch (Exception exception) {
             return 0L;
         }

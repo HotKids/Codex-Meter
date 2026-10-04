@@ -13,8 +13,12 @@
         <item name="buttonCornerRadius">999dp</item>
     </style>
 
-    <!-- Same One UI blues as fallback when Material You system colors are unavailable. -->
-    <style name="AppTheme.MaterialYou" parent="AppTheme" />
+    <!-- Material You follows the system accent palette. -->
+    <style name="AppTheme.MaterialYou" parent="AppTheme">
+        <item name="colorPrimary">@android:color/system_accent1_600</item>
+        <item name="colorPrimaryDark">@android:color/system_accent1_700</item>
+        <item name="colorControlActivated">@android:color/system_accent1_600</item>
+    </style>
 
     <style name="App.ContainedPrimaryColorButtonTheme" parent="OneUI.ContainedPrimaryColorButtonTheme">
         <item name="buttonCornerRadius">999dp</item>

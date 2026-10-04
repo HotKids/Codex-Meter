@@ -1,25 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!--
-        Material home widget roles. Android 12+ maps them to the wallpaper-derived system
-        palette (values-v31); older releases use this fixed blue scheme. The unsuffixed
-        roles follow the night mode of whoever resolves them (values-night aliases).
-    -->
-    <color name="widget_material_surface_light">#FFEEF0FF</color>
-    <color name="widget_material_panel_light">#FFDCE2F9</color>
-    <color name="widget_material_track_light">#FFC0C8E8</color>
-    <color name="widget_material_fill_light">#FF475D92</color>
-    <color name="widget_material_text_light">#FF1A1B21</color>
-    <color name="widget_material_secondary_light">#FF45464F</color>
-    <color name="widget_material_accent_light">#FF475D92</color>
+    <!-- Material You roles from the system palette (tone in the comment). -->
+    <color name="widget_material_surface_light">@android:color/system_accent2_50</color>       <!-- S95 -->
+    <color name="widget_material_panel_light">@android:color/system_accent2_100</color>        <!-- S90 -->
+    <color name="widget_material_track_light">@android:color/system_accent2_200</color>        <!-- S80 -->
+    <color name="widget_material_fill_light">@android:color/system_accent1_600</color>         <!-- P40 -->
+    <color name="widget_material_text_light">@android:color/system_neutral1_900</color>        <!-- N10 -->
+    <color name="widget_material_secondary_light">@android:color/system_neutral2_700</color>   <!-- NV30 -->
+    <color name="widget_material_accent_light">@android:color/system_accent1_600</color>       <!-- P40 -->
 
-    <color name="widget_material_surface_dark">#FF1A1B21</color>
-    <color name="widget_material_panel_dark">#FF283041</color>
-    <color name="widget_material_track_dark">#FF3E4759</color>
-    <color name="widget_material_fill_dark">#FFB0C6FF</color>
-    <color name="widget_material_text_dark">#FFE3E2E9</color>
-    <color name="widget_material_secondary_dark">#FFC5C6D0</color>
-    <color name="widget_material_accent_dark">#FFB0C6FF</color>
+    <color name="widget_material_surface_dark">@android:color/system_neutral1_900</color>      <!-- N10 -->
+    <color name="widget_material_panel_dark">@android:color/system_accent2_800</color>         <!-- S20 -->
+    <color name="widget_material_track_dark">@android:color/system_accent2_700</color>         <!-- S30 -->
+    <color name="widget_material_fill_dark">@android:color/system_accent1_200</color>          <!-- P80 -->
+    <color name="widget_material_text_dark">@android:color/system_neutral1_50</color>          <!-- N95 -->
+    <color name="widget_material_secondary_dark">@android:color/system_neutral2_200</color>    <!-- NV80 -->
+    <color name="widget_material_accent_dark">@android:color/system_accent1_200</color>        <!-- P80 -->
 
     <color name="widget_material_surface">@color/widget_material_surface_light</color>
     <color name="widget_material_panel">@color/widget_material_panel_light</color>

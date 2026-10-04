@@ -272,14 +272,6 @@ public class MaterialCardHeaderTest {
     }
 
     @Test
-    @Config(sdk = 30)
-    public void oldHostsKeepTheOriginalHeaderStartWithoutAnUnsupportedMarginCall() {
-        View applied = build(350, 200, false, 100);
-        View header = applied.findViewById(R.id.md_header);
-        assertEquals(0, ((ViewGroup.MarginLayoutParams) header.getLayoutParams()).getMarginStart());
-    }
-
-    @Test
     public void writesSourceBasedHeaderPreview() throws Exception {
         PreviewSheet sheet = new PreviewSheet("material-source-header");
         float density = context().getResources().getDisplayMetrics().density;

@@ -8,7 +8,6 @@ import android.graphics.Paint;
 import android.graphics.RectF;
 import android.graphics.Typeface;
 import android.graphics.drawable.Drawable;
-import android.os.Build;
 import android.util.DisplayMetrics;
 
 /** Battery-widget-inspired monochrome dials for Samsung lock and AOD surfaces. */
@@ -169,12 +168,10 @@ final class SamsungLockGraphics {
                 top + (48.0f * scale), paint);
     }
 
-    /** Samsung's system font at weight 600 where supported, bold before Android P. */
+    /** Samsung's system font at weight 600. */
     private static Typeface semiBoldTypeface() {
-        return Build.VERSION.SDK_INT >= 28
-                ? Typeface.create(Typeface.create(SAMSUNG_FONT_FAMILY, Typeface.NORMAL),
-                        SEMI_BOLD_WEIGHT, false)
-                : Typeface.create(SAMSUNG_FONT_FAMILY, Typeface.BOLD);
+        return Typeface.create(Typeface.create(SAMSUNG_FONT_FAMILY, Typeface.NORMAL),
+                SEMI_BOLD_WEIGHT, false);
     }
 
     private static int clampPercent(int value) {
