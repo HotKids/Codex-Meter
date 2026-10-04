@@ -118,7 +118,7 @@ public class UsageCardPreviewTest {
     }
 
     @Test
-    @Config(sdk = {26, 35}, qualifiers = "zh-rCN-xhdpi")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN-xhdpi")
     public void clearTypographyKeepsItsHeightBasedSizeWhenTheHostIsBetweenResponsiveSizes()
             throws Exception {
         Context context = RuntimeEnvironment.getApplication();
@@ -180,7 +180,7 @@ public class UsageCardPreviewTest {
     }
 
     @Test
-    @Config(sdk = {28, 35}, qualifiers = "zh-rCN-land-xhdpi")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN-land-xhdpi")
     public void dialGraphicsAdaptToShortHostsAndKeepVerticalInsets() throws Exception {
         Context context = RuntimeEnvironment.getApplication();
         UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
@@ -243,7 +243,7 @@ public class UsageCardPreviewTest {
     }
 
     @Test
-    @Config(sdk = {26, 28, 35}, qualifiers = "zh-rCN-xhdpi")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN-xhdpi")
     public void dialColumnsStayInsideTheMinimumHostWidth() throws Exception {
         Context context = RuntimeEnvironment.getApplication();
         UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
@@ -287,7 +287,7 @@ public class UsageCardPreviewTest {
     }
 
     @Test
-    @Config(sdk = {26, 35}, qualifiers = "zh-rCN-xhdpi")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN-xhdpi")
     public void dialValuesAccommodateTheSystemFontScale() throws Exception {
         RuntimeEnvironment.setFontScale(1.3f);
         try {

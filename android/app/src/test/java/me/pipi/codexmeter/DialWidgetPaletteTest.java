@@ -118,7 +118,7 @@ public class DialWidgetPaletteTest {
     }
 
     @Test
-    @Config(sdk = 28)
+    @Config(sdk = 30)
     public void preAndroid12DialsUseTheSameResolvedNightRolesAsTheirSurface() {
         Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);
         View applied = apply(night, build(night, 100));

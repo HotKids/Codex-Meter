@@ -106,6 +106,7 @@ jobs:
           apk="android/dist/CodexMeter-me.pipi.codexmeter-$RELEASE_VERSION.apk"
           badging="$("$ANDROID_HOME/build-tools/37.0.0/aapt" dump badging "$apk")"
           grep -Fq "package: name='me.pipi.codexmeter' versionCode='$RELEASE_CODE' versionName='$RELEASE_VERSION'" <<< "$badging"
+          grep -Fxq "sdkVersion:'30'" <<< "$badging"
           grep -Fxq "targetSdkVersion:'37'" <<< "$badging"
           grep -Fq "launchable-activity: name='me.pipi.codexmeter.MainActivity'" <<< "$badging"
           cd android/dist

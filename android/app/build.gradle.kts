@@ -11,7 +11,7 @@ android {
 
     defaultConfig {
         applicationId = "me.pipi.codexmeter"
-        minSdk = 26
+        minSdk = 30
         targetSdk = 37
         versionCode = 3
         versionName = "0.2"

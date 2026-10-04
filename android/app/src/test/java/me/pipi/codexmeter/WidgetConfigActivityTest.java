@@ -270,7 +270,7 @@ public class WidgetConfigActivityTest {
     }
 
     @Test
-    @Config(sdk = {26, 35}, qualifiers = "zh-rCN")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN")
     public void minimumHeightCardProviderKeepsAllControlsAndCardRefreshHint() throws Exception {
         bindProvider(CodexUsageWidget.class, 110);
         saveSelection(WidgetOptions.USAGE_CREDITS);
@@ -282,7 +282,7 @@ public class WidgetConfigActivityTest {
     }
 
     @Test
-    @Config(sdk = {26, 35}, qualifiers = "zh-rCN")
+    @Config(sdk = {30, 35}, qualifiers = "zh-rCN")
     public void remainingCreditsOnlyShrunkToOneRowKeepsTheRenderedWeeklySelection()
             throws Exception {
         AppWidgetManager manager = bindProvider(CodexDialWidget.class, 170);

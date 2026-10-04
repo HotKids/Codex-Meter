@@ -29,7 +29,7 @@ import org.robolectric.annotation.GraphicsMode;
 
 /** Balances keep their full amount when a narrow card moves it below the label. */
 @RunWith(RobolectricTestRunner.class)
-@Config(sdk = {26, 35}, application = Application.class, qualifiers = "zh-rCN-notnight-xhdpi")
+@Config(sdk = {30, 35}, application = Application.class, qualifiers = "zh-rCN-notnight-xhdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class MaterialCardBalanceLayoutTest {
     private static final String AMOUNT = "62,437.29";

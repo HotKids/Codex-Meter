@@ -105,7 +105,7 @@ public class ColorOsWidgetAppearanceTest {
     }
 
     @Test
-    @Config(sdk = 28)
+    @Config(sdk = 30)
     public void preAndroidTwelveOppoHostsKeepTheOriginalPixels() {
         for (Size size : SIZES) {
             assertPixelsEqual(apply(size, original(size, options(100))),
