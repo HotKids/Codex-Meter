@@ -13,6 +13,10 @@ these files directly. Both the Gradle signing configuration and the build wrappe
 check the fixed certificate. The wrapper also requires exactly one APK signer.
 Missing material fails the build; it never creates a replacement key.
 
+Release APKs explicitly compress DEX files with `packaging.dex.useLegacyPackaging`.
+The build wrapper verifies compression to prevent a higher minimum SDK from
+silently increasing the download size.
+
 The owner's recovery backup is `/Users/joey/Desktop/Codex-Meter-Signing-Backup/`.
 It contains the identical keystore and password files, the public certificate,
 and recovery instructions. Keep this folder private and retain another protected

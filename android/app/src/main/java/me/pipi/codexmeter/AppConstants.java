@@ -4,8 +4,8 @@ import android.os.Build;
 
 /** Release identity, OAuth/backend endpoints, and internal broadcast contract for the phone. */
 public final class AppConstants {
-    public static final int VERSION_CODE = 4;
-    public static final String VERSION_NAME = "0.3";
+    public static final int VERSION_CODE = 5;
+    public static final String VERSION_NAME = "0.3.1";
 
     /**
      * Broadcast actions and the internal permission are namespaced by the installed application
@@ -62,7 +62,7 @@ public final class AppConstants {
         String release = Build.VERSION.RELEASE == null ? "unknown" : Build.VERSION.RELEASE;
         String model = Build.MODEL == null ? "Android" : Build.MODEL;
         // Keep the literal version in sync with VERSION_NAME; release checks grep for it.
-        return "codex-meter-android/0.3 (Android " + release + "; " + model + ")";
+        return "codex-meter-android/0.3.1 (Android " + release + "; " + model + ")";
     }
 
     public static String updaterUserAgent() {

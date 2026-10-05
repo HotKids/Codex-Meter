@@ -13,8 +13,8 @@ android {
         applicationId = "me.pipi.codexmeter"
         minSdk = 31
         targetSdk = 37
-        versionCode = 4
-        versionName = "0.3"
+        versionCode = 5
+        versionName = "0.3.1"
         providers.gradleProperty("demoVersionCode").orNull?.toIntOrNull()?.let {
             versionCode = it
         }
@@ -76,6 +76,7 @@ android {
     }
 
     packaging {
+        dex.useLegacyPackaging = true
         resources.excludes += setOf("META-INF/AL2.0", "META-INF/LGPL2.1", "META-INF/LICENSE*")
     }
 

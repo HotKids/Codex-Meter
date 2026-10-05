@@ -2,7 +2,7 @@
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "$0")" && pwd)"
-VERSION_NAME="0.3"
+VERSION_NAME="0.3.1"
 DIST="$ROOT/dist"
 SIGNING_DIR="$ROOT/.local-signing"
 KEYSTORE="$SIGNING_DIR/codex-meter-local.p12"
@@ -39,6 +39,18 @@ if [[ ! "$EXPECTED_CERT_SHA" =~ ^[0-9a-f]{64}$ || "$SIGNER_COUNT" != "1" || "$AC
   echo "Phone APK must have exactly one signer matching the fixed release certificate." >&2
   exit 1
 fi
+
+# A higher minSdk otherwise switches the default to uncompressed DEX files.
+python3 - "$SOURCE_APK" <<'PY'
+import sys
+from zipfile import ZIP_DEFLATED, ZipFile
+
+with ZipFile(sys.argv[1]) as apk:
+    dex_files = [entry for entry in apk.infolist() if entry.filename.endswith(".dex")]
+    if not dex_files or any(entry.compress_type != ZIP_DEFLATED for entry in dex_files):
+        raise SystemExit("Phone APK must package all DEX files with compression.")
+PY
+
 cp "$SOURCE_APK" "$OUT"
 printf '%s\n' "$PHONE_SIGNER_REPORT"
 (cd "$DIST" && sha256sum "$(basename "$OUT")") | tee "$DIST/SHA256SUMS.txt"
