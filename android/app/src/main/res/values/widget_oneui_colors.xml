@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- SmartThings TV colors stay separate from the generic dynamic widget palette. -->
+    <color name="widget_oneui_surface_light">#FCFCFF</color>
+    <color name="widget_oneui_surface_dark">#010102</color>
+    <color name="widget_oneui_surface">@color/widget_oneui_surface_light</color>
+    <color name="widget_oneui_panel_light">#F2F2F5</color>
+    <color name="widget_oneui_panel_dark">#29292C</color>
+    <color name="widget_oneui_panel">@color/widget_oneui_panel_light</color>
+</resources>

@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Consumer IR's QuickCard preview: device_back_bg and device_middle_bg. -->
+    <color name="widget_coloros_classic_surface">#FFFFFF</color>
+    <!-- Composite its #0A000000 panel over white before the shared opacity is applied. -->
+    <color name="widget_coloros_classic_panel">#F5F5F5</color>
+</resources>

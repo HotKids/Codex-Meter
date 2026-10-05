@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="utf-8"?>
+<scale xmlns:android="http://schemas.android.com/apk/res/android"
+    android:scaleGravity="start|fill_vertical" android:scaleWidth="100%">
+    <shape android:shape="rectangle">
+        <gradient android:angle="0" android:startColor="@color/widget_classic_progress_start"
+            android:endColor="@color/widget_classic_progress_normal" />
+        <corners android:radius="999dp" />
+    </shape>
+</scale>

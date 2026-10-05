@@ -106,14 +106,15 @@ public class NowBarManagerTextTest {
         baseBuilder.setAccessible(true);
         Notification notification = ((Notification.Builder) baseBuilder.invoke(null, app,
                 content, true)).build();
-        assertEquals(R.drawable.ic_notification, notification.getSmallIcon().getResId());
+        assertEquals(R.drawable.ic_live_capsule, notification.getSmallIcon().getResId());
+        assertEquals(R.drawable.ic_notification, notification.actions[0].getIcon().getResId());
         assertNull(notification.getLargeIcon());
         Notification samsung = samsungNotification(content);
         android.graphics.drawable.Icon chip = samsung.extras.getParcelable(
                 "android.ongoingActivityNoti.chipIcon");
         android.graphics.drawable.Icon expanded = samsung.extras.getParcelable(
                 "android.ongoingActivityNoti.nowbarIcon");
-        assertEquals(R.drawable.ic_codex_logo_on_accent, chip.getResId());
+        assertEquals(R.drawable.ic_live_capsule_samsung, chip.getResId());
         assertEquals(R.mipmap.ic_launcher, expanded.getResId());
     }
 

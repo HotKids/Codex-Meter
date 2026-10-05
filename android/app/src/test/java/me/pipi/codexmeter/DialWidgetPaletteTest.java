@@ -19,16 +19,44 @@ import android.widget.FrameLayout;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import org.junit.Test;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
+import org.robolectric.shadows.ShadowBuild;
 
 @RunWith(RobolectricTestRunner.class)
 @Config(sdk = 35, application = Application.class, qualifiers = "mdpi")
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class DialWidgetPaletteTest {
+    @Before
+    public void usePixelHost() {
+        ShadowBuild.setManufacturer("Google");
+        ShadowBuild.setModel("Pixel 11 Pro");
+    }
+
+    @Test
+    public void neutralLayersFollowAppearanceWhileProgressKeepsTheDynamicPrimary() {
+        Context light = themedContext(Configuration.UI_MODE_NIGHT_NO);
+        Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);
+        assertEquals(light.getColor(android.R.color.system_accent2_50),
+                light.getColor(R.color.widget_material_surface));
+        assertEquals(light.getColor(android.R.color.system_accent2_100),
+                light.getColor(R.color.widget_material_panel));
+        assertEquals(night.getColor(android.R.color.system_accent2_800),
+                night.getColor(R.color.widget_material_surface));
+        assertEquals(night.getColor(android.R.color.system_accent2_700),
+                night.getColor(R.color.widget_material_panel));
+        assertEquals(0x1A000000, light.getColor(R.color.widget_material_track));
+        assertEquals(0x33FCFCFF, night.getColor(R.color.widget_material_track));
+        assertEquals(light.getColor(android.R.color.system_accent1_600),
+                light.getColor(R.color.widget_material_fill));
+        assertEquals(night.getColor(android.R.color.system_accent1_200),
+                night.getColor(R.color.widget_material_fill));
+    }
+
     @Test
     public void pickerShowsArcsWithoutAProviderUpdate() {
         Context host = themedContext(Configuration.UI_MODE_NIGHT_NO);
@@ -185,12 +213,24 @@ public class DialWidgetPaletteTest {
     private static boolean hasOpaquePixel(Bitmap bitmap, int color) {
         for (int y = 0; y < bitmap.getHeight(); y++) {
             for (int x = 0; x < bitmap.getWidth(); x++) {
-                if (bitmap.getPixel(x, y) == color) {
+                if (samePaintColor(bitmap.getPixel(x, y), color)) {
                     return true;
                 }
             }
         }
         return false;
+    }
+
+    private static boolean samePaintColor(int pixel, int expected) {
+        int alpha = Color.alpha(expected);
+        if (Color.alpha(pixel) != alpha) return false;
+        // Low-alpha tracks quantize RGB when Canvas stores premultiplied pixels.
+        for (int shift : new int[] {0, 8, 16}) {
+            int actual = Math.round(((pixel >> shift) & 255) * alpha / 255f);
+            int wanted = Math.round(((expected >> shift) & 255) * alpha / 255f);
+            if (Math.abs(actual - wanted) > 1) return false;
+        }
+        return true;
     }
 
     private static int opaquePixels(Bitmap bitmap, int color) {

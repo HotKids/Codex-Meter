@@ -158,8 +158,7 @@ public final class OAuthClient {
                     "duration_ms", SystemClock.elapsedRealtime() - started,
                     "response_bytes", body.getBytes(StandardCharsets.UTF_8).length);
             if (!isSuccessful(status)) {
-                throw responseError(context, body, R.string.auth_error_authentication_http,
-                        status);
+                throw tokenEndpointFailure(context, operation, status, body);
             }
             return body;
         } catch (Exception exception) {
@@ -209,6 +208,49 @@ public final class OAuthClient {
         return serverMessage.isEmpty()
                 ? userError(context, fallbackRes, args)
                 : new Exception(serverMessage);
+    }
+
+    static TokenEndpointException tokenEndpointFailure(Context context, String operation,
+            int status, String body) {
+        String errorCode = "";
+        try {
+            Object error = new JSONObject(body == null ? "" : body).opt("error");
+            if (error instanceof String) {
+                errorCode = (String) error;
+            }
+        } catch (Exception ignored) {
+            // Gateway responses do not establish an OAuth rejection.
+        }
+        Exception message = responseError(context, body, R.string.auth_error_authentication_http,
+                status);
+        return new TokenEndpointException(status, errorCode,
+                "oauth_token_refresh".equals(operation), message);
+    }
+
+    static final class TokenEndpointException extends Exception {
+        final int status;
+        final String errorCode;
+        private final boolean refreshTokenRequest;
+        private final String localizedMessage;
+
+        TokenEndpointException(int status, String errorCode, boolean refreshTokenRequest,
+                Exception message) {
+            super(message.getMessage());
+            this.status = status;
+            this.errorCode = errorCode;
+            this.refreshTokenRequest = refreshTokenRequest;
+            this.localizedMessage = message.getLocalizedMessage();
+        }
+
+        boolean rejectsRefreshToken() {
+            return refreshTokenRequest && status >= 400 && status < 500
+                    && "invalid_grant".equals(errorCode);
+        }
+
+        @Override
+        public String getLocalizedMessage() {
+            return localizedMessage;
+        }
     }
 
     /** Extracts a server-provided error message, or returns "" when there is none. */

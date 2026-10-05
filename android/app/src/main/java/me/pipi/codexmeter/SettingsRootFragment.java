@@ -5,6 +5,7 @@ import dev.bennett.codexmeter.WidgetMeters;
 
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.graphics.drawable.GradientDrawable;
 import android.view.View;
 import android.widget.ImageView;
@@ -16,7 +17,8 @@ import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 
 /** Root settings list: the ChatGPT account card plus a summarized link to every sub-page. */
-public final class SettingsRootFragment extends SettingsPageFragment {
+public final class SettingsRootFragment extends SettingsPageFragment
+        implements SharedPreferences.OnSharedPreferenceChangeListener {
     private static final int SIGN_OUT_COLOR_DARK = 0xFFFF6B6B;
     private static final int SIGN_OUT_COLOR_LIGHT = 0xFFFF3B30;
     private static final int AVATAR_PADDING_DP = 10;
@@ -47,8 +49,27 @@ public final class SettingsRootFragment extends SettingsPageFragment {
     @Override
     public void onResume() {
         super.onResume();
+        getPreferenceManager().getSharedPreferences()
+                .registerOnSharedPreferenceChangeListener(this);
         bindAccount();
         updateSummaries();
+    }
+
+    @Override
+    public void onPause() {
+        getPreferenceManager().getSharedPreferences()
+                .unregisterOnSharedPreferenceChangeListener(this);
+        super.onPause();
+    }
+
+    @Override
+    public void onSharedPreferenceChanged(SharedPreferences preferences, String key) {
+        // Unrelated refresh bookkeeping must not reread credentials, and queued callbacks may
+        // arrive after this page pauses. A cleared store changes both account-related fields.
+        if (isResumed() && (key == null || "reauthentication_required".equals(key)
+                || "last_snapshot".equals(key))) {
+            bindAccount();
+        }
     }
 
     private void bindPageLink(String key, String page) {
@@ -70,14 +91,15 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         TextView summary = preference.findViewById(R.id.settings_account_summary);
         TextView plan = preference.findViewById(R.id.settings_account_plan);
         CardItemView action = preference.findViewById(R.id.settings_account_action);
-        title.setTextColor(Ui.mainText(dark));
+        title.setTextColor(Ui.mainText(context, dark));
         summary.setTextColor(Ui.secondaryText(dark));
-        plan.setTextColor(Ui.mainText(dark));
+        plan.setTextColor(Ui.mainText(context, dark));
         plan.setBackground(Ui.pillBackground(context, dark));
 
         AuthTokens tokens = SecureTokenStore.load(context);
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(context);
         boolean signedIn = tokens != null;
+        boolean reauthenticate = !signedIn || AppPreferences.isReauthenticationRequired(context);
         title.setText(signedIn
                 ? R.string.settings_account_title_signed_in
                 : R.string.settings_account_title_signed_out);
@@ -88,17 +110,22 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         } else {
             summary.setText(tokens.email);
         }
-        if (signedIn && snapshot != null) {
-            String label = UsageFormat.planLabel(snapshot.planType);
+        if (!reauthenticate) {
+            String label = snapshot == null ? "" : UsageFormat.planLabel(snapshot.planType);
             if (label.isEmpty()) {
                 plan.setText(R.string.settings_account_plan_fallback);
             } else {
                 plan.setText(label);
             }
-            plan.setVisibility(View.VISIBLE);
+            plan.setOnClickListener(null);
+            plan.setClickable(false);
+            plan.setFocusable(false);
         } else {
-            plan.setVisibility(View.GONE);
+            plan.setText(R.string.settings_account_sign_in_again);
+            plan.setOnClickListener(view -> openSignIn(true));
+            plan.setFocusable(true);
         }
+        plan.setVisibility(View.VISIBLE);
         action.getTitleView().setText(signedIn
                 ? R.string.settings_account_sign_out
                 : R.string.settings_account_sign_in);
@@ -109,11 +136,16 @@ public final class SettingsRootFragment extends SettingsPageFragment {
             if (SecureTokenStore.isSignedIn(requireContext())) {
                 confirmSignOut();
             } else {
-                startActivity(new Intent(requireContext(), MainActivity.class)
-                        .putExtra("start_sign_in", true));
-                requireActivity().finish();
+                openSignIn(false);
             }
         });
+    }
+
+    private void openSignIn(boolean reauthenticate) {
+        startActivity(new Intent(requireContext(), MainActivity.class)
+                .putExtra("start_sign_in", true)
+                .putExtra(OAuthService.EXTRA_REAUTHENTICATE, reauthenticate));
+        requireActivity().finish();
     }
 
     private void styleAvatar(ImageView avatar, boolean dark) {
@@ -125,7 +157,7 @@ public final class SettingsRootFragment extends SettingsPageFragment {
         int padding = Ui.dp(context, AVATAR_PADDING_DP);
         avatar.setPadding(padding, padding, padding, padding);
         avatar.setImageResource(R.drawable.ic_ms_account_circle);
-        avatar.setColorFilter(Ui.mainText(dark));
+        avatar.setColorFilter(Ui.mainText(context, dark));
     }
 
     private void confirmSignOut() {

@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Standard sizes enable One UI's host background; the picker retains one entry. -->
+<samsung-appwidget-info xmlns:app="http://schemas.android.com/apk/res-auto"
+    app:configure="me.pipi.codexmeter.WidgetConfigActivity"
+    app:targetHost="home"
+    app:widgetSize="medium|large|extraLarge"
+    app:previewLayoutMedium="@layout/widget_oneui_card_preview"
+    app:previewSize="medium" />

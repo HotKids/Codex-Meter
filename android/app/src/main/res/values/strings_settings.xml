@@ -28,9 +28,10 @@
     <string name="settings_account_title_signed_out">Not connected</string>
     <string name="settings_account_summary_signed_out">Sign in to view Codex usage</string>
     <string name="settings_account_summary_connected">Connected</string>
-    <string name="settings_account_plan_fallback" translatable="false">Codex</string>
+    <string name="settings_account_plan_fallback">Plan unavailable</string>
     <string name="settings_account_sign_out">Sign out</string>
     <string name="settings_account_sign_in">Sign in with ChatGPT</string>
+    <string name="settings_account_sign_in_again">Sign in again</string>
     <string name="settings_sign_out_dialog_title">Sign out?</string>
     <string name="settings_sign_out_dialog_message">This removes encrypted ChatGPT tokens and cached usage from this device.</string>
     <string name="settings_signed_out">Signed out.</string>

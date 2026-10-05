@@ -60,6 +60,7 @@ public final class AppPreferences {
     private static final String FIELD_LAYOUT = "layout";
     private static final String FIELD_DENSITY = "density";
     private static final String FIELD_SURFACE_STYLE = "surface_style";
+    private static final String FIELD_COLOR_STYLE = "color_style";
     private static final String FIELD_GRAPHIC_SCALE = "graphic_scale";
     private static final String FIELD_THEME = "theme";
     private static final String FIELD_ACCENT = "accent";
@@ -80,7 +81,8 @@ public final class AppPreferences {
     private static final String FIELD_CARD_STYLE = "card_style";
     /** Every field {@link #saveWidgetOptions} writes for a home-screen widget. */
     private static final String[] HOME_WIDGET_FIELDS = {
-            FIELD_STYLE, FIELD_LAYOUT, FIELD_DENSITY, FIELD_SURFACE_STYLE, FIELD_GRAPHIC_SCALE,
+            FIELD_STYLE, FIELD_LAYOUT, FIELD_DENSITY, FIELD_SURFACE_STYLE, FIELD_COLOR_STYLE,
+            FIELD_GRAPHIC_SCALE,
             FIELD_THEME, FIELD_ACCENT, FIELD_OPACITY, FIELD_RESET_MODE, FIELD_DISPLAY_MODE,
             FIELD_METRIC_MODE, FIELD_VISIBLE_METERS, FIELD_SHOW_TITLE, FIELD_SHOW_PLAN,
             FIELD_SHOW_UPDATED, FIELD_SHOW_REFRESH, FIELD_SHOW_RESET_CREDITS,
@@ -91,6 +93,7 @@ public final class AppPreferences {
     private static final String KEY_OAUTH_PENDING = "oauth_pending";
     private static final String KEY_OAUTH_STARTED_AT = "oauth_started_at";
     private static final String KEY_OAUTH_URL = "oauth_url";
+    private static final String KEY_REAUTHENTICATION_REQUIRED = "reauthentication_required";
     private static final String KEY_ONBOARDING_COMPLETE = "onboarding_complete";
     private static final String KEY_ONBOARDING_STEP = "onboarding_step";
 
@@ -579,6 +582,8 @@ public final class AppPreferences {
                 .withPercentSymbol(prefs.getBoolean(prefix + FIELD_SHOW_PERCENT_SYMBOL, true))
                 .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
                         defaultVisibleMeters))
+                .withColorStyle(prefs.getString(prefix + FIELD_COLOR_STYLE,
+                        WidgetOptions.COLOR_AUTO))
                 .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
                         WidgetOptions.CARD_CLEAR)));
     }
@@ -600,6 +605,20 @@ public final class AppPreferences {
         // A placed widget's legacy content choice takes precedence over account defaults.
         String inheritedMeters = prefs.contains(prefix + FIELD_METRIC_MODE)
                 ? "" : defaults.visibleMeters;
+        if (!prefs.contains(prefix + FIELD_VISIBLE_METERS)
+                && !prefs.contains(prefix + FIELD_METRIC_MODE)) {
+            UsageSnapshot snapshot = loadSnapshot(context);
+            if (snapshot != null && UsageFormat.planLabel(snapshot.planType).startsWith("Pro ")) {
+                // New Pro widgets must not inherit the session meter from older global defaults.
+                List<String> meters = WidgetMeters.parse(defaults.effectiveVisibleMeters());
+                meters.remove(WidgetMeters.FIVE_HOUR);
+                if (meters.isEmpty()) {
+                    meters.add(WidgetMeters.WEEKLY);
+                    meters.add(WidgetMeters.NEXT_RESET);
+                }
+                inheritedMeters = WidgetMeters.serialize(meters);
+            }
+        }
         return normalizeLoaded(new WidgetOptions(
                 prefs.getString(prefix + FIELD_STYLE, defaults.layout),
                 prefs.getString(prefix + FIELD_DENSITY, defaults.density),
@@ -621,6 +640,8 @@ public final class AppPreferences {
                         defaults.showPercentSymbol))
                 .withVisibleMeters(prefs.getString(prefix + FIELD_VISIBLE_METERS,
                         inheritedMeters))
+                .withColorStyle(prefs.getString(prefix + FIELD_COLOR_STYLE,
+                        defaults.colorStyle))
                 .withCardStyle(prefs.getString(prefix + FIELD_CARD_STYLE,
                         defaults.cardStyle)));
     }
@@ -747,6 +768,7 @@ public final class AppPreferences {
                 .putString(prefix + FIELD_LAYOUT, options.layout)
                 .putString(prefix + FIELD_DENSITY, options.density)
                 .putString(prefix + FIELD_SURFACE_STYLE, options.surfaceStyle)
+                .putString(prefix + FIELD_COLOR_STYLE, options.colorStyle)
                 .putString(prefix + FIELD_GRAPHIC_SCALE, options.graphicScale)
                 .putString(prefix + FIELD_THEME, options.theme)
                 .putString(prefix + FIELD_ACCENT, options.accent)
@@ -776,6 +798,7 @@ public final class AppPreferences {
                 options.metricMode, false, false, false, false, false, false)
                 .withPercentSymbol(options.showPercentSymbol)
                 .withVisibleMeters(options.visibleMeters)
+                .withColorStyle(options.colorStyle)
                 .withCardStyle(options.cardStyle);
     }
 
@@ -844,6 +867,23 @@ public final class AppPreferences {
     // ---------------------------------------------------------------------------------------
     // OAuth sign-in
     // ---------------------------------------------------------------------------------------
+
+    /** Confirmed remote rejection is independent from transient refresh errors and cached usage. */
+    public static boolean isReauthenticationRequired(Context context) {
+        return prefs(context).getBoolean(KEY_REAUTHENTICATION_REQUIRED, false);
+    }
+
+    static void setReauthenticationRequired(Context context, boolean required) throws Exception {
+        SharedPreferences.Editor editor = prefs(context).edit();
+        if (required) {
+            editor.putBoolean(KEY_REAUTHENTICATION_REQUIRED, true);
+        } else {
+            editor.remove(KEY_REAUTHENTICATION_REQUIRED);
+        }
+        if (!editor.commit()) {
+            throw OAuthClient.userError(context, R.string.auth_error_status_not_saved);
+        }
+    }
 
     public static void setOAuthPending(Context context, boolean pending, String url) {
         SharedPreferences.Editor editor = prefs(context).edit()

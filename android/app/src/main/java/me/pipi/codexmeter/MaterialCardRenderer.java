@@ -203,6 +203,10 @@ final class MaterialCardRenderer {
     }
 
     private void renderHeader() {
+        boolean classic = OneUiWidgetAppearance.classicPalette(options.colorStyle);
+        views.setImageViewResource(R.id.md_logo, classic ? R.drawable.ic_codex_logo_color
+                : R.drawable.ic_notification);
+        views.setColorStateList(R.id.md_logo, "setImageTintList", null);
         boolean failure = state.signedIn && !state.refreshError.isEmpty();
         boolean mediumStatus = showUpdated || failure;
         // Reapply can retain a host view's previous offset; the header shares the panel edge.
@@ -272,14 +276,18 @@ final class MaterialCardRenderer {
             views.setTextColor(R.id.md_title, Color.WHITE);
             views.setTextColor(R.id.md_status, Color.WHITE);
             views.setTextColor(R.id.md_updated, Color.WHITE);
-            views.setInt(R.id.md_logo, "setColorFilter", Color.WHITE);
+            views.setInt(R.id.md_logo, "setColorFilter", classic ? Color.TRANSPARENT : Color.WHITE);
             views.setInt(R.id.md_refresh, "setColorFilter", Color.WHITE);
             return;
         }
         color(R.id.md_title, "setTextColor", Role.TEXT);
         color(R.id.md_status, "setTextColor", Role.SECONDARY);
         color(R.id.md_updated, "setTextColor", Role.SECONDARY);
-        color(R.id.md_logo, "setColorFilter", Role.ACCENT);
+        if (classic) {
+            views.setInt(R.id.md_logo, "setColorFilter", Color.TRANSPARENT);
+        } else {
+            color(R.id.md_logo, "setColorFilter", Role.ACCENT);
+        }
         color(R.id.md_refresh, "setColorFilter", Role.TEXT);
     }
 
@@ -323,7 +331,7 @@ final class MaterialCardRenderer {
         views.setViewVisibility(VALUES[slot], stackedBalance ? View.GONE : View.VISIBLE);
         views.setViewVisibility(BARS[slot], balance ? View.GONE : View.VISIBLE);
         if (!balance) {
-            renderBar(slot, meter.progress);
+            renderBar(slot, meter, usage);
         }
         views.setViewVisibility(DETAILS[slot], usage || reset || stackedBalance
                 ? View.VISIBLE : View.GONE);
@@ -358,12 +366,23 @@ final class MaterialCardRenderer {
         return nameWidth + 8f * density + paint.measureText(value) > available;
     }
 
-    private void renderBar(int slot, int progress) {
+    private void renderBar(int slot, WidgetMeter meter, boolean usage) {
+        int progress = meter.progress;
         views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
                 TypedValue.COMPLEX_UNIT_DIP);
         panelGap(BARS[slot]);
-        color(TRACKS[slot], "setColorFilter", Role.TRACK);
-        color(FILLS[slot], "setColorFilter", Role.FILL);
+        WidgetGraphics.tintTrack(views, TRACKS[slot]);
+        boolean classic = OneUiWidgetAppearance.classicPalette(options.colorStyle);
+        int fillColor = WidgetUsageColors.color(meter.window, usage);
+        boolean gradient = classic && fillColor == R.color.widget_classic_progress_normal;
+        views.setImageViewResource(FILLS[slot], gradient ? R.drawable.widget_classic_capsule_fill
+                : R.drawable.widget_card_capsule_fill);
+        views.setColorStateList(FILLS[slot], "setImageTintList", null);
+        if (gradient) {
+            views.setInt(FILLS[slot], "setColorFilter", Color.TRANSPARENT);
+        } else {
+            views.setColor(FILLS[slot], "setColorFilter", classic ? fillColor : Role.FILL.resource);
+        }
         int level = 0;
         if (progress > 0) {
             // Never thinner than a dot, so a nearly empty window still shows its colour.

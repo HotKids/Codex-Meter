@@ -3,8 +3,5 @@
     style="@style/OneUI.ContainedButton"
     android:layout_width="match_parent"
     android:layout_height="60dp"
-    android:fontFamily="sec"
     android:textAllCaps="false"
-    android:textSize="18sp"
-    android:textStyle="bold"
-    android:theme="@style/App.ContainedPrimaryColorButtonTheme" />
+    android:theme="@style/OneUI.ContainedPrimaryColorButtonTheme" />

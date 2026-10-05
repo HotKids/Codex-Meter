@@ -8,6 +8,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.res.ColorStateList;
 import android.content.res.Configuration;
+import android.content.res.TypedArray;
 import android.graphics.Color;
 import android.graphics.Insets;
 import android.graphics.Typeface;
@@ -33,6 +34,7 @@ import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AppCompatDelegate;
+import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.appcompat.widget.AppCompatButton;
 import androidx.appcompat.widget.AppCompatCheckBox;
 import androidx.appcompat.widget.AppCompatSpinner;
@@ -40,13 +42,13 @@ import androidx.appcompat.widget.SeslProgressBar;
 import dev.oneuiproject.oneui.ktx.ActivityKt;
 import dev.oneuiproject.oneui.layout.ToolbarLayout;
 import dev.oneuiproject.oneui.popover.PopOverOptions;
+import dev.oneuiproject.oneui.utils.TypefaceUtilsKt;
 import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import dev.oneuiproject.oneui.widget.Separator;
 
 /** Shared One UI theme, palette, typography, and programmatic view factories for the phone app. */
 public final class Ui {
-    private static final String ONE_UI_FONT_FAMILY = "sec";
     private static final float CARD_CORNER_RADIUS_DP = 28.0f;
     private static final float POPUP_CORNER_RADIUS_DP = 18.0f;
     /** Large enough to round any control into a pill. */
@@ -56,8 +58,6 @@ public final class Ui {
     private static final float ACCENT_SATURATION_SCALE = 0.72f;
     /** Accents brighter than this get black text; darker ones get white. */
     private static final float ON_ACCENT_LUMINANCE_THRESHOLD = 0.55f;
-    private static final int DISABLED_FILL_ALPHA = 105;
-    private static final int DISABLED_TEXT_ALPHA = 150;
 
     public static final class Page {
         public final ToolbarLayout toolbar;
@@ -217,7 +217,7 @@ public final class Ui {
     // ---------------------------------------------------------------------------------------
 
     public static int background(Context context, boolean dark) {
-        return dark ? Color.rgb(5, 6, 8) : Color.rgb(241, 241, 243);
+        return context.getColor(dev.oneuiproject.oneui.design.R.color.oui_des_round_and_bgcolor);
     }
 
     /** Legacy (pre-One UI) page background. */
@@ -226,7 +226,7 @@ public final class Ui {
     }
 
     public static int cardColor(Context context, boolean dark) {
-        return dark ? Color.rgb(22, 24, 28) : Color.rgb(252, 252, 255);
+        return context.getColor(dev.oneuiproject.oneui.design.R.color.oui_des_background_color);
     }
 
     /** Legacy (pre-One UI) card surface. */
@@ -238,8 +238,13 @@ public final class Ui {
         return dark ? Color.rgb(42, 44, 50) : Color.rgb(238, 238, 241);
     }
 
-    public static int mainText(boolean dark) {
-        return dark ? Color.rgb(248, 248, 250) : Color.BLACK;
+    public static int mainText(Context context, boolean dark) {
+        TypedArray colors = context.obtainStyledAttributes(new int[]{android.R.attr.textColorPrimary});
+        try {
+            return colors.getColorStateList(0).getDefaultColor();
+        } finally {
+            colors.recycle();
+        }
     }
 
     public static int secondaryText(boolean dark) {
@@ -311,11 +316,11 @@ public final class Ui {
     // ---------------------------------------------------------------------------------------
 
     public static Typeface regularTypeface(Context context) {
-        return Typeface.create(ONE_UI_FONT_FAMILY, Typeface.NORMAL);
+        return TypefaceUtilsKt.getRegularFont();
     }
 
     public static Typeface mediumTypeface(Context context) {
-        return Typeface.create(ONE_UI_FONT_FAMILY, Typeface.BOLD);
+        return TypefaceUtilsKt.getSemiBoldFont();
     }
 
     public static TextView text(Context context, String text, float sizeSp, int color) {
@@ -330,7 +335,7 @@ public final class Ui {
     }
 
     public static TextView title(Context context, String title, boolean dark) {
-        TextView view = text(context, title, 42.0f, mainText(dark));
+        TextView view = text(context, title, 42.0f, mainText(context, dark));
         view.setTypeface(mediumTypeface(context));
         view.setLetterSpacing(-0.025f);
         return view;
@@ -445,59 +450,47 @@ public final class Ui {
     // Buttons
     // ---------------------------------------------------------------------------------------
 
-    /** Pill button filled with the accent ({@code primary}) or the control surface. */
+    /** One UI contained button with an optional leading icon. */
     public static Button button(Context context, String label, boolean primary, boolean dark) {
         return button(context, label, 0, primary, dark);
     }
 
-    /**
-     * Pill button with an optional leading icon. Icons are chosen by the caller rather than
-     * inferred from the label, so translated labels keep their icons.
-     */
     public static Button button(Context context, String label, int icon, boolean primary,
             boolean dark) {
-        Button button = new AppCompatButton(context);
+        Context themed = new ContextThemeWrapper(context, primary
+                ? dev.oneuiproject.oneui.design.R.style.OneUI_ContainedPrimaryColorButtonTheme
+                : dev.oneuiproject.oneui.design.R.style.OneUI_ContainedButtonTheme);
+        Button button = new AppCompatButton(themed);
         button.setText(label);
         button.setAllCaps(false);
-        button.setTextSize(18.0f);
-        button.setTypeface(mediumTypeface(context));
         button.setGravity(Gravity.CENTER);
-        button.setSingleLine(true);
-        button.setIncludeFontPadding(false);
+        button.setMaxLines(2);
         button.setMinHeight(dp(context, 52.0f));
-        button.setMinWidth(0);
-        button.setPadding(dp(context, 18.0f), dp(context, 7.0f), dp(context, 18.0f),
-                dp(context, 7.0f));
-        int fill = primary ? accent(context, dark) : controlSurface(context, dark);
-        int foreground = primary ? onAccent(context, dark) : mainText(dark);
-        int ripple = primary
-                ? Color.argb(42, 255, 255, 255)
-                : withAlpha(mainText(dark), dark ? 44 : 28);
-        button.setBackground(new RippleDrawable(ColorStateList.valueOf(ripple),
-                shape(fill, dp(context, PILL_CORNER_RADIUS_DP)), null));
-        button.setTextColor(foreground);
+        if (primary) {
+            applyDynamicPrimaryText(button, context);
+        }
         if (icon != 0) {
             button.setCompoundDrawablesRelativeWithIntrinsicBounds(icon, 0, 0, 0);
             button.setCompoundDrawablePadding(dp(context, 8.0f));
-            button.setCompoundDrawableTintList(ColorStateList.valueOf(foreground));
+            button.setCompoundDrawableTintList(button.getTextColors());
         }
-        button.setElevation(0.0f);
-        button.setStateListAnimator(null);
         return button;
     }
 
-    /** SESL-styled primary button tinted with the current accent, dimmed while disabled. */
+    /** Uses the library's primary button background and enabled/disabled states. */
     public static Button nativePrimaryButton(Context context, String text) {
         Button button = (Button) LayoutInflater.from(context)
                 .inflate(R.layout.view_oneui_primary_button, null, false);
         button.setText(text);
-        boolean dark = isDark(context);
-        int accent = accent(context, dark);
-        int onAccent = onAccent(context, dark);
-        button.setBackgroundTintList(
-                enabledStateList(withAlpha(accent, DISABLED_FILL_ALPHA), accent));
-        button.setTextColor(enabledStateList(withAlpha(onAccent, DISABLED_TEXT_ALPHA), onAccent));
+        applyDynamicPrimaryText(button, context);
         return button;
+    }
+
+    private static void applyDynamicPrimaryText(Button button, Context context) {
+        if (AppPreferences.isMaterialYouEnabled(context)) {
+            // The library's white label cannot contrast with pale dynamic accents in dark mode.
+            button.setTextColor(onAccent(context, isDark(context)));
+        }
     }
 
     /** Borderless-looking pill used for toolbar-style actions. */
@@ -506,7 +499,7 @@ public final class Ui {
         button.setText(label);
         button.setAllCaps(false);
         button.setTextSize(18.0f);
-        button.setTextColor(mainText(dark));
+        button.setTextColor(mainText(context, dark));
         button.setTypeface(mediumTypeface(context));
         button.setGravity(Gravity.CENTER);
         button.setSingleLine(true);
@@ -517,7 +510,7 @@ public final class Ui {
         button.setMinimumWidth(0);
         button.setPadding(dp(context, 18.0f), 0, dp(context, 18.0f), 0);
         button.setBackground(new RippleDrawable(
-                ColorStateList.valueOf(withAlpha(mainText(dark), dark ? 42 : 28)),
+                ColorStateList.valueOf(withAlpha(mainText(context, dark), dark ? 42 : 28)),
                 shape(controlSurface(context, dark), dp(context, PILL_CORNER_RADIUS_DP)),
                 null));
         button.setElevation(0.0f);
@@ -528,7 +521,7 @@ public final class Ui {
     public static Button backAction(Context context, boolean dark) {
         Button button = topAction(context, "", dark);
         button.setCompoundDrawablesRelativeWithIntrinsicBounds(R.drawable.ic_ms_arrow_back, 0, 0, 0);
-        button.setCompoundDrawableTintList(ColorStateList.valueOf(mainText(dark)));
+        button.setCompoundDrawableTintList(ColorStateList.valueOf(mainText(context, dark)));
         button.setPadding(dp(context, 12.0f), 0, dp(context, 12.0f), 0);
         return button;
     }
@@ -601,7 +594,7 @@ public final class Ui {
 
     private static TextView styleSpinnerItem(Context context, TextView item, boolean dark,
             boolean dropDown) {
-        item.setTextColor(dropDown ? mainText(dark) : accent(context, dark));
+        item.setTextColor(dropDown ? mainText(context, dark) : accent(context, dark));
         item.setTextSize(14.0f);
         item.setTypeface(mediumTypeface(context));
         item.setIncludeFontPadding(false);
@@ -619,7 +612,7 @@ public final class Ui {
         Context context = parent.getContext();
         LinearLayout row = horizontal(context, Gravity.CENTER_VERTICAL);
         row.setMinimumHeight(dp(context, 58.0f));
-        row.addView(text(context, label, 15.0f, mainText(dark)),
+        row.addView(text(context, label, 15.0f, mainText(context, dark)),
                 new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
         row.addView(spinner,
                 new LinearLayout.LayoutParams(dp(context, 168.0f), dp(context, 54.0f)));
@@ -635,7 +628,7 @@ public final class Ui {
         checkBox.setText(label);
         checkBox.setChecked(checked);
         checkBox.setTextSize(15.0f);
-        checkBox.setTextColor(mainText(dark));
+        checkBox.setTextColor(mainText(context, dark));
         checkBox.setTypeface(regularTypeface(context));
         checkBox.setButtonTintList(new ColorStateList(
                 new int[][]{new int[]{android.R.attr.state_checked}, new int[0]},
@@ -695,12 +688,6 @@ public final class Ui {
         drawable.setColor(color);
         drawable.setCornerRadius(cornerRadius);
         return drawable;
-    }
-
-    private static ColorStateList enabledStateList(int disabledColor, int enabledColor) {
-        return new ColorStateList(
-                new int[][]{new int[]{-android.R.attr.state_enabled}, new int[0]},
-                new int[]{disabledColor, enabledColor});
     }
 
     private static int withAlpha(int color, int alpha) {

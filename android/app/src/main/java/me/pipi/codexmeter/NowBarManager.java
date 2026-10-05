@@ -550,7 +550,7 @@ public final class NowBarManager {
         Icon stopActionIcon = Icon.createWithResource(context, R.drawable.ic_notification);
         Icon refreshActionIcon = Icon.createWithResource(context, R.drawable.ic_refresh);
         Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_notification)
+                .setSmallIcon(R.drawable.ic_live_capsule)
                 .setContentTitle(context.getString(R.string.alerts_now_bar_title))
                 .setContentText(content.windowText)
                 .setContentIntent(contentIntent)
@@ -575,7 +575,7 @@ public final class NowBarManager {
     /** Adds Samsung's ongoing-activity extras so One UI shows the monitor in the Now Bar. */
     private static void applySamsungCompatibility(Context context, Notification.Builder builder,
             MonitorContent content, long until, boolean preview) {
-        Icon chipIcon = Icon.createWithResource(context, R.drawable.ic_codex_logo_on_accent);
+        Icon chipIcon = Icon.createWithResource(context, R.drawable.ic_live_capsule_samsung);
         Icon nowBarIcon = themeAdaptiveCodexLogo(context);
         Icon progressDot = Icon.createWithResource(context, R.drawable.ic_now_bar_progress_dot);
         String chipLabel = content.weeklyFocus || !content.showFiveHour

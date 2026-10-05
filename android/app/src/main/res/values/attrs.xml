@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <attr name="configure" format="string" />
     <attr name="allowMultipleSizes" format="boolean">
     </attr>
     <attr name="featuredWidget" format="integer">
@@ -36,6 +37,10 @@
     <attr name="previewLayoutTiny" format="reference">
     </attr>
     <attr name="previewLayoutWideSmall" format="reference">
+    </attr>
+    <attr name="previewSize" format="integer">
+        <flag name="small" value="0x2" />
+        <flag name="medium" value="0x8" />
     </attr>
     <attr name="targetHost" format="integer">
         <flag name="cover" value="0x4" />

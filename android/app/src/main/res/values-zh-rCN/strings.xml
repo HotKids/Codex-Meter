@@ -3,6 +3,10 @@
     <string name="widget_config_cancel">取消</string>
     <string name="widget_config_save">保存</string>
     <string name="widget_background">背景</string>
+    <string name="widget_color_style">样式</string>
+    <string name="widget_color_style_auto">自动</string>
+    <string name="widget_color_style_native">原生</string>
+    <string name="widget_color_style_classic">经典</string>
     <string name="widget_opacity">不透明度</string>
     <string name="widget_next_reset">距离下次重置的剩余时间</string>
     <string name="widget_reset_credits">Codex 重置额度</string>

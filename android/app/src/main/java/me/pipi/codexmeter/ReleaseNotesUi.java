@@ -11,7 +11,7 @@ public final class ReleaseNotesUi {
     }
 
     public static TextView create(Context context, String markdown, boolean dark) {
-        TextView view = Ui.text(context, "", 14, Ui.mainText(dark));
+        TextView view = Ui.text(context, "", 14, Ui.mainText(context, dark));
         apply(view, markdown);
         return view;
     }

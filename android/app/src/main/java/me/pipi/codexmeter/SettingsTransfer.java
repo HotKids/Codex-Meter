@@ -168,6 +168,7 @@ public final class SettingsTransfer {
         json.put("style", safe.layout);
         json.put("density", safe.density);
         json.put("surface_style", safe.surfaceStyle);
+        json.put("color_style", safe.colorStyle);
         json.put("graphic_scale", safe.graphicScale);
         json.put("theme", safe.theme);
         json.put("accent", safe.accent);
@@ -220,6 +221,7 @@ public final class SettingsTransfer {
         WidgetOptions restored = options.withPercentSymbol(
                 booleanOr(json, "show_percent_symbol", fallback.showPercentSymbol))
                 .withVisibleMeters(stringOr(json, "visible_meters", fallback.visibleMeters))
+                .withColorStyle(stringOr(json, "color_style", fallback.colorStyle))
                 .withCardStyle(stringOr(json, "card_style", fallback.cardStyle));
         return restored.withVisibleMeters(restored.effectiveVisibleMeters());
     }

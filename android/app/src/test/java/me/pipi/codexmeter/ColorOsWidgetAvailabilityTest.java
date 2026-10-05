@@ -246,7 +246,7 @@ public class ColorOsWidgetAvailabilityTest {
         RemoteViews preview = manager.getWidgetPreview(card.provider, Process.myUserHandle(),
                 AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN);
         assertNotNull(preview);
-        assertEquals(R.layout.widget_material_preview, preview.getLayoutId());
+        assertEquals(R.layout.widget_coloros_card_preview, preview.getLayoutId());
     }
 
     private int[] placedIds(ComponentName provider) {

@@ -172,6 +172,7 @@ public final class ResetCreditApi {
         if (response.isSuccessful()) {
             return;
         }
+        UsageApi.recordAuthenticationRejection(context, response);
         if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
             throw OAuthClient.responseError(context, response.body, forbiddenRes);
         }

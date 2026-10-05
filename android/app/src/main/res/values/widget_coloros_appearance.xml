@@ -1,7 +1,5 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="widget_coloros_surface_start">#FFF2F3F4</color>
-    <color name="widget_coloros_surface_end">#FFFAFAFA</color>
     <!-- The stock launcher's default big_folder_bg_radius, without its private smooth curve. -->
     <dimen name="widget_coloros_card_radius">28dp</dimen>
     <item type="layout" name="widget_coloros_dial_preview">@layout/widget_rings</item>

@@ -1,9 +1,10 @@
 package me.pipi.codexmeter;
 
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertThrows;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
@@ -21,10 +22,8 @@ import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
-import android.graphics.LinearGradient;
 import android.graphics.Paint;
 import android.graphics.RectF;
-import android.graphics.Shader;
 import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.os.Looper;
@@ -107,13 +106,13 @@ public class ColorOsWidgetAppearanceTest {
     @Test
     @Config(qualifiers = "zh-rCN-notnight-xhdpi")
     public void colorOsLightLayersKeepAllForegroundPixelsAndRenderReviewImages() throws Exception {
-        assertColorOsLayers(0xFFF2F3F4, 0xFFFAFAFA, "light");
+        assertColorOsLayers(0xFFFFFFFF, 0xFFF5F5F5, "light");
     }
 
     @Test
     @Config(qualifiers = "zh-rCN-night-xhdpi")
     public void colorOsDarkLayersKeepAllForegroundPixelsAndRenderReviewImages() throws Exception {
-        assertColorOsLayers(0xFF252627, 0xFF282929, "dark");
+        assertColorOsLayers(0xFF373737, 0xFF474747, "dark");
     }
 
     @Test
@@ -206,8 +205,7 @@ public class ColorOsWidgetAppearanceTest {
                 Bitmap expected = Bitmap.createBitmap(host.getWidth(), host.getHeight(),
                         Bitmap.Config.ARGB_8888);
                 Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-                paint.setShader(new LinearGradient(0, 0, host.getWidth(), host.getHeight(),
-                        0xFFF2F3F4, 0xFFFAFAFA, Shader.TileMode.CLAMP));
+                paint.setColor(0xFFFFFFFF);
                 // Native big-folder geometry uses 28/56 of the final icon size at this density.
                 float expectedRadius = px(iconDp) / 2f;
                 new Canvas(expected).drawRoundRect(new RectF(0, 0, host.getWidth(), host.getHeight()),
@@ -230,7 +228,7 @@ public class ColorOsWidgetAppearanceTest {
                     int x = Math.round(host.getWidth() * position);
                     int y = Math.round(host.getHeight() * position);
                     for (int shift : new int[] {0, 8, 16}) {
-                        assertEquals("The parent draw must retain the native gradient RGB",
+                        assertEquals("The parent draw must retain the ColorOS neutral surface RGB",
                                 (expected.getPixel(x, y) >> shift) & 255,
                                 (actual.getPixel(x, y) >> shift) & 255, 1);
                     }
@@ -402,13 +400,13 @@ public class ColorOsWidgetAppearanceTest {
     public void reapplyingAcrossLaunchersRestoresFreshPixelsInBothDirections() {
         for (int opacity : new int[] {0, 15, 40, 100}) {
             for (Size size : SIZES) {
-                WidgetOptions options = options(opacity);
+                WidgetOptions options = options(opacity).withColorStyle(WidgetOptions.COLOR_NATIVE);
                 setHost("Google", "com.google.android.apps.nexuslauncher");
                 RemoteViews ordinary = dispatched(size, options);
                 View reused = apply(size, ordinary);
                 for (boolean colorOs : new boolean[] {true, false, true}) {
                     setHost(colorOs ? "OPPO" : "samsung",
-                            colorOs ? "com.android.launcher" : "com.sec.android.app.launcher");
+                            colorOs ? "com.android.launcher" : "com.example.launcher");
                     RemoteViews next = dispatched(size, options);
                     assertEquals(ordinary.getLayoutId(), next.getLayoutId());
                     next.reapply(app, reused);
@@ -422,14 +420,137 @@ public class ColorOsWidgetAppearanceTest {
 
     @Test
     @Config(qualifiers = "zh-rCN-notnight-xhdpi")
-    public void generatedLightPreviewsRenderTheSameNativeLayersDespiteXmlTint() throws Exception {
-        assertPublishedPreviews(0xFFF2F3F4, 0xFFFAFAFA, "light");
+    public void generatedLightPreviewsRenderTheSameClassicLayersDespiteXmlTint() throws Exception {
+        assertPublishedPreviews(0xFFFFFFFF, 0xFFF5F5F5, "light");
     }
 
     @Test
     @Config(qualifiers = "zh-rCN-night-xhdpi")
-    public void generatedDarkPreviewsRenderTheSameNativeLayersDespiteXmlTint() throws Exception {
-        assertPublishedPreviews(0xFF252627, 0xFF282929, "dark");
+    public void generatedDarkPreviewsRenderTheSameClassicLayersDespiteXmlTint() throws Exception {
+        assertPublishedPreviews(0xFF373737, 0xFF474747, "dark");
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-notnight-xhdpi")
+    public void colorOsPickerMeasuresThePublishedCardAsACalendarSizedSquare() {
+        AppWidgetManager manager = AppWidgetManager.getInstance(app);
+        ComponentName provider = new ComponentName(app, CodexUsageWidget.class);
+        int category = AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN;
+        RemoteViews legacy = new RemoteViews(app.getPackageName(), R.layout.widget_material_preview);
+        ColorOsWidgetAppearance.apply(app, legacy, false, 100);
+        assertTrue(manager.setWidgetPreview(provider, category, legacy));
+
+        ColorOsWidgetAppearance.publishPreviews(app, manager);
+
+        RemoteViews published = manager.getWidgetPreview(provider, Process.myUserHandle(), category);
+        assertNotNull(published);
+        assertEquals(R.layout.widget_coloros_card_preview, published.getLayoutId());
+        View oldView = legacy.apply(app, new FrameLayout(app));
+        int unconstrained = View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED);
+        oldView.measure(unconstrained, unconstrained);
+        assertTrue("The former MATCH_PARENT preview shrinks below Calendar's intrinsic square",
+                oldView.getMeasuredWidth() < px(146) || oldView.getMeasuredHeight() < px(146));
+
+        View preview = parcelRoundTrip(published).apply(app, new FrameLayout(app));
+        // ColorOS AutoScaleContainer measures its RemoteViews child with UNSPECIFIED specs.
+        for (int hint : new int[] {0, 146, 292}) {
+            int spec = View.MeasureSpec.makeMeasureSpec(px(hint), View.MeasureSpec.UNSPECIFIED);
+            preview.measure(spec, spec);
+            preview.layout(0, 0, preview.getMeasuredWidth(), preview.getMeasuredHeight());
+            assertEquals(px(146), preview.getMeasuredWidth());
+            assertEquals(px(146), preview.getMeasuredHeight());
+            assertEquals(px(146), preview.findViewById(R.id.md_surface).getWidth());
+            assertEquals(px(146), preview.findViewById(R.id.md_surface).getHeight());
+            for (int id : new int[] {R.id.md_title, R.id.md_name_0, R.id.md_value_0,
+                    R.id.md_reset_0, R.id.md_name_2, R.id.md_value_2, R.id.md_reset_2}) {
+                assertFullyShown(text(preview, id));
+            }
+        }
+    }
+
+    @Test
+    public void leavingColorOsRemovesBothCurrentAndLegacyGeneratedCardPreviews() {
+        AppWidgetManager manager = AppWidgetManager.getInstance(app);
+        ComponentName provider = new ComponentName(app, CodexUsageWidget.class);
+        int category = AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN;
+        setHost("Google", "com.google.android.apps.nexuslauncher");
+        for (int layout : new int[] {R.layout.widget_material_preview,
+                R.layout.widget_coloros_card_preview}) {
+            assertTrue(manager.setWidgetPreview(provider, category,
+                    new RemoteViews(app.getPackageName(), layout)));
+
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
+
+            assertNull(manager.getWidgetPreview(provider, Process.myUserHandle(), category));
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-notnight-mdpi")
+    public void colorOsEditorUsesTheSameLightPaletteAndOpacityTicks() {
+        assertEditorLayers(0xFFFFFFFF, 0xFFF5F5F5);
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-night-mdpi")
+    public void colorOsEditorUsesTheSameDarkPaletteAndOpacityTicks() {
+        assertEditorLayers(0xFF373737, 0xFF474747);
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-notnight-mdpi")
+    public void enteringStockHostReplacesOldActionsWithTheSameLayoutThenIsIdempotent() {
+        AppWidgetManager manager = AppWidgetManager.getInstance(app);
+        ComponentName provider = new ComponentName(app, CodexUsageWidget.class);
+        int category = AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN;
+        setHost("Google", "com.google.android.apps.nexuslauncher");
+        ColorOsWidgetAppearance.publishPreviews(app, manager);
+        setHost("OPPO", "com.android.launcher");
+        RemoteViews stale = new RemoteViews(app.getPackageName(), R.layout.widget_material_preview);
+        stale.setInt(R.id.md_surface, "setColorFilter", Color.MAGENTA);
+        stale.setInt(R.id.md_panel_bg_0, "setColorFilter", Color.MAGENTA);
+        assertTrue(manager.setWidgetPreview(provider, category, stale));
+        ColorOsWidgetAppearance.publishPreviews(app, manager);
+        RemoteViews current = manager.getWidgetPreview(provider, Process.myUserHandle(), category);
+        assertNotNull(current);
+        assertNotSame("A process's first publication replaces cached actions, not just missing layouts",
+                stale, current);
+        View view = apply(SIZES[0], current);
+        assertNeutralSurface(surface(SIZES[0], view), 0xFFFFFFFF);
+        assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF5F5F5);
+        ColorOsWidgetAppearance.publishPreviews(app, manager);
+        assertSame("An unchanged process must not repeatedly publish the same preview", current,
+                manager.getWidgetPreview(provider, Process.myUserHandle(), category));
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-notnight-mdpi")
+    public void rejectedOrFailedPublicationRetainsOldActionsUntilTheNextSuccessfulRetry() {
+        AppWidgetManager manager = AppWidgetManager.getInstance(app);
+        ProviderPreviewCache cache = (ProviderPreviewCache) shadowOf(manager);
+        ComponentName provider = new ComponentName(app, CodexUsageWidget.class);
+        int category = AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN;
+        for (boolean throwsException : new boolean[] {false, true}) {
+            setHost("Google", "com.google.android.apps.nexuslauncher");
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
+            setHost("OPPO", "com.android.launcher");
+            RemoteViews stale = new RemoteViews(app.getPackageName(), R.layout.widget_material_preview);
+            stale.setInt(R.id.md_panel_bg_0, "setColorFilter", Color.MAGENTA);
+            assertTrue(manager.setWidgetPreview(provider, category, stale));
+            cache.failNextProvider = provider;
+            cache.throwOnFailure = throwsException;
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
+            assertSame("Rejected publication must leave the prior cache intact", stale,
+                    manager.getWidgetPreview(provider, Process.myUserHandle(), category));
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
+            RemoteViews current = manager.getWidgetPreview(provider, Process.myUserHandle(), category);
+            assertNotSame("The next call must retry the same-layout stale actions", stale, current);
+            View view = apply(SIZES[0], current);
+            assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF5F5F5);
+            ColorOsWidgetAppearance.publishPreviews(app, manager);
+            assertSame("Successful publication closes the retry", current,
+                    manager.getWidgetPreview(provider, Process.myUserHandle(), category));
+        }
     }
 
     @Test
@@ -480,12 +601,12 @@ public class ColorOsWidgetAppearanceTest {
 
     private void assertNormalProducts() {
         for (String[] host : new String[][] {{"Google", "com.google.android.apps.nexuslauncher"},
-                {"samsung", "com.sec.android.app.launcher"}, {"OPPO", "org.example.launcher"},
+                {"samsung", "com.example.launcher"}, {"OPPO", "org.example.launcher"},
                 {"OPPO", null}}) {
             setHost(host[0], host[1]);
             for (int opacity : new int[] {0, 15, 40, 100}) {
                 for (Size size : SIZES) {
-                    WidgetOptions options = options(opacity);
+                    WidgetOptions options = options(opacity).withColorStyle(WidgetOptions.COLOR_NATIVE);
                     assertPixelsEqual(apply(size, original(size, options)),
                             apply(size, dispatched(size, options)));
                 }
@@ -493,23 +614,23 @@ public class ColorOsWidgetAppearanceTest {
         }
     }
 
-    private void assertColorOsLayers(int start, int end, String name) throws Exception {
+    private void assertColorOsLayers(int outerColor, int panelColor, String name) throws Exception {
         PreviewSheet sheet = new PreviewSheet("coloros-appearance-" + name);
         for (Size size : SIZES) {
-            for (int opacity : new int[] {0, 15, 40, 100}) {
+            for (int opacity : new int[] {0, 15, 40, 56, 65, 100}) {
                 WidgetOptions options = options(opacity);
                 View view = apply(size, dispatched(size, options));
                 ImageView outer = surface(size, view);
                 assertEquals(opacity == 0 ? View.GONE : View.VISIBLE, outer.getVisibility());
-                assertEquals(Math.round(opacity * 2.55f), outer.getImageAlpha());
-                assertGradient(outer, start, end);
+                assertEquals(nativeAlpha(opacity), outer.getImageAlpha());
+                assertNeutralSurface(outer, outerColor);
                 if (!size.dial) {
                     assertEquals("This is the local default radius, not the host's smooth curve",
                             28f * density(), ((GradientDrawable) outer.getDrawable()).getCornerRadius(), 0f);
                     for (int panelId : PANELS) {
                         ImageView panel = view.findViewById(panelId);
                         if (isShown(panel)) {
-                            assertAccentLayer(panel);
+                            assertNeutralPanel(panel, panelColor, nativeAlpha(opacity));
                         }
                     }
                 } else if (opacity == 100) {
@@ -536,7 +657,25 @@ public class ColorOsWidgetAppearanceTest {
         assertTrue(sheet.writeSheet().isFile());
     }
 
-    private void assertPublishedPreviews(int start, int end, String name) throws Exception {
+    private void assertEditorLayers(int outerColor, int panelColor) {
+        Size size = SIZES[0];
+        for (int opacity : new int[] {0, 56, 65, 100}) {
+            View preview = apply(size, WidgetRenderer.buildPreview(app, size.id,
+                    options(opacity), size.width, size.height));
+            ImageView outer = surface(size, preview);
+            assertEquals(opacity == 0 ? View.GONE : View.VISIBLE, outer.getVisibility());
+            assertEquals(nativeAlpha(opacity), outer.getImageAlpha());
+            assertNeutralSurface(outer, outerColor);
+            assertNeutralPanel(preview.findViewById(R.id.md_panel_bg_0), panelColor,
+                    nativeAlpha(opacity));
+        }
+    }
+
+    private static int nativeAlpha(int opacity) {
+        return opacity == 0 ? 0 : opacity < 65 ? 77 : opacity < 100 ? 168 : 255;
+    }
+
+    private void assertPublishedPreviews(int outerColor, int panelColor, String name) throws Exception {
         AppWidgetManager manager = AppWidgetManager.getInstance(app);
         ColorOsWidgetAppearance.publishPreviews(app, manager);
         PreviewSheet sheet = new PreviewSheet("coloros-picker-" + name);
@@ -547,7 +686,7 @@ public class ColorOsWidgetAppearanceTest {
             assertNotNull(preview);
             View view = apply(size, preview);
             ImageView outer = surface(size, view);
-            assertGradient(outer, start, end);
+            assertNeutralSurface(outer, outerColor);
             assertCompleteParentCorners(view);
             Bitmap outerPixels = draw(outer);
             assertEquals(0, Color.alpha(outerPixels.getPixel(0, 0)));
@@ -558,7 +697,7 @@ public class ColorOsWidgetAppearanceTest {
             } else {
                 assertHeaderSharesPanelEdge(view);
                 for (int panelId : new int[] {R.id.md_panel_bg_0, R.id.md_panel_bg_2}) {
-                    assertAccentLayer(view.findViewById(panelId));
+                    assertNeutralPanel(view.findViewById(panelId), panelColor);
                 }
                 View placed = apply(size, dispatched(size, options(100)));
                 for (int id : new int[] {R.id.md_title, R.id.md_name_0, R.id.md_value_0,
@@ -657,50 +796,48 @@ public class ColorOsWidgetAppearanceTest {
         return pixels;
     }
 
-    private void assertAccentLayer(ImageView panel) {
-        GradientDrawable drawable = (GradientDrawable) panel.getDrawable();
-        assertNotNull(drawable.getColor());
-        int fill = drawable.getColor().getDefaultColor();
-        assertEquals(25, Color.alpha(fill));
-        assertEquals(app.getColor(R.color.widget_material_fill) & 0x00FFFFFF, fill & 0x00FFFFFF);
+    private static void assertNeutralPanel(ImageView panel, int color) {
+        assertNeutralPanel(panel, color, 255);
+    }
+
+    private static void assertNeutralPanel(ImageView panel, int color, int alpha) {
         Bitmap pixels = draw(panel);
         int actual = pixels.getPixel(panel.getWidth() / 2, panel.getHeight() / 2);
-        assertEquals("The actual paint must override any inherited opaque XML tint",
-                25, Color.alpha(actual));
-        // Compare premultiplied channels because low alpha magnifies one storage quantization step.
-        for (int shift : new int[] {0, 8, 16}) {
-            int expectedPremultiplied = Math.round(((fill >> shift) & 255) * 25f / 255f);
-            int actualPremultiplied = Math.round(((actual >> shift) & 255) * 25f / 255f);
-            assertEquals(expectedPremultiplied, actualPremultiplied, 1);
+        assertEquals("The common inner background follows configured shell opacity", alpha,
+                panel.getImageAlpha());
+        int actualAlpha = Color.alpha(actual);
+        assertEquals("The rendered inner background retains the selected opacity", alpha,
+                actualAlpha, alpha == 0 || alpha == 255 ? 0 : 1);
+        if (alpha == 255) {
+            assertEquals("ColorOS retains its reference inner surface color", color, actual);
+        } else if (alpha > 0) {
+            for (int shift : new int[] {0, 8, 16}) {
+                assertEquals("Premultiplied panel RGB retains the ColorOS reference color",
+                        Math.round(((color >> shift) & 255) * actualAlpha / 255f),
+                        Math.round(((actual >> shift) & 255) * actualAlpha / 255f), 1);
+            }
         }
         pixels.recycle();
     }
 
-    private static void assertGradient(ImageView image, int start, int end) {
-        assertTrue(image.getDrawable() instanceof GradientDrawable);
-        GradientDrawable gradient = (GradientDrawable) image.getDrawable();
-        assertEquals(GradientDrawable.Orientation.TL_BR, gradient.getOrientation());
-        assertArrayEquals(new int[] {start, end}, gradient.getColors());
-        if (image.getVisibility() == View.VISIBLE && image.getImageAlpha() == 255) {
+    private static void assertNeutralSurface(ImageView image, int color) {
+        if (image.getVisibility() == View.VISIBLE) {
             Bitmap actual = draw(image);
-            Bitmap reference = Bitmap.createBitmap(image.getWidth(), image.getHeight(), Bitmap.Config.ARGB_8888);
-            Paint paint = new Paint();
-            paint.setShader(new LinearGradient(0, 0, image.getWidth(), image.getHeight(),
-                    start, end, Shader.TileMode.CLAMP));
-            new Canvas(reference).drawRect(0, 0, image.getWidth(), image.getHeight(), paint);
             for (float position : new float[] {0.25f, 0.5f, 0.75f}) {
                 int x = Math.round(image.getWidth() * position);
                 int y = Math.round(image.getHeight() * position);
-                int expectedPixel = reference.getPixel(x, y);
                 int actualPixel = actual.getPixel(x, y);
-                assertEquals(255, Color.alpha(actualPixel));
+                int alpha = image.getImageAlpha();
+                // Native rasterization can quantize translucent image alpha by one level.
+                assertEquals("The actual surface paint retains the configured opacity", alpha,
+                        Color.alpha(actualPixel), alpha == 0 || alpha == 255 ? 0 : 1);
                 for (int shift : new int[] {0, 8, 16}) {
-                    assertEquals("The transparent filter must preserve the gradient's actual RGB",
-                            (expectedPixel >> shift) & 255, (actualPixel >> shift) & 255, 1);
+                    assertEquals("Premultiplied surface RGB retains the ColorOS neutral color",
+                            Math.round(((color >> shift) & 255) * alpha / 255f),
+                            Math.round(((actualPixel >> shift) & 255) * alpha / 255f), 1);
                 }
             }
             actual.recycle();
-            reference.recycle();
         }
     }
 
@@ -722,11 +859,13 @@ public class ColorOsWidgetAppearanceTest {
         expected.recycle();
     }
 
-    /** The unchanged renderer is the original-product oracle, with no copied layout logic. */
+    /** The common renderer and palette are the oracle before ColorOS desktop geometry. */
     private RemoteViews original(Size size, WidgetOptions options) {
         List<String> keys = WidgetRenderer.selectedKeys(options, state.snapshot, size.dial);
-        return size.dial ? DialWidgetRenderer.build(app, size.id, options, keys, state)
+        RemoteViews views = size.dial ? DialWidgetRenderer.build(app, size.id, options, keys, state)
                 : MaterialCardRenderer.build(app, size.id, options, keys, state, size.width, size.height);
+        OneUiWidgetAppearance.applySurface(app, views, size.dial, options.opacity, options.colorStyle);
+        return views;
     }
 
     private RemoteViews originalColorOsForeground(Size size, WidgetOptions options) {
@@ -788,6 +927,7 @@ public class ColorOsWidgetAppearanceTest {
 
     private void setHost(String manufacturer, String launcher) {
         ShadowBuild.setManufacturer(manufacturer);
+        ShadowBuild.setModel("Google".equals(manufacturer) ? "Pixel 11 Pro" : "Test device");
         Intent home = new Intent(Intent.ACTION_MAIN).addCategory(Intent.CATEGORY_HOME);
         if (launcher == null) {
             shadowOf(app.getPackageManager()).setResolveInfosForIntent(home, Collections.emptyList());
@@ -918,9 +1058,16 @@ public class ColorOsWidgetAppearanceTest {
     @Implements(AppWidgetManager.class)
     public static class ProviderPreviewCache extends ShadowAppWidgetManager {
         final Map<ComponentName, Map<Integer, RemoteViews>> previews = new HashMap<>();
+        ComponentName failNextProvider;
+        boolean throwOnFailure;
 
         @Implementation(minSdk = 35)
         protected boolean setWidgetPreview(ComponentName provider, int category, RemoteViews views) {
+            if (provider.equals(failNextProvider)) {
+                failNextProvider = null;
+                if (throwOnFailure) throw new IllegalStateException("Synthetic preview publication failure");
+                return false;
+            }
             previews.computeIfAbsent(provider, ignored -> new HashMap<>()).put(category, views);
             return true;
         }

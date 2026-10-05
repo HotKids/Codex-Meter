@@ -23,6 +23,9 @@ public final class WidgetOptions {
     public static final String ACCENT_VIOLET = "violet";
     /** Material You card used for placements taller than one row. */
     public static final String CARD_CLEAR = "clear";
+    public static final String COLOR_AUTO = "auto";
+    public static final String COLOR_NATIVE = "native";
+    public static final String COLOR_CLASSIC = "classic";
     public static final String DENSITY_AUTO = "auto";
     public static final String DENSITY_COMFORTABLE = "comfortable";
     public static final String DENSITY_COMPACT = "compact";
@@ -54,16 +57,17 @@ public final class WidgetOptions {
     public static final String TAP_OPEN_APP = "open_app";
     public static final String TAP_REFRESH = "refresh";
     public static final String TAP_USE_RESET = "use_reset";
-    /** One UI 7-style discrete fill strengths when the widget background is enabled. */
-    public static final int[] OPACITY_LEVELS = {56, 88, 100};
-    /** Opaque by default; 56 and 88 remain selectable. */
+    /** Three background strengths; the middle matches the One UI battery default. */
+    public static final int[] OPACITY_LEVELS = {56, 65, 100};
+    /** Opaque by default; 56 and 65 remain selectable. */
     public static final int DEFAULT_OPACITY = 100;
     /** Opacities accepted from storage: off, legacy four-step and drawable-aligned values. */
-    private static final int[] KNOWN_OPACITIES = {0, 15, 40, 56, 70, 72, 88, 94, 100};
+    private static final int[] KNOWN_OPACITIES = {0, 15, 40, 56, 65, 70, 72, 88, 94, 100};
 
     public final String accent;
     /** Legacy style preferences and imports normalize to Clear. */
     public final String cardStyle;
+    public final String colorStyle;
     public final String density;
     public final String displayMode;
     public final String graphicScale;
@@ -117,7 +121,7 @@ public final class WidgetOptions {
             boolean showRefresh, boolean showResetCredits, boolean showResetAction) {
         this(layout, density, surfaceStyle, graphicScale, theme, accent, opacity, resetMode,
                 displayMode, metricMode, showTitle, showPlan, showUpdated, showRefresh,
-                showResetCredits, showResetAction, true, "", CARD_CLEAR);
+                showResetCredits, showResetAction, true, "", CARD_CLEAR, COLOR_AUTO);
     }
 
     private WidgetOptions(String layout, String density, String surfaceStyle,
@@ -125,7 +129,7 @@ public final class WidgetOptions {
             String displayMode, String metricMode, boolean showTitle, boolean showPlan,
             boolean showUpdated, boolean showRefresh, boolean showResetCredits,
             boolean showResetAction, boolean showPercentSymbol, String visibleMeters,
-            String cardStyle) {
+            String cardStyle, String colorStyle) {
         this.layout = normalizeStyle(layout);
         this.density = oneOf(density, DENSITY_AUTO, DENSITY_COMPACT, DENSITY_COMFORTABLE)
                 ? density : DENSITY_AUTO;
@@ -150,27 +154,36 @@ public final class WidgetOptions {
         this.showPercentSymbol = showPercentSymbol;
         this.visibleMeters = visibleMeters == null ? "" : visibleMeters.trim();
         this.cardStyle = CARD_CLEAR;
+        this.colorStyle = oneOf(colorStyle, COLOR_AUTO, COLOR_NATIVE, COLOR_CLASSIC)
+                ? colorStyle : COLOR_AUTO;
     }
 
     public WidgetOptions withPercentSymbol(boolean show) {
         return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
                 opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
                 showUpdated, showRefresh, showResetCredits, showResetAction,
-                show, visibleMeters, cardStyle);
+                show, visibleMeters, cardStyle, colorStyle);
     }
 
     public WidgetOptions withVisibleMeters(String metersCsv) {
         return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
                 opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
                 showUpdated, showRefresh, showResetCredits, showResetAction,
-                showPercentSymbol, metersCsv, cardStyle);
+                showPercentSymbol, metersCsv, cardStyle, colorStyle);
     }
 
     public WidgetOptions withCardStyle(String style) {
         return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
                 opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
                 showUpdated, showRefresh, showResetCredits, showResetAction,
-                showPercentSymbol, visibleMeters, style);
+                showPercentSymbol, visibleMeters, style, colorStyle);
+    }
+
+    public WidgetOptions withColorStyle(String style) {
+        return new WidgetOptions(layout, density, surfaceStyle, graphicScale, theme, accent,
+                opacity, resetMode, displayMode, metricMode, showTitle, showPlan,
+                showUpdated, showRefresh, showResetCredits, showResetAction,
+                showPercentSymbol, visibleMeters, cardStyle, style);
     }
 
     public static WidgetOptions defaults() {
@@ -184,6 +197,10 @@ public final class WidgetOptions {
     public static int snapOpacity(int opacity) {
         if (opacity <= 0) {
             return 0;
+        }
+        // Preserve the middle tick when restoring widgets saved with the former 88% level.
+        if (opacity == 88) {
+            return 65;
         }
         int best = DEFAULT_OPACITY;
         int distance = Integer.MAX_VALUE;

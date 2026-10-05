@@ -162,7 +162,7 @@ public final class UsageWaveView extends View {
         }
         drawWaveFill(canvas, density, dark);
 
-        int foreground = warning ? (dark ? Color.WHITE : Color.BLACK) : Ui.mainText(dark);
+        int foreground = warning ? (dark ? Color.WHITE : Color.BLACK) : Ui.mainText(getContext(), dark);
         drawLabels(canvas, density, foreground);
         drawIconAndPercent(canvas, density, foreground);
     }

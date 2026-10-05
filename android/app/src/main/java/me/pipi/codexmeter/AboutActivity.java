@@ -126,7 +126,7 @@ public final class AboutActivity extends AppCompatActivity {
         card.addView(icon, new LinearLayout.LayoutParams(Ui.dp(this, 44), Ui.dp(this, 44)));
         LinearLayout text = new LinearLayout(this);
         text.setOrientation(LinearLayout.VERTICAL);
-        text.addView(Ui.text(this, getString(R.string.app_name), 18, Ui.mainText(dark)));
+        text.addView(Ui.text(this, getString(R.string.app_name), 18, Ui.mainText(this, dark)));
         text.addView(Ui.text(this, versionLabel(), 14, Ui.secondaryText(dark)));
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1);
         textParams.setMargins(Ui.dp(this, 20), 0, 0, 0);

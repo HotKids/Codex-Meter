@@ -8,6 +8,7 @@ import dev.bennett.codexmeter.UsageWindow;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNotSame;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -16,9 +17,11 @@ import android.appwidget.AppWidgetManager;
 import android.appwidget.AppWidgetProviderInfo;
 import android.content.ComponentName;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.XmlResourceParser;
+import android.graphics.PorterDuffColorFilter;
 import android.os.Bundle;
 import android.os.Looper;
 import android.view.View;
@@ -26,6 +29,8 @@ import android.view.ViewGroup;
 import android.widget.TextView;
 import android.widget.FrameLayout;
 import android.widget.RemoteViews;
+import android.widget.ImageView;
+import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SwitchCompat;
 import java.lang.reflect.Method;
@@ -44,6 +49,7 @@ import org.robolectric.RuntimeEnvironment;
 import org.robolectric.android.controller.ActivityController;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.LooperMode;
+import org.robolectric.shadows.ShadowDialog;
 import org.xmlpull.v1.XmlPullParser;
 
 @RunWith(RobolectricTestRunner.class)
@@ -95,12 +101,14 @@ public class WidgetConfigActivityTest {
     }
 
     @Test
-    public void savedSelectionsOverrideTheProDefaultAndSurvivePlanChanges() {
+    public void newProWidgetsRemoveInheritedSessionWhileSavedSelectionsSurvivePlanChanges() {
         AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro", 20, 30, false));
         AppPreferences.saveDefaultWidgetOptions(app, WidgetOptions.defaults()
                 .withVisibleMeters("five_hour,usage_credits"));
-        assertEquals("five_hour,usage_credits",
+        assertEquals("usage_credits",
                 AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+        assertEquals("five_hour,usage_credits",
+                AppPreferences.loadDefaultWidgetOptions(app).effectiveVisibleMeters());
 
         saveSelection(WidgetMeters.NEXT_RESET, WidgetMeters.FIVE_HOUR, WidgetMeters.WEEKLY);
         assertEquals("next_reset,five_hour,weekly",
@@ -111,7 +119,7 @@ public class WidgetConfigActivityTest {
     }
 
     @Test
-    public void legacyContentPreferencesOverrideTheProDefault() {
+    public void legacyPerWidgetContentKeepsPriorityOverProInitialization() {
         AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro500", 20, 30, false));
         for (String prefix : new String[] {"default_", "widget_42_"}) {
             for (String[] legacy : new String[][] {
@@ -120,9 +128,54 @@ public class WidgetConfigActivityTest {
                 app.getSharedPreferences("codex_meter_settings_v1", Context.MODE_PRIVATE)
                         .edit().remove("default_metric_mode").remove("widget_42_metric_mode")
                         .putString(prefix + "metric_mode", legacy[0]).commit();
-                assertEquals(prefix + legacy[0], legacy[1],
+                String expected = "default_".equals(prefix) && !"weekly".equals(legacy[0])
+                        ? "weekly,next_reset" : legacy[1];
+                assertEquals(prefix + legacy[0], expected,
                         AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
             }
+        }
+    }
+
+    @Test
+    public void newProWidgetsDropOnlySessionAndKeepTheInheritedOrderAndAppearance() {
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro200", 20, 30, false));
+        WidgetOptions defaults = new WidgetOptions("auto", "system", "app", 65,
+                "hidden", "remaining").withVisibleMeters("usage_credits,five_hour,next_reset,weekly")
+                .withColorStyle(WidgetOptions.COLOR_NATIVE).withPercentSymbol(false);
+        AppPreferences.saveDefaultWidgetOptions(app, defaults);
+
+        WidgetOptions added = AppPreferences.loadWidgetOptions(app, WIDGET_ID);
+        assertEquals("usage_credits,next_reset,weekly", added.effectiveVisibleMeters());
+        assertEquals(defaults.colorStyle, added.colorStyle);
+        assertEquals(defaults.opacity, added.opacity);
+        assertEquals(defaults.showPercentSymbol, added.showPercentSymbol);
+        assertEquals(defaults.effectiveVisibleMeters(),
+                AppPreferences.loadDefaultWidgetOptions(app).effectiveVisibleMeters());
+    }
+
+    @Test
+    public void newProSessionOnlyDefaultsFallBackWithoutChangingAnExistingManualSelection() {
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot("pro500", 20, 30, false));
+        WidgetOptions session = WidgetOptions.defaults().withVisibleMeters("five_hour");
+        AppPreferences.saveDefaultWidgetOptions(app, session);
+        AppPreferences.saveWidgetOptions(app, WIDGET_ID, session);
+
+        assertEquals("weekly,next_reset",
+                AppPreferences.loadWidgetOptions(app, 43).effectiveVisibleMeters());
+        assertEquals("five_hour",
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
+        assertEquals("five_hour",
+                AppPreferences.loadDefaultWidgetOptions(app).effectiveVisibleMeters());
+    }
+
+    @Test
+    public void nonProNewWidgetsKeepInheritedSessionSelections() {
+        AppPreferences.saveDefaultWidgetOptions(app, WidgetOptions.defaults()
+                .withVisibleMeters("usage_credits,five_hour,next_reset"));
+        for (String plan : new String[] {"plus", "free", "team", "pro20x", "unknown"}) {
+            AppPreferences.saveSnapshot(app, UsageCardFixtures.snapshot(plan, 20, 30, false));
+            assertEquals(plan, "usage_credits,five_hour,next_reset",
+                    AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
         }
     }
 
@@ -385,6 +438,150 @@ public class WidgetConfigActivityTest {
         assertEquals("five_hour,next_reset",
                 AppPreferences.loadWidgetOptions(app, WIDGET_ID).effectiveVisibleMeters());
         assertEquals("weekly", AppPreferences.loadWidgetOptions(app, 43).effectiveVisibleMeters());
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN")
+    public void colorStyleChoicesSitBelowBackgroundAndRefreshThePreview() throws Exception {
+        bindProvider(CodexUsageWidget.class, 180);
+        WidgetConfigActivity activity = openEditor();
+        org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle();
+        WidgetOptions before = currentOptions(activity);
+        View styleRow = colorStyleRow(activity);
+        ViewGroup appearance = (ViewGroup) styleRow.getParent();
+        int stylePosition = appearance.indexOfChild(styleRow);
+        assertNotNull(findText(appearance.getChildAt(stylePosition - 2), "背景"));
+        assertEquals(R.id.opacity_slider,
+                appearance.getChildAt(stylePosition + 2).findViewById(R.id.opacity_slider).getId());
+        assertEquals(WidgetOptions.COLOR_AUTO, before.colorStyle);
+        assertNotNull(findText(styleRow, "自动"));
+
+        FrameLayout preview = previewContainer(activity);
+        View automaticPreview = preview.getChildAt(1);
+        AlertDialog dialog = openColorStyleChoices(activity);
+        assertEquals(0, dialog.getListView().getCheckedItemPosition());
+        assertEquals("自动", dialog.getListView().getAdapter().getItem(0));
+        assertEquals("原生", dialog.getListView().getAdapter().getItem(1));
+        assertEquals("经典", dialog.getListView().getAdapter().getItem(2));
+        dialog.getListView().performItemClick(null, 1, 1);
+        org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle();
+        assertFalse(dialog.isShowing());
+        assertEquals(WidgetOptions.COLOR_NATIVE, currentOptions(activity).colorStyle);
+        assertNotNull(findText(styleRow, "原生"));
+        assertNotSame(automaticPreview, preview.getChildAt(1));
+        assertEquals(before.opacity, currentOptions(activity).opacity);
+        assertEquals(before.layout, currentOptions(activity).layout);
+        assertEquals(before.surfaceStyle, currentOptions(activity).surfaceStyle);
+        assertEquals(before.effectiveVisibleMeters(),
+                currentOptions(activity).effectiveVisibleMeters());
+
+        dialog = openColorStyleChoices(activity);
+        assertEquals(1, dialog.getListView().getCheckedItemPosition());
+        dialog.getListView().performItemClick(null, 2, 2);
+        assertEquals(WidgetOptions.COLOR_CLASSIC, currentOptions(activity).colorStyle);
+        assertNotNull(findText(styleRow, "经典"));
+    }
+
+    @Test
+    public void colorStyleSavesOnlyThisWidgetAndCancelKeepsTheSavedChoice() throws Exception {
+        bindProvider(CodexUsageWidget.class, 180);
+        AppPreferences.saveWidgetOptions(app, WIDGET_ID,
+                WidgetOptions.defaults().withColorStyle(WidgetOptions.COLOR_CLASSIC));
+        AppPreferences.saveWidgetOptions(app, 43,
+                WidgetOptions.defaults().withColorStyle(WidgetOptions.COLOR_CLASSIC));
+        WidgetConfigActivity activity = openEditor();
+        AlertDialog dialog = openColorStyleChoices(activity);
+        assertEquals(2, dialog.getListView().getCheckedItemPosition());
+        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).performClick();
+        assertEquals(WidgetOptions.COLOR_CLASSIC, currentOptions(activity).colorStyle);
+
+        dialog = openColorStyleChoices(activity);
+        dialog.getListView().performItemClick(null, 1, 1);
+        assertEquals(WidgetOptions.COLOR_CLASSIC,
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
+        activity.findViewById(R.id.config_save).performClick();
+        assertEquals(WidgetOptions.COLOR_NATIVE,
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
+        assertEquals(WidgetOptions.COLOR_CLASSIC,
+                AppPreferences.loadWidgetOptions(app, 43).colorStyle);
+        assertEquals(WidgetOptions.COLOR_NATIVE, currentOptions(openEditor()).colorStyle);
+
+        WidgetConfigActivity canceled = openEditor();
+        dialog = openColorStyleChoices(canceled);
+        dialog.getListView().performItemClick(null, 2, 2);
+        canceled.findViewById(R.id.config_cancel).performClick();
+        assertEquals(WidgetOptions.COLOR_NATIVE,
+                AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN")
+    public void recreationKeepsTheUnsavedColorChoiceUntilSaveOrCancel() throws Exception {
+        bindProvider(CodexUsageWidget.class, 180);
+        for (boolean save : new boolean[] {true, false}) {
+            AppPreferences.saveWidgetOptions(app, WIDGET_ID,
+                    WidgetOptions.defaults().withColorStyle(WidgetOptions.COLOR_CLASSIC));
+            WidgetConfigActivity activity = openEditor();
+            AlertDialog dialog = openColorStyleChoices(activity);
+            dialog.getListView().performItemClick(null, 1, 1);
+            assertNativeColorDraft(activity);
+
+            ActivityController<WidgetConfigActivity> original = activities.remove(
+                    activities.size() - 1);
+            Bundle state = new Bundle();
+            original.saveInstanceState(state).pause().stop().destroy();
+            ActivityController<WidgetConfigActivity> restored = Robolectric
+                    .buildActivity(WidgetConfigActivity.class, new Intent(activity.getIntent()))
+                    .create(state).start().resume().visible();
+            activities.add(restored);
+            activity = restored.get();
+            assertNativeColorDraft(activity);
+            assertEquals(WidgetOptions.COLOR_CLASSIC,
+                    AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
+            activity.findViewById(save ? R.id.config_save : R.id.config_cancel).performClick();
+            assertEquals(save ? WidgetOptions.COLOR_NATIVE : WidgetOptions.COLOR_CLASSIC,
+                    AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
+        }
+    }
+
+    private static void assertNativeColorDraft(WidgetConfigActivity activity) throws Exception {
+        org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle();
+        assertEquals(WidgetOptions.COLOR_NATIVE, currentOptions(activity).colorStyle);
+        assertNotNull(findText(colorStyleRow(activity), "原生"));
+        AlertDialog dialog = openColorStyleChoices(activity);
+        assertEquals(1, dialog.getListView().getCheckedItemPosition());
+        dialog.getButton(DialogInterface.BUTTON_NEGATIVE).performClick();
+        ImageView shell = previewContainer(activity).getChildAt(1)
+                .findViewById(R.id.md_surface);
+        assertNotNull(shell);
+        assertTrue(shell.getColorFilter() instanceof PorterDuffColorFilter);
+        assertEquals(activity.getColor(R.color.widget_material_surface),
+                org.robolectric.Shadows.shadowOf(
+                        (PorterDuffColorFilter) shell.getColorFilter()).getColor());
+    }
+
+    private static View colorStyleRow(WidgetConfigActivity activity) throws Exception {
+        Field field = WidgetConfigActivity.class.getDeclaredField("colorStyleRow");
+        field.setAccessible(true);
+        return (View) field.get(activity);
+    }
+
+    private static FrameLayout previewContainer(WidgetConfigActivity activity) throws Exception {
+        Field field = WidgetConfigActivity.class.getDeclaredField("previewContainer");
+        field.setAccessible(true);
+        return (FrameLayout) field.get(activity);
+    }
+
+    private static AlertDialog openColorStyleChoices(WidgetConfigActivity activity)
+            throws Exception {
+        View target = colorStyleRow(activity).findViewById(
+                dev.oneuiproject.oneui.design.R.id.cardview_container);
+        assertNotNull(target);
+        assertTrue(target.performClick());
+        AlertDialog dialog = (AlertDialog) ShadowDialog.getLatestDialog();
+        assertNotNull(dialog);
+        assertTrue(dialog.isShowing());
+        return dialog;
     }
 
     private AppWidgetManager bindProvider(Class<?> type, int height) {

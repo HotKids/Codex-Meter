@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <style name="WidgetOneUiDialValue">
+        <item name="android:layout_width">match_parent</item>
+        <item name="android:layout_height">wrap_content</item>
+        <item name="android:gravity">center</item>
+        <item name="android:includeFontPadding">false</item>
+        <item name="android:fallbackLineSpacing">false</item>
+        <item name="android:fontFamily">sec</item>
+        <item name="android:textFontWeight">500</item>
+        <item name="android:textColor">@color/widget_material_text</item>
+        <item name="android:maxLines">1</item>
+    </style>
+</resources>

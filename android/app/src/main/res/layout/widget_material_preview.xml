@@ -19,7 +19,7 @@
                         <TextView android:id="@+id/md_value_0" style="@style/WidgetMaterialText.Bold" android:textSize="13.95dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="5.6dp" android:textColor="@color/widget_material_text" android:text="@string/widget_preview_five_hour_value" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_0" android:layout_width="match_parent" android:layout_height="6.3dp" android:layout_marginTop="5dp">
-                        <ImageView android:id="@+id/md_track_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" android:tint="@color/widget_material_track" />
+                        <ImageView android:id="@+id/md_track_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" android:tint="@color/widget_material_track" android:tintMode="src_in" />
                         <ImageView android:id="@+id/md_fill_0" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_preview_five_hour_fill" android:tint="@color/widget_material_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_0" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">
@@ -53,7 +53,7 @@
                         <TextView android:id="@+id/md_value_2" style="@style/WidgetMaterialText.Bold" android:textSize="13.95dp" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:layout_marginStart="5.6dp" android:textColor="@color/widget_material_text" android:text="@string/widget_preview_weekly_value" />
                     </LinearLayout>
                     <FrameLayout android:id="@+id/md_bar_2" android:layout_width="match_parent" android:layout_height="6.3dp" android:layout_marginTop="5dp">
-                        <ImageView android:id="@+id/md_track_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" android:tint="@color/widget_material_track" />
+                        <ImageView android:id="@+id/md_track_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_card_capsule" android:tint="@color/widget_material_track" android:tintMode="src_in" />
                         <ImageView android:id="@+id/md_fill_2" android:layout_width="match_parent" android:layout_height="match_parent" android:importantForAccessibility="no" android:scaleType="fitXY" android:src="@drawable/widget_preview_weekly_fill" android:tint="@color/widget_material_fill" />
                     </FrameLayout>
                     <LinearLayout android:id="@+id/md_detail_2" android:layout_width="match_parent" android:layout_height="wrap_content" android:layout_marginTop="5dp" android:baselineAligned="true" android:orientation="horizontal">

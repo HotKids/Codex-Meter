@@ -107,6 +107,8 @@
     <string name="auth_error_scheduler_unavailable">Android 的后台任务调度器不可用。</string>
     <string name="auth_error_scheduler_failed">后台刷新：%1$s</string>
 
+    <string name="auth_error_status_not_saved">无法保存账户认证状态。</string>
+
     <!-- 关于。 -->
     <string name="auth_about_app_info">应用信息</string>
     <string name="auth_about_credits">致谢</string>

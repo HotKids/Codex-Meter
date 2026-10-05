@@ -363,7 +363,7 @@ public final class SettingsTransferStore {
             throw new IllegalArgumentException(
                     context.getString(R.string.settings_transfer_error_auth_invalid));
         }
-        SecureTokenStore.save(context, tokens);
+        UsageApi.saveTokens(context, tokens);
         AppPreferences.clearSnapshot(context);
         AppPreferences.setOAuthPending(context, false, "");
         AppPreferences.completeOnboarding(context);

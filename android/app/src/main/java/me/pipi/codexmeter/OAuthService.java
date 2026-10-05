@@ -39,6 +39,7 @@ import java.util.concurrent.atomic.AtomicBoolean;
  */
 public final class OAuthService extends Service {
     public static final String ACTION_START = BuildConfig.APPLICATION_ID + ".oauth.START";
+    public static final String EXTRA_REAUTHENTICATE = "reauthenticate";
     public static final String ACTION_CANCEL = BuildConfig.APPLICATION_ID + ".oauth.CANCEL";
     public static final String ACTION_CANCEL_SILENT =
             BuildConfig.APPLICATION_ID + ".oauth.CANCEL_SILENT";
@@ -53,10 +54,12 @@ public final class OAuthService extends Service {
     private static final int MAX_ERROR_LENGTH = 240;
     private static final int MAX_WIDGET_ERROR_LENGTH = 200;
 
+    private final Object flowLock = new Object();
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private final AtomicBoolean running = new AtomicBoolean(false);
     private volatile ServerSocket serverSocket;
     private volatile boolean cancelled;
+    private volatile boolean credentialsCommitted;
 
     @Override
     public void onCreate() {
@@ -73,14 +76,19 @@ public final class OAuthService extends Service {
             cancelFlow(getString(R.string.auth_sign_in_cancelled), ACTION_CANCEL.equals(action));
             return START_NOT_STICKY;
         }
-        if (SecureTokenStore.isSignedIn(this)) {
+        if (cancelled) {
+            return START_NOT_STICKY;
+        }
+        boolean reauthenticate = intent != null
+                && intent.getBooleanExtra(EXTRA_REAUTHENTICATE, false);
+        // Explicit reauthentication keeps the old session until a successful exchange replaces it.
+        if (SecureTokenStore.isSignedIn(this) && !reauthenticate && !running.get()) {
             AppPreferences.setOAuthPending(this, false, "");
             broadcastResult(true, getString(R.string.auth_sign_in_already_signed_in));
             finishService();
             return START_NOT_STICKY;
         }
         if (running.compareAndSet(false, true)) {
-            cancelled = false;
             startSignInForeground(buildNotification(getString(R.string.auth_sign_in_preparing),
                     null));
             executor.execute(this::runFlow);
@@ -101,6 +109,11 @@ public final class OAuthService extends Service {
 
     @Override
     public void onDestroy() {
+        synchronized (flowLock) {
+            if (!credentialsCommitted) {
+                cancelled = true;
+            }
+        }
         closeServer();
         executor.shutdownNow();
         super.onDestroy();
@@ -108,17 +121,22 @@ public final class OAuthService extends Service {
 
     private void runFlow() {
         Socket browser = null;
-        boolean credentialsCommitted = false;
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(this, "auth", "oauth_flow_started");
         try {
             Pkce pkce = Pkce.generate();
-            int port = bindServer();
-            String redirectUri = "http://localhost:" + port + CALLBACK_PATH;
-            String authUrl = buildAuthorizeUrl(redirectUri, pkce);
-            AppPreferences.setOAuthPending(this, true, authUrl);
-            updateNotification(getString(R.string.auth_sign_in_complete_in_browser), authUrl);
-            broadcastReady(authUrl);
+            String redirectUri;
+            synchronized (flowLock) {
+                if (cancelled) {
+                    return;
+                }
+                int port = bindServer();
+                redirectUri = "http://localhost:" + port + CALLBACK_PATH;
+                String authUrl = buildAuthorizeUrl(redirectUri, pkce);
+                AppPreferences.setOAuthPending(this, true, authUrl);
+                updateNotification(getString(R.string.auth_sign_in_complete_in_browser), authUrl);
+                broadcastReady(authUrl);
+            }
 
             while (!cancelled) {
                 try {
@@ -165,10 +183,10 @@ public final class OAuthService extends Service {
                 AuthTokens tokens = OAuthClient.exchangeCode(this, code, redirectUri,
                         pkce.verifier);
                 OAuthTiming.mark(OAuthTiming.Phase.EXCHANGE_COMPLETED);
-                SecureTokenStore.save(this, tokens);
+                if (!commitSession(tokens)) {
+                    return;
+                }
                 OAuthTiming.mark(OAuthTiming.Phase.SAVE_COMPLETED);
-                credentialsCommitted = true;
-                AppPreferences.setOAuthPending(this, false, "");
 
                 // The browser callback is complete as soon as credentials are safely stored.
                 // Usage retrieval and JobScheduler setup must never turn a successful OAuth
@@ -222,6 +240,20 @@ public final class OAuthService extends Service {
         } finally {
             closeQuietly(browser);
             closeServer();
+        }
+    }
+
+    private boolean commitSession(AuthTokens tokens) throws Exception {
+        // Wait for backend work without holding the cancellation boundary on the main thread.
+        synchronized (UsageApi.NETWORK_LOCK) {
+            synchronized (flowLock) {
+                if (cancelled) {
+                    return false;
+                }
+                UsageApi.saveTokens(this, tokens, () -> credentialsCommitted = true);
+                AppPreferences.setOAuthPending(this, false, "");
+                return true;
+            }
         }
     }
 
@@ -356,7 +388,12 @@ public final class OAuthService extends Service {
     }
 
     private void cancelFlow(String message, boolean broadcast) {
-        cancelled = true;
+        synchronized (flowLock) {
+            if (credentialsCommitted) {
+                return;
+            }
+            cancelled = true;
+        }
         AppPreferences.setOAuthPending(this, false, "");
         closeServer();
         if (broadcast) {
@@ -464,15 +501,17 @@ public final class OAuthService extends Service {
         Notification.Action cancelAction = new Notification.Action.Builder(
                 Icon.createWithResource(this, R.drawable.ic_oui_close),
                 getString(R.string.auth_sign_in_notification_cancel), cancel).build();
-        return new Notification.Builder(this, CHANNEL_ID)
+        Notification.Builder notification = new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_oui_notification)
                 .setContentTitle(getString(R.string.auth_sign_in_notification_title))
                 .setContentText(text)
                 .setContentIntent(open)
-                .addAction(cancelAction)
                 .setOngoing(true)
-                .setCategory(Notification.CATEGORY_SERVICE)
-                .build();
+                .setCategory(Notification.CATEGORY_SERVICE);
+        if (!credentialsCommitted) {
+            notification.addAction(cancelAction);
+        }
+        return notification.build();
     }
 
     private void updateNotification(String text, String authUrl) {

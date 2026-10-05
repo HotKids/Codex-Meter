@@ -8,7 +8,6 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.content.res.Configuration;
-import android.graphics.Color;
 import android.os.Build;
 import android.os.Process;
 import android.provider.Settings;
@@ -17,11 +16,12 @@ import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.widget.RemoteViews;
 
-/** Applies stock ColorOS backgrounds and source-derived geometry. */
+/** Adds ColorOS corners to the One UI background layer and shared widget content. */
 final class ColorOsWidgetAppearance {
     private static final String TAG = "CodexMeterWidget";
     private static final int[] PANELS = {R.id.md_panel_bg_0, R.id.md_panel_bg_1,
             R.id.md_panel_bg_2, R.id.md_panel_bg_3};
+    private static boolean previewAttempted;
 
     private ColorOsWidgetAppearance() {
     }
@@ -33,29 +33,21 @@ final class ColorOsWidgetAppearance {
 
     static void apply(Context context, RemoteViews views, boolean dial, int opacity,
             float widthDp, float heightDp) {
+        apply(context, views, dial, opacity, widthDp, heightDp, WidgetOptions.COLOR_AUTO);
+    }
+
+    static void apply(Context context, RemoteViews views, boolean dial, int opacity,
+            float widthDp, float heightDp, String colorStyle) {
+        OneUiWidgetAppearance.applySurface(context, views, dial, opacity, colorStyle);
         boolean colorOs = isStockLauncher(context);
         int surface = dial ? R.id.dial_surface : R.id.md_surface;
-        views.setImageViewResource(surface, colorOs
-                ? (dial ? R.drawable.widget_coloros_dial_surface
-                        : R.drawable.widget_coloros_card_surface)
-                : (dial ? R.drawable.widget_dial_surface : R.drawable.widget_card_surface));
-        if (colorOs) {
-            // Transparent SRC_ATOP preserves the drawable's own RGB and alpha.
-            views.setInt(surface, "setColorFilter", Color.TRANSPARENT);
-        } else {
-            views.setColor(surface, "setColorFilter", R.color.widget_material_surface);
-        }
-        views.setInt(surface, "setImageAlpha", Math.round(opacity * 2.55f));
         geometry(context, views, surface, colorOs, dial, widthDp, heightDp);
+        if (!colorOs) return;
+        views.setImageViewResource(surface, dial ? R.drawable.widget_coloros_dial_surface
+                : R.drawable.widget_coloros_card_surface);
         if (!dial) {
             for (int panel : PANELS) {
-                views.setImageViewResource(panel, colorOs
-                        ? R.drawable.widget_coloros_panel : R.drawable.widget_material_panel);
-                if (colorOs) {
-                    views.setInt(panel, "setColorFilter", Color.TRANSPARENT);
-                } else {
-                    views.setColor(panel, "setColorFilter", R.color.widget_material_panel);
-                }
+                views.setImageViewResource(panel, R.drawable.widget_coloros_panel);
             }
         }
     }
@@ -131,41 +123,48 @@ final class ColorOsWidgetAppearance {
                 && "com.android.launcher".equals(launcher.activityInfo.packageName);
     }
 
-    static void publishPreviews(Context context, AppWidgetManager manager) {
+    static synchronized void publishPreviews(Context context, AppWidgetManager manager) {
         boolean colorOs = isStockLauncher(context);
         reconcileDialAvailability(context, manager, colorOs);
         if (Build.VERSION.SDK_INT < 35) {
             return;
         }
+        boolean refresh = colorOs && !previewAttempted;
+        if (!colorOs) previewAttempted = false;
+        boolean published = true;
         for (Class<?> provider : new Class<?>[] {CodexUsageWidget.class, CodexDialWidget.class}) {
             try {
                 boolean dial = provider == CodexDialWidget.class;
                 int layout = dial ? R.layout.widget_coloros_dial_preview
-                        : R.layout.widget_material_preview;
+                        : R.layout.widget_coloros_card_preview;
                 ComponentName component = new ComponentName(context, provider);
                 RemoteViews current = manager.getWidgetPreview(component, Process.myUserHandle(),
                         AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN);
                 if (!colorOs) {
-                    if (current != null && current.getLayoutId() == layout) {
+                    if (current != null && (current.getLayoutId() == layout
+                            || !dial && current.getLayoutId() == R.layout.widget_material_preview)) {
                         manager.removeWidgetPreview(component,
                                 AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN);
                     }
                     continue;
                 }
-                if (current != null && current.getLayoutId() == layout) {
+                if (!refresh && current != null && current.getLayoutId() == layout) {
                     continue;
                 }
                 RemoteViews preview = new RemoteViews(context.getPackageName(), layout);
                 apply(context, preview, dial, 100);
                 if (!manager.setWidgetPreview(component,
                         AppWidgetProviderInfo.WIDGET_CATEGORY_HOME_SCREEN, preview)) {
+                    published = false;
                     Log.w(TAG, "Widget preview publication rate limited");
                 }
             } catch (RuntimeException exception) {
+                published = false;
                 Log.w(TAG, "Widget preview publication failed: "
                         + exception.getClass().getSimpleName());
             }
         }
+        if (colorOs) previewAttempted = published;
     }
 
     private static void reconcileDialAvailability(Context context, AppWidgetManager manager,

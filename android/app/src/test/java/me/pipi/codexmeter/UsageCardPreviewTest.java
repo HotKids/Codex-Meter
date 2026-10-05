@@ -22,11 +22,13 @@ import android.widget.RemoteViews;
 import android.widget.TextView;
 import java.util.List;
 import org.junit.Test;
+import org.junit.Before;
 import org.junit.runner.RunWith;
 import org.robolectric.RobolectricTestRunner;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Config;
 import org.robolectric.annotation.GraphicsMode;
+import org.robolectric.shadows.ShadowBuild;
 import org.xmlpull.v1.XmlPullParser;
 
 /** Widget previews use synthetic fixtures and render the production RemoteViews. */
@@ -34,6 +36,12 @@ import org.xmlpull.v1.XmlPullParser;
 @Config(sdk = 35, application = Application.class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class UsageCardPreviewTest {
+    @Before
+    public void usePixelHost() {
+        ShadowBuild.setManufacturer("Google");
+        ShadowBuild.setModel("Pixel 11 Pro");
+    }
+
     @Test
     @Config(qualifiers = "zh-rCN-xhdpi")
     public void pickerShowsTwoPopulatedClearRows() throws Exception {
@@ -353,8 +361,8 @@ public class UsageCardPreviewTest {
     public void oneRowBackgroundHonorsEnabledOpacityLevelsAndOff() {
         Context context = RuntimeEnvironment.getApplication();
         UsageCardState state = UsageCardFixtures.state(UsageCardFixtures.plus(), 2);
-        int[] opacity = {56, 88, 100, 0};
-        int[] alpha = {143, 224, 255, 0};
+        int[] opacity = {56, 65, 100, 0};
+        int[] alpha = {143, 166, 255, 0};
         for (int index = 0; index < opacity.length; index++) {
             WidgetOptions options = new WidgetOptions("auto", "system", "app", opacity[index],
                     "hidden", "remaining").withVisibleMeters(

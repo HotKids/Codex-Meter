@@ -59,6 +59,7 @@ public final class UsageApi {
             tokens = refreshAndSave(context, tokens);
             response = requestUsage(context, tokens);
         }
+        recordAuthenticationRejection(context, response);
         if (!response.isSuccessful()) {
             throw usageFailure(context, response);
         }
@@ -70,6 +71,7 @@ public final class UsageApi {
         if (!AppPreferences.saveSnapshot(context, snapshot)) {
             throw OAuthClient.userError(context, R.string.auth_error_usage_not_saved);
         }
+        AppPreferences.setReauthenticationRequired(context, false);
         UsageHistoryRecorder.record(context, snapshot);
         NowBarManager.onUsageUpdated(context, snapshot);
         ResetNotificationManager.onUsageUpdated(context, previous, snapshot);
@@ -124,9 +126,54 @@ public final class UsageApi {
 
     /** Exchanges the refresh token and persists the result before anything uses it. */
     static AuthTokens refreshAndSave(Context context, AuthTokens tokens) throws Exception {
-        AuthTokens refreshed = OAuthClient.refresh(context, tokens);
-        SecureTokenStore.save(context, refreshed);
-        return refreshed;
+        synchronized (NETWORK_LOCK) {
+            try {
+                AuthTokens refreshed = OAuthClient.refresh(context, tokens);
+                saveTokens(context, refreshed);
+                return refreshed;
+            } catch (OAuthClient.TokenEndpointException exception) {
+                if (exception.rejectsRefreshToken()) {
+                    AppPreferences.setReauthenticationRequired(context, true);
+                }
+                throw exception;
+            }
+        }
+    }
+
+    static void saveTokens(Context context, AuthTokens tokens) throws Exception {
+        saveTokens(context, tokens, () -> {});
+    }
+
+    static void saveTokens(Context context, AuthTokens tokens, Runnable onCredentialsCommitted)
+            throws Exception {
+        synchronized (NETWORK_LOCK) {
+            // A previous request's rejection must not overwrite a newly committed session.
+            AuthTokens previous = SecureTokenStore.load(context);
+            SecureTokenStore.save(context, tokens);
+            onCredentialsCommitted.run();
+            if (accountChanged(previous, tokens)) {
+                AppPreferences.clearSnapshot(context);
+            }
+            AppPreferences.setReauthenticationRequired(context, false);
+        }
+    }
+
+    private static boolean accountChanged(AuthTokens previous, AuthTokens replacement) {
+        if (previous == null) {
+            return false;
+        }
+        if (!previous.accountId.isEmpty() && !replacement.accountId.isEmpty()) {
+            return !previous.accountId.equals(replacement.accountId);
+        }
+        return !previous.email.isEmpty() && !replacement.email.isEmpty()
+                && !previous.email.equalsIgnoreCase(replacement.email);
+    }
+
+    /** Call only after the access-token refresh retry; an initial 401 may be recoverable. */
+    static void recordAuthenticationRejection(Context context, Response response) throws Exception {
+        if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            AppPreferences.setReauthenticationRequired(context, true);
+        }
     }
 
     private static Response requestUsage(Context context, AuthTokens tokens) throws Exception {
@@ -143,7 +190,7 @@ public final class UsageApi {
         return send(context, operation, method, url, tokens, payload, true);
     }
 
-    private static Response send(Context context, String operation, String method, String url,
+    static Response send(Context context, String operation, String method, String url,
             AuthTokens tokens, byte[] payload, boolean logRequestBytes) throws Exception {
         HttpsURLConnection connection =
                 (HttpsURLConnection) URI.create(url).toURL().openConnection();

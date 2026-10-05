@@ -226,7 +226,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         Ui.addSpacer(this.content, 20);
         RoundedLinearLayout card = Ui.seslCard(this, this.dark);
         TextView title = Ui.text(this, getString(R.string.auth_onboarding_galaxy_title), 18.0f,
-                Ui.mainText(this.dark));
+                Ui.mainText(this, this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView body = Ui.text(this, getString(R.string.auth_onboarding_galaxy_body),

@@ -231,7 +231,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                         : getString(R.string.dashboard_history_scrub_value, moment, used,
                                 PlanPricing.formatUsd(
                                         pricing.estimatedValueUsd(history.kind, usedPercent)));
-                scrubDetail.setTextColor(Ui.mainText(dark));
+                scrubDetail.setTextColor(Ui.mainText(UsageHistoryActivity.this, dark));
                 scrubDetail.setText(text);
             }
 
@@ -274,7 +274,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             LinearLayout texts = new LinearLayout(this);
             texts.setOrientation(LinearLayout.VERTICAL);
             TextView titleView = Ui.text(this, rowTitle, 14,
-                    current ? Ui.accent(this, dark) : Ui.mainText(dark));
+                    current ? Ui.accent(this, dark) : Ui.mainText(this, dark));
             titleView.setTypeface(Ui.mediumTypeface(this));
             texts.addView(titleView);
             texts.addView(Ui.text(this, subtitle, 12, Ui.secondaryText(dark)));
@@ -289,7 +289,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                         current ? UsageBurnChartView.CURRENT_WINDOW : chartWindowIndex);
                 for (int i = 0; i < titles.length; i++) {
                     titles[i].setTextColor(i == rowIndex ? Ui.accent(this, dark)
-                            : Ui.mainText(dark));
+                            : Ui.mainText(this, dark));
                 }
             });
             row.setClickable(true);
@@ -325,7 +325,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         long observedAt = snapshot == null ? now : snapshot.fetchedAtMillis;
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this, getString(R.string.dashboard_history_insights), 16,
-                Ui.mainText(dark));
+                Ui.mainText(this, dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         int rows = 0;
@@ -412,7 +412,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
     private LinearLayout buildValueCard(UsageSnapshot snapshot, PlanPricing pricing) {
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this, SharedLabels.planPriceTitle(this,
-                UsageFormat.planLabel(snapshot.planType), pricing), 16, Ui.mainText(dark));
+                UsageFormat.planLabel(snapshot.planType), pricing), 16, Ui.mainText(this, dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         addStatRow(card, getString(R.string.dashboard_history_included_usage),
@@ -445,7 +445,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         rowParams.setMargins(0, Ui.dp(this, 8), 0, 0);
         TextView labelView = Ui.text(this, label, 13, Ui.secondaryText(dark));
         row.addView(labelView, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
-        TextView valueView = Ui.text(this, value, 13, Ui.mainText(dark));
+        TextView valueView = Ui.text(this, value, 13, Ui.mainText(this, dark));
         valueView.setTypeface(Typeface.create("sec", Typeface.NORMAL));
         valueView.setGravity(Gravity.END);
         row.addView(valueView, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));

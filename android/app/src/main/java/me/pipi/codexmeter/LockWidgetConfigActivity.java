@@ -196,7 +196,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         LinearLayout content = new LinearLayout(this);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 52));
-        content.addView(Ui.text(this, title, 16, Ui.mainText(dark)),
+        content.addView(Ui.text(this, title, 16, Ui.mainText(this, dark)),
                 new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
         content.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
         content.setOnClickListener(view -> toggle.toggle());

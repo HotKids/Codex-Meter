@@ -21,12 +21,14 @@ import android.widget.LinearLayout;
 import android.widget.RemoteViews;
 import android.widget.TextView;
 import android.widget.Toast;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.SeslSeekBar;
 import androidx.appcompat.widget.SwitchCompat;
 import androidx.recyclerview.widget.ItemTouchHelper;
 import androidx.recyclerview.widget.LinearLayoutManager;
 import androidx.recyclerview.widget.RecyclerView;
+import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import java.util.ArrayList;
 import java.util.LinkedHashSet;
@@ -41,6 +43,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private static final String OPTION_MAX_WIDTH = AppWidgetManager.OPTION_APPWIDGET_MAX_WIDTH;
     private static final String OPTION_MIN_HEIGHT = AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT;
     private static final String OPTION_MAX_HEIGHT = AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT;
+    private static final String STATE_COLOR_STYLE = "widget_color_style";
     /** A 2x2 cell on a typical phone grid, used before the launcher reports a size. */
     private static final int DEFAULT_PREVIEW_DP = 170;
     private static final float DIMMED_ALPHA = 0.45f;
@@ -60,6 +63,8 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private SwitchCompat backgroundSwitch;
     private SeslSeekBar opacitySlider;
     private View opacityControl;
+    private String colorStyle;
+    private CardItemView colorStyleRow;
 
     @Override
     protected void onCreate(Bundle state) {
@@ -81,6 +86,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         setResult(RESULT_CANCELED, new Intent().putExtra(AppWidgetManager.EXTRA_APPWIDGET_ID,
                 appWidgetId));
         dark = Ui.isDark(this);
+        colorStyle = state == null ? null : state.getString(STATE_COLOR_STYLE);
         refreshWidgetSize();
         build();
     }
@@ -88,6 +94,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     @Override
     protected void onSaveInstanceState(Bundle state) {
         state.putInt(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
+        state.putString(STATE_COLOR_STYLE, colorStyle);
         super.onSaveInstanceState(state);
     }
 
@@ -248,7 +255,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
 
             LinearLayout labels = new LinearLayout(activity);
             labels.setOrientation(LinearLayout.VERTICAL);
-            TextView title = Ui.text(activity, "", 17f, Ui.mainText(dark));
+            TextView title = Ui.text(activity, "", 17f, Ui.mainText(activity, dark));
             TextView summary = Ui.text(activity, "", 13f, Ui.secondaryText(dark));
             labels.addView(title);
             labels.addView(summary);
@@ -264,7 +271,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
 
             ImageView handle = new ImageView(activity);
             handle.setImageResource(R.drawable.ic_ms_drag_handle);
-            handle.setImageTintList(ColorStateList.valueOf(Ui.mainText(dark)));
+            handle.setImageTintList(ColorStateList.valueOf(Ui.mainText(activity, dark)));
             handle.setContentDescription(getString(R.string.widget_editor_reorder));
             int padding = Ui.dp(activity, 12);
             handle.setPadding(padding, padding, padding, padding);
@@ -394,6 +401,12 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         backgroundSwitch = new SwitchCompat(this);
         backgroundSwitch.setChecked(saved.opacity > 0);
         card.addView(switchRow(getString(R.string.widget_background), backgroundSwitch));
+        card.addView(divider(), dividerParams());
+        colorStyle = colorStyle == null ? saved.colorStyle
+                : saved.withColorStyle(colorStyle).colorStyle;
+        colorStyleRow = Ui.actionRow(this, getString(R.string.widget_color_style),
+                colorStyleLabel(), 0, view -> showColorStyleChoices());
+        card.addView(colorStyleRow);
         View opacityDivider = divider();
         card.addView(opacityDivider, dividerParams());
         opacityControl = LayoutInflater.from(this).inflate(R.layout.view_widget_opacity, card,
@@ -430,6 +443,36 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         return card;
     }
 
+    private String colorStyleLabel() {
+        if (WidgetOptions.COLOR_NATIVE.equals(colorStyle)) {
+            return getString(R.string.widget_color_style_native);
+        }
+        if (WidgetOptions.COLOR_CLASSIC.equals(colorStyle)) {
+            return getString(R.string.widget_color_style_classic);
+        }
+        return getString(R.string.widget_color_style_auto);
+    }
+
+    private void showColorStyleChoices() {
+        String[] values = {WidgetOptions.COLOR_AUTO, WidgetOptions.COLOR_NATIVE,
+                WidgetOptions.COLOR_CLASSIC};
+        String[] labels = {getString(R.string.widget_color_style_auto),
+                getString(R.string.widget_color_style_native),
+                getString(R.string.widget_color_style_classic)};
+        int selected = WidgetOptions.COLOR_NATIVE.equals(colorStyle) ? 1
+                : WidgetOptions.COLOR_CLASSIC.equals(colorStyle) ? 2 : 0;
+        new AlertDialog.Builder(this)
+                .setTitle(R.string.widget_color_style)
+                .setSingleChoiceItems(labels, selected, (dialog, which) -> {
+                    colorStyle = values[which];
+                    colorStyleRow.setSummary(colorStyleLabel());
+                    renderPreview();
+                    dialog.dismiss();
+                })
+                .setNegativeButton(android.R.string.cancel, null)
+                .show();
+    }
+
     private LinearLayout switchRow(String title, SwitchCompat toggle) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
@@ -437,7 +480,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 64));
         content.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), 0);
-        content.addView(Ui.text(this, title, 18, Ui.mainText(dark)),
+        content.addView(Ui.text(this, title, 18, Ui.mainText(this, dark)),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         content.addView(toggle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -502,10 +545,10 @@ public final class WidgetConfigActivity extends AppCompatActivity {
                 : 0;
         return new WidgetOptions(saved.layout, WidgetOptions.DENSITY_AUTO,
                 WidgetOptions.SURFACE_ONE_UI, WidgetOptions.GRAPHIC_AUTO,
-                // Colours follow the system palette and dark mode; no per-widget override.
                 WidgetOptions.THEME_SYSTEM, WidgetOptions.ACCENT_APP,
                 opacity, WidgetOptions.RESET_HIDDEN, saved.displayMode, WidgetOptions.METRIC_BOTH,
                 false, false, false, false, false, false)
+                .withColorStyle(colorStyle)
                 .withPercentSymbol(saved.showPercentSymbol)
                 .withVisibleMeters(WidgetMeters.serialize(orderedSelection()));
     }

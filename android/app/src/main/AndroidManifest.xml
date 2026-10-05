@@ -31,6 +31,9 @@
         android:usesCleartextTraffic="false"
         android:roundIcon="@mipmap/ic_launcher"
         android:dataExtractionRules="@xml/data_extraction_rules">
+        <meta-data
+            android:name="theming-meta"
+            android:value="theming_meta_codex_meter"/>
         <activity
             android:name="me.pipi.codexmeter.MainActivity"
             android:exported="true"
@@ -100,6 +103,9 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/codex_widget_info"/>
+            <meta-data
+                android:name="samsung.appwidget.colorful.info"
+                android:resource="@xml/codex_widget_oneui_info"/>
         </receiver>
         <receiver
             android:label="@string/widget_dial_name"
@@ -111,6 +117,9 @@
             <meta-data
                 android:name="android.appwidget.provider"
                 android:resource="@xml/codex_dial_widget_info"/>
+            <meta-data
+                android:name="samsung.appwidget.colorful.info"
+                android:resource="@xml/codex_dial_widget_oneui_info"/>
             <meta-data
                 android:name="${applicationId}.COLOROS_HIDDEN_DIAL_PROVIDER_INFO"
                 android:resource="@xml/codex_dial_widget_hidden_info"/>

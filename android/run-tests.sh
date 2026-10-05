@@ -71,12 +71,12 @@ javac -encoding UTF-8 -cp "$JSON_JAR" -d "$OUT" \
 java -ea -cp "$OUT:$JSON_JAR" me.pipi.codexmeter.ParserSelfTest
 
 # Source-level release checks.
-grep -q 'VERSION_NAME = "0.2"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_CODE = 3' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'versionName = "0.2"' "$ROOT/app/build.gradle.kts"
-grep -q 'versionCode = 3' "$ROOT/app/build.gradle.kts"
-grep -q 'codex-meter-android/0.2' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_NAME="0.2"' "$ROOT/build.sh"
+grep -q 'VERSION_NAME = "0.3"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_CODE = 4' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'versionName = "0.3"' "$ROOT/app/build.gradle.kts"
+grep -q 'versionCode = 4' "$ROOT/app/build.gradle.kts"
+grep -q 'codex-meter-android/0.3' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_NAME="0.3"' "$ROOT/build.sh"
 WORKFLOW="$ROOT/../.github/workflows/build-apk.yml"
 grep -Fq ':app:assembleDebug' "$WORKFLOW"
 grep -Fq 'android/app/build/outputs/apk/debug/app-debug.apk' "$WORKFLOW"
@@ -501,8 +501,22 @@ grep -q 'codex_live_monitor_v2' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
 grep -q 'NotificationManager.IMPORTANCE_DEFAULT' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
-grep -q 'setSmallIcon(R.drawable.ic_notification)' \
+grep -q 'setSmallIcon(R.drawable.ic_live_capsule)' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
+grep -q 'R.drawable.ic_live_capsule_samsung' \
+  "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
+test -f "$ROOT/app/src/main/res/drawable/ic_codex_logo_color.xml"
+test -f "$ROOT/app/src/main/res/drawable/ic_live_capsule_samsung.xml"
+test ! -f "$ROOT/app/src/main/res/drawable/ic_live_capsule.xml"
+python3 - <<PY
+from pathlib import Path
+import struct
+resources = Path("$ROOT/app/src/main/res")
+for density, size in (("mdpi", 24), ("hdpi", 36), ("xhdpi", 48), ("xxhdpi", 72), ("xxxhdpi", 96)):
+    png = (resources / ("drawable-" + density) / "ic_live_capsule.png").read_bytes()
+    assert png[:8] == b"\x89PNG\r\n\x1a\n"
+    assert struct.unpack(">II", png[16:24]) == (size, size)
+PY
 grep -q 'ic_now_bar_progress_dot' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/NowBarManager.java"
 grep -q 'R.mipmap.ic_launcher' \
@@ -649,7 +663,7 @@ grep -R -q 'app:widgetStyle="monotone"' "$ROOT/app/src/main/res/xml/samsung_lock
 grep -q 'RESET_CREDITS_CONSUME_URL' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
 grep -q 'ResetCreditActivity' "$ROOT/app/src/main/AndroidManifest.xml"
 grep -q 'showResetAction' "$ROOT/app/src/main/java/me/pipi/codexmeter/WidgetOptions.java"
-grep -q 'OPACITY_LEVELS = {56, 88, 100}' \
+grep -q 'OPACITY_LEVELS = {56, 65, 100}' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/WidgetOptions.java"
 grep -q 'widget_background' "$ROOT/app/src/main/res/values/strings.xml"
 grep -q 'backgroundSwitch' \

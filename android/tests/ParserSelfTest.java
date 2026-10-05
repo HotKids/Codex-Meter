@@ -1373,8 +1373,7 @@ public final class ParserSelfTest {
                 WidgetOptions.RESET_BOTH, WidgetOptions.DISPLAY_USED);
         check(WidgetOptions.STYLE_BARS.equals(migrated.layout), "legacy detailed migration");
         check(WidgetOptions.DENSITY_AUTO.equals(migrated.density), "default density");
-        // 72 is equidistant from 56 and 88; prefer the stronger fill (88).
-        check(migrated.opacity == 88, "legacy 72% opacity snaps to medium fill");
+        check(migrated.opacity == 65, "legacy 72% opacity snaps to medium fill");
         WidgetOptions safe = new WidgetOptions("invalid", "invalid", "invalid", "invalid", 13,
                 "invalid", "invalid", true, false, true);
         check(WidgetOptions.STYLE_AUTO.equals(safe.layout), "invalid style fallback");
@@ -1389,10 +1388,13 @@ public final class ParserSelfTest {
         check(WidgetOptions.snapOpacity(0) == 0, "background-off stays at 0");
         check(WidgetOptions.snapOpacity(15) == 56, "legacy 15% maps to low fill");
         check(WidgetOptions.snapOpacity(40) == 56, "legacy 40% maps to low fill");
-        check(WidgetOptions.snapOpacity(70) == 56, "legacy 70% maps to low fill");
+        check(WidgetOptions.snapOpacity(70) == 65, "legacy 70% maps to medium fill");
+        check(WidgetOptions.snapOpacity(88) == 65, "old middle level migrates to 65%");
+        check(WidgetOptions.snapOpacity(65) == 65, "new middle level stays at 65%");
         check(WidgetOptions.snapOpacity(94) == 100, "legacy 94% maps to full fill");
         check(WidgetOptions.opacityIndex(0) == 2, "background-off restores the opaque default tick");
-        check(WidgetOptions.opacityIndex(88) == 1, "88% is the middle tick");
+        check(WidgetOptions.opacityIndex(88) == 1, "old middle opacity keeps the middle tick");
+        check(WidgetOptions.opacityIndex(65) == 1, "65% is the middle tick");
 
         WidgetOptions transparent = new WidgetOptions(WidgetOptions.STYLE_RINGS,
                 WidgetOptions.DENSITY_COMFORTABLE, WidgetOptions.SURFACE_ONE_UI,

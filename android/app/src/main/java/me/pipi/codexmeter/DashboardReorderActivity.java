@@ -175,7 +175,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
 
         LinearLayout labels = new LinearLayout(context);
         labels.setOrientation(LinearLayout.VERTICAL);
-        TextView title = Ui.text(context, "", 17.0f, Ui.mainText(dark));
+        TextView title = Ui.text(context, "", 17.0f, Ui.mainText(context, dark));
         labels.addView(title);
         TextView summary = Ui.text(context, "", 13.0f, Ui.secondaryText(dark));
         LinearLayout.LayoutParams summaryParams =
@@ -193,7 +193,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
 
         ImageView handle = new ImageView(context);
         handle.setImageResource(R.drawable.ic_ms_drag_handle);
-        handle.setImageTintList(ColorStateList.valueOf(Ui.mainText(dark)));
+        handle.setImageTintList(ColorStateList.valueOf(Ui.mainText(context, dark)));
         handle.setContentDescription(context.getString(R.string.dashboard_edit_reorder));
         int pad = Ui.dp(context, 12);
         handle.setPadding(pad, pad, pad, pad);

@@ -107,6 +107,8 @@
     <string name="auth_error_scheduler_unavailable">Android\'s background scheduler is unavailable.</string>
     <string name="auth_error_scheduler_failed">Background refresh: %1$s</string>
 
+    <string name="auth_error_status_not_saved">Could not save the account authentication status.</string>
+
     <!-- About. -->
     <string name="auth_about_app_info">App info</string>
     <string name="auth_about_credits">Credits</string>

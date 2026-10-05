@@ -285,7 +285,7 @@ public final class UsageBurnChartView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setTypeface(boldTypeface);
         paint.setTextSize(14f * density);
-        paint.setColor(Ui.mainText(dark));
+        paint.setColor(Ui.mainText(getContext(), dark));
         canvas.drawText(label, plot.left, baseline, paint);
 
         paint.setTypeface(regularTypeface);
@@ -432,7 +432,7 @@ public final class UsageBurnChartView extends View {
                 bubbleTop + 22f * density);
         paint.setColor(Ui.controlSurface(getContext(), dark));
         canvas.drawRoundRect(bubbleRect, 11f * density, 11f * density, paint);
-        paint.setColor(Ui.mainText(dark));
+        paint.setColor(Ui.mainText(getContext(), dark));
         canvas.drawText(bubble, bubbleLeft + padding, bubbleTop + 15f * density, paint);
     }
 

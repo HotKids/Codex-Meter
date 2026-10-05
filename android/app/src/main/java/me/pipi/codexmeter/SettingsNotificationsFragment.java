@@ -282,7 +282,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         EditText amount = new EditText(context);
         amount.setHint(R.string.alerts_reminder_amount_hint);
         amount.setSingleLine(true);
-        amount.setTextColor(Ui.mainText(dark));
+        amount.setTextColor(Ui.mainText(context, dark));
         amount.setHintTextColor(Ui.secondaryText(dark));
         amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         inputRow.addView(amount, new LinearLayout.LayoutParams(0, Ui.dp(context, 54), 1.0f));

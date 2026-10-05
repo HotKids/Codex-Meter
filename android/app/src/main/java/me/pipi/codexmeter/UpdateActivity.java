@@ -146,7 +146,7 @@ public final class UpdateActivity extends AppCompatActivity {
 
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this, titleText(comparison, returnToStable), 20,
-                Ui.mainText(dark));
+                Ui.mainText(this, dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView summary = Ui.text(this,
@@ -268,7 +268,7 @@ public final class UpdateActivity extends AppCompatActivity {
         content.removeAllViews();
         LinearLayout card = Ui.card(this, dark);
         TextView title = Ui.text(this, getString(R.string.updates_check_unavailable_title), 20,
-                Ui.mainText(dark));
+                Ui.mainText(this, dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, message, 14, Ui.secondaryText(dark));

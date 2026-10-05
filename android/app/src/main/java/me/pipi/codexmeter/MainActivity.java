@@ -65,6 +65,7 @@ public final class MainActivity extends AppCompatActivity {
     private SwipeRefreshLayout swipeRefresh;
     private boolean receiverRegistered;
     private boolean launchSignInRequested;
+    private boolean launchReauthenticationRequested;
     private String lastLaunchedAuthUrl = "";
 
     private final BroadcastReceiver appEventsReceiver = new BroadcastReceiver() {
@@ -144,6 +145,9 @@ public final class MainActivity extends AppCompatActivity {
         }
         handleLaunchIntent(intent);
         rebuild();
+        if (this.receiverRegistered) {
+            startRequestedSignIn();
+        }
     }
 
     @Override
@@ -163,11 +167,9 @@ public final class MainActivity extends AppCompatActivity {
         RefreshEngagement.onForeground(this);
         registerAppEventsReceiver();
         rebuild();
-        if (this.launchSignInRequested) {
-            this.launchSignInRequested = false;
-            startOrContinueSignIn();
-        }
-        if (SecureTokenStore.isSignedIn(this)) {
+        boolean reauthenticate = startRequestedSignIn();
+        if (SecureTokenStore.isSignedIn(this) && !reauthenticate
+                && !AppPreferences.isOAuthPending(this)) {
             AppPreferences.setOAuthPending(this, false, "");
             refreshIfStaleOnLaunch();
         }
@@ -263,7 +265,10 @@ public final class MainActivity extends AppCompatActivity {
         }
         if (intent.getBooleanExtra(EXTRA_START_SIGN_IN, false)) {
             this.launchSignInRequested = true;
+            this.launchReauthenticationRequested =
+                    intent.getBooleanExtra(OAuthService.EXTRA_REAUTHENTICATE, false);
             intent.removeExtra(EXTRA_START_SIGN_IN);
+            intent.removeExtra(OAuthService.EXTRA_REAUTHENTICATE);
         }
         if (isAuthCallback(intent.getData())) {
             if (SecureTokenStore.isSignedIn(this)) {
@@ -370,7 +375,7 @@ public final class MainActivity extends AppCompatActivity {
                 UpdatePreferences.installedVersion(this));
         LinearLayout card = Ui.card(this, this.dark);
         TextView title = Ui.text(this, updateTitle(release, returnToStable), 18,
-                Ui.mainText(this.dark));
+                Ui.mainText(this, this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView summary = Ui.text(this, updateSummary(release, returnToStable), 13,
@@ -517,7 +522,7 @@ public final class MainActivity extends AppCompatActivity {
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
         long now = System.currentTimeMillis();
         TextView title = Ui.text(this, getString(R.string.dashboard_usage_history), 18,
-                Ui.mainText(this.dark));
+                Ui.mainText(this, this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         LinearLayout.LayoutParams titleParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -586,7 +591,7 @@ public final class MainActivity extends AppCompatActivity {
     private LinearLayout buildUsageCreditsCard(UsageCredits credits) {
         LinearLayout card = Ui.card(this, this.dark);
         TextView title = Ui.text(this, getString(R.string.dashboard_section_usage_credits_title), 18,
-                Ui.mainText(this.dark));
+                Ui.mainText(this, this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_credits_detail),
@@ -610,12 +615,12 @@ public final class MainActivity extends AppCompatActivity {
         LinearLayout row = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
         ImageView image = new ImageView(this);
         image.setImageResource(icon);
-        image.setImageTintList(ColorStateList.valueOf(Ui.mainText(this.dark)));
+        image.setImageTintList(ColorStateList.valueOf(Ui.mainText(this, this.dark)));
         row.addView(image, new LinearLayout.LayoutParams(Ui.dp(this, 30), Ui.dp(this, 30)));
 
         LinearLayout labels = new LinearLayout(this);
         labels.setOrientation(LinearLayout.VERTICAL);
-        TextView valueText = Ui.text(this, value, 17.0f, Ui.mainText(this.dark));
+        TextView valueText = Ui.text(this, value, 17.0f, Ui.mainText(this, this.dark));
         valueText.setTypeface(Ui.mediumTypeface(this));
         labels.addView(valueText);
         TextView summaryText = Ui.text(this, summary, 13.0f, Ui.secondaryText(this.dark));
@@ -683,7 +688,7 @@ public final class MainActivity extends AppCompatActivity {
 
         LinearLayout card = Ui.card(this, this.dark);
         TextView title = Ui.text(this, getString(R.string.dashboard_reset_credits), 18,
-                Ui.mainText(this.dark));
+                Ui.mainText(this, this.dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_reset_credits_detail),
@@ -771,16 +776,33 @@ public final class MainActivity extends AppCompatActivity {
 
     /** Starts (or resumes) the browser OAuth flow; the service broadcasts the URL back. */
     private void startOrContinueSignIn() {
+        startOrContinueSignIn(false);
+    }
+
+    private boolean startRequestedSignIn() {
+        if (!this.launchSignInRequested) {
+            return false;
+        }
+        boolean reauthenticate = this.launchReauthenticationRequested;
+        this.launchSignInRequested = false;
+        this.launchReauthenticationRequested = false;
+        startOrContinueSignIn(reauthenticate);
+        return reauthenticate;
+    }
+
+    private void startOrContinueSignIn(boolean reauthenticate) {
         DiagnosticLog.info(this, "user", "sign_in_requested",
-                "already_signed_in", SecureTokenStore.isSignedIn(this));
-        if (SecureTokenStore.isSignedIn(this)) {
+                "already_signed_in", SecureTokenStore.isSignedIn(this),
+                "reauthenticate", reauthenticate);
+        if (SecureTokenStore.isSignedIn(this) && !reauthenticate) {
             AppPreferences.setOAuthPending(this, false, "");
             rebuild();
             return;
         }
         try {
             startForegroundService(new Intent(this, OAuthService.class)
-                    .setAction(OAuthService.ACTION_START));
+                    .setAction(OAuthService.ACTION_START)
+                    .putExtra(OAuthService.EXTRA_REAUTHENTICATE, reauthenticate));
             String status = getString(AppPreferences.isOAuthPending(this)
                     ? R.string.dashboard_sign_in_resuming
                     : R.string.dashboard_sign_in_opening);

@@ -49,6 +49,7 @@ public final class WidgetRenderer {
         try {
             AppWidgetManager manager = AppWidgetManager.getInstance(app);
             ColorOsWidgetAppearance.publishPreviews(app, manager);
+            OneUiWidgetAppearance.publishPreview(app, manager);
             int[] ids = manager.getAppWidgetIds(new ComponentName(app, CodexUsageWidget.class));
             DiagnosticLog.info(app, "widget", "update_all_started",
                     "home_widget_count", ids.length,
@@ -73,8 +74,9 @@ public final class WidgetRenderer {
                 || appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             return;
         }
+        WidgetOptions options = WidgetOptions.defaults();
         try {
-            WidgetOptions options = AppPreferences.loadWidgetOptions(context, appWidgetId);
+            options = AppPreferences.loadWidgetOptions(context, appWidgetId);
             Bundle host = manager.getAppWidgetOptions(appWidgetId);
             UsageCardState state = UsageCardState.load(context);
             RemoteViews views = buildResponsive(context, appWidgetId, options, state, host);
@@ -84,7 +86,7 @@ public final class WidgetRenderer {
                     "widget_id", appWidgetId);
             Log.w(TAG, "Widget render failed: " + safeMessage(exception));
             try {
-                manager.updateAppWidget(appWidgetId, buildFallback(context, appWidgetId));
+                manager.updateAppWidget(appWidgetId, buildFallback(context, appWidgetId, options));
             } catch (RuntimeException fallbackException) {
                 DiagnosticLog.error(context, "widget", "fallback_render_failed",
                         fallbackException, "widget_id", appWidgetId);
@@ -96,8 +98,11 @@ public final class WidgetRenderer {
     static RemoteViews buildPreview(Context context, int appWidgetId, WidgetOptions options,
             float widthDp, float heightDp) {
         Bundle host = AppWidgetManager.getInstance(context).getAppWidgetOptions(appWidgetId);
-        return build(context, appWidgetId, options, UsageCardState.load(context), widthDp,
-                heightDp, host);
+        RemoteViews views = build(context, appWidgetId, options, UsageCardState.load(context),
+                widthDp, heightDp, host);
+        OneUiWidgetAppearance.applyEditorSurface(context, views,
+                oneRow(context, appWidgetId, host, heightDp), options.opacity);
+        return views;
     }
 
     static RemoteViews build(Context context, int appWidgetId, WidgetOptions options,
@@ -105,10 +110,12 @@ public final class WidgetRenderer {
         boolean dial = oneRow(context, appWidgetId, host, heightDp);
         List<String> keys = selectedKeys(options, state.snapshot, dial);
         RemoteViews views = dial
-                ? DialWidgetRenderer.build(context, appWidgetId, options, keys, state)
+                ? DialWidgetRenderer.build(context, appWidgetId, options, keys, state, widthDp,
+                        heightDp)
                 : MaterialCardRenderer.build(context, appWidgetId, options, keys, state, widthDp,
                         heightDp);
-        ColorOsWidgetAppearance.apply(context, views, dial, options.opacity, widthDp, heightDp);
+        ColorOsWidgetAppearance.apply(context, views, dial, options.opacity, widthDp, heightDp,
+                options.colorStyle);
         return views;
     }
 
@@ -141,9 +148,11 @@ public final class WidgetRenderer {
                 RemoteViews landscape = new RemoteViews(views);
                 RemoteViews portrait = new RemoteViews(views);
                 ColorOsWidgetAppearance.apply(orientation(context, Configuration.ORIENTATION_LANDSCAPE),
-                        landscape, true, options.opacity, size.getWidth(), size.getHeight());
+                        landscape, true, options.opacity, size.getWidth(), size.getHeight(),
+                        options.colorStyle);
                 ColorOsWidgetAppearance.apply(orientation(context, Configuration.ORIENTATION_PORTRAIT),
-                        portrait, true, options.opacity, size.getWidth(), size.getHeight());
+                        portrait, true, options.opacity, size.getWidth(), size.getHeight(),
+                        options.colorStyle);
                 // Size-map children must be plain layouts: orientation containers lose their
                 // ideal size in Parcel. An add-view action selects the nested orientation at apply.
                 views = new RemoteViews(context.getPackageName(), R.layout.widget_coloros_dial_responsive);
@@ -219,12 +228,17 @@ public final class WidgetRenderer {
         return rows > 0 ? rows == 1 : heightDp < ONE_ROW_MAX_HEIGHT_DP;
     }
 
-    private static RemoteViews buildFallback(Context context, int appWidgetId) {
+    private static RemoteViews buildFallback(Context context, int appWidgetId,
+            WidgetOptions selected) {
         UsageCardState signedOut = new UsageCardState(false, null, null, "",
                 System.currentTimeMillis());
-        return MaterialCardRenderer.build(context, appWidgetId,
-                WidgetOptions.defaults(), WidgetMeters.defaultVisible(), signedOut, DEFAULT_WIDTH_DP,
+        WidgetOptions options = WidgetOptions.defaults().withColorStyle(selected.colorStyle);
+        RemoteViews views = MaterialCardRenderer.build(context, appWidgetId,
+                options, WidgetMeters.defaultVisible(), signedOut, DEFAULT_WIDTH_DP,
                 DEFAULT_HEIGHT_DP);
+        ColorOsWidgetAppearance.apply(context, views, false, options.opacity, DEFAULT_WIDTH_DP,
+                DEFAULT_HEIGHT_DP, options.colorStyle);
+        return views;
     }
 
     private static int option(Bundle host, String key) {
