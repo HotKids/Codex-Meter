@@ -95,6 +95,60 @@ public class MaterialCardHeaderTest {
     }
 
     @Test
+    @Config(sdk = {31, 35})
+    public void pickerRendersTheCompleteRefreshGlyphThroughItsAncestors() {
+        assertPickerRendersCompleteRefreshGlyph();
+    }
+
+    @Test
+    @Config(sdk = {31, 35}, qualifiers = "ar-rEG-ldrtl-xhdpi")
+    public void rtlPickerRendersTheCompleteRefreshGlyphThroughItsAncestors() {
+        assertEquals(View.LAYOUT_DIRECTION_RTL,
+                context().getResources().getConfiguration().getLayoutDirection());
+        assertPickerRendersCompleteRefreshGlyph();
+    }
+
+    private static void assertPickerRendersCompleteRefreshGlyph() {
+        for (int[] preview : new int[][] {
+                {R.layout.widget_material_preview, 140, 200},
+                {R.layout.widget_material_preview, 350, 170},
+                {R.layout.widget_oneui_card_preview, 125, 130},
+                {R.layout.widget_coloros_card_preview, 146, 146}}) {
+            int direction = context().getResources().getConfiguration().getLayoutDirection();
+            FrameLayout host = new FrameLayout(context());
+            host.setLayoutDirection(direction);
+            View card = new RemoteViews(context().getPackageName(), preview[0])
+                    .apply(context(), host);
+            host.addView(card);
+            measure(card, preview[1], preview[2]);
+            ImageView image = card.findViewById(R.id.md_refresh);
+            assertEquals(direction, image.getLayoutDirection());
+            Bitmap complete = draw(image);
+            Bitmap rendered = draw(card);
+            image.setVisibility(View.INVISIBLE);
+            Bitmap withoutGlyph = draw(card);
+            image.setVisibility(View.VISIBLE);
+            int left = leftIn(image, card);
+            int top = topIn(image, card);
+            int pixels = 0;
+            for (int x = 0; x < complete.getWidth(); x++) {
+                for (int y = 0; y < complete.getHeight(); y++) {
+                    if (Color.alpha(complete.getPixel(x, y)) > 127) {
+                        pixels++;
+                        assertTrue("Picker clips the refresh glyph at " + x + "," + y,
+                                rendered.getPixel(left + x, top + y)
+                                        != withoutGlyph.getPixel(left + x, top + y));
+                    }
+                }
+            }
+            assertTrue("The expected refresh glyph must contain visible pixels", pixels > 0);
+            complete.recycle();
+            rendered.recycle();
+            withoutGlyph.recycle();
+        }
+    }
+
+    @Test
     public void refreshKeepsItsHeaderLineAndAlignsWithTheCornerAxis() {
         for (int[] size : new int[][] {{110, 130}, {140, 200}, {350, 170}, {500, 300}}) {
             for (boolean failed : new boolean[] {false, true}) {

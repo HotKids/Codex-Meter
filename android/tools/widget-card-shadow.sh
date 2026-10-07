@@ -34,6 +34,8 @@ ET.register_namespace("tools", tools[1:-1])
 root = ET.parse(layouts / "widget_material.xml").getroot()
 # Widget hosts inflate framework ImageView; AppCompat's app:tint is not available.
 root.set(tools + "ignore", "UseAppTint")
+# The refresh glyph straddles its corner anchor, so the root must allow that overflow too.
+root.set(android + "clipChildren", "false")
 renderer = layouts.parents[1] / "java/me/pipi/codexmeter/MaterialCardRenderer.java"
 renderer_source = renderer.read_text()
 
