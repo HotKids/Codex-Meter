@@ -175,6 +175,14 @@
     <string name="alerts_notifications_metric_title">提醒范围</string>
     <string name="alerts_notifications_threshold_title">预警阈值（剩余额度）</string>
     <string name="alerts_notifications_account_category">账户动态</string>
+    <string name="alerts_notifications_usage_credits_exhausted_title">额度耗尽提醒</string>
+    <string name="alerts_notifications_usage_credits_exhausted_summary">购买额度的余额耗尽时发送提醒</string>
+    <string name="alerts_notifications_authentication_expired_title">登录失效提醒</string>
+    <string name="alerts_notifications_authentication_expired_summary">登录失效、需要重新登录才能刷新用量时发送提醒</string>
+    <string name="alerts_usage_credits_exhausted_title">Codex 额度已耗尽</string>
+    <string name="alerts_usage_credits_exhausted_text">购买额度已耗尽。可购买额度或等待使用限额重置。</string>
+    <string name="alerts_authentication_expired_title">ChatGPT 登录已失效</string>
+    <string name="alerts_authentication_expired_text">请重新登录，以继续更新 Codex 用量。</string>
     <string name="alerts_notifications_refills_title">额度提前恢复</string>
     <string name="alerts_notifications_refills_summary" formatted="false">额度在预定重置时间前恢复至 100% 时发送提醒</string>
     <string name="alerts_notifications_new_credits_title">新增重置额度</string>

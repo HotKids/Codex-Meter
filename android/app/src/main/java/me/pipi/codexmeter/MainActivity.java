@@ -16,6 +16,7 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.IntentFilter;
 import android.content.res.ColorStateList;
+import android.graphics.Rect;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
@@ -23,13 +24,16 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewTreeObserver;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.core.widget.NestedScrollView;
 import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
+import dev.oneuiproject.oneui.layout.ToolbarLayout;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
@@ -67,6 +71,9 @@ public final class MainActivity extends AppCompatActivity {
     private boolean launchSignInRequested;
     private boolean launchReauthenticationRequested;
     private String lastLaunchedAuthUrl = "";
+    private String pendingDashboardSection;
+    private final ViewTreeObserver.OnGlobalLayoutListener dashboardNavigation =
+            this::navigateToDashboardSection;
 
     private final BroadcastReceiver appEventsReceiver = new BroadcastReceiver() {
         @Override
@@ -263,6 +270,8 @@ public final class MainActivity extends AppCompatActivity {
         if (intent == null) {
             return;
         }
+        pendingDashboardSection = WidgetActions.ACTION_OPEN.equals(intent.getAction())
+                ? intent.getStringExtra(WidgetActions.EXTRA_DASHBOARD_SECTION) : null;
         if (intent.getBooleanExtra(EXTRA_START_SIGN_IN, false)) {
             this.launchSignInRequested = true;
             this.launchReauthenticationRequested =
@@ -353,6 +362,42 @@ public final class MainActivity extends AppCompatActivity {
         if (signedIn && dashboard.getChildCount() == 0) {
             addEmptyDashboardHint();
         }
+        scheduleDashboardNavigation();
+    }
+
+    private void scheduleDashboardNavigation() {
+        content.getViewTreeObserver().removeOnGlobalLayoutListener(dashboardNavigation);
+        if (pendingDashboardSection == null) {
+            return;
+        }
+        if (content.findViewWithTag(pendingDashboardSection) == null) {
+            consumeDashboardNavigation();
+            return;
+        }
+        ToolbarLayout toolbar = findViewById(R.id.toolbar_layout);
+        toolbar.setExpanded(false, false);
+        // Cards and the collapsed app bar must finish layout before calculating the target.
+        content.getViewTreeObserver().addOnGlobalLayoutListener(dashboardNavigation);
+    }
+
+    private void navigateToDashboardSection() {
+        View target = pendingDashboardSection == null ? null
+                : content.findViewWithTag(pendingDashboardSection);
+        consumeDashboardNavigation();
+        if (target == null) {
+            return;
+        }
+        NestedScrollView scroll = findViewById(R.id.dashboard_scroll);
+        Rect bounds = new Rect();
+        target.getDrawingRect(bounds);
+        scroll.offsetDescendantRectToMyCoords(target, bounds);
+        scroll.scrollTo(0, bounds.top);
+    }
+
+    private void consumeDashboardNavigation() {
+        content.getViewTreeObserver().removeOnGlobalLayoutListener(dashboardNavigation);
+        pendingDashboardSection = null;
+        getIntent().removeExtra(WidgetActions.EXTRA_DASHBOARD_SECTION);
     }
 
     private void addSignInButton() {
@@ -365,7 +410,7 @@ public final class MainActivity extends AppCompatActivity {
 
     private void addEmptyDashboardHint() {
         TextView empty = Ui.text(this, getString(R.string.dashboard_empty),
-                14.0f, Ui.secondaryText(this.dark));
+                14.0f, Ui.secondaryText(this, this.dark));
         empty.setGravity(Gravity.CENTER);
         this.content.addView(empty, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
     }
@@ -379,7 +424,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView summary = Ui.text(this, updateSummary(release, returnToStable), 13,
-                Ui.secondaryText(this.dark));
+                Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams summaryParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(this, 7), 0, Ui.dp(this, 14));
@@ -411,8 +456,7 @@ public final class MainActivity extends AppCompatActivity {
     // -------------------------------------------------------------------------------------------
 
     /**
-     * Builds the visible dashboard sections in the user's saved order. Returns an empty column
-     * when signed out or when nothing is available.
+     * Builds visible sections in the saved order when signed in and data is available.
      */
     private LinearLayout buildUsageDashboard() {
         UsageSnapshot snapshot = AppPreferences.loadSnapshot(this);
@@ -428,27 +472,27 @@ public final class MainActivity extends AppCompatActivity {
         for (String key : DashboardSections.resolveOrder(
                 AppPreferences.getDashboardOrder(this), available)) {
             if (DashboardSections.FIVE_HOUR.equals(key)) {
-                addDashboardCard(column, buildMetricCard(
+                addDashboardCard(column, key, buildMetricCard(
                         getString(R.string.dashboard_section_five_hour_title), snapshot,
                         snapshot.fiveHour, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.WEEKLY.equals(key)) {
-                addDashboardCard(column, buildMetricCard(
+                addDashboardCard(column, key, buildMetricCard(
                         getString(R.string.dashboard_section_weekly_title), snapshot,
                         snapshot.weekly, inverted));
                 inverted = !inverted;
             } else if (DashboardSections.MONTHLY.equals(key)) {
-                addDashboardCard(column, buildMetricCard(
+                addDashboardCard(column, key, buildMetricCard(
                         getString(R.string.dashboard_section_monthly_title), snapshot,
                         snapshot.monthly,
                         inverted));
                 inverted = !inverted;
             } else if (DashboardSections.USAGE_CREDITS.equals(key)) {
-                addDashboardCard(column, buildUsageCreditsCard(snapshot.usageCredits));
+                addDashboardCard(column, key, buildUsageCreditsCard(snapshot.usageCredits));
             } else if (DashboardSections.USAGE_HISTORY.equals(key)) {
-                addDashboardCard(column, buildUsageHistoryCard());
+                addDashboardCard(column, key, buildUsageHistoryCard());
             } else if (DashboardSections.RESET_CREDITS.equals(key)) {
-                addDashboardCard(column, buildResetCreditsCard());
+                addDashboardCard(column, key, buildResetCreditsCard());
             }
         }
         return column;
@@ -488,10 +532,11 @@ public final class MainActivity extends AppCompatActivity {
         return available;
     }
 
-    private void addDashboardCard(LinearLayout column, View card) {
+    private void addDashboardCard(LinearLayout column, String key, View card) {
         if (column.getChildCount() > 0) {
             Ui.addSpacer(column, SECTION_SPACING_DP);
         }
+        card.setTag(key);
         column.addView(card);
     }
 
@@ -529,7 +574,7 @@ public final class MainActivity extends AppCompatActivity {
         titleParams.setMargins(Ui.dp(this, 12), 0, Ui.dp(this, 12), 0);
         card.addView(title, titleParams);
         TextView detail = Ui.text(this, getString(R.string.dashboard_history_card_detail),
-                12, Ui.secondaryText(this.dark));
+                12, Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12), Ui.dp(this, 4));
@@ -559,7 +604,7 @@ public final class MainActivity extends AppCompatActivity {
 
         if (!hasCharts) {
             TextView waiting = Ui.text(this, getString(R.string.dashboard_history_card_waiting),
-                    12, Ui.secondaryText(this.dark));
+                    12, Ui.secondaryText(this, this.dark));
             LinearLayout.LayoutParams waitingParams =
                     new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             waitingParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 8),
@@ -595,7 +640,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_credits_detail),
-                12, Ui.secondaryText(this.dark));
+                12, Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(0, Ui.dp(this, 4), 0, 0);
@@ -623,7 +668,7 @@ public final class MainActivity extends AppCompatActivity {
         TextView valueText = Ui.text(this, value, 17.0f, Ui.mainText(this, this.dark));
         valueText.setTypeface(Ui.mediumTypeface(this));
         labels.addView(valueText);
-        TextView summaryText = Ui.text(this, summary, 13.0f, Ui.secondaryText(this.dark));
+        TextView summaryText = Ui.text(this, summary, 13.0f, Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams summaryParams =
                 new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(this, 2), 0, 0);
@@ -633,7 +678,7 @@ public final class MainActivity extends AppCompatActivity {
             LinearLayout summaryRow = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
             ImageView clock = new ImageView(this);
             clock.setImageResource(summaryIcon);
-            clock.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(this.dark)));
+            clock.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(this, this.dark)));
             clock.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             LinearLayout.LayoutParams clockParams =
                     new LinearLayout.LayoutParams(Ui.dp(this, 14), Ui.dp(this, 14));
@@ -692,7 +737,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_reset_credits_detail),
-                12, Ui.secondaryText(this.dark));
+                12, Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(0, Ui.dp(this, 4), 0, 0);
@@ -846,24 +891,61 @@ public final class MainActivity extends AppCompatActivity {
             return;
         }
         Context app = getApplicationContext();
+        UsageApi.Session session = UsageApi.session();
         this.executor.execute(() -> {
             try {
-                RefreshScheduler.scheduleAtNextReset(app, UsageApi.refreshAndCache(app));
-                WidgetRenderer.updateAll(app);
+                UsageSnapshot snapshot = UsageApi.refreshAndCache(app, session);
+                session.commit(() -> {
+                    RefreshScheduler.scheduleAtNextReset(app, snapshot);
+                    WidgetRenderer.updateAll(app);
+                });
                 runOnUiThread(() -> {
-                    DiagnosticLog.info(app, "user", "manual_refresh_finished", "source", "pull");
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
                     this.swipeRefresh.setRefreshing(false);
+                    if (!session.isCurrent()) {
+                        return;
+                    }
+                    DiagnosticLog.info(app, "user", "manual_refresh_finished", "source", "pull");
                     rebuild();
                 });
             } catch (Exception e) {
-                DiagnosticLog.error(app, "user", "manual_refresh_failed", e, "source", "pull");
-                AppPreferences.setLastError(app, safeMessage(app, e));
-                WidgetRenderer.updateAll(app);
+                if (e instanceof java.util.concurrent.CancellationException) {
+                    finishCanceledPull();
+                    return;
+                }
+                try {
+                    session.commit(() -> {
+                        DiagnosticLog.error(app, "user", "manual_refresh_failed", e, "source", "pull");
+                        AppPreferences.setLastError(app, safeMessage(app, e), true);
+                        WidgetRenderer.updateAll(app);
+                    });
+                } catch (java.util.concurrent.CancellationException canceled) {
+                    finishCanceledPull();
+                    return;
+                } catch (Exception failure) {
+                    DiagnosticLog.error(app, "user", "manual_refresh_feedback_failed", failure);
+                }
                 runOnUiThread(() -> {
+                    if (isFinishing() || isDestroyed()) {
+                        return;
+                    }
                     this.swipeRefresh.setRefreshing(false);
+                    if (!session.isCurrent()) {
+                        return;
+                    }
                     Toast.makeText(this, safeMessage(this, e), Toast.LENGTH_LONG).show();
                     rebuild();
                 });
+            }
+        });
+    }
+
+    private void finishCanceledPull() {
+        runOnUiThread(() -> {
+            if (!isFinishing() && !isDestroyed()) {
+                this.swipeRefresh.setRefreshing(false);
             }
         });
     }

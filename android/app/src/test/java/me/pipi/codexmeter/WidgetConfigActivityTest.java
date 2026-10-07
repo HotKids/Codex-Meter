@@ -33,6 +33,7 @@ import android.widget.ImageView;
 import androidx.appcompat.app.AlertDialog;
 import androidx.recyclerview.widget.RecyclerView;
 import androidx.appcompat.widget.SwitchCompat;
+import androidx.appcompat.widget.SeslSeekBar;
 import java.lang.reflect.Method;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
@@ -542,6 +543,69 @@ public class WidgetConfigActivityTest {
             assertEquals(save ? WidgetOptions.COLOR_NATIVE : WidgetOptions.COLOR_CLASSIC,
                     AppPreferences.loadWidgetOptions(app, WIDGET_ID).colorStyle);
         }
+    }
+
+    @Test
+    public void recreationKeepsTheCompleteUnsavedDraftUntilSaveOrCancel() throws Exception {
+        bindProvider(CodexUsageWidget.class, 180);
+        for (boolean save : new boolean[] {true, false}) {
+            for (boolean background : new boolean[] {true, false}) {
+                saveSelection(WidgetMeters.FIVE_HOUR, WidgetMeters.WEEKLY);
+                Map<String, ?> stored = new HashMap<>(app.getSharedPreferences(
+                        "codex_meter_settings_v1", Context.MODE_PRIVATE).getAll());
+                WidgetConfigActivity activity = openEditor();
+                assertTrue(setSelected(activity, WidgetMeters.FIVE_HOUR, false));
+                assertTrue(setSelected(activity, WidgetMeters.NEXT_RESET, true));
+                List<String> order = windowOrder(activity);
+                order.clear();
+                order.addAll(List.of(WidgetMeters.NEXT_RESET, WidgetOptions.USAGE_CREDITS,
+                        WidgetMeters.WEEKLY, WidgetMeters.FIVE_HOUR));
+                backgroundSwitch(activity).setChecked(background);
+                SeslSeekBar slider = activity.findViewById(R.id.opacity_slider);
+                slider.setProgress(0);
+
+                ActivityController<WidgetConfigActivity> original = activities.remove(
+                        activities.size() - 1);
+                Bundle state = new Bundle();
+                original.saveInstanceState(state).pause().stop().destroy();
+                ActivityController<WidgetConfigActivity> restored = Robolectric
+                        .buildActivity(WidgetConfigActivity.class, new Intent(activity.getIntent()))
+                        .create(state).start().resume().visible();
+                activities.add(restored);
+                activity = restored.get();
+                assertEquals(List.of(WidgetMeters.NEXT_RESET, WidgetOptions.USAGE_CREDITS,
+                        WidgetMeters.WEEKLY, WidgetMeters.FIVE_HOUR), windowOrder(activity));
+                assertEquals(List.of(WidgetMeters.NEXT_RESET, WidgetMeters.WEEKLY),
+                        selection(activity));
+                assertEquals(background, backgroundSwitch(activity).isChecked());
+                assertEquals(0, ((SeslSeekBar) activity.findViewById(R.id.opacity_slider)).getProgress());
+                assertEquals(background ? 56 : 0, currentOptions(activity).opacity);
+                assertEquals("Recreation cannot persist the draft", stored,
+                        app.getSharedPreferences("codex_meter_settings_v1", Context.MODE_PRIVATE).getAll());
+                activity.findViewById(save ? R.id.config_save : R.id.config_cancel).performClick();
+                if (save) {
+                    WidgetOptions written = AppPreferences.loadWidgetOptions(app, WIDGET_ID);
+                    assertEquals("next_reset,weekly", written.effectiveVisibleMeters());
+                    assertEquals(background ? 56 : 0, written.opacity);
+                } else {
+                    assertEquals("Cancel keeps every stored setting unchanged", stored,
+                            app.getSharedPreferences("codex_meter_settings_v1", Context.MODE_PRIVATE).getAll());
+                }
+            }
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private static List<String> windowOrder(WidgetConfigActivity activity) throws Exception {
+        Field field = WidgetConfigActivity.class.getDeclaredField("windowOrder");
+        field.setAccessible(true);
+        return (List<String>) field.get(activity);
+    }
+
+    private static SwitchCompat backgroundSwitch(WidgetConfigActivity activity) throws Exception {
+        Field field = WidgetConfigActivity.class.getDeclaredField("backgroundSwitch");
+        field.setAccessible(true);
+        return (SwitchCompat) field.get(activity);
     }
 
     private static void assertNativeColorDraft(WidgetConfigActivity activity) throws Exception {

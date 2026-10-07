@@ -2,7 +2,7 @@ package me.pipi.codexmeter;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 
-import android.app.AlertDialog;
+import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
 import android.content.Intent;
 import android.os.Bundle;
@@ -10,6 +10,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.Toast;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import dev.oneuiproject.oneui.widget.CardItemView;
 import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 import java.util.Collections;
@@ -17,6 +18,7 @@ import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CancellationException;
 
 /** Lists available Codex reset credits with their expirations and lets the user spend one. */
 public final class ResetCreditActivity extends AppCompatActivity {
@@ -38,11 +40,24 @@ public final class ResetCreditActivity extends AppCompatActivity {
         this.dark = Ui.isDark(this);
         this.content = Ui.installPage(this,
                 getString(R.string.alerts_reset_credits_page_title), true).content;
+        stopUnusedRefresh();
         rebuild();
         refreshDetailsIfNeeded();
         if (savedInstanceState == null) {
             maybePromptUseReset(getIntent());
         }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle state) {
+        super.onRestoreInstanceState(state);
+        stopUnusedRefresh();
+    }
+
+    private void stopUnusedRefresh() {
+        SwipeRefreshLayout refresh = findViewById(R.id.dashboard_refresh);
+        refresh.setRefreshing(false);
+        refresh.setEnabled(false);
     }
 
     @Override
@@ -205,12 +220,15 @@ public final class ResetCreditActivity extends AppCompatActivity {
             return;
         }
         Context app = getApplicationContext();
+        UsageApi.Session session = UsageApi.session();
         this.executor.execute(() -> {
             try {
-                ResetCreditApi.refreshAndCache(app);
-                runOnUiThread(this::rebuild);
+                ResetCreditApi.refreshAndCache(app, session);
+                postUi(session, this::rebuild);
+            } catch (CancellationException ignored) {
+                return;
             } catch (Exception e) {
-                AppPreferences.setResetCreditsError(app, safeMessage(app, e));
+                onOperationFailed(app, session, e, false);
             }
         });
     }
@@ -245,20 +263,23 @@ public final class ResetCreditActivity extends AppCompatActivity {
     private void consume() {
         if (this.useButton != null) {
             this.useButton.setEnabled(false);
-            this.useButton.setText(R.string.alerts_reset_credits_applying);
         }
+        Toast.makeText(this, R.string.alerts_reset_credits_applying, Toast.LENGTH_SHORT).show();
         Context app = getApplicationContext();
+        UsageApi.Session session = UsageApi.session();
+        int notificationId = this.expiryNotificationId;
         this.executor.execute(() -> {
             try {
-                ResetConsumeResult result = ResetCreditApi.consumeBestAvailable(app);
-                runOnUiThread(() -> onConsumeFinished(result));
+                ResetConsumeResult result = ResetCreditApi.consumeBestAvailable(app, session);
+                if (result.applied()) {
+                    session.commit(() -> ResetNotificationManager
+                            .dismissResetCreditExpiryNotification(app, notificationId));
+                }
+                postUi(session, () -> onConsumeFinished(result));
+            } catch (CancellationException ignored) {
+                return;
             } catch (Exception e) {
-                String message = safeMessage(app, e);
-                AppPreferences.setResetCreditsError(app, message);
-                runOnUiThread(() -> {
-                    Toast.makeText(this, message, Toast.LENGTH_LONG).show();
-                    rebuild();
-                });
+                onOperationFailed(app, session, e, true);
             }
         });
     }
@@ -269,9 +290,33 @@ public final class ResetCreditActivity extends AppCompatActivity {
             rebuild();
             return;
         }
-        ResetNotificationManager.dismissResetCreditExpiryNotification(this,
-                this.expiryNotificationId);
         finish();
+    }
+
+    private void onOperationFailed(Context app, UsageApi.Session session, Exception exception,
+            boolean showToast) {
+        String message = safeMessage(app, exception);
+        try {
+            session.commit(() -> AppPreferences.setResetCreditsError(app, message));
+        } catch (CancellationException ignored) {
+            return;
+        } catch (Exception failure) {
+            DiagnosticLog.error(app, "user", "reset_credit_feedback_failed", failure);
+        }
+        postUi(session, () -> {
+            if (showToast) {
+                Toast.makeText(this, message, Toast.LENGTH_LONG).show();
+            }
+            rebuild();
+        });
+    }
+
+    private void postUi(UsageApi.Session session, Runnable action) {
+        runOnUiThread(() -> {
+            if (session.isCurrent() && !isFinishing() && !isDestroyed()) {
+                action.run();
+            }
+        });
     }
 
     /**

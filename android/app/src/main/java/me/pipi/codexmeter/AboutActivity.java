@@ -97,12 +97,12 @@ public final class AboutActivity extends AppCompatActivity {
 
     private void buildContent(LinearLayout content) {
         content.addView(buildAppCard());
-        content.addView(sectionTitle(getString(R.string.auth_about_development)));
+        content.addView(Ui.separator(this, getString(R.string.auth_about_development)));
         RoundedLinearLayout developer = Ui.cardGroup(this, dark);
         developer.addView(personRow("HotKids", "", R.drawable.hotkids_avatar, false,
                 "https://github.com/HotKids"));
         content.addView(developer);
-        content.addView(sectionTitle(getString(R.string.auth_about_credits)));
+        content.addView(Ui.separator(this, getString(R.string.auth_about_credits)));
         RoundedLinearLayout credits = Ui.cardGroup(this, dark);
         credits.addView(personRow(getString(R.string.about_benit_title),
                 "",
@@ -127,7 +127,7 @@ public final class AboutActivity extends AppCompatActivity {
         LinearLayout text = new LinearLayout(this);
         text.setOrientation(LinearLayout.VERTICAL);
         text.addView(Ui.text(this, getString(R.string.app_name), 18, Ui.mainText(this, dark)));
-        text.addView(Ui.text(this, versionLabel(), 14, Ui.secondaryText(dark)));
+        text.addView(Ui.text(this, versionLabel(), 14, Ui.secondaryText(this, dark)));
         LinearLayout.LayoutParams textParams = new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1);
         textParams.setMargins(Ui.dp(this, 20), 0, 0, 0);
         card.addView(text, textParams);
@@ -224,13 +224,4 @@ public final class AboutActivity extends AppCompatActivity {
         startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(url)));
     }
 
-    private TextView sectionTitle(String title) {
-        TextView label = Ui.text(this, title, 14, Ui.secondaryText(dark));
-        label.setTypeface(Ui.mediumTypeface(this));
-        LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
-        params.setMargins(Ui.dp(this, 20), Ui.dp(this, 20), 0, Ui.dp(this, 10));
-        label.setLayoutParams(params);
-        return label;
-    }
 }

@@ -29,7 +29,6 @@ import android.widget.CheckBox;
 import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.Spinner;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
@@ -49,7 +48,6 @@ import dev.oneuiproject.oneui.widget.Separator;
 
 /** Shared One UI theme, palette, typography, and programmatic view factories for the phone app. */
 public final class Ui {
-    private static final float CARD_CORNER_RADIUS_DP = 28.0f;
     private static final float POPUP_CORNER_RADIUS_DP = 18.0f;
     /** Large enough to round any control into a pill. */
     private static final float PILL_CORNER_RADIUS_DP = 999.0f;
@@ -247,12 +245,17 @@ public final class Ui {
         }
     }
 
-    public static int secondaryText(boolean dark) {
-        return dark ? Color.rgb(183, 186, 194) : Color.rgb(132, 132, 135);
+    public static int secondaryText(Context context, boolean dark) {
+        TypedArray colors = context.obtainStyledAttributes(new int[]{android.R.attr.textColorSecondary});
+        try {
+            return colors.getColorStateList(0).getDefaultColor();
+        } finally {
+            colors.recycle();
+        }
     }
 
-    public static int divider(boolean dark) {
-        return dark ? Color.rgb(55, 58, 64) : Color.rgb(228, 228, 228);
+    public static int divider(Context context, boolean dark) {
+        return context.getColor(dev.oneuiproject.oneui.design.R.color.oui_des_list_divider_color);
     }
 
     /** Official One UI Primary (#0381FE) / dark-mode accent (#5CA9FF). */
@@ -364,9 +367,8 @@ public final class Ui {
         card.setPadding(dp(context, CARD_HORIZONTAL_PADDING_DP), dp(context, 20.0f),
                 dp(context, CARD_HORIZONTAL_PADDING_DP),
                 dp(context, 20.0f));
-        card.setBackground(cardBackground(context, dark));
+        card.setBackgroundColor(cardColor(context, dark));
         card.setElevation(0.0f);
-        card.setClipToOutline(true);
         card.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return card;
     }
@@ -376,8 +378,7 @@ public final class Ui {
         card.setOrientation(LinearLayout.VERTICAL);
         card.setPadding(dp(context, 18.0f), dp(context, 14.0f), dp(context, 18.0f),
                 dp(context, 14.0f));
-        card.setBackground(cardBackground(context, dark));
-        card.setClipToOutline(true);
+        card.setBackgroundColor(cardColor(context, dark));
         card.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return card;
     }
@@ -386,8 +387,7 @@ public final class Ui {
     public static RoundedLinearLayout cardGroup(Context context, boolean dark) {
         RoundedLinearLayout group = new RoundedLinearLayout(context);
         group.setOrientation(LinearLayout.VERTICAL);
-        group.setBackground(cardBackground(context, dark));
-        group.setClipToOutline(true);
+        group.setBackgroundColor(cardColor(context, dark));
         group.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return group;
     }
@@ -530,9 +530,9 @@ public final class Ui {
     // Progress and form controls
     // ---------------------------------------------------------------------------------------
 
-    public static ProgressBar progress(Context context, boolean dark) {
-        ProgressBar progressBar =
-                new ProgressBar(context, null, android.R.attr.progressBarStyleHorizontal);
+    public static SeslProgressBar progress(Context context, boolean dark) {
+        SeslProgressBar progressBar = new SeslProgressBar(context, null,
+                android.R.attr.progressBarStyleHorizontal);
         progressBar.setMax(100);
         progressBar.setProgressTintList(ColorStateList.valueOf(accent(context, dark)));
         progressBar.setProgressBackgroundTintList(
@@ -540,31 +540,6 @@ public final class Ui {
         progressBar.setIndeterminate(false);
         progressBar.setLayoutParams(new LinearLayout.LayoutParams(MATCH_PARENT, dp(context, 7.0f)));
         return progressBar;
-    }
-
-    /** One UI circular indeterminate spinner, centered below the rounded content corners. */
-    public static SeslProgressBar indeterminateLoading(Context context) {
-        return indeterminateLoading(context, context.getString(R.string.dashboard_loading));
-    }
-
-    /**
-     * One UI circular indeterminate spinner with an accessibility label.
-     * Keeps the page free of clipped loading text while still announcing status to TalkBack.
-     */
-    public static SeslProgressBar indeterminateLoading(Context context, String description) {
-        SeslProgressBar loading = new SeslProgressBar(context);
-        loading.setIndeterminate(true);
-        if (description != null && !description.isEmpty()) {
-            loading.setContentDescription(description);
-            loading.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
-        }
-        LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
-        params.gravity = Gravity.CENTER_HORIZONTAL;
-        // Keep clear of ToolbarLayout's rounded top corners so the spinner is not clipped.
-        params.topMargin = dp(context, 48.0f);
-        loading.setLayoutParams(params);
-        return loading;
     }
 
     /** Transparent drop-down spinner: accent end-aligned value, card-colored popup rows. */
@@ -618,7 +593,7 @@ public final class Ui {
                 new LinearLayout.LayoutParams(dp(context, 168.0f), dp(context, 54.0f)));
         parent.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         View rule = new View(context);
-        rule.setBackgroundColor(divider(dark));
+        rule.setBackgroundColor(divider(context, dark));
         parent.addView(rule, new LinearLayout.LayoutParams(MATCH_PARENT, 1));
     }
 
@@ -632,7 +607,7 @@ public final class Ui {
         checkBox.setTypeface(regularTypeface(context));
         checkBox.setButtonTintList(new ColorStateList(
                 new int[][]{new int[]{android.R.attr.state_checked}, new int[0]},
-                new int[]{accent(context, dark), secondaryText(dark)}));
+                new int[]{accent(context, dark), secondaryText(context, dark)}));
         checkBox.setMinHeight(dp(context, 52.0f));
         checkBox.setPadding(0, dp(context, 4.0f), 0, dp(context, 4.0f));
         return checkBox;
@@ -678,10 +653,6 @@ public final class Ui {
     // ---------------------------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------------------------
-
-    private static GradientDrawable cardBackground(Context context, boolean dark) {
-        return shape(cardColor(context, dark), dp(context, CARD_CORNER_RADIUS_DP));
-    }
 
     private static GradientDrawable shape(int color, int cornerRadius) {
         GradientDrawable drawable = new GradientDrawable();

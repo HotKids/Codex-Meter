@@ -1,5 +1,6 @@
 package me.pipi.codexmeter;
 
+import dev.bennett.codexmeter.DashboardSections;
 import dev.bennett.codexmeter.UsageCredits;
 import dev.bennett.codexmeter.UsageSnapshot;
 import dev.bennett.codexmeter.UsageWindow;
@@ -18,6 +19,7 @@ final class WidgetMeter {
     final String value;
     final int progress;
     final int icon;
+    final String dashboardSection;
 
     WidgetMeter(Context context, String key, WidgetOptions options, UsageCardState state) {
         title = title(context.getResources(), key, state.snapshot);
@@ -50,6 +52,7 @@ final class WidgetMeter {
                     : percent + (options.showPercentSymbol ? "%" : "");
             progress = Math.max(0, percent);
         }
+        dashboardSection = dashboardSection(key, state.snapshot, window);
     }
 
     static String title(Resources resources, String key, UsageSnapshot snapshot) {
@@ -64,6 +67,29 @@ final class WidgetMeter {
             return resources.getString(R.string.widget_card_remaining_credits);
         }
         return resources.getString(R.string.widget_editor_next_reset);
+    }
+
+    private static String dashboardSection(String key, UsageSnapshot snapshot,
+            UsageWindow window) {
+        if (snapshot == null) {
+            return "";
+        }
+        if (WidgetOptions.USAGE_CREDITS.equals(key)) {
+            return snapshot.usageCredits == null ? "" : DashboardSections.USAGE_CREDITS;
+        }
+        if (window == null) {
+            return "";
+        }
+        if (WidgetMeters.FIVE_HOUR.equals(key)
+                || (WidgetMeters.NEXT_RESET.equals(key) && window == snapshot.fiveHour)) {
+            return DashboardSections.FIVE_HOUR;
+        }
+        if (WidgetMeters.WEEKLY.equals(key)
+                || (WidgetMeters.NEXT_RESET.equals(key) && window == snapshot.longWindow())) {
+            return WidgetMeters.weeklyMeterIsMonthly(snapshot)
+                    ? DashboardSections.MONTHLY : DashboardSections.WEEKLY;
+        }
+        return "";
     }
 
     private static UsageWindow nextWindow(UsageCardState state) {

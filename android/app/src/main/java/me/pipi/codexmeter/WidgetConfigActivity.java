@@ -44,6 +44,10 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private static final String OPTION_MIN_HEIGHT = AppWidgetManager.OPTION_APPWIDGET_MIN_HEIGHT;
     private static final String OPTION_MAX_HEIGHT = AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT;
     private static final String STATE_COLOR_STYLE = "widget_color_style";
+    private static final String STATE_WINDOW_ORDER = "widget_window_order";
+    private static final String STATE_SELECTED_WINDOWS = "widget_selected_windows";
+    private static final String STATE_BACKGROUND = "widget_background";
+    private static final String STATE_OPACITY_INDEX = "widget_opacity_index";
     /** A 2x2 cell on a typical phone grid, used before the launcher reports a size. */
     private static final int DEFAULT_PREVIEW_DP = 170;
     private static final float DIMMED_ALPHA = 0.45f;
@@ -88,13 +92,19 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         dark = Ui.isDark(this);
         colorStyle = state == null ? null : state.getString(STATE_COLOR_STYLE);
         refreshWidgetSize();
-        build();
+        build(state);
     }
 
     @Override
     protected void onSaveInstanceState(Bundle state) {
         state.putInt(AppWidgetManager.EXTRA_APPWIDGET_ID, appWidgetId);
         state.putString(STATE_COLOR_STYLE, colorStyle);
+        state.putStringArrayList(STATE_WINDOW_ORDER, new ArrayList<>(windowOrder));
+        state.putStringArrayList(STATE_SELECTED_WINDOWS, new ArrayList<>(selectedWindows));
+        if (backgroundSwitch != null && opacitySlider != null) {
+            state.putBoolean(STATE_BACKGROUND, backgroundSwitch.isChecked());
+            state.putInt(STATE_OPACITY_INDEX, opacitySlider.getProgress());
+        }
         super.onSaveInstanceState(state);
     }
 
@@ -104,22 +114,32 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         return true;
     }
 
-    private void build() {
+    private void build(Bundle state) {
         Ui.ConfigPage page = Ui.installConfigPage(this, getString(R.string.widget_editor_title));
         previewContainer = page.preview;
         LinearLayout content = page.content;
         saved = AppPreferences.loadWidgetOptions(this, appWidgetId);
         snapshot = SecureTokenStore.isSignedIn(this) ? AppPreferences.loadSnapshot(this) : null;
         loadSelection();
+        if (state != null) {
+            ArrayList<String> order = state.getStringArrayList(STATE_WINDOW_ORDER);
+            ArrayList<String> selected = state.getStringArrayList(STATE_SELECTED_WINDOWS);
+            if (order != null && selected != null) {
+                windowOrder.clear();
+                windowOrder.addAll(order);
+                selectedWindows.clear();
+                selectedWindows.addAll(selected);
+            }
+        }
 
         content.addView(Ui.separator(this, getString(R.string.widget_editor_windows)));
         content.addView(buildWindowCard());
         content.addView(Ui.separator(this, getString(R.string.widget_editor_appearance)));
-        content.addView(buildAppearanceCard());
+        content.addView(buildAppearanceCard(state));
         TextView refreshHint = Ui.text(this, getString(
                 WidgetRenderer.oneRow(this, appWidgetId, widgetSize, previewHeightDp())
                         ? R.string.widget_editor_refresh_hint_dial
-                        : R.string.widget_editor_refresh_hint), 13, Ui.secondaryText(dark));
+                        : R.string.widget_editor_refresh_hint), 13, Ui.secondaryText(this, dark));
         refreshHint.setPadding(Ui.dp(this, 24), Ui.dp(this, 12), Ui.dp(this, 24),
                 Ui.dp(this, 16));
         content.addView(refreshHint);
@@ -165,7 +185,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private RoundedLinearLayout buildWindowCard() {
         RoundedLinearLayout card = Ui.seslRowCard(this, dark);
         TextView hint = Ui.text(this, getString(R.string.widget_editor_windows_hint), 13,
-                Ui.secondaryText(dark));
+                Ui.secondaryText(this, dark));
         hint.setPadding(Ui.dp(this, 20), Ui.dp(this, 12), Ui.dp(this, 20), Ui.dp(this, 8));
         card.addView(hint);
         windowList = new RecyclerView(this);
@@ -256,7 +276,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
             LinearLayout labels = new LinearLayout(activity);
             labels.setOrientation(LinearLayout.VERTICAL);
             TextView title = Ui.text(activity, "", 17f, Ui.mainText(activity, dark));
-            TextView summary = Ui.text(activity, "", 13f, Ui.secondaryText(dark));
+            TextView summary = Ui.text(activity, "", 13f, Ui.secondaryText(activity, dark));
             labels.addView(title);
             labels.addView(summary);
             row.addView(labels, new LinearLayout.LayoutParams(0,
@@ -395,11 +415,12 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     // ---------------------------------------------------------------------------------------
     // Appearance
 
-    private RoundedLinearLayout buildAppearanceCard() {
+    private RoundedLinearLayout buildAppearanceCard(Bundle state) {
         RoundedLinearLayout card = Ui.seslRowCard(this, dark);
 
         backgroundSwitch = new SwitchCompat(this);
-        backgroundSwitch.setChecked(saved.opacity > 0);
+        backgroundSwitch.setChecked(state == null ? saved.opacity > 0
+                : state.getBoolean(STATE_BACKGROUND, saved.opacity > 0));
         card.addView(switchRow(getString(R.string.widget_background), backgroundSwitch));
         card.addView(divider(), dividerParams());
         colorStyle = colorStyle == null ? saved.colorStyle
@@ -414,7 +435,8 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         opacityControl.setTag(opacityDivider);
         card.addView(opacityControl);
         opacitySlider = opacityControl.findViewById(R.id.opacity_slider);
-        opacitySlider.setProgress(WidgetOptions.opacityIndex(saved.opacity));
+        opacitySlider.setProgress(state == null ? WidgetOptions.opacityIndex(saved.opacity)
+                : state.getInt(STATE_OPACITY_INDEX, WidgetOptions.opacityIndex(saved.opacity)));
         opacitySlider.setAlpha(0f);
         if (opacitySlider.getProgressDrawable() != null) {
             opacitySlider.getProgressDrawable().setAlpha(0);
@@ -480,7 +502,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 64));
         content.setPadding(Ui.dp(this, 20), 0, Ui.dp(this, 20), 0);
-        content.addView(Ui.text(this, title, 18, Ui.mainText(this, dark)),
+        content.addView(Ui.text(this, title, 17, Ui.mainText(this, dark)),
                 new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
         content.addView(toggle, new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT));
@@ -492,7 +514,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
 
     private View divider() {
         View divider = new View(this);
-        divider.setBackgroundColor(Ui.divider(dark));
+        divider.setBackgroundColor(Ui.divider(this, dark));
         return divider;
     }
 

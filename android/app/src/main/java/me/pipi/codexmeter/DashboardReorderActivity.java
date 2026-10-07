@@ -65,7 +65,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         refresh.setEnabled(false);
 
         TextView hint = Ui.text(this, getString(R.string.dashboard_edit_hint),
-                14.0f, Ui.secondaryText(dark));
+                14.0f, Ui.secondaryText(this, dark));
         LinearLayout.LayoutParams hintParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         hintParams.setMargins(Ui.dp(this, 6), Ui.dp(this, 2), Ui.dp(this, 6), Ui.dp(this, 16));
@@ -84,7 +84,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         content.addView(listCard);
 
         TextView note = Ui.text(this, getString(R.string.dashboard_edit_note),
-                12.0f, Ui.secondaryText(dark));
+                12.0f, Ui.secondaryText(this, dark));
         LinearLayout.LayoutParams noteParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         noteParams.setMargins(Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 6), 0);
@@ -177,7 +177,7 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         labels.setOrientation(LinearLayout.VERTICAL);
         TextView title = Ui.text(context, "", 17.0f, Ui.mainText(context, dark));
         labels.addView(title);
-        TextView summary = Ui.text(context, "", 13.0f, Ui.secondaryText(dark));
+        TextView summary = Ui.text(context, "", 13.0f, Ui.secondaryText(context, dark));
         LinearLayout.LayoutParams summaryParams =
                 new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(context, 2), 0, 0);

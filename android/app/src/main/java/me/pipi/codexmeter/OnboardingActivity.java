@@ -16,8 +16,9 @@ import android.os.Bundle;
 import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
+import androidx.appcompat.widget.SeslProgressBar;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import androidx.activity.OnBackPressedCallback;
 import androidx.appcompat.app.AppCompatActivity;
@@ -39,8 +40,9 @@ public final class OnboardingActivity extends AppCompatActivity {
     private boolean receiverRegistered;
     /** True while this screen has a sign-in in flight that "Not now" must cancel. */
     private boolean oauthRequested;
-    /** Status line shown on the account step (progress, failures). */
+    /** A sign-in failure remains visible until it is retried or the user changes steps. */
     private String authMessage = "";
+    private Button signInButton;
     private String lastLaunchedAuthUrl = "";
 
     private final BroadcastReceiver authReceiver = new BroadcastReceiver() {
@@ -160,8 +162,11 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (url == null || url.isEmpty()) {
             return;
         }
-        this.authMessage = getString(R.string.auth_onboarding_status_browser_open);
-        render();
+        Toast.makeText(this, R.string.auth_onboarding_status_browser_open,
+                Toast.LENGTH_SHORT).show();
+        if (this.signInButton != null) {
+            this.signInButton.setText(R.string.auth_onboarding_sign_in_continue);
+        }
         openAuthUrl(url);
     }
 
@@ -210,7 +215,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         labelParams.setMargins(Ui.dp(this, 14), Ui.dp(this, 6), Ui.dp(this, 14), Ui.dp(this, 10));
         this.content.addView(label, labelParams);
 
-        ProgressBar progress = Ui.progress(this, this.dark);
+        SeslProgressBar progress = Ui.progress(this, this.dark);
         progress.setProgress((this.step + 1) * 100 / OnboardingFlow.STEP_COUNT);
         LinearLayout.LayoutParams progressParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 5));
@@ -230,7 +235,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView body = Ui.text(this, getString(R.string.auth_onboarding_galaxy_body),
-                15.0f, Ui.secondaryText(this.dark));
+                15.0f, Ui.secondaryText(this, this.dark));
         LinearLayout.LayoutParams bodyParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         bodyParams.setMargins(0, Ui.dp(this, 10), 0, 0);
@@ -292,14 +297,14 @@ public final class OnboardingActivity extends AppCompatActivity {
         if (!this.authMessage.isEmpty()) {
             Ui.addSpacer(this.content, 16);
             RoundedLinearLayout status = Ui.seslCard(this, this.dark);
-            status.addView(Ui.text(this, this.authMessage, 14.0f, Ui.secondaryText(this.dark)));
+            status.addView(Ui.text(this, this.authMessage, 14.0f, Ui.secondaryText(this, this.dark)));
             this.content.addView(status);
         }
 
         String signInLabel = getString(AppPreferences.isOAuthPending(this)
                 ? R.string.auth_onboarding_sign_in_continue
                 : R.string.auth_onboarding_sign_in_start);
-        addPrimaryAction(signInLabel, this::startSignIn);
+        this.signInButton = addPrimaryAction(signInLabel, this::startSignIn);
         Button later = Ui.button(this, getString(R.string.auth_onboarding_not_now), false,
                 this.dark);
         later.setOnClickListener(view -> completeAndOpenMain());
@@ -364,7 +369,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         titleParams.setMargins(0, Ui.dp(this, 24), 0, 0);
         hero.addView(title, titleParams);
 
-        TextView body = Ui.text(this, bodyText, 16.0f, Ui.secondaryText(this.dark));
+        TextView body = Ui.text(this, bodyText, 16.0f, Ui.secondaryText(this, this.dark));
         body.setLineSpacing(0.0f, 1.18f);
         LinearLayout.LayoutParams bodyParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
@@ -373,13 +378,14 @@ public final class OnboardingActivity extends AppCompatActivity {
         this.content.addView(hero);
     }
 
-    private void addPrimaryAction(String label, Runnable action) {
+    private Button addPrimaryAction(String label, Runnable action) {
         Button button = Ui.nativePrimaryButton(this, label);
         button.setOnClickListener(view -> action.run());
         LinearLayout.LayoutParams params =
                 new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60));
         params.setMargins(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
         this.content.addView(button, params);
+        return button;
     }
 
     private void showStep(int requestedStep) {
@@ -399,10 +405,13 @@ public final class OnboardingActivity extends AppCompatActivity {
         }
         boolean resuming = AppPreferences.isOAuthPending(this);
         this.oauthRequested = true;
-        this.authMessage = getString(resuming
+        Toast.makeText(this, resuming
                 ? R.string.auth_onboarding_status_resuming
-                : R.string.auth_onboarding_status_preparing);
-        render();
+                : R.string.auth_onboarding_status_preparing, Toast.LENGTH_SHORT).show();
+        if (!this.authMessage.isEmpty()) {
+            this.authMessage = "";
+            render();
+        }
         try {
             startForegroundService(new Intent(this, OAuthService.class)
                     .setAction(OAuthService.ACTION_START));

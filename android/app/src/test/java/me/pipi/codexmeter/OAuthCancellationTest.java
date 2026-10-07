@@ -2,6 +2,7 @@ package me.pipi.codexmeter;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertSame;
 import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
@@ -86,6 +87,19 @@ public class OAuthCancellationTest {
             ControlledExchange.release.countDown();
             assertTrue(flow.executor.awaitTermination(5, TimeUnit.SECONDS));
             assertUncommitted();
+        }
+    }
+
+    @Test
+    public void signOutDuringTheExchangeCannotRestoreTheSignedOutAccount() throws Exception {
+        try (Flow flow = startCallback()) {
+            UsageApi.signOut(app);
+            ControlledExchange.release.countDown();
+            flow.awaitCompletion();
+            assertNull(SettingsAccountCardTest.InMemoryTokenStore.syntheticTokens);
+            assertEquals(0, SettingsAccountCardTest.InMemoryTokenStore.saveCalls);
+            assertEquals(0, resultCount(true));
+            assertFalse(AppPreferences.isOAuthPending(app));
         }
     }
 
@@ -245,6 +259,12 @@ public class OAuthCancellationTest {
             entered.countDown();
             assertTrue(release.await(5, TimeUnit.SECONDS));
             throw new Exception("Synthetic usage unavailable");
+        }
+
+        @Implementation
+        protected static UsageSnapshot refreshAndCache(Context context,
+                UsageApi.Session session) throws Exception {
+            return refreshAndCache(context);
         }
     }
 

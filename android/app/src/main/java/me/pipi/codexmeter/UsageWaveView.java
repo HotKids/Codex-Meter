@@ -31,7 +31,6 @@ public final class UsageWaveView extends View {
 
     // Text and icon placement, in dp from the view's top/left (or right edge for the icon).
     private static final float TEXT_START_DP = Ui.CARD_HORIZONTAL_PADDING_DP;
-    private static final float PACE_AFTER_RESET_START_DP = TEXT_START_DP + 6f;
     private static final float TITLE_BASELINE_DP = 34f;
     private static final float RESET_TOP_BASELINE_DP = 67f;
     private static final float BOTTOM_LINE_BASELINE_DP = 87f;
@@ -208,9 +207,8 @@ public final class UsageWaveView extends View {
             if (!resetBottom.isEmpty()) {
                 canvas.drawText(resetBottom, textStart, bottomBaseline, resetPaint);
                 if (!pace.isEmpty()) {
-                    float paceX = PACE_AFTER_RESET_START_DP * density
-                            + resetPaint.measureText(resetBottom);
-                    canvas.drawText("· " + pace, paceX, bottomBaseline, pacePaint);
+                    float paceX = textStart + resetPaint.measureText(resetBottom);
+                    canvas.drawText(" · " + pace, paceX, bottomBaseline, pacePaint);
                 }
             }
         } else if (!pace.isEmpty()) {

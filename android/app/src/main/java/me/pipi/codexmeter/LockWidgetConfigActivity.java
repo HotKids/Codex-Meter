@@ -111,7 +111,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
     private RoundedLinearLayout buildMetersCard() {
         RoundedLinearLayout card = Ui.seslCard(this, dark);
         // updateMetersHint() fills in the capacity text once the selection is known.
-        metersHint = Ui.text(this, "", 13.0f, Ui.secondaryText(dark));
+        metersHint = Ui.text(this, "", 13.0f, Ui.secondaryText(this, dark));
         metersHint.setPadding(0, 0, 0, Ui.dp(this, 8));
         card.addView(metersHint);
 
@@ -174,7 +174,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         card.addView(showResetCredits);
         card.addView(showResetAction);
         TextView resetNote = Ui.text(this, getString(R.string.dashboard_lock_reset_note),
-                12.0f, Ui.secondaryText(dark));
+                12.0f, Ui.secondaryText(this, dark));
         LinearLayout.LayoutParams noteParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         noteParams.setMargins(0, Ui.dp(this, 12.0f), 0, 0);
@@ -187,7 +187,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         row.setOrientation(LinearLayout.VERTICAL);
         if (topDivider) {
             View divider = new View(this);
-            divider.setBackgroundColor(Ui.divider(dark));
+            divider.setBackgroundColor(Ui.divider(this, dark));
             LinearLayout.LayoutParams dividerParams =
                     new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 1));
             dividerParams.setMargins(0, Ui.dp(this, 4), 0, Ui.dp(this, 4));
@@ -196,7 +196,7 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
         LinearLayout content = new LinearLayout(this);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 52));
-        content.addView(Ui.text(this, title, 16, Ui.mainText(this, dark)),
+        content.addView(Ui.text(this, title, 17, Ui.mainText(this, dark)),
                 new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
         content.addView(toggle, new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT));
         content.setOnClickListener(view -> toggle.toggle());

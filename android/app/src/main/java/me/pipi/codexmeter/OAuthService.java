@@ -31,6 +31,7 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
@@ -60,6 +61,7 @@ public final class OAuthService extends Service {
     private volatile ServerSocket serverSocket;
     private volatile boolean cancelled;
     private volatile boolean credentialsCommitted;
+    private UsageApi.Session session;
 
     @Override
     public void onCreate() {
@@ -89,6 +91,7 @@ public final class OAuthService extends Service {
             return START_NOT_STICKY;
         }
         if (running.compareAndSet(false, true)) {
+            session = UsageApi.session();
             startSignInForeground(buildNotification(getString(R.string.auth_sign_in_preparing),
                     null));
             executor.execute(this::runFlow);
@@ -133,9 +136,11 @@ public final class OAuthService extends Service {
                 int port = bindServer();
                 redirectUri = "http://localhost:" + port + CALLBACK_PATH;
                 String authUrl = buildAuthorizeUrl(redirectUri, pkce);
-                AppPreferences.setOAuthPending(this, true, authUrl);
-                updateNotification(getString(R.string.auth_sign_in_complete_in_browser), authUrl);
-                broadcastReady(authUrl);
+                session.commit(() -> {
+                    AppPreferences.setOAuthPending(this, true, authUrl);
+                    updateNotification(getString(R.string.auth_sign_in_complete_in_browser), authUrl);
+                    broadcastReady(authUrl);
+                });
             }
 
             while (!cancelled) {
@@ -178,7 +183,8 @@ public final class OAuthService extends Service {
                 }
                 OAuthTiming.mark(OAuthTiming.Phase.CALLBACK_VALID);
 
-                updateNotification(getString(R.string.auth_sign_in_securing_session), null);
+                session.commit(() -> updateNotification(
+                        getString(R.string.auth_sign_in_securing_session), null));
                 OAuthTiming.mark(OAuthTiming.Phase.EXCHANGE_STARTED);
                 AuthTokens tokens = OAuthClient.exchangeCode(this, code, redirectUri,
                         pkce.verifier);
@@ -201,15 +207,19 @@ public final class OAuthService extends Service {
                 }
                 closeQuietly(browser);
                 browser = null;
-                broadcastResult(true, getString(R.string.auth_sign_in_succeeded));
-
-                updateNotification(getString(R.string.auth_sign_in_loading_usage), null);
+                session.commit(() -> {
+                    broadcastResult(true, getString(R.string.auth_sign_in_succeeded));
+                    updateNotification(getString(R.string.auth_sign_in_loading_usage), null);
+                });
                 performPostAuthenticationSetup();
                 DiagnosticLog.info(this, "auth", "oauth_flow_succeeded",
                         "duration_ms", SystemClock.elapsedRealtime() - started);
                 finishService();
                 return;
             }
+        } catch (CancellationException exception) {
+            DiagnosticLog.info(this, "auth", "oauth_session_cancelled");
+            finishService();
         } catch (Exception exception) {
             DiagnosticLog.error(this, "auth", "oauth_flow_failed", exception,
                     "credentials_committed", credentialsCommitted,
@@ -217,14 +227,23 @@ public final class OAuthService extends Service {
             if (credentialsCommitted) {
                 // A post-commit failure is not an authentication failure. Preserve the session,
                 // show a valid success state, and let manual refresh recover later.
-                AppPreferences.setOAuthPending(this, false, "");
-                AppPreferences.setLastError(this, cleanMessage(exception));
-                broadcastResult(true, getString(R.string.auth_sign_in_succeeded_usage_pending));
-                safeWidgetUpdate();
+                try {
+                    session.commit(() -> {
+                        AppPreferences.setOAuthPending(this, false, "");
+                        AppPreferences.setLastError(this, cleanMessage(exception));
+                        broadcastResult(true,
+                                getString(R.string.auth_sign_in_succeeded_usage_pending));
+                        safeWidgetUpdate();
+                    });
+                } catch (CancellationException ignored) {
+                    // Sign-out invalidates even a previously committed authentication flow.
+                } catch (Exception statusError) {
+                    DiagnosticLog.error(this, "auth", "oauth_status_failed", statusError);
+                }
                 finishService();
                 return;
             }
-            if (browser != null) {
+            if (browser != null && session.isCurrent()) {
                 try {
                     writeBrowser(browser, 500, cleanMessage(exception), false);
                 } catch (Exception ignored) {
@@ -232,9 +251,16 @@ public final class OAuthService extends Service {
                 }
             }
             if (!cancelled) {
-                String message = cleanMessage(exception);
-                AppPreferences.setOAuthPending(this, false, "");
-                broadcastResult(false, message);
+                try {
+                    session.commit(() -> {
+                        AppPreferences.setOAuthPending(this, false, "");
+                        broadcastResult(false, cleanMessage(exception));
+                    });
+                } catch (CancellationException ignored) {
+                    // The account that started this browser flow is no longer current.
+                } catch (Exception statusError) {
+                    DiagnosticLog.error(this, "auth", "oauth_status_failed", statusError);
+                }
             }
             finishService();
         } finally {
@@ -250,8 +276,11 @@ public final class OAuthService extends Service {
                 if (cancelled) {
                     return false;
                 }
-                UsageApi.saveTokens(this, tokens, () -> credentialsCommitted = true);
-                AppPreferences.setOAuthPending(this, false, "");
+                session = UsageApi.saveTokens(this, tokens, () -> {
+                    credentialsCommitted = true;
+                    session = UsageApi.session();
+                }, session);
+                session.commit(() -> AppPreferences.setOAuthPending(this, false, ""));
                 return true;
             }
         }
@@ -259,14 +288,30 @@ public final class OAuthService extends Service {
 
     private void performPostAuthenticationSetup() {
         try {
-            UsageSnapshot snapshot = UsageApi.refreshAndCache(this);
-            RefreshScheduler.scheduleAtNextReset(this, snapshot);
+            UsageSnapshot snapshot = UsageApi.refreshAndCache(this, session);
+            session.commit(() -> RefreshScheduler.scheduleAtNextReset(this, snapshot));
+        } catch (CancellationException exception) {
+            return;
         } catch (Exception refreshError) {
-            AppPreferences.setLastError(this, cleanMessage(refreshError));
+            try {
+                session.commit(() -> AppPreferences.setLastError(this, cleanMessage(refreshError)));
+            } catch (CancellationException exception) {
+                return;
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
+            }
         }
-        RefreshScheduler.schedulePeriodic(this);
-        safeWidgetUpdate();
-        broadcastUsageUpdated();
+        try {
+            session.commit(() -> {
+                RefreshScheduler.schedulePeriodic(this);
+                safeWidgetUpdate();
+                broadcastUsageUpdated();
+            });
+        } catch (CancellationException exception) {
+            // Sign-out owns the cleared account, even when its HTTP request finished late.
+        } catch (Exception exception) {
+            throw new IllegalStateException(exception);
+        }
     }
 
     /** Binds the first free registered loopback port and returns it. */
@@ -394,10 +439,21 @@ public final class OAuthService extends Service {
             }
             cancelled = true;
         }
-        AppPreferences.setOAuthPending(this, false, "");
         closeServer();
-        if (broadcast) {
-            broadcastResult(false, message);
+        UsageApi.Session current = session;
+        if (current != null) {
+            try {
+                current.commit(() -> {
+                    AppPreferences.setOAuthPending(this, false, "");
+                    if (broadcast) {
+                        broadcastResult(false, message);
+                    }
+                });
+            } catch (CancellationException ignored) {
+                // Cancelling an old browser flow cannot change a replacement account.
+            } catch (Exception statusError) {
+                DiagnosticLog.error(this, "auth", "oauth_status_failed", statusError);
+            }
         }
         finishService();
     }

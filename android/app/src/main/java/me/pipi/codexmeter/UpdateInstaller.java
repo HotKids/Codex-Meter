@@ -68,6 +68,7 @@ public final class UpdateInstaller {
      */
     public static PreparedUpdate prepare(Context context, GitHubRelease release,
             ProgressListener listener) throws Exception {
+        requireActiveDownload(context);
         if (release == null) {
             throw new IllegalArgumentException(
                     context.getString(R.string.updates_error_no_release_selected));
@@ -82,6 +83,7 @@ public final class UpdateInstaller {
                 "expected_bytes", release.apkSize);
         String checksumFile = downloadText(context, "update_checksum",
                 release.checksumUrl, MAX_CHECKSUM_BYTES);
+        requireActiveDownload(context);
         String expected = ReleaseIntegrity.expectedSha256(checksumFile, release.apkName);
         if (expected.isEmpty()) {
             throw new SecurityException(context.getString(
@@ -91,16 +93,18 @@ public final class UpdateInstaller {
         if (!directory.exists() && !directory.mkdirs()) {
             throw new IllegalStateException(context.getString(R.string.updates_error_storage));
         }
-        File partial = new File(directory, release.apkName + PARTIAL_SUFFIX);
-        File apk = new File(directory, release.apkName);
-        deleteQuietly(partial);
-        deleteQuietly(apk);
+        // Cleanup must own its files even when a canceled request finishes after a new attempt.
+        File partial = File.createTempFile("update-", PARTIAL_SUFFIX, directory);
+        File apk = new File(directory, partial.getName() + ".apk");
         try {
             downloadFile(context, "update_apk", release.apkUrl, partial, release.apkSize,
                     listener);
+            requireActiveDownload(context);
             verifyDownload(context, partial, release.apkSize, expected);
+            requireActiveDownload(context);
             moveFile(partial, apk);
             PreparedUpdate prepared = verifyPackage(context, release, apk);
+            requireActiveDownload(context);
             DiagnosticLog.info(context, "update", "update_prepare_succeeded",
                     "version", prepared.versionName,
                     "version_code", prepared.versionCode,
@@ -125,26 +129,29 @@ public final class UpdateInstaller {
             throw new IllegalArgumentException(
                     context.getString(R.string.updates_error_verified_apk_missing));
         }
-        long apkBytes = update.apk.length();
         PackageInstaller installer = context.getPackageManager().getPackageInstaller();
-        PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
-                PackageInstaller.SessionParams.MODE_FULL_INSTALL);
-        params.setAppPackageName(context.getPackageName());
-        params.setSize(apkBytes);
-        params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
-        int sessionId = installer.createSession(params);
-        DiagnosticLog.info(context, "update", "installer_session_created",
-                "session_id", sessionId,
-                "version", update.versionName,
-                "apk_bytes", apkBytes);
+        int sessionId = -1;
         PackageInstaller.Session session = null;
         try {
+            requireActiveDownload(context);
+            long apkBytes = update.apk.length();
+            PackageInstaller.SessionParams params = new PackageInstaller.SessionParams(
+                    PackageInstaller.SessionParams.MODE_FULL_INSTALL);
+            params.setAppPackageName(context.getPackageName());
+            params.setSize(apkBytes);
+            params.setRequireUserAction(PackageInstaller.SessionParams.USER_ACTION_REQUIRED);
+            sessionId = installer.createSession(params);
+            DiagnosticLog.info(context, "update", "installer_session_created",
+                    "session_id", sessionId,
+                    "version", update.versionName,
+                    "apk_bytes", apkBytes);
             session = installer.openSession(sessionId);
             try (InputStream input = new FileInputStream(update.apk);
                     OutputStream output = session.openWrite(SESSION_APK_NAME, 0L, apkBytes)) {
-                copyStream(input, output);
+                copyStream(context, input, output);
                 session.fsync(output);
             }
+            requireActiveDownload(context);
             session.commit(statusCallback(context, sessionId, update.versionName)
                     .getIntentSender());
             DiagnosticLog.info(context, "update", "installer_session_committed",
@@ -156,14 +163,20 @@ public final class UpdateInstaller {
                     "session_id", sessionId,
                     "version", update.versionName);
             try {
-                installer.abandonSession(sessionId);
+                if (sessionId >= 0) {
+                    installer.abandonSession(sessionId);
+                }
             } catch (RuntimeException ignored) {
                 // The original failure is the one worth reporting.
             }
             throw exception;
         } finally {
-            if (session != null) {
-                session.close();
+            try {
+                if (session != null) {
+                    session.close();
+                }
+            } finally {
+                deleteQuietly(update.apk);
             }
         }
     }
@@ -251,6 +264,7 @@ public final class UpdateInstaller {
 
     private static String downloadText(Context context, String operation, String url, int limit)
             throws Exception {
+        requireActiveDownload(context);
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "network", "request_started",
                 "operation", operation,
@@ -265,6 +279,7 @@ public final class UpdateInstaller {
                 int total = 0;
                 int read;
                 while ((read = input.read(buffer)) != -1) {
+                    requireActiveDownload(context);
                     total += read;
                     if (total > limit) {
                         throw new SecurityException(
@@ -295,6 +310,7 @@ public final class UpdateInstaller {
      */
     private static void downloadFile(Context context, String operation, String url,
             File destination, long expected, ProgressListener listener) throws Exception {
+        requireActiveDownload(context);
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "network", "request_started",
                 "operation", operation,
@@ -315,10 +331,7 @@ public final class UpdateInstaller {
                 long total = 0L;
                 int read;
                 while ((read = input.read(buffer)) != -1) {
-                    if (Thread.currentThread().isInterrupted()) {
-                        throw new InterruptedException(
-                                context.getString(R.string.updates_error_download_canceled));
-                    }
+                    requireActiveDownload(context);
                     total += read;
                     if (total > expected || total > MAX_APK_BYTES) {
                         throw new SecurityException(
@@ -348,6 +361,12 @@ public final class UpdateInstaller {
         DiagnosticLog.error(context, "network", "request_failed", exception,
                 "operation", operation,
                 "duration_ms", SystemClock.elapsedRealtime() - started);
+    }
+
+    private static void requireActiveDownload(Context context) throws InterruptedException {
+        if (Thread.currentThread().isInterrupted()) {
+            throw new InterruptedException(context.getString(R.string.updates_error_download_canceled));
+        }
     }
 
     private static HttpURLConnection open(Context context, String value) throws Exception {
@@ -417,9 +436,17 @@ public final class UpdateInstaller {
     }
 
     private static void copyStream(InputStream input, OutputStream output) throws Exception {
+        copyStream(null, input, output);
+    }
+
+    private static void copyStream(Context context, InputStream input, OutputStream output)
+            throws Exception {
         byte[] buffer = new byte[COPY_BUFFER_BYTES];
         int read;
         while ((read = input.read(buffer)) != -1) {
+            if (context != null) {
+                requireActiveDownload(context);
+            }
             output.write(buffer, 0, read);
         }
     }

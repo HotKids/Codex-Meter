@@ -9,6 +9,7 @@ import java.net.HttpURLConnection;
 import java.nio.charset.StandardCharsets;
 import java.util.UUID;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.CancellationException;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -21,35 +22,51 @@ public final class ResetCreditApi {
     }
 
     public static ResetCreditsSnapshot refreshAndCache(Context context) throws Exception {
+        return refreshAndCache(context, UsageApi.session());
+    }
+
+    static ResetCreditsSnapshot refreshAndCache(Context context, UsageApi.Session session)
+            throws Exception {
         synchronized (UsageApi.NETWORK_LOCK) {
+            session.requireCurrent();
             UsageApi.installCookieManager();
-            return refreshAndCacheLocked(context, UsageApi.usableTokens(context));
+            return refreshAndCacheLocked(context, UsageApi.usableTokens(context, session), session);
         }
     }
 
     /** Fetches and caches the credit list; the caller must hold {@link UsageApi#NETWORK_LOCK}. */
     static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens tokens)
             throws Exception {
+        return refreshAndCacheLocked(context, tokens, UsageApi.session());
+    }
+
+    static ResetCreditsSnapshot refreshAndCacheLocked(Context context, AuthTokens tokens,
+            UsageApi.Session session) throws Exception {
+        session.requireCurrent();
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "refresh", "reset_credit_refresh_started");
         if (tokens == null) {
-            tokens = UsageApi.usableTokens(context);
+            tokens = UsageApi.usableTokens(context, session);
         }
         UsageApi.Response response = requestCredits(context, tokens);
+        session.requireCurrent();
         if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
             DiagnosticLog.warn(context, "auth", "reset_credit_token_rejected_refreshing");
-            response = requestCredits(context, UsageApi.refreshAndSave(context, tokens));
+            response = requestCredits(context, UsageApi.refreshAndSave(context, tokens, session));
+            session.requireCurrent();
         }
-        ensureSuccess(context, response, R.string.auth_error_reset_credits_load_denied,
+        ensureSuccess(context, response, session, R.string.auth_error_reset_credits_load_denied,
                 R.string.auth_error_reset_credits_load_unavailable,
                 R.string.auth_error_reset_credits_load_http);
         ResetCreditsSnapshot snapshot =
                 ResetCreditsParser.parse(response.body, System.currentTimeMillis());
-        if (!AppPreferences.saveResetCredits(context, snapshot)) {
-            throw OAuthClient.userError(context, R.string.auth_error_reset_credits_not_saved);
-        }
-        ResetNotificationManager.onResetCreditsUpdated(context, snapshot);
-        notifyUpdated(context);
+        session.commit(() -> {
+            if (!AppPreferences.saveResetCredits(context, snapshot)) {
+                throw OAuthClient.userError(context, R.string.auth_error_reset_credits_not_saved);
+            }
+            ResetNotificationManager.onResetCreditsUpdated(context, snapshot);
+            notifyUpdated(context);
+        });
         DiagnosticLog.info(context, "refresh", "reset_credit_refresh_succeeded",
                 "duration_ms", SystemClock.elapsedRealtime() - started,
                 "available", snapshot.availableCount);
@@ -57,20 +74,28 @@ public final class ResetCreditApi {
     }
 
     public static ResetConsumeResult consumeBestAvailable(Context context) throws Exception {
+        return consumeBestAvailable(context, UsageApi.session());
+    }
+
+    static ResetConsumeResult consumeBestAvailable(Context context, UsageApi.Session session)
+            throws Exception {
         Context app = context.getApplicationContext() == null
                 ? context : context.getApplicationContext();
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(app, "user", "reset_credit_use_requested");
         synchronized (UsageApi.NETWORK_LOCK) {
+            session.requireCurrent();
             UsageApi.installCookieManager();
-            AuthTokens tokens = UsageApi.usableTokens(app);
+            AuthTokens tokens = UsageApi.usableTokens(app, session);
             ResetCreditsSnapshot credits = AppPreferences.loadResetCredits(app);
             long now = System.currentTimeMillis();
 
             if (needsRefresh(credits, now)) {
                 try {
-                    credits = refreshAndCacheLocked(app, tokens);
-                    tokens = UsageApi.usableTokens(app);
+                    credits = refreshAndCacheLocked(app, tokens, session);
+                    tokens = UsageApi.usableTokens(app, session);
+                } catch (CancellationException exception) {
+                    throw exception;
                 } catch (Exception exception) {
                     // Still try to redeem when the credits on hand list one as available.
                     if (!hasAvailableCredit(credits)) {
@@ -83,13 +108,16 @@ public final class ResetCreditApi {
             }
 
             byte[] payload = consumeRequestBody(credits, now);
+            session.requireCurrent();
             UsageApi.Response response = requestConsume(app, tokens, payload);
+            session.requireCurrent();
             if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
                 DiagnosticLog.warn(app, "auth", "reset_consume_token_rejected_refreshing");
-                tokens = UsageApi.refreshAndSave(app, tokens);
+                tokens = UsageApi.refreshAndSave(app, tokens, session);
                 response = requestConsume(app, tokens, payload);
+                session.requireCurrent();
             }
-            ensureSuccess(app, response, R.string.auth_error_reset_apply_denied,
+            ensureSuccess(app, response, session, R.string.auth_error_reset_apply_denied,
                     R.string.auth_error_reset_apply_unavailable,
                     R.string.auth_error_reset_apply_http);
 
@@ -97,15 +125,20 @@ public final class ResetCreditApi {
             String code = result.optString("code", "");
             int windowsReset = result.optInt("windows_reset", 0);
             String refreshWarning = ResetConsumeResult.RESET.equals(code)
-                    ? reloadUsageAfterReset(app) : "";
+                    ? reloadUsageAfterReset(app, session) : "";
 
             try {
-                refreshAndCacheLocked(app, UsageApi.usableTokens(app));
+                refreshAndCacheLocked(app, UsageApi.usableTokens(app, session), session);
+            } catch (CancellationException exception) {
+                throw exception;
             } catch (Exception exception) {
-                AppPreferences.setResetCreditsError(app, UsageApi.safeMessage(app, exception));
+                session.commit(() -> AppPreferences
+                        .setResetCreditsError(app, UsageApi.safeMessage(app, exception)));
             }
-            WidgetRenderer.updateAll(app);
-            notifyUpdated(app);
+            session.commit(() -> {
+                WidgetRenderer.updateAll(app);
+                notifyUpdated(app);
+            });
             DiagnosticLog.info(app, "user", "reset_credit_use_finished",
                     "result", code,
                     "windows_reset", windowsReset,
@@ -138,15 +171,22 @@ public final class ResetCreditApi {
      * Records the user-initiated reset, then reloads usage and its schedules. Returns a warning
      * for the result message when the new usage values could not be loaded.
      */
-    private static String reloadUsageAfterReset(Context app) {
-        ResetNotificationManager.markUserReset(app, AppPreferences.loadSnapshot(app));
+    private static String reloadUsageAfterReset(Context app, UsageApi.Session session)
+            throws Exception {
+        session.commit(() -> ResetNotificationManager
+                .markUserReset(app, AppPreferences.loadSnapshot(app)));
         try {
-            UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
-            RefreshScheduler.scheduleAtNextReset(app, snapshot);
-            ResetAlertScheduler.scheduleFromSnapshot(app, snapshot);
+            UsageSnapshot snapshot = UsageApi.refreshAndCache(app, session);
+            session.commit(() -> {
+                RefreshScheduler.scheduleAtNextReset(app, snapshot);
+                ResetAlertScheduler.scheduleFromSnapshot(app, snapshot);
+            });
             return "";
+        } catch (CancellationException exception) {
+            throw exception;
         } catch (Exception exception) {
-            AppPreferences.setLastError(app, UsageApi.safeMessage(app, exception));
+            session.commit(() -> AppPreferences.setLastError(app,
+                    UsageApi.safeMessage(app, exception), true));
             return app.getString(R.string.auth_reset_usage_reload_failed);
         }
     }
@@ -168,11 +208,13 @@ public final class ResetCreditApi {
      * forbidden (403), missing (404) or other HTTP status (formatted with the status code).
      */
     private static void ensureSuccess(Context context, UsageApi.Response response,
-            int forbiddenRes, int notFoundRes, int httpStatusRes) throws Exception {
+            UsageApi.Session session, int forbiddenRes, int notFoundRes, int httpStatusRes)
+            throws Exception {
+        session.requireCurrent();
         if (response.isSuccessful()) {
             return;
         }
-        UsageApi.recordAuthenticationRejection(context, response);
+        UsageApi.recordAuthenticationRejection(context, response, session);
         if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
             throw OAuthClient.responseError(context, response.body, forbiddenRes);
         }

@@ -29,6 +29,8 @@ public final class ResetAlertPreferences {
     private static final String KEY_STYLE = "style";
     private static final String KEY_THRESHOLD = "threshold";
     private static final String KEY_UNEXPECTED_REFILLS = "unexpected_refills";
+    private static final String KEY_USAGE_CREDITS_EXHAUSTED = "usage_credits_exhausted";
+    private static final String KEY_AUTHENTICATION_EXPIRED = "authentication_expired";
     private static final int DEFAULT_THRESHOLD = 25;
 
     private ResetAlertPreferences() {
@@ -64,6 +66,22 @@ public final class ResetAlertPreferences {
 
     public static boolean unexpectedRefillsEnabled(Context context) {
         return prefs(context).getBoolean(KEY_UNEXPECTED_REFILLS, true);
+    }
+
+    public static boolean usageCreditsExhaustedEnabled(Context context) {
+        return prefs(context).getBoolean(KEY_USAGE_CREDITS_EXHAUSTED, true);
+    }
+
+    public static void setUsageCreditsExhaustedEnabled(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_USAGE_CREDITS_EXHAUSTED, enabled).apply();
+    }
+
+    public static boolean authenticationExpiredEnabled(Context context) {
+        return prefs(context).getBoolean(KEY_AUTHENTICATION_EXPIRED, true);
+    }
+
+    public static void setAuthenticationExpiredEnabled(Context context, boolean enabled) {
+        prefs(context).edit().putBoolean(KEY_AUTHENTICATION_EXPIRED, enabled).apply();
     }
 
     public static void setUnexpectedRefillsEnabled(Context context, boolean enabled) {

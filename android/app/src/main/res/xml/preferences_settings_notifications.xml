@@ -36,6 +36,14 @@
         android:key="notification_reset_credit_category"
         android:title="@string/alerts_notifications_account_category">
         <SwitchPreferenceCompat
+            android:key="usage_credits_exhausted_ui"
+            android:summary="@string/alerts_notifications_usage_credits_exhausted_summary"
+            android:title="@string/alerts_notifications_usage_credits_exhausted_title" />
+        <SwitchPreferenceCompat
+            android:key="authentication_expired_ui"
+            android:summary="@string/alerts_notifications_authentication_expired_summary"
+            android:title="@string/alerts_notifications_authentication_expired_title" />
+        <SwitchPreferenceCompat
             android:key="unexpected_refills_ui"
             android:summary="@string/alerts_notifications_refills_summary"
             android:title="@string/alerts_notifications_refills_title" />

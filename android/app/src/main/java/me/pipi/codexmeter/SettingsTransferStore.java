@@ -111,6 +111,10 @@ public final class SettingsTransferStore {
         json.put("style", ResetAlertPreferences.getStyle(context));
         json.put("metric", ResetAlertPreferences.getMetric(context));
         json.put("threshold", ResetAlertPreferences.getThreshold(context));
+        json.put("usage_credits_exhausted",
+                ResetAlertPreferences.usageCreditsExhaustedEnabled(context));
+        json.put("authentication_expired",
+                ResetAlertPreferences.authenticationExpiredEnabled(context));
         json.put("unexpected_refills", ResetAlertPreferences.unexpectedRefillsEnabled(context));
         json.put("reset_credit_increases",
                 ResetAlertPreferences.resetCreditIncreasesEnabled(context));
@@ -318,6 +322,12 @@ public final class SettingsTransferStore {
         ResetAlertPreferences.setUnexpectedRefillsEnabled(context,
                 json.optBoolean("unexpected_refills",
                         ResetAlertPreferences.unexpectedRefillsEnabled(context)));
+        ResetAlertPreferences.setUsageCreditsExhaustedEnabled(context,
+                json.optBoolean("usage_credits_exhausted",
+                        ResetAlertPreferences.usageCreditsExhaustedEnabled(context)));
+        ResetAlertPreferences.setAuthenticationExpiredEnabled(context,
+                json.optBoolean("authentication_expired",
+                        ResetAlertPreferences.authenticationExpiredEnabled(context)));
         ResetAlertPreferences.setResetCreditIncreasesEnabled(context,
                 json.optBoolean("reset_credit_increases",
                         ResetAlertPreferences.resetCreditIncreasesEnabled(context)));
@@ -333,6 +343,8 @@ public final class SettingsTransferStore {
                     AppPreferences.loadSnapshot(context));
             ResetNotificationManager.onResetCreditsUpdated(context,
                     AppPreferences.loadResetCredits(context));
+            ResetNotificationManager.onAuthenticationStateChanged(context,
+                    AppPreferences.isReauthenticationRequired(context));
         } else {
             ResetNotificationManager.clearNotificationHistory(context);
         }
@@ -394,18 +406,33 @@ public final class SettingsTransferStore {
 
     /** Fetches usage with newly imported credentials off the calling thread. */
     private static void refreshUsageInBackground(Context app) {
+        UsageApi.Session session = UsageApi.session();
         new Thread(() -> {
             try {
-                UsageSnapshot snapshot = UsageApi.refreshAndCache(app);
-                RefreshScheduler.scheduleAtNextReset(app, snapshot);
-                WidgetRenderer.updateAll(app);
+                UsageSnapshot snapshot = UsageApi.refreshAndCache(app, session);
+                session.commit(() -> {
+                    RefreshScheduler.scheduleAtNextReset(app, snapshot);
+                    WidgetRenderer.updateAll(app);
+                });
+            } catch (java.util.concurrent.CancellationException exception) {
+                // An import's old account must not overwrite a later sign-out or sign-in.
             } catch (Exception exception) {
                 String message = exception.getLocalizedMessage();
                 if (message == null || message.trim().isEmpty()) {
                     message = app.getString(R.string.settings_transfer_error_refresh_failed);
                 }
-                AppPreferences.setLastError(app, message);
-                WidgetRenderer.updateAll(app);
+                String error = message;
+                try {
+                    session.commit(() -> {
+                        AppPreferences.setLastError(app, error);
+                        WidgetRenderer.updateAll(app);
+                    });
+                } catch (java.util.concurrent.CancellationException ignored) {
+                    // The current account owns its error state.
+                } catch (Exception statusError) {
+                    DiagnosticLog.error(app, "settings", "import_refresh_status_failed",
+                            statusError);
+                }
             }
         }, "codex-transfer-refresh").start();
     }

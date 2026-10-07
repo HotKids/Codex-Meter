@@ -105,6 +105,47 @@ public class MaterialCardVerticalFitTest {
     }
 
     @Test
+    public void minimumHeightCardsKeepEveryVisibleNativeLineInsideThePanel() {
+        Application app = RuntimeEnvironment.getApplication();
+        UsageCardState state = stateWithLongBalance();
+        for (int width : new int[] {90, 110, 140, 170, 350, 430}) {
+            List<String> keys = width < MaterialCardRenderer.MEDIUM_MIN_WIDTH_DP
+                    ? List.of("weekly", "next_reset")
+                    : List.of("five_hour", "weekly", "next_reset", "usage_credits");
+            View widget = card(app, keys, state, width, 110);
+            assertPanelContentFits(app, widget, width + "x110dp");
+        }
+    }
+
+    private static void assertPanelContentFits(Application app, View widget, String label) {
+        for (int slot = 0; slot < 4; slot++) {
+            View panel = widget.findViewById(id(app, "md_panel_", slot));
+            if (panel.getVisibility() != View.VISIBLE) continue;
+            ViewGroup content = widget.findViewById(id(app, "md_panel_content_", slot));
+            int top = content.getPaddingTop();
+            int bottom = content.getHeight() - content.getPaddingBottom();
+            for (int index = 0; index < content.getChildCount(); index++) {
+                View child = content.getChildAt(index);
+                if (child.getVisibility() == View.GONE) continue;
+                assertTrue(label + " slot=" + slot + " child=" + index + " bounds="
+                                + child.getTop() + ".." + child.getBottom() + "px outside "
+                                + top + ".." + bottom + "px",
+                        child.getTop() >= top && child.getBottom() <= bottom);
+            }
+            for (String field : new String[] {"md_name_", "md_value_", "md_reset_"}) {
+                TextView text = widget.findViewById(id(app, field, slot));
+                if (text.getVisibility() != View.VISIBLE
+                        || ((View) text.getParent()).getVisibility() != View.VISIBLE) continue;
+                int available = text.getHeight() - text.getCompoundPaddingTop()
+                        - text.getCompoundPaddingBottom();
+                assertTrue(label + " text=" + text.getText() + " line needs "
+                                + text.getLayout().getHeight() + "px but has " + available + "px",
+                        text.getLayout().getHeight() <= available);
+            }
+        }
+    }
+
+    @Test
     public void colorOsCardsKeepChinesePanelContentInsideVerticalPadding() {
         Application app = RuntimeEnvironment.getApplication();
         ShadowBuild.setManufacturer("OPPO");

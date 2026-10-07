@@ -11,6 +11,7 @@ import java.net.CookiePolicy;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.nio.charset.StandardCharsets;
+import java.util.concurrent.CancellationException;
 import javax.net.ssl.HttpsURLConnection;
 
 /**
@@ -18,8 +19,10 @@ import javax.net.ssl.HttpsURLConnection;
  * authenticated ChatGPT backend transport that {@link ResetCreditApi} shares.
  */
 public final class UsageApi {
-    /** Serializes backend calls so token refreshes and cache writes never interleave. */
+    /** Serializes backend calls; sign-out uses the separate, short local commit boundary. */
     static final Object NETWORK_LOCK = new Object();
+    private static final Object SESSION_LOCK = new Object();
+    private static long sessionGeneration;
     private static final int CONNECT_TIMEOUT_MS = 15_000;
     private static final int READ_TIMEOUT_MS = 25_000;
     private static final int MAX_MESSAGE_LENGTH = 240;
@@ -28,15 +31,85 @@ public final class UsageApi {
     private UsageApi() {
     }
 
+    @FunctionalInterface
+    interface CheckedAction {
+        void run() throws Exception;
+    }
+
+    /** A request belongs to the session that queued it, even if HTTP ignores interruption. */
+    static final class Session {
+        private final long generation;
+        private boolean cancelled;
+
+        private Session(long generation) {
+            this.generation = generation;
+        }
+
+        boolean isCurrent() {
+            synchronized (SESSION_LOCK) {
+                return !cancelled && generation == sessionGeneration
+                        && !Thread.currentThread().isInterrupted();
+            }
+        }
+
+        void requireCurrent() {
+            if (!isCurrent()) {
+                throw new CancellationException("Usage session is no longer current");
+            }
+        }
+
+        void commit(CheckedAction action) throws Exception {
+            synchronized (SESSION_LOCK) {
+                requireCurrent();
+                action.run();
+            }
+        }
+
+        void cancel() {
+            synchronized (SESSION_LOCK) {
+                cancelled = true;
+            }
+        }
+    }
+
+    static Session session() {
+        synchronized (SESSION_LOCK) {
+            return new Session(sessionGeneration);
+        }
+    }
+
+    /** Invalidates pending requests without waiting for any remote request to finish. */
+    static AuthTokens signOut(Context context) {
+        synchronized (SESSION_LOCK) {
+            sessionGeneration++;
+            AuthTokens previous = SecureTokenStore.load(context);
+            SecureTokenStore.clear(context);
+            AppPreferences.clearSnapshot(context);
+            AppPreferences.setOAuthPending(context, false, "");
+            RefreshScheduler.cancelAll(context);
+            ResetAlertScheduler.cancelAll(context);
+            return previous;
+        }
+    }
+
     public static UsageSnapshot refreshAndCache(Context context) throws Exception {
+        return refreshAndCache(context, session());
+    }
+
+    static UsageSnapshot refreshAndCache(Context context, Session session) throws Exception {
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "refresh", "usage_refresh_started");
         UsageSnapshot snapshot;
         try {
             synchronized (NETWORK_LOCK) {
-                snapshot = refreshAndCacheLocked(context);
+                session.requireCurrent();
+                snapshot = refreshAndCacheLocked(context, session);
             }
+        } catch (CancellationException exception) {
+            DiagnosticLog.info(context, "refresh", "usage_refresh_cancelled");
+            throw exception;
         } catch (Exception exception) {
+            session.requireCurrent();
             DiagnosticLog.error(context, "refresh", "usage_refresh_failed", exception,
                     "duration_ms", SystemClock.elapsedRealtime() - started);
             throw exception;
@@ -50,16 +123,19 @@ public final class UsageApi {
         return snapshot;
     }
 
-    private static UsageSnapshot refreshAndCacheLocked(Context context) throws Exception {
+    private static UsageSnapshot refreshAndCacheLocked(Context context, Session session)
+            throws Exception {
         installCookieManager();
-        AuthTokens tokens = usableTokens(context);
+        AuthTokens tokens = usableTokens(context, session);
         Response response = requestUsage(context, tokens);
+        session.requireCurrent();
         if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
             DiagnosticLog.warn(context, "auth", "usage_token_rejected_refreshing");
-            tokens = refreshAndSave(context, tokens);
+            tokens = refreshAndSave(context, tokens, session);
             response = requestUsage(context, tokens);
+            session.requireCurrent();
         }
-        recordAuthenticationRejection(context, response);
+        recordAuthenticationRejection(context, response, session);
         if (!response.isSuccessful()) {
             throw usageFailure(context, response);
         }
@@ -67,20 +143,26 @@ public final class UsageApi {
         if (!snapshot.hasDisplayableData()) {
             throw OAuthClient.userError(context, R.string.auth_error_usage_unrecognized);
         }
-        UsageSnapshot previous = AppPreferences.loadSnapshot(context);
-        if (!AppPreferences.saveSnapshot(context, snapshot)) {
-            throw OAuthClient.userError(context, R.string.auth_error_usage_not_saved);
+        session.commit(() -> {
+            UsageSnapshot previous = AppPreferences.loadSnapshot(context);
+            if (!AppPreferences.saveSnapshot(context, snapshot)) {
+                throw OAuthClient.userError(context, R.string.auth_error_usage_not_saved);
+            }
+            AppPreferences.setReauthenticationRequired(context, false);
+            UsageHistoryRecorder.record(context, snapshot);
+            NowBarManager.onUsageUpdated(context, snapshot);
+            ResetNotificationManager.onUsageUpdated(context, previous, snapshot);
+            try {
+                ResetAlertScheduler.scheduleFromSnapshot(context, snapshot);
+            } catch (RuntimeException exception) {
+                DiagnosticLog.error(context, "scheduler", "reset_alert_schedule_failed", exception);
+            }
+        });
+        if (refreshResetCredits(context, snapshot, tokens, session)) {
+            // Auxiliary authorization must recover before another expiry alert can fire.
+            session.commit(() -> ResetNotificationManager
+                    .onAuthenticationStateChanged(context, false));
         }
-        AppPreferences.setReauthenticationRequired(context, false);
-        UsageHistoryRecorder.record(context, snapshot);
-        NowBarManager.onUsageUpdated(context, snapshot);
-        ResetNotificationManager.onUsageUpdated(context, previous, snapshot);
-        try {
-            ResetAlertScheduler.scheduleFromSnapshot(context, snapshot);
-        } catch (RuntimeException exception) {
-            DiagnosticLog.error(context, "scheduler", "reset_alert_schedule_failed", exception);
-        }
-        refreshResetCredits(context, snapshot, tokens);
         return snapshot;
     }
 
@@ -98,22 +180,36 @@ public final class UsageApi {
     }
 
     /** A reset-credit failure must not fail the usage refresh that already succeeded. */
-    private static void refreshResetCredits(Context context, UsageSnapshot snapshot,
-            AuthTokens tokens) {
+    private static boolean refreshResetCredits(Context context, UsageSnapshot snapshot,
+            AuthTokens tokens, Session session) throws Exception {
         try {
-            ResetCreditApi.refreshAndCacheLocked(context, tokens);
+            ResetCreditApi.refreshAndCacheLocked(context, tokens, session);
+            return true;
+        } catch (CancellationException exception) {
+            throw exception;
         } catch (Exception exception) {
-            DiagnosticLog.error(context, "refresh", "reset_credit_side_refresh_failed",
-                    exception);
-            ResetNotificationManager.onResetCreditSummaryUpdated(context,
-                    snapshot.resetCreditsAvailable);
-            AppPreferences.setResetCreditsError(context, safeMessage(context, exception));
+            session.commit(() -> {
+                DiagnosticLog.error(context, "refresh", "reset_credit_side_refresh_failed",
+                        exception);
+                ResetNotificationManager.onResetCreditSummaryUpdated(context,
+                        snapshot.resetCreditsAvailable);
+                AppPreferences.setResetCreditsError(context, safeMessage(context, exception));
+            });
+            return false;
         }
     }
 
     /** Loads the stored credentials, refreshing them first when they are about to expire. */
     static AuthTokens usableTokens(Context context) throws Exception {
-        AuthTokens tokens = SecureTokenStore.load(context);
+        return usableTokens(context, session());
+    }
+
+    static AuthTokens usableTokens(Context context, Session session) throws Exception {
+        AuthTokens tokens;
+        synchronized (SESSION_LOCK) {
+            session.requireCurrent();
+            tokens = SecureTokenStore.load(context);
+        }
         if (tokens == null) {
             throw OAuthClient.userError(context, R.string.auth_error_sign_in_required);
         }
@@ -121,19 +217,27 @@ public final class UsageApi {
             return tokens;
         }
         DiagnosticLog.info(context, "auth", "token_refresh_due");
-        return refreshAndSave(context, tokens);
+        return refreshAndSave(context, tokens, session);
     }
 
     /** Exchanges the refresh token and persists the result before anything uses it. */
     static AuthTokens refreshAndSave(Context context, AuthTokens tokens) throws Exception {
+        return refreshAndSave(context, tokens, session());
+    }
+
+    static AuthTokens refreshAndSave(Context context, AuthTokens tokens, Session session)
+            throws Exception {
         synchronized (NETWORK_LOCK) {
+            session.requireCurrent();
             try {
                 AuthTokens refreshed = OAuthClient.refresh(context, tokens);
-                saveTokens(context, refreshed);
+                // Refresh-token acceptance alone does not establish restored usage access.
+                session.commit(() -> saveTokensLocked(context, refreshed, () -> {}, false));
                 return refreshed;
             } catch (OAuthClient.TokenEndpointException exception) {
                 if (exception.rejectsRefreshToken()) {
-                    AppPreferences.setReauthenticationRequired(context, true);
+                    session.commit(() -> AppPreferences
+                            .setReauthenticationRequired(context, true));
                 }
                 throw exception;
             }
@@ -146,15 +250,33 @@ public final class UsageApi {
 
     static void saveTokens(Context context, AuthTokens tokens, Runnable onCredentialsCommitted)
             throws Exception {
-        synchronized (NETWORK_LOCK) {
-            // A previous request's rejection must not overwrite a newly committed session.
-            AuthTokens previous = SecureTokenStore.load(context);
-            SecureTokenStore.save(context, tokens);
-            onCredentialsCommitted.run();
-            if (accountChanged(previous, tokens)) {
-                AppPreferences.clearSnapshot(context);
-            }
-            AppPreferences.setReauthenticationRequired(context, false);
+        saveTokens(context, tokens, onCredentialsCommitted, session());
+    }
+
+    static Session saveTokens(Context context, AuthTokens tokens, Runnable onCredentialsCommitted,
+            Session expected) throws Exception {
+        synchronized (SESSION_LOCK) {
+            expected.requireCurrent();
+            saveTokensLocked(context, tokens, onCredentialsCommitted, true);
+            return session();
+        }
+    }
+
+    /** Caller holds the local session commit boundary; new credentials invalidate older HTTP. */
+    private static void saveTokensLocked(Context context, AuthTokens tokens,
+            Runnable onCredentialsCommitted, boolean signInCompleted) throws Exception {
+        AuthTokens previous = SecureTokenStore.load(context);
+        SecureTokenStore.save(context, tokens);
+        if (signInCompleted) {
+            sessionGeneration++;
+        }
+        onCredentialsCommitted.run();
+        if (accountChanged(previous, tokens)) {
+            AppPreferences.clearSnapshot(context);
+        }
+        AppPreferences.setReauthenticationRequired(context, false);
+        if (signInCompleted) {
+            ResetNotificationManager.onAuthenticationStateChanged(context, false);
         }
     }
 
@@ -171,8 +293,13 @@ public final class UsageApi {
 
     /** Call only after the access-token refresh retry; an initial 401 may be recoverable. */
     static void recordAuthenticationRejection(Context context, Response response) throws Exception {
+        recordAuthenticationRejection(context, response, session());
+    }
+
+    static void recordAuthenticationRejection(Context context, Response response, Session session)
+            throws Exception {
         if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
-            AppPreferences.setReauthenticationRequired(context, true);
+            session.commit(() -> AppPreferences.setReauthenticationRequired(context, true));
         }
     }
 

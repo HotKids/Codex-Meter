@@ -50,7 +50,7 @@ final class MaterialCardRenderer {
     private static final float DETAIL_TEXT = 9.5f;
     private static final float PANEL_PADDING_H = 12f;
     private static final float PANEL_PADDING_V = 4f;
-    /** Fixed spacing between title, bar and detail rows across card sizes. */
+    /** Normal spacing; minimum-height cards use their remaining vertical space. */
     private static final float PANEL_GAP = 5f;
     private static final float VALUE_GAP = 2f;
     private static final float BAR_HEIGHT = 9f;
@@ -115,6 +115,7 @@ final class MaterialCardRenderer {
     private final float textScale;
     private final boolean showUpdated;
     private final float panelContentWidth;
+    private final int panelHeightPx;
 
     private MaterialCardRenderer(Context context, WidgetOptions options,
             List<String> keys, UsageCardState state, float widthDp, float heightDp) {
@@ -140,6 +141,16 @@ final class MaterialCardRenderer {
         this.scale = Math.max(MIN_SCALE, Math.min(MAX_SCALE, fit));
         this.textScale = Math.max(MIN_SCALE, Math.min(MAX_SCALE,
                 TEXT_REFERENCE_SCALE * heightDp / TEXT_REFERENCE_HEIGHT));
+        boolean failure = state.signedIn && !state.refreshError.isEmpty();
+        float metadataSize = showUpdated || failure
+                ? TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT,
+                        resources.getDisplayMetrics())
+                : STATUS_TEXT * textScale * resources.getDisplayMetrics().density;
+        int headerHeight = Math.max(px(ICON), Math.max(lineHeight(VALUE_TEXT, true),
+                lineHeightPx(metadataSize, Typeface.create("sans-serif-medium", Typeface.NORMAL))));
+        this.panelHeightPx = Math.max(0, (Math.round(heightDp
+                * resources.getDisplayMetrics().density) - px(PADDING) * 2 - headerHeight
+                - px(FIRST_ROW_GAP) - (rowCount - 1) * px(GAP)) / rowCount);
         float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
                 / columns;
         this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
@@ -173,7 +184,7 @@ final class MaterialCardRenderer {
                 continue;
             }
             views.setViewVisibility(PANELS[slot], View.VISIBLE);
-            renderPanel(slot, item);
+            renderPanel(slot, item, appWidgetId);
         }
         bindActions(appWidgetId);
     }
@@ -301,9 +312,11 @@ final class MaterialCardRenderer {
         return value;
     }
 
-    private void renderPanel(int slot, int item) {
+    private void renderPanel(int slot, int item, int appWidgetId) {
         String key = item < keys.size() ? keys.get(item) : null;
         WidgetMeter meter = new WidgetMeter(context, key, options, state);
+        views.setOnClickPendingIntent(PANELS[slot],
+                WidgetActions.openSection(context, appWidgetId, meter.dashboardSection));
         UsageWindow window = meter.window;
         long resetAt = meter.resetAtMillis;
         boolean reset = WidgetMeters.NEXT_RESET.equals(key);
@@ -311,9 +324,6 @@ final class MaterialCardRenderer {
                 : meter.value;
 
         color(PANEL_BACKGROUNDS[slot], "setColorFilter", Role.PANEL);
-        int horizontal = px(PANEL_PADDING_H);
-        int vertical = px(PANEL_PADDING_V);
-        views.setViewPadding(CONTENTS[slot], horizontal, vertical, horizontal, vertical);
         if (slot % 2 == 1) {
             margin(PANELS[slot], RemoteViews.MARGIN_START, GAP);
         }
@@ -328,12 +338,26 @@ final class MaterialCardRenderer {
 
         boolean balance = WidgetOptions.USAGE_CREDITS.equals(key);
         boolean stackedBalance = balance && balanceNeedsSecondLine(slot, meter.title, value);
+        boolean detailVisible = usage || reset || stackedBalance;
+        int fixedHeight = Math.max(lineHeight(NAME_TEXT, true), lineHeight(VALUE_TEXT, true))
+                + (balance ? 0 : px(BAR_HEIGHT))
+                + (detailVisible ? lineHeight(stackedBalance ? VALUE_TEXT : DETAIL_TEXT,
+                        stackedBalance) : 0);
+        int gapCount = (balance ? 0 : 1) + (detailVisible ? 1 : 0);
+        int freeHeight = Math.max(0, panelHeightPx - fixedHeight);
+        int vertical = Math.min(px(PANEL_PADDING_V), freeHeight / 2);
+        int gap = gapCount == 0 ? 0 : Math.min(Math.round(PANEL_GAP
+                * resources.getDisplayMetrics().density), (freeHeight - 2 * vertical) / gapCount);
+        int horizontal = px(PANEL_PADDING_H);
+        views.setViewPadding(CONTENTS[slot], horizontal, vertical, horizontal, vertical);
+        panelGap(BARS[slot], gap);
+        panelGap(DETAILS[slot], gap);
         views.setViewVisibility(VALUES[slot], stackedBalance ? View.GONE : View.VISIBLE);
         views.setViewVisibility(BARS[slot], balance ? View.GONE : View.VISIBLE);
         if (!balance) {
             renderBar(slot, meter, usage);
         }
-        views.setViewVisibility(DETAILS[slot], usage || reset || stackedBalance
+        views.setViewVisibility(DETAILS[slot], detailVisible
                 ? View.VISIBLE : View.GONE);
         String detail = stackedBalance ? value : reset
                 ? resources.getString(R.string.widget_material_reset_credits, state.availableCredits())
@@ -348,7 +372,6 @@ final class MaterialCardRenderer {
         }
         textSize(RESETS[slot], stackedBalance ? VALUE_TEXT : DETAIL_TEXT);
         color(RESETS[slot], "setTextColor", stackedBalance ? Role.TEXT : Role.SECONDARY);
-        panelGap(DETAILS[slot]);
     }
 
     private boolean balanceNeedsSecondLine(int slot, String title, String value) {
@@ -370,7 +393,6 @@ final class MaterialCardRenderer {
         int progress = meter.progress;
         views.setViewLayoutHeight(BARS[slot], BAR_HEIGHT * scale,
                 TypedValue.COMPLEX_UNIT_DIP);
-        panelGap(BARS[slot]);
         WidgetGraphics.tintTrack(views, TRACKS[slot]);
         boolean classic = OneUiWidgetAppearance.classicPalette(options.colorStyle);
         int fillColor = WidgetUsageColors.color(meter.window, usage);
@@ -418,9 +440,22 @@ final class MaterialCardRenderer {
         views.setTextViewTextSize(viewId, TypedValue.COMPLEX_UNIT_DIP, sizeDp * textScale);
     }
 
-    private void panelGap(int viewId) {
-        views.setViewLayoutMargin(viewId, RemoteViews.MARGIN_TOP, PANEL_GAP,
-                TypedValue.COMPLEX_UNIT_DIP);
+    private int lineHeight(float sizeDp, boolean bold) {
+        return lineHeightPx(sizeDp * textScale * resources.getDisplayMetrics().density,
+                bold ? Typeface.DEFAULT_BOLD : Typeface.DEFAULT);
+    }
+
+    private static int lineHeightPx(float size, Typeface typeface) {
+        Paint paint = new Paint();
+        paint.setTypeface(typeface);
+        paint.setTextSize(size);
+        Paint.FontMetricsInt metrics = paint.getFontMetricsInt();
+        return metrics.descent - metrics.ascent;
+    }
+
+    private void panelGap(int viewId, int pixels) {
+        views.setViewLayoutMargin(viewId, RemoteViews.MARGIN_TOP, pixels,
+                TypedValue.COMPLEX_UNIT_PX);
     }
 
     private void margin(int viewId, int which, float valueDp) {

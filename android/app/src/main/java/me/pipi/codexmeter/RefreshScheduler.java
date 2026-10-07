@@ -21,6 +21,7 @@ import java.util.concurrent.TimeUnit;
 public final class RefreshScheduler {
     static final String REASON_ADAPTIVE = "adaptive";
     static final String REASON_SHORT_PERIODIC = "short_periodic";
+    static final String REASON_MANUAL = "manual";
     private static final String REASON_IMMEDIATE = "immediate";
     private static final String REASON_PERIODIC = "periodic";
     private static final String REASON_RESET = "reset";
@@ -145,6 +146,14 @@ public final class RefreshScheduler {
     }
 
     public static boolean scheduleImmediate(Context context) {
+        return scheduleImmediate(context, false);
+    }
+
+    static boolean scheduleManual(Context context) {
+        return scheduleImmediate(context, true);
+    }
+
+    private static boolean scheduleImmediate(Context context, boolean manual) {
         Context app = appContext(context);
         if (app == null) {
             return false;
@@ -154,8 +163,13 @@ public final class RefreshScheduler {
             return true;
         }
         try {
+            JobScheduler scheduler = scheduler(app);
+            JobInfo pending = scheduler == null ? null : scheduler.getPendingJob(IMMEDIATE_JOB_ID);
+            boolean manualFeedback = manual || (pending != null
+                    && REASON_MANUAL.equals(reason(pending.getExtras())));
             DiagnosticLog.info(app, "scheduler", "immediate_refresh_requested");
-            return submit(app, baseJob(app, IMMEDIATE_JOB_ID, REASON_IMMEDIATE)
+            return submit(app, baseJob(app, IMMEDIATE_JOB_ID,
+                    manualFeedback ? REASON_MANUAL : REASON_IMMEDIATE)
                     .setMinimumLatency(0L)
                     .setOverrideDeadline(IMMEDIATE_DEADLINE_MS)
                     .build());

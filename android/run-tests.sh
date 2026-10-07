@@ -434,7 +434,7 @@ grep -q 'requireLeadTimes' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SettingsTransferStore.java"
 grep -q 'applyNowBar && NowBarManager.isActive' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SettingsTransferStore.java"
-grep -q 'AppPreferences.setLastError(app, message)' \
+grep -q 'AppPreferences.setLastError(app, error)' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SettingsTransferStore.java"
 grep -q 'partial widget keeps current theme' "$ROOT/tests/ParserSelfTest.java"
 grep -q 'malformed lead times rejected' "$ROOT/tests/ParserSelfTest.java"
@@ -754,7 +754,7 @@ grep -q 'Color.rgb(230, 91, 23)' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/Ui.java"
 grep -q 'WARNING_WAVE_DURATION_MS = 950L' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/UsageWaveView.java"
-grep -q '"· " + pace' \
+grep -q '" · " + pace' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/UsageWaveView.java"
 grep -q 'card.setMinimumHeight(Ui.dp(this, 103.0f))' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/MainActivity.java"

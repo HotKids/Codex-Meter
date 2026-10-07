@@ -23,6 +23,7 @@ public final class AppPreferences {
     private static final String KEY_SNAPSHOT = "last_snapshot";
     private static final String KEY_ERROR = "last_error";
     private static final String KEY_ERROR_AT = "last_error_at";
+    private static final String KEY_ERROR_MANUAL = "last_error_manual";
     private static final String KEY_RESET_CREDITS = "reset_credits_snapshot";
     private static final String KEY_RESET_ERROR = "reset_credits_error";
     private static final String KEY_RESET_ERROR_AT = "reset_credits_error_at";
@@ -128,6 +129,7 @@ public final class AppPreferences {
                     .putString(KEY_SNAPSHOT, snapshot.toJson().toString())
                     .remove(KEY_ERROR)
                     .remove(KEY_ERROR_AT)
+                    .remove(KEY_ERROR_MANUAL)
                     .commit();
         } catch (Exception e) {
             setLastError(context, context.getString(R.string.auth_error_usage_not_cached));
@@ -151,6 +153,7 @@ public final class AppPreferences {
     public static void clearSnapshot(Context context) {
         prefs(context).edit()
                 .remove(KEY_SNAPSHOT).remove(KEY_ERROR).remove(KEY_ERROR_AT)
+                .remove(KEY_ERROR_MANUAL)
                 .remove(KEY_RESET_CREDITS).remove(KEY_RESET_ERROR).remove(KEY_RESET_ERROR_AT)
                 .remove(KEY_HISTORY_FIVE_HOUR).remove(KEY_HISTORY_WEEKLY)
                 .remove(KEY_HISTORY_MONTHLY)
@@ -163,6 +166,10 @@ public final class AppPreferences {
     }
 
     public static void setLastError(Context context, String message) {
+        setLastError(context, message, false);
+    }
+
+    public static void setLastError(Context context, String message, boolean manual) {
         if (isBlank(message)) {
             clearLastError(context);
             return;
@@ -170,11 +177,14 @@ public final class AppPreferences {
         prefs(context).edit()
                 .putString(KEY_ERROR, clip(message))
                 .putLong(KEY_ERROR_AT, System.currentTimeMillis())
+                .putBoolean(KEY_ERROR_MANUAL,
+                        manual || prefs(context).getBoolean(KEY_ERROR_MANUAL, false))
                 .apply();
     }
 
     public static void clearLastError(Context context) {
-        prefs(context).edit().remove(KEY_ERROR).remove(KEY_ERROR_AT).apply();
+        prefs(context).edit().remove(KEY_ERROR).remove(KEY_ERROR_AT)
+                .remove(KEY_ERROR_MANUAL).apply();
     }
 
     public static String getLastError(Context context) {
@@ -183,7 +193,8 @@ public final class AppPreferences {
 
     /**
      * Returns the last refresh error unless newer usage data superseded it (which also clears
-     * it) or the cached usage is still fresh enough that the error is not worth showing.
+     * it) or a background failure has fresh cached usage. A manual failure stays visible until
+     * usage succeeds again, including when a later automatic retry also fails.
      */
     public static String getVisibleRefreshError(Context context) {
         String lastError = getLastError(context);
@@ -198,6 +209,9 @@ public final class AppPreferences {
         if (errorAt > 0 && errorAt <= snapshot.fetchedAtMillis) {
             clearLastError(context);
             return "";
+        }
+        if (prefs(context).getBoolean(KEY_ERROR_MANUAL, false)) {
+            return lastError;
         }
         long snapshotAge = Math.max(0L, System.currentTimeMillis() - snapshot.fetchedAtMillis);
         return snapshotAge < REFRESH_ERROR_GRACE_MS ? "" : lastError;
@@ -882,6 +896,9 @@ public final class AppPreferences {
         }
         if (!editor.commit()) {
             throw OAuthClient.userError(context, R.string.auth_error_status_not_saved);
+        }
+        if (required) {
+            ResetNotificationManager.onAuthenticationStateChanged(context, true);
         }
     }
 

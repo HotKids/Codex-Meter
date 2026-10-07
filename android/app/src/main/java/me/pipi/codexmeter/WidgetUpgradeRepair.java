@@ -121,7 +121,8 @@ public final class WidgetUpgradeRepair {
         File[] files = directory.listFiles();
         if (files != null) {
             for (File file : files) {
-                if (file != null) {
+                // Active downloads release their own unique files; repair only clears legacy APKs.
+                if (file != null && !file.getName().startsWith("update-")) {
                     file.delete();
                 }
             }

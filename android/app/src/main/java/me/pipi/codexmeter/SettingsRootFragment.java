@@ -92,7 +92,7 @@ public final class SettingsRootFragment extends SettingsPageFragment
         TextView plan = preference.findViewById(R.id.settings_account_plan);
         CardItemView action = preference.findViewById(R.id.settings_account_action);
         title.setTextColor(Ui.mainText(context, dark));
-        summary.setTextColor(Ui.secondaryText(dark));
+        summary.setTextColor(Ui.secondaryText(context, dark));
         plan.setTextColor(Ui.mainText(context, dark));
         plan.setBackground(Ui.pillBackground(context, dark));
 
@@ -172,12 +172,7 @@ public final class SettingsRootFragment extends SettingsPageFragment
 
     private void signOut() {
         Context context = requireContext();
-        AuthTokens tokens = SecureTokenStore.load(context);
-        SecureTokenStore.clear(context);
-        AppPreferences.clearSnapshot(context);
-        AppPreferences.setOAuthPending(context, false, "");
-        RefreshScheduler.cancelAll(context);
-        ResetAlertScheduler.cancelAll(context);
+        AuthTokens tokens = UsageApi.signOut(context);
         WidgetRenderer.updateAll(context);
         showToast(getString(R.string.settings_signed_out), Toast.LENGTH_SHORT);
         requireActivity().recreate();

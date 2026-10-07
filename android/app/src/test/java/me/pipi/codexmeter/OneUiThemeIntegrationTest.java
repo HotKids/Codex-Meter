@@ -1,6 +1,7 @@
 package me.pipi.codexmeter;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
@@ -8,6 +9,8 @@ import android.content.Context;
 import android.content.res.ColorStateList;
 import android.content.res.TypedArray;
 import android.graphics.Color;
+import android.graphics.drawable.ColorDrawable;
+import android.view.View;
 import android.widget.Button;
 import androidx.appcompat.view.ContextThemeWrapper;
 import androidx.core.graphics.ColorUtils;
@@ -22,6 +25,44 @@ import org.robolectric.annotation.GraphicsMode;
 @Config(sdk = 35, application = Application.class)
 @GraphicsMode(GraphicsMode.Mode.NATIVE)
 public class OneUiThemeIntegrationTest {
+    @Test
+    public void lightSecondaryTextAndDividersUseOneUiTheme() {
+        assertSecondaryPalette(false);
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void darkSecondaryTextAndDividersUseOneUiTheme() {
+        assertSecondaryPalette(true);
+    }
+
+    private void assertSecondaryPalette(boolean dark) {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+                R.style.AppTheme);
+        TypedArray attributes = context.obtainStyledAttributes(
+                new int[]{android.R.attr.textColorSecondary});
+        try {
+            assertEquals(attributes.getColorStateList(0).getDefaultColor(), Ui.secondaryText(context, dark));
+        } finally {
+            attributes.recycle();
+        }
+        assertEquals(context.getColor(dev.oneuiproject.oneui.design.R.color.oui_des_list_divider_color),
+                Ui.divider(context, dark));
+    }
+
+    @Test
+    public void sharedCardsUseOneUiCornerDrawingWithoutAnExtraOutline() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+                R.style.AppTheme);
+        for (View card : new View[]{Ui.card(context, false), Ui.seslCard(context, false),
+                Ui.cardGroup(context, false)}) {
+            assertTrue(card.getBackground() instanceof ColorDrawable);
+            assertEquals(Ui.cardColor(context, false),
+                    ((ColorDrawable) card.getBackground()).getColor());
+            assertFalse(card.getClipToOutline());
+        }
+    }
+
     @Test
     @Config(qualifiers = "night")
     public void darkPagesUseOneUiSurfacesAndSemiboldTypography() {

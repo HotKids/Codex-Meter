@@ -1,6 +1,7 @@
 package me.pipi.codexmeter;
 
 import dev.bennett.codexmeter.UsageSnapshot;
+import dev.bennett.codexmeter.UsageCredits;
 import dev.bennett.codexmeter.UsageWindow;
 
 import android.app.Notification;
@@ -31,6 +32,9 @@ public final class ResetNotificationManager {
     private static final String KEY_WEEKLY_WINDOW = "low_weekly_window";
     private static final String KEY_MONTHLY_WINDOW = "low_monthly_window";
     private static final String KEY_CREDIT_COUNT = "known_reset_credit_count";
+    private static final String KEY_USAGE_CREDITS_EXHAUSTED = "known_usage_credits_exhausted";
+    private static final String KEY_USAGE_CREDITS_PENDING = "usage_credits_exhaustion_pending";
+    private static final String KEY_AUTHENTICATION_ANNOUNCED = "authentication_expired_announced";
     private static final String KEY_CREDIT_EXPIRY_ANNOUNCED =
             "reset_credit_expiry_announced";
     private static final String KEY_USER_RESET_FIVE_HOUR_UNTIL = "user_reset_five_hour_until";
@@ -51,6 +55,8 @@ public final class ResetNotificationManager {
     private static final int NOTIFICATION_REFILL_WEEKLY = 74512;
     private static final int NOTIFICATION_REFILL_BOTH = 74513;
     private static final int NOTIFICATION_REFILL_MONTHLY = 74514;
+    private static final int NOTIFICATION_USAGE_CREDITS_EXHAUSTED = 74515;
+    private static final int NOTIFICATION_AUTHENTICATION_EXPIRED = 74516;
     /** Expiry reminders use IDs in [base, base + range), derived from the credit ID. */
     private static final int NOTIFICATION_CREDIT_EXPIRY_BASE = 74600;
     private static final int NOTIFICATION_CREDIT_EXPIRY_RANGE = 1000;
@@ -59,6 +65,7 @@ public final class ResetNotificationManager {
 
     /** Guards the read-modify-write of {@link #KEY_CREDIT_EXPIRY_ANNOUNCED}. */
     private static final Object EXPIRY_STATE_LOCK = new Object();
+    private static final Object ACCOUNT_STATE_LOCK = new Object();
 
     private ResetNotificationManager() {
     }
@@ -76,6 +83,8 @@ public final class ResetNotificationManager {
         if (context == null || snapshot == null) {
             return;
         }
+        onUsageCreditsUpdated(context, previous == null ? null : previous.usageCredits,
+                snapshot.usageCredits);
         int unexpectedRefills = suppressUserResetRefills(context,
                 CelebrationDetector.detectUnexpectedRefills(previous, snapshot),
                 snapshot.fetchedAtMillis);
@@ -99,6 +108,96 @@ public final class ResetNotificationManager {
         }
         if (ResetAlertPreferences.unexpectedRefillsEnabled(context)) {
             notifyUnexpectedRefill(context, unexpectedRefills);
+        }
+    }
+
+    /** A saved previous balance can establish the baseline when alert state is still empty. */
+    private static void onUsageCreditsUpdated(Context context, UsageCredits previous,
+            UsageCredits credits) {
+        synchronized (ACCOUNT_STATE_LOCK) {
+            SharedPreferences preferences = state(context);
+            if (!SecureTokenStore.isSignedIn(context) || credits == null
+                    || !credits.hasCredits || credits.unlimited) {
+                preferences.edit().remove(KEY_USAGE_CREDITS_EXHAUSTED)
+                        .remove(KEY_USAGE_CREDITS_PENDING).apply();
+                cancel(context, NOTIFICATION_USAGE_CREDITS_EXHAUSTED);
+                return;
+            }
+            if (credits.numericBalance() == null) {
+                return;
+            }
+            boolean exhausted = !credits.shouldDisplay();
+            boolean alertsEnabled = ResetAlertPreferences.enabled(context)
+                    && ResetAlertPreferences.usageCreditsExhaustedEnabled(context);
+            boolean previouslyAvailable = preferences.contains(KEY_USAGE_CREDITS_EXHAUSTED)
+                    ? !preferences.getBoolean(KEY_USAGE_CREDITS_EXHAUSTED, false)
+                    : previous != null && previous.hasCredits && !previous.unlimited
+                    && previous.numericBalance() != null && previous.shouldDisplay();
+            boolean pending = alertsEnabled && exhausted
+                    && (preferences.getBoolean(KEY_USAGE_CREDITS_PENDING, false)
+                    || previouslyAvailable);
+            if (!preferences.edit().putBoolean(KEY_USAGE_CREDITS_EXHAUSTED, exhausted)
+                    .putBoolean(KEY_USAGE_CREDITS_PENDING, pending).commit()) {
+                return;
+            }
+            if (!exhausted || !alertsEnabled) {
+                cancel(context, NOTIFICATION_USAGE_CREDITS_EXHAUSTED);
+            } else if (pending) {
+                try {
+                    if (post(context, NOTIFICATION_USAGE_CREDITS_EXHAUSTED,
+                            context.getString(R.string.alerts_usage_credits_exhausted_title),
+                            context.getString(R.string.alerts_usage_credits_exhausted_text), true)) {
+                        preferences.edit().remove(KEY_USAGE_CREDITS_PENDING).commit();
+                    }
+                } catch (RuntimeException exception) {
+                    DiagnosticLog.error(context, "alerts", "usage_credits_alert_failed", exception);
+                }
+            }
+        }
+    }
+
+    /** Runs after the confirmed authentication state has been durably committed. */
+    static void onAuthenticationStateChanged(Context context, boolean required) {
+        synchronized (ACCOUNT_STATE_LOCK) {
+            SharedPreferences preferences = state(context);
+            if (!required || !SecureTokenStore.isSignedIn(context)) {
+                preferences.edit().remove(KEY_AUTHENTICATION_ANNOUNCED).commit();
+                cancel(context, NOTIFICATION_AUTHENTICATION_EXPIRED);
+                return;
+            }
+            if (!ResetAlertPreferences.enabled(context)
+                    || !ResetAlertPreferences.authenticationExpiredEnabled(context)) {
+                cancel(context, NOTIFICATION_AUTHENTICATION_EXPIRED);
+                return;
+            }
+            if (preferences.getBoolean(KEY_AUTHENTICATION_ANNOUNCED, false)) {
+                return;
+            }
+            Intent signIn = new Intent(context, MainActivity.class)
+                    .putExtra("start_sign_in", true)
+                    .putExtra(OAuthService.EXTRA_REAUTHENTICATE, true)
+                    .addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+            try {
+                if (post(context, NOTIFICATION_AUTHENTICATION_EXPIRED,
+                        context.getString(R.string.alerts_authentication_expired_title),
+                        context.getString(R.string.alerts_authentication_expired_text), true,
+                        signIn)) {
+                    preferences.edit().putBoolean(KEY_AUTHENTICATION_ANNOUNCED, true).commit();
+                }
+            } catch (RuntimeException exception) {
+                DiagnosticLog.error(context, "alerts", "authentication_alert_failed", exception);
+            }
+        }
+    }
+
+    private static void cancel(Context context, int id) {
+        NotificationManager manager = manager(context);
+        if (manager != null) {
+            try {
+                manager.cancel(id);
+            } catch (RuntimeException exception) {
+                DiagnosticLog.error(context, "alerts", "account_alert_cancel_failed", exception);
+            }
         }
     }
 
@@ -421,7 +520,11 @@ public final class ResetNotificationManager {
             return;
         }
         synchronized (EXPIRY_STATE_LOCK) {
-            state(context).edit().clear().apply();
+            synchronized (ACCOUNT_STATE_LOCK) {
+                state(context).edit().clear().apply();
+                cancel(context, NOTIFICATION_USAGE_CREDITS_EXHAUSTED);
+                cancel(context, NOTIFICATION_AUTHENTICATION_EXPIRED);
+            }
         }
     }
 
@@ -434,7 +537,10 @@ public final class ResetNotificationManager {
                 .remove(KEY_WEEKLY_WINDOW)
                 .remove(KEY_MONTHLY_WINDOW)
                 .remove(KEY_CREDIT_COUNT)
+                .remove(KEY_USAGE_CREDITS_PENDING)
                 .apply();
+        cancel(context, NOTIFICATION_USAGE_CREDITS_EXHAUSTED);
+        cancel(context, NOTIFICATION_AUTHENTICATION_EXPIRED);
         clearResetCreditExpiryReminderHistory(context);
     }
 
@@ -449,6 +555,13 @@ public final class ResetNotificationManager {
     /** Posts a reminder that opens the dashboard; {@code id} doubles as its request code. */
     private static boolean post(Context context, int id, String title, String text,
             boolean onlyAlertOnce) {
+        return post(context, id, title, text, onlyAlertOnce,
+                new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP));
+    }
+
+    private static boolean post(Context context, int id, String title, String text,
+            boolean onlyAlertOnce, Intent destination) {
         NotificationManager manager = manager(context);
         if (manager == null) {
             return false;
@@ -459,8 +572,7 @@ public final class ResetNotificationManager {
             return false;
         }
         PendingIntent contentIntent = PendingIntent.getActivity(context, id,
-                new Intent(context, MainActivity.class).addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
-                        | Intent.FLAG_ACTIVITY_SINGLE_TOP),
+                destination,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification notification = new Notification.Builder(context, channel)
                 .setSmallIcon(R.drawable.ic_oui_alarm)

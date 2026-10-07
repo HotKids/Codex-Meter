@@ -7,11 +7,12 @@ import android.provider.Settings;
 import android.view.View;
 import android.widget.Button;
 import android.widget.LinearLayout;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.widget.SeslProgressBar;
+import androidx.swiperefreshlayout.widget.SwipeRefreshLayout;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -28,7 +29,8 @@ public final class UpdateActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private LinearLayout content;
     private GitHubRelease release;
-    private ProgressBar progress;
+    private SeslProgressBar progress;
+    private Button actionButton;
     private TextView status;
     private boolean waitingForInstallPermission;
     private boolean operationRunning;
@@ -41,6 +43,7 @@ public final class UpdateActivity extends AppCompatActivity {
         super.onCreate(bundle);
         dark = Ui.isDark(this);
         content = Ui.installPage(this, getString(R.string.updates_app_update_title), true).content;
+        stopUnusedRefresh();
         String requested = getIntent().getStringExtra(EXTRA_VERSION);
         release = UpdatePreferences.findVersion(this, requested);
         boolean force = getIntent().getBooleanExtra(EXTRA_FORCE_CHECK, false);
@@ -51,6 +54,18 @@ public final class UpdateActivity extends AppCompatActivity {
         } else {
             render();
         }
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle state) {
+        super.onRestoreInstanceState(state);
+        stopUnusedRefresh();
+    }
+
+    private void stopUnusedRefresh() {
+        SwipeRefreshLayout refresh = findViewById(R.id.dashboard_refresh);
+        refresh.setRefreshing(false);
+        refresh.setEnabled(false);
     }
 
     @Override
@@ -103,9 +118,18 @@ public final class UpdateActivity extends AppCompatActivity {
      * it is not published, the newest release of the selected channel.
      */
     private void checkReleases(String requestedVersion) {
-        operationRunning = true;
-        content.removeAllViews();
-        content.addView(Ui.indeterminateLoading(this, getString(R.string.updates_checking)));
+        if (operationRunning) {
+            return;
+        }
+        setOperationRunning(true);
+        if (content.getChildCount() == 0) {
+            if (release == null) {
+                renderInstalledVersion();
+            } else {
+                render();
+            }
+        }
+        Toast.makeText(this, R.string.updates_checking, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
             try {
                 ReleaseUpdateClient.check(getApplicationContext());
@@ -117,17 +141,39 @@ public final class UpdateActivity extends AppCompatActivity {
                 }
                 GitHubRelease result = selected;
                 postUi(() -> {
-                    operationRunning = false;
+                    setOperationRunning(false);
                     release = result;
                     render();
                 });
             } catch (Exception exception) {
                 postUi(() -> {
-                    operationRunning = false;
+                    setOperationRunning(false);
                     renderError(ReleaseUpdateClient.safeMessage(this, exception));
                 });
             }
         });
+    }
+
+    private void setOperationRunning(boolean running) {
+        operationRunning = running;
+        if (actionButton != null) {
+            actionButton.setEnabled(!running);
+        }
+    }
+
+    private void renderInstalledVersion() {
+        LinearLayout card = Ui.card(this, dark);
+        TextView title = Ui.text(this, getString(R.string.updates_current_version_title,
+                UpdatePreferences.installedVersion(this)), 20, Ui.mainText(this, dark));
+        title.setTypeface(Ui.mediumTypeface(this));
+        card.addView(title, wrapContentParams(0, 0, 0, 18));
+        actionButton = Ui.nativePrimaryButton(this,
+                getString(R.string.updates_pref_check_now_title));
+        actionButton.setEnabled(!operationRunning);
+        actionButton.setOnClickListener(view ->
+                checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
+        card.addView(actionButton, fixedHeightParams(60));
+        content.addView(card);
     }
 
     private void render() {
@@ -151,7 +197,7 @@ public final class UpdateActivity extends AppCompatActivity {
         card.addView(title);
         TextView summary = Ui.text(this,
                 detailText(installedVersion, comparison, irreversible, returnToStable), 14,
-                irreversible ? Ui.danger(dark) : Ui.secondaryText(dark));
+                irreversible ? Ui.danger(dark) : Ui.secondaryText(this, dark));
         card.addView(summary, wrapContentParams(0, 8, 0, 18));
         if (irreversible) {
             addIrreversibleActions(card);
@@ -162,6 +208,10 @@ public final class UpdateActivity extends AppCompatActivity {
 
         if (!release.notes.isEmpty()) {
             addReleaseNotes();
+        }
+
+        if (operationRunning) {
+            return;
         }
 
         boolean autoInstall = startInstallPending && (comparison > 0 || returnToStable)
@@ -207,34 +257,36 @@ public final class UpdateActivity extends AppCompatActivity {
     /** Pre-updater releases can only be installed manually from GitHub. */
     private void addIrreversibleActions(LinearLayout card) {
         TextView irreversibleDetail = Ui.text(this, getString(R.string.updates_irreversible_detail,
-                ReleaseUpdatePolicy.FIRST_IN_APP_UPDATE_VERSION), 13, Ui.secondaryText(dark));
+                ReleaseUpdatePolicy.FIRST_IN_APP_UPDATE_VERSION), 13, Ui.secondaryText(this, dark));
         card.addView(irreversibleDetail, wrapContentParams(0, 0, 0, 18));
-        Button github = Ui.nativePrimaryButton(this, getString(R.string.updates_open_on_github));
-        github.setOnClickListener(view -> openReleasePage());
-        card.addView(github, fixedHeightParams(60));
+        actionButton = Ui.nativePrimaryButton(this, getString(R.string.updates_open_on_github));
+        actionButton.setEnabled(!operationRunning);
+        actionButton.setOnClickListener(view -> openReleasePage());
+        card.addView(actionButton, fixedHeightParams(60));
         progress = null;
         status = null;
     }
 
     private void addInstallActions(LinearLayout card, int comparison, boolean returnToStable) {
-        Button action = Ui.nativePrimaryButton(this,
+        actionButton = Ui.nativePrimaryButton(this,
                 getString(actionLabel(comparison, returnToStable)));
-        action.setOnClickListener(view -> {
+        actionButton.setEnabled(!operationRunning);
+        actionButton.setOnClickListener(view -> {
             if (comparison < 0 && !returnToStable) {
                 confirmOlderDownload();
             } else {
                 requestInstall();
             }
         });
-        card.addView(action, fixedHeightParams(60));
+        card.addView(actionButton, fixedHeightParams(60));
 
-        progress = new ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal);
+        progress = Ui.progress(this, dark);
         progress.setMax(PROGRESS_MAX);
-        progress.setVisibility(View.GONE);
+        progress.setVisibility(View.INVISIBLE);
         LinearLayout.LayoutParams progressParams = fixedHeightParams(8);
         progressParams.setMargins(0, Ui.dp(this, 18), 0, 0);
         card.addView(progress, progressParams);
-        status = Ui.text(this, "", 13, Ui.secondaryText(dark));
+        status = Ui.text(this, "", 13, Ui.secondaryText(this, dark));
         status.setVisibility(View.GONE);
         card.addView(status, wrapContentParams(0, 10, 0, 0));
     }
@@ -255,7 +307,7 @@ public final class UpdateActivity extends AppCompatActivity {
 
     private void addReleaseNotes() {
         TextView heading = Ui.text(this, getString(R.string.updates_whats_new), 15,
-                Ui.secondaryText(dark));
+                Ui.secondaryText(this, dark));
         heading.setTypeface(Ui.mediumTypeface(this));
         content.addView(heading, wrapContentParams(4, 24, 0, 10));
         LinearLayout notesCard = Ui.card(this, dark);
@@ -271,11 +323,12 @@ public final class UpdateActivity extends AppCompatActivity {
                 Ui.mainText(this, dark));
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
-        TextView detail = Ui.text(this, message, 14, Ui.secondaryText(dark));
+        TextView detail = Ui.text(this, message, 14, Ui.secondaryText(this, dark));
         card.addView(detail, wrapContentParams(0, 8, 0, 18));
-        Button retry = Ui.nativePrimaryButton(this, getString(R.string.updates_check_again));
-        retry.setOnClickListener(view -> checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
-        card.addView(retry, fixedHeightParams(60));
+        actionButton = Ui.nativePrimaryButton(this, getString(R.string.updates_check_again));
+        actionButton.setEnabled(!operationRunning);
+        actionButton.setOnClickListener(view -> checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
+        card.addView(actionButton, fixedHeightParams(60));
         content.addView(card);
     }
 
@@ -322,29 +375,31 @@ public final class UpdateActivity extends AppCompatActivity {
                 || ReleaseUpdatePolicy.isIrreversible(release.version)) {
             return;
         }
-        operationRunning = true;
+        setOperationRunning(true);
         progress.setVisibility(View.VISIBLE);
         progress.setProgress(0);
-        setStatus(getString(R.string.update_downloading), Ui.secondaryText(dark));
+        setStatus("", Ui.secondaryText(this, dark));
+        Toast.makeText(this, R.string.update_downloading, Toast.LENGTH_SHORT).show();
         executor.execute(() -> {
             try {
                 UpdateInstaller.PreparedUpdate prepared = UpdateInstaller.prepare(
                         getApplicationContext(), release, (downloaded, total) ->
                                 postUi(() -> showDownloadProgress(downloaded, total)));
-                postUi(() -> setStatus(getString(R.string.update_opening_installer),
-                        Ui.secondaryText(dark)));
+                postUi(() -> Toast.makeText(this, R.string.update_opening_installer,
+                        Toast.LENGTH_SHORT).show());
                 UpdateInstaller.commit(getApplicationContext(), prepared);
                 postUi(() -> {
-                    operationRunning = false;
-                    setStatus(getString(R.string.update_waiting_for_installer),
-                            Ui.secondaryText(dark));
+                    setOperationRunning(false);
+                    progress.setVisibility(View.INVISIBLE);
+                    Toast.makeText(this, R.string.update_waiting_for_installer,
+                            Toast.LENGTH_SHORT).show();
                 });
             } catch (Exception exception) {
                 UpdatePreferences.setInstallError(getApplicationContext(),
                         safeMessage(exception));
                 postUi(() -> {
-                    operationRunning = false;
-                    progress.setVisibility(View.GONE);
+                    setOperationRunning(false);
+                    progress.setVisibility(View.INVISIBLE);
                     setStatus(safeMessage(exception), Ui.danger(dark));
                 });
             }

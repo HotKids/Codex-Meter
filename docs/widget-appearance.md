@@ -20,6 +20,16 @@ dials have no inner card panels and retain their existing behavior.
 ColorOS still hides the 2×1 picker entry and uses
 the common narrow 2×2 layout. No launcher-specific fonts or content layouts are introduced.
 
+Card typography scales with height, independent of width. At minimum heights, the common renderer
+reduces internal padding and gaps using actual font line heights. Normal placements retain their
+existing spacing. Widget-editor drafts survive activity recreation and are persisted only by
+Save; Cancel leaves the placed widget unchanged.
+
+Explicit refresh failures from the dashboard, widget, or live notification are shown immediately.
+The 15-minute fresh-cache grace applies only to background failures. Once a manual failure is
+visible, subsequent background failures keep it visible until a successful usage response clears
+it; failed cards use Sync Problem and hide the last successful refresh time.
+
 Classic usage severity follows
 [AI-Usage](https://raw.githubusercontent.com/StarYunLee/Scripting/main/AI-Usage.scripting):
 used below 60% is green, 60% to below 85% is orange, and 85% or above is red. Fill lengths and labels

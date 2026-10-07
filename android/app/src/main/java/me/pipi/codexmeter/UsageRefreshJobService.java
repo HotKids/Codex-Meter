@@ -4,8 +4,10 @@ import android.app.job.JobParameters;
 import android.app.job.JobService;
 import android.content.Context;
 import android.os.SystemClock;
+import dev.bennett.codexmeter.UsageSnapshot;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.CancellationException;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.FutureTask;
@@ -79,6 +81,7 @@ public final class UsageRefreshJobService extends JobService {
         /** Whether this job is a link in the chain that schedules its own successor. */
         private final boolean chainedCycle;
         private final String reason;
+        private final UsageApi.Session session = UsageApi.session();
         private volatile boolean stopped;
         private FutureTask<Void> task;
 
@@ -90,6 +93,7 @@ public final class UsageRefreshJobService extends JobService {
         }
 
         void cancel() {
+            session.cancel();
             stopped = true;
             task.cancel(true);
         }
@@ -103,11 +107,19 @@ public final class UsageRefreshJobService extends JobService {
             try {
                 try {
                     refresh(startedAt);
+                } catch (CancellationException exception) {
+                    finish(false);
                 } catch (Exception e) {
                     onRefreshFailed(e, startedAt);
                 }
             } catch (Throwable throwable) {
-                WidgetRenderer.updateAll(getApplicationContext());
+                try {
+                    session.commit(() -> WidgetRenderer.updateAll(getApplicationContext()));
+                } catch (CancellationException ignored) {
+                    // A cancelled job cannot redraw the current account's widgets.
+                } catch (Exception updateError) {
+                    throwable.addSuppressed(updateError);
+                }
                 finish(false);
                 throw throwable;
             }
@@ -115,27 +127,40 @@ public final class UsageRefreshJobService extends JobService {
 
         private void refresh(long startedAt) throws Exception {
             Context app = getApplicationContext();
-            RefreshScheduler.scheduleAtNextReset(app, UsageApi.refreshAndCache(app));
-            AppPreferences.recordRefreshSuccess(app);
-            WidgetRenderer.updateAll(app);
-            DiagnosticLog.info(UsageRefreshJobService.this, "scheduler",
-                    "refresh_job_succeeded",
-                    "job_id", params.getJobId(),
-                    "reason", reason,
-                    "duration_ms", SystemClock.elapsedRealtime() - startedAt);
+            UsageSnapshot snapshot = UsageApi.refreshAndCache(app, session);
+            session.commit(() -> {
+                RefreshScheduler.scheduleAtNextReset(app, snapshot);
+                AppPreferences.recordRefreshSuccess(app);
+                WidgetRenderer.updateAll(app);
+                DiagnosticLog.info(UsageRefreshJobService.this, "scheduler",
+                        "refresh_job_succeeded",
+                        "job_id", params.getJobId(),
+                        "reason", reason,
+                        "duration_ms", SystemClock.elapsedRealtime() - startedAt);
+            });
             finish(false);
         }
 
         private void onRefreshFailed(Exception e, long startedAt) {
             Context app = getApplicationContext();
-            DiagnosticLog.error(UsageRefreshJobService.this, "scheduler",
-                    "refresh_job_failed", e,
-                    "job_id", params.getJobId(),
-                    "reason", reason,
-                    "duration_ms", SystemClock.elapsedRealtime() - startedAt);
-            AppPreferences.setLastError(app, safeMessage(e));
-            AppPreferences.recordRefreshFailure(app);
-            WidgetRenderer.updateAll(app);
+            try {
+                session.commit(() -> {
+                    DiagnosticLog.error(UsageRefreshJobService.this, "scheduler",
+                            "refresh_job_failed", e,
+                            "job_id", params.getJobId(),
+                            "reason", reason,
+                            "duration_ms", SystemClock.elapsedRealtime() - startedAt);
+                    AppPreferences.setLastError(app, safeMessage(e),
+                            RefreshScheduler.REASON_MANUAL.equals(reason));
+                    AppPreferences.recordRefreshFailure(app);
+                    WidgetRenderer.updateAll(app);
+                });
+            } catch (CancellationException exception) {
+                finish(false);
+                return;
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
+            }
             // A chained job schedules its own retry instead of using JobScheduler's backoff.
             finish(!chainedCycle);
         }
@@ -149,10 +174,16 @@ public final class UsageRefreshJobService extends JobService {
             if (stopped) {
                 return;
             }
-            jobFinished(params, needsReschedule);
+            jobFinished(params, needsReschedule && session.isCurrent());
             Context app = getApplicationContext();
             if (chainedCycle && SecureTokenStore.isSignedIn(app)) {
-                RefreshScheduler.scheduleNextShort(app, params.getJobId());
+                try {
+                    session.commit(() -> RefreshScheduler.scheduleNextShort(app, params.getJobId()));
+                } catch (CancellationException exception) {
+                    // A completed old-session job is released without scheduling its successor.
+                } catch (Exception exception) {
+                    throw new IllegalStateException(exception);
+                }
             }
         }
     }

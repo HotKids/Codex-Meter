@@ -203,6 +203,14 @@
     <string name="alerts_notifications_metric_title">Alert for</string>
     <string name="alerts_notifications_threshold_title">Alert when remaining reaches</string>
     <string name="alerts_notifications_account_category">Account activity</string>
+    <string name="alerts_notifications_usage_credits_exhausted_title">Credits exhausted</string>
+    <string name="alerts_notifications_usage_credits_exhausted_summary">Notify when purchased credits run out</string>
+    <string name="alerts_notifications_authentication_expired_title">Sign-in expired</string>
+    <string name="alerts_notifications_authentication_expired_summary">Notify when signing in again is required to refresh usage</string>
+    <string name="alerts_usage_credits_exhausted_title">Codex credits have run out</string>
+    <string name="alerts_usage_credits_exhausted_text">Purchased credits are exhausted. Purchase credits or wait for your usage limits to reset.</string>
+    <string name="alerts_authentication_expired_title">ChatGPT sign-in has expired</string>
+    <string name="alerts_authentication_expired_text">Sign in again to continue refreshing Codex usage.</string>
     <string name="alerts_notifications_refills_title">Surprise limit refills</string>
     <string name="alerts_notifications_refills_summary" formatted="false">An allowance reaches 100% before its scheduled reset</string>
     <string name="alerts_notifications_new_credits_title">New reset credits</string>

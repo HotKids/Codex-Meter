@@ -49,6 +49,8 @@ final class DialWidgetRenderer {
             }
             String key = keys.get(index);
             WidgetMeter meter = new WidgetMeter(english, key, options, state);
+            views.setOnClickPendingIntent(RING_SECTIONS[index],
+                    WidgetActions.openSection(context, appWidgetId, meter.dashboardSection));
             // VectorDrawable does not trim its path when ProgressBar changes the level.
             for (int layer = 0; layer < RING_ARC_LAYERS[index].length; layer++) {
                 int viewId = RING_ARC_LAYERS[index][layer];

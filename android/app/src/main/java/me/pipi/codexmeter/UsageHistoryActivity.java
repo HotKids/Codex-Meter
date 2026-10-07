@@ -11,7 +11,6 @@ import dev.bennett.codexmeter.UsageWindow;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
-import android.app.AlertDialog;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -22,6 +21,7 @@ import android.widget.Button;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
+import androidx.appcompat.app.AlertDialog;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -53,7 +53,21 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         super.onCreate(state);
         dark = Ui.isDark(this);
         content = Ui.installPage(this, getString(R.string.dashboard_usage_history), true).content;
+        stopUnusedRefresh();
         render();
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle state) {
+        super.onRestoreInstanceState(state);
+        stopUnusedRefresh();
+    }
+
+    private void stopUnusedRefresh() {
+        androidx.swiperefreshlayout.widget.SwipeRefreshLayout refresh = findViewById(R.id.dashboard_refresh);
+        // Local history has no pull-to-refresh action.
+        refresh.setRefreshing(false);
+        refresh.setEnabled(false);
     }
 
     @Override
@@ -156,7 +170,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
     /** A card holding one paragraph of secondary text, followed by section spacing. */
     private void addNoteCard(String text) {
         LinearLayout card = Ui.card(this, dark);
-        card.addView(Ui.text(this, text, 13, Ui.secondaryText(dark)));
+        card.addView(Ui.text(this, text, 13, Ui.secondaryText(this, dark)));
         content.addView(card);
         Ui.addSpacer(content, 20);
     }
@@ -215,7 +229,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
         String defaultDetail = getString(showWindowRows
                 ? R.string.dashboard_history_drag_compare : R.string.dashboard_history_drag);
-        TextView scrubDetail = Ui.text(this, defaultDetail, 12, Ui.secondaryText(dark));
+        TextView scrubDetail = Ui.text(this, defaultDetail, 12, Ui.secondaryText(this, dark));
         LinearLayout.LayoutParams scrubParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         scrubParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 2), Ui.dp(this, 12), Ui.dp(this, 6));
@@ -237,14 +251,14 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
             @Override
             public void onScrubEnd() {
-                scrubDetail.setTextColor(Ui.secondaryText(dark));
+                scrubDetail.setTextColor(Ui.secondaryText(UsageHistoryActivity.this, dark));
                 scrubDetail.setText(defaultDetail);
             }
         });
 
         if (showWindowRows) {
             View divider = new View(this);
-            divider.setBackgroundColor(Ui.divider(dark));
+            divider.setBackgroundColor(Ui.divider(this, dark));
             LinearLayout.LayoutParams dividerParams =
                     new LinearLayout.LayoutParams(MATCH_PARENT, 1);
             dividerParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12),
@@ -277,7 +291,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     current ? Ui.accent(this, dark) : Ui.mainText(this, dark));
             titleView.setTypeface(Ui.mediumTypeface(this));
             texts.addView(titleView);
-            texts.addView(Ui.text(this, subtitle, 12, Ui.secondaryText(dark)));
+            texts.addView(Ui.text(this, subtitle, 12, Ui.secondaryText(this, dark)));
             row.addView(texts, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
             card.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 
@@ -430,7 +444,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                             UsageHistory.WEEKLY, snapshot.weekly.remainingPercent()))));
         }
         TextView disclaimer = Ui.text(this, getString(R.string.dashboard_history_disclaimer),
-                12, Ui.secondaryText(dark));
+                12, Ui.secondaryText(this, dark));
         LinearLayout.LayoutParams disclaimerParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         disclaimerParams.setMargins(0, Ui.dp(this, 10), 0, 0);
@@ -443,7 +457,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
         LinearLayout.LayoutParams rowParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         rowParams.setMargins(0, Ui.dp(this, 8), 0, 0);
-        TextView labelView = Ui.text(this, label, 13, Ui.secondaryText(dark));
+        TextView labelView = Ui.text(this, label, 13, Ui.secondaryText(this, dark));
         row.addView(labelView, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
         TextView valueView = Ui.text(this, value, 13, Ui.mainText(this, dark));
         valueView.setTypeface(Typeface.create("sec", Typeface.NORMAL));

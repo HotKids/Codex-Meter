@@ -54,6 +54,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         resetCreditCategory = findPreference("notification_reset_credit_category");
         troubleshootingCategory = findPreference("notification_troubleshooting_category");
         bindLowUsageAlerts();
+        bindAccountAlerts();
         bindResetCreditAlerts();
         bindTroubleshooting();
         updateMetricEntries();
@@ -155,6 +156,28 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         updateExpiryTimesSummary();
     }
 
+    private void bindAccountAlerts() {
+        Context context = requireContext();
+        SwitchPreferenceCompat credits = findPreference("usage_credits_exhausted_ui");
+        credits.setPersistent(false);
+        credits.setChecked(ResetAlertPreferences.usageCreditsExhaustedEnabled(context));
+        credits.setOnPreferenceChangeListener((preference, value) -> {
+            ResetAlertPreferences.setUsageCreditsExhaustedEnabled(requireContext(), (Boolean) value);
+            ResetNotificationManager.onUsageUpdated(requireContext(),
+                    AppPreferences.loadSnapshot(requireContext()));
+            return true;
+        });
+        SwitchPreferenceCompat authentication = findPreference("authentication_expired_ui");
+        authentication.setPersistent(false);
+        authentication.setChecked(ResetAlertPreferences.authenticationExpiredEnabled(context));
+        authentication.setOnPreferenceChangeListener((preference, value) -> {
+            ResetAlertPreferences.setAuthenticationExpiredEnabled(requireContext(), (Boolean) value);
+            ResetNotificationManager.onAuthenticationStateChanged(requireContext(),
+                    AppPreferences.isReauthenticationRequired(requireContext()));
+            return true;
+        });
+    }
+
     private void bindTroubleshooting() {
         permissionPreference = findPreference("notification_permission");
         permissionPreference.setOnPreferenceClickListener(preference -> {
@@ -201,6 +224,8 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
             ResetNotificationManager.onUsageUpdated(context, AppPreferences.loadSnapshot(context));
             ResetNotificationManager.onResetCreditsUpdated(context,
                     AppPreferences.loadResetCredits(context));
+            ResetNotificationManager.onAuthenticationStateChanged(context,
+                    AppPreferences.isReauthenticationRequired(context));
         }
         ResetAlertScheduler.scheduleFromSnapshot(context, AppPreferences.loadSnapshot(context));
         scheduleResetCreditExpiryReminders();
@@ -272,7 +297,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         container.setPadding(Ui.dp(context, 24), Ui.dp(context, 8), Ui.dp(context, 24), 0);
         TextView explanation = Ui.text(context,
                 context.getString(R.string.alerts_reminder_add_explanation),
-                14.0f, Ui.secondaryText(dark));
+                14.0f, Ui.secondaryText(context, dark));
         container.addView(explanation, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 
         LinearLayout inputRow = Ui.horizontal(context, 12);
@@ -283,7 +308,7 @@ public final class SettingsNotificationsFragment extends SettingsPageFragment {
         amount.setHint(R.string.alerts_reminder_amount_hint);
         amount.setSingleLine(true);
         amount.setTextColor(Ui.mainText(context, dark));
-        amount.setHintTextColor(Ui.secondaryText(dark));
+        amount.setHintTextColor(Ui.secondaryText(context, dark));
         amount.setInputType(InputType.TYPE_CLASS_NUMBER | InputType.TYPE_NUMBER_FLAG_DECIMAL);
         inputRow.addView(amount, new LinearLayout.LayoutParams(0, Ui.dp(context, 54), 1.0f));
         String[] units = context.getResources().getStringArray(R.array.alerts_reminder_units);

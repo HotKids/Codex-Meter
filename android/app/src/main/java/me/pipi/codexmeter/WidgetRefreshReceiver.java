@@ -9,7 +9,7 @@ public final class WidgetRefreshReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
         if (intent != null && AppConstants.ACTION_REFRESH_WIDGET.equals(intent.getAction())) {
-            RefreshScheduler.scheduleImmediate(context);
+            RefreshScheduler.scheduleManual(context);
             WidgetRenderer.updateAll(context);
         }
     }

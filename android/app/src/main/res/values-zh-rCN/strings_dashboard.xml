@@ -137,7 +137,7 @@
     <string name="dashboard_history_pace_on_par">与通常水平持平</string>
     <string name="dashboard_history_included_usage">套餐包含的用量（估算）</string>
     <string name="dashboard_history_weekly_allowance">每周额度</string>
-    <string name="dashboard_history_five_hour_allowance">5h 额度</string>
+    <string name="dashboard_history_five_hour_allowance">5 小时额度</string>
     <string name="dashboard_history_vs_price">与订阅价格对比</string>
     <string name="dashboard_history_value_multiplier">≈ 月费的 %1$d 倍</string>
     <string name="dashboard_history_weekly_value_remaining">本周剩余价值</string>
