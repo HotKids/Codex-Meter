@@ -83,7 +83,6 @@ public final class SettingsTransferStore {
     private static JSONObject collectAppSettings(Context context) throws Exception {
         JSONObject json = new JSONObject();
         json.put("app_theme", AppPreferences.getAppTheme(context));
-        json.put("material_you", AppPreferences.isMaterialYouEnabled(context));
         json.put("automatic_refresh", AppPreferences.getAutomaticRefresh(context));
         json.put("refresh_minutes", AppPreferences.getRefreshMinutes(context));
         json.put("refresh_on_launch", AppPreferences.getRefreshOnLaunch(context));
@@ -256,14 +255,11 @@ public final class SettingsTransferStore {
         }
     }
 
-    /** Returns whether the app theme or Material You setting changed. */
+    /** Returns whether the app theme changed. */
     private static boolean applyAppSettings(Context context, JSONObject json) throws Exception {
         String previousTheme = AppPreferences.getAppTheme(context);
-        boolean previousMaterialYou = AppPreferences.isMaterialYouEnabled(context);
         String theme = json.optString("app_theme", previousTheme);
         AppPreferences.setAppTheme(context, theme);
-        AppPreferences.setMaterialYouEnabled(context,
-                json.optBoolean("material_you", previousMaterialYou));
         AppPreferences.setAutomaticRefresh(context, json.optBoolean("automatic_refresh",
                 AppPreferences.getAutomaticRefresh(context)));
         AppPreferences.setRefreshMinutes(context, json.optInt("refresh_minutes",
@@ -305,8 +301,7 @@ public final class SettingsTransferStore {
                     SettingsTransfer.widgetOptionsFromJson(widget,
                             AppPreferences.loadDefaultWidgetOptions(context)));
         }
-        return !previousTheme.equals(AppPreferences.getAppTheme(context))
-                || previousMaterialYou != AppPreferences.isMaterialYouEnabled(context);
+        return !previousTheme.equals(AppPreferences.getAppTheme(context));
     }
 
     private static void applyNotifications(Context context, JSONObject json) throws Exception {

@@ -138,7 +138,9 @@ public final class UsageWaveView extends View {
             phase = (Float) animation.getAnimatedValue();
             invalidate();
         });
-        animator.start();
+        if (ValueAnimator.areAnimatorsEnabled()) {
+            animator.start();
+        }
     }
 
     @Override
@@ -161,7 +163,8 @@ public final class UsageWaveView extends View {
         }
         drawWaveFill(canvas, density, dark);
 
-        int foreground = warning ? (dark ? Color.WHITE : Color.BLACK) : Ui.mainText(getContext(), dark);
+        int foreground = warning ? (dark ? Color.WHITE : Color.BLACK)
+                : Ui.mainText(getContext(), dark);
         drawLabels(canvas, density, foreground);
         drawIconAndPercent(canvas, density, foreground);
     }
@@ -169,7 +172,8 @@ public final class UsageWaveView extends View {
     /** Fills from the left edge up to the remaining percentage, with a wavy right edge. */
     private void drawWaveFill(Canvas canvas, float density, boolean dark) {
         float edge = getWidth() * percent / 100f;
-        float amplitude = (warning ? WARNING_AMPLITUDE_DP : NORMAL_AMPLITUDE_DP) * density;
+        float amplitude = percent == 0 || percent == 100 ? 0f
+                : (warning ? WARNING_AMPLITUDE_DP : NORMAL_AMPLITUDE_DP) * density;
         fillPath.reset();
         fillPath.moveTo(0, 0);
         fillPath.lineTo(edge, 0);
@@ -186,15 +190,13 @@ public final class UsageWaveView extends View {
         }
         fillPath.lineTo(0, getHeight());
         fillPath.close();
-        fillPaint.setColor(warning ? Ui.warning(dark)
-                : Ui.desaturatedAccent(getContext(), dark));
+        fillPaint.setColor(warning ? Ui.warning(dark) : Ui.desaturatedAccent(getContext(), dark));
         canvas.drawPath(fillPath, fillPaint);
     }
 
     private void drawLabels(Canvas canvas, float density, int foreground) {
         titlePaint.setColor(foreground);
         titlePaint.setTextSize(20f * density);
-        // Reset duration must match title/percent contrast (black light / white dark).
         resetPaint.setColor(foreground);
         resetPaint.setTextSize(13f * density);
         pacePaint.setColor(foreground);

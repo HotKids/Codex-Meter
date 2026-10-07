@@ -71,12 +71,12 @@ javac -encoding UTF-8 -cp "$JSON_JAR" -d "$OUT" \
 java -ea -cp "$OUT:$JSON_JAR" me.pipi.codexmeter.ParserSelfTest
 
 # Source-level release checks.
-grep -q 'VERSION_NAME = "0.3.1"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_CODE = 5' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'versionName = "0.3.1"' "$ROOT/app/build.gradle.kts"
-grep -q 'versionCode = 5' "$ROOT/app/build.gradle.kts"
-grep -q 'codex-meter-android/0.3.1' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_NAME="0.3.1"' "$ROOT/build.sh"
+grep -q 'VERSION_NAME = "0.3.2"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_CODE = 6' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'versionName = "0.3.2"' "$ROOT/app/build.gradle.kts"
+grep -q 'versionCode = 6' "$ROOT/app/build.gradle.kts"
+grep -q 'codex-meter-android/0.3.2' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_NAME="0.3.2"' "$ROOT/build.sh"
 WORKFLOW="$ROOT/../.github/workflows/build-apk.yml"
 grep -Fq ':app:assembleDebug' "$WORKFLOW"
 grep -Fq 'android/app/build/outputs/apk/debug/app-debug.apk' "$WORKFLOW"
@@ -405,7 +405,7 @@ for section in ("app_settings", "notifications", "now_bar", "authentication"):
         assert strings[key] == english.group(1), key + " drifted from SettingsTransfer"
 print("transfer section and security-warning resources match SettingsTransfer.")
 PY
-grep -q 'material_you' \
+! grep -q 'material_you' \
   "$ROOT/app/src/main/res/xml/preferences_settings_appearance.xml"
 grep -q 'HorizontalRadioPreference' \
   "$ROOT/app/src/main/res/xml/preferences_settings_appearance.xml"
@@ -417,7 +417,7 @@ grep -q 'HorizontalRadioPreference theme' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/SettingsAppearanceFragment.java"
 test -f "$ROOT/app/src/main/res/drawable-xxhdpi/display_help_light_mode.webp"
 test -f "$ROOT/app/src/main/res/drawable-xxhdpi/display_help_dark_mode.webp"
-grep -q 'isMaterialYouEnabled' \
+! grep -Eq 'isMaterialYouEnabled|setMaterialYouEnabled' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/AppPreferences.java"
 grep -q 'AppTheme_MaterialYou' \
   "$ROOT/app/src/main/java/me/pipi/codexmeter/Ui.java"

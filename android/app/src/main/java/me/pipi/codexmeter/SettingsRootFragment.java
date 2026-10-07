@@ -19,8 +19,6 @@ import dev.oneuiproject.oneui.widget.RoundedLinearLayout;
 /** Root settings list: the ChatGPT account card plus a summarized link to every sub-page. */
 public final class SettingsRootFragment extends SettingsPageFragment
         implements SharedPreferences.OnSharedPreferenceChangeListener {
-    private static final int SIGN_OUT_COLOR_DARK = 0xFFFF6B6B;
-    private static final int SIGN_OUT_COLOR_LIGHT = 0xFFFF3B30;
     private static final int AVATAR_PADDING_DP = 10;
     private static final int MINUTES_PER_HOUR = 60;
 
@@ -129,9 +127,7 @@ public final class SettingsRootFragment extends SettingsPageFragment
         action.getTitleView().setText(signedIn
                 ? R.string.settings_account_sign_out
                 : R.string.settings_account_sign_in);
-        action.getTitleView().setTextColor(signedIn
-                ? (dark ? SIGN_OUT_COLOR_DARK : SIGN_OUT_COLOR_LIGHT)
-                : Ui.accent(context, dark));
+        action.getTitleView().setTextColor(Ui.accent(context, dark));
         action.setOnClickListener(view -> {
             if (SecureTokenStore.isSignedIn(requireContext())) {
                 confirmSignOut();
@@ -197,15 +193,12 @@ public final class SettingsRootFragment extends SettingsPageFragment
 
     private static String appearanceSummary(Context context) {
         String theme = AppPreferences.getAppTheme(context);
-        String themeLabel = WidgetOptions.THEME_SYSTEM.equals(theme)
+        return WidgetOptions.THEME_SYSTEM.equals(theme)
                 ? context.getString(R.string.settings_theme_system_default)
                 : arrayLabel(context, R.array.preferences_darkmode_entries,
                         R.array.preferences_darkmode_values,
                         WidgetOptions.THEME_DARK.equals(theme)
                                 ? WidgetOptions.THEME_DARK : WidgetOptions.THEME_LIGHT);
-        return context.getString(AppPreferences.isMaterialYouEnabled(context)
-                ? R.string.settings_summary_appearance_material_you_on
-                : R.string.settings_summary_appearance_material_you_off, themeLabel);
     }
 
     private static String refreshUsageSummary(Context context) {

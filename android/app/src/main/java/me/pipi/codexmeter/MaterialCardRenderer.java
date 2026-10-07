@@ -42,6 +42,7 @@ final class MaterialCardRenderer {
     /** Source glyph bounds: Sync 160..800/960; Sync Problem 120..840/960. */
     private static final float REFRESH_END_INSET = 0.16666667f;
     private static final float SYNC_PROBLEM_INSET = 0.125f;
+    private static final float REFRESH_TARGET = 50f;
     private static final float STATUS_TEXT = 10.5f;
     /** The native health widget's label-medium size is in sp, independent of card scale. */
     private static final float UPDATED_TEXT = 12f;
@@ -89,7 +90,6 @@ final class MaterialCardRenderer {
         SURFACE(R.color.widget_material_surface),
         PANEL(R.color.widget_material_panel),
         TRACK(R.color.widget_material_track),
-        FILL(R.color.widget_material_fill),
         TEXT(R.color.widget_material_text),
         SECONDARY(R.color.widget_material_secondary),
         ACCENT(R.color.widget_material_accent);
@@ -115,6 +115,7 @@ final class MaterialCardRenderer {
     private final float textScale;
     private final boolean showUpdated;
     private final float panelContentWidth;
+    private final int headerHeightPx;
     private final int panelHeightPx;
 
     private MaterialCardRenderer(Context context, WidgetOptions options,
@@ -146,16 +147,18 @@ final class MaterialCardRenderer {
                 ? TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT,
                         resources.getDisplayMetrics())
                 : STATUS_TEXT * textScale * resources.getDisplayMetrics().density;
-        int headerHeight = Math.max(px(ICON), Math.max(lineHeight(VALUE_TEXT, true),
+        this.headerHeightPx = Math.max(px(ICON), Math.max(lineHeight(VALUE_TEXT, true),
                 lineHeightPx(metadataSize, Typeface.create("sans-serif-medium", Typeface.NORMAL))));
         this.panelHeightPx = Math.max(0, (Math.round(heightDp
-                * resources.getDisplayMetrics().density) - px(PADDING) * 2 - headerHeight
+                * resources.getDisplayMetrics().density) - px(PADDING) * 2 - headerHeightPx
                 - px(FIRST_ROW_GAP) - (rowCount - 1) * px(GAP)) / rowCount);
         float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
                 / columns;
         this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
+        // New layout identities reload cached foregrounds without changing the common layouts.
         this.views = new RemoteViews(context.getPackageName(), options.opacity <= 0
-                ? R.layout.widget_material_shadow : R.layout.widget_material);
+                ? R.layout.widget_material_refresh_shadow : R.layout.widget_material_refresh,
+                android.R.id.background);
     }
 
     /**
@@ -219,6 +222,11 @@ final class MaterialCardRenderer {
                 : R.drawable.ic_notification);
         views.setColorStateList(R.id.md_logo, "setImageTintList", null);
         boolean failure = state.signedIn && !state.refreshError.isEmpty();
+        String currentStatus = state.statusMessage(resources, false);
+        boolean problem = !currentStatus.isEmpty();
+        String status = state.refreshing ? resources.getString(R.string.widget_card_refreshing)
+                : currentStatus;
+        boolean wide = widthDp >= MEDIUM_MIN_WIDTH_DP;
         boolean mediumStatus = showUpdated || failure;
         // Reapply can retain a host view's previous offset; the header shares the panel edge.
         views.setViewLayoutMargin(R.id.md_header, RemoteViews.MARGIN_START, 0,
@@ -230,10 +238,28 @@ final class MaterialCardRenderer {
         int iconWidth = Math.round(ICON * resources.getDisplayMetrics().density
                 * scale);
         boolean rtl = resources.getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
-        float inset = failure ? SYNC_PROBLEM_INSET : REFRESH_END_INSET;
-        int shift = Math.round(iconWidth * inset) * (rtl ? -1 : 1);
-        // Equal and opposite padding preserves fitCenter scale and the click target.
-        views.setViewPadding(R.id.md_refresh, shift, 0, -shift, 0);
+        int shift = Math.round(iconWidth * (problem ? SYNC_PROBLEM_INSET : REFRESH_END_INSET));
+        views.setViewPadding(R.id.md_refresh, rtl ? -shift : shift, 0, rtl ? shift : -shift, 0);
+        float endCenter = ColorOsWidgetAppearance.cardCornerRadiusPx(context);
+        int endMargin = Math.round(endCenter - px(PADDING) - iconWidth / 2f + shift);
+        views.setViewLayoutMargin(R.id.md_refresh, RemoteViews.MARGIN_END, endMargin,
+                TypedValue.COMPLEX_UNIT_PX);
+        float topCenter = px(PADDING) + (headerHeightPx - iconWidth) / 2 + iconWidth / 2f;
+        // RemoteViews margins use pixel offsets (truncate), unlike explicit sizes (round).
+        int rowGap = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
+                FIRST_ROW_GAP * scale, resources.getDisplayMetrics());
+        float rowTop = px(PADDING) + headerHeightPx + rowGap;
+        // Align with the shell's corner axis while retaining the original header center line.
+        int targetSize = Math.min(Math.round(REFRESH_TARGET * resources.getDisplayMetrics().density),
+                (int) (2 * Math.min(endCenter, Math.min(topCenter, rowTop - topCenter))));
+        targetSize -= (targetSize - iconWidth) & 1;
+        views.setViewLayoutWidth(R.id.md_refresh_button, targetSize, TypedValue.COMPLEX_UNIT_PX);
+        views.setViewLayoutHeight(R.id.md_refresh_button, targetSize, TypedValue.COMPLEX_UNIT_PX);
+        views.setViewLayoutMargin(R.id.md_refresh_button, RemoteViews.MARGIN_END,
+                Math.round(endCenter - targetSize / 2f), TypedValue.COMPLEX_UNIT_PX);
+        views.setViewLayoutMargin(R.id.md_refresh_button, RemoteViews.MARGIN_TOP,
+                Math.round(topCenter - targetSize / 2f),
+                TypedValue.COMPLEX_UNIT_PX);
         textSize(R.id.md_title, VALUE_TEXT);
         if (mediumStatus) {
             views.setTextViewTextSize(R.id.md_status, TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT);
@@ -242,19 +268,18 @@ final class MaterialCardRenderer {
         }
         views.setTextViewTextSize(R.id.md_updated, TypedValue.COMPLEX_UNIT_SP, UPDATED_TEXT);
         String updated = UsageCardFormat.time(context, state.fetchedAtMillis());
-        boolean updatedVisible = showUpdated && state.fetchedAtMillis() > 0L && !failure;
+        boolean updatedVisible = showUpdated && state.fetchedAtMillis() > 0L && !problem && !state.refreshing;
         views.setTextViewText(R.id.md_updated, metadataText(updated, showUpdated));
         views.setViewVisibility(R.id.md_updated,
                 updatedVisible ? View.VISIBLE : View.GONE);
         String plan = UsageFormat.planLabel(state.planType());
         String title = plan.isEmpty() ? resources.getString(R.string.widget_material_title) : plan;
         views.setTextViewText(R.id.md_title, title);
-        String status = state.statusMessage(resources, false);
-        boolean statusVisible = !status.isEmpty();
+        boolean statusVisible = wide && !status.isEmpty();
         float density = resources.getDisplayMetrics().density;
         int spacing = Math.round(HEADER_SPACING * density);
         int available = Math.round(widthDp * density) - 2 * px(PADDING)
-                - 2 * iconWidth - 2 * spacing;
+                - 2 * iconWidth - 2 * spacing - endMargin;
         Paint paint = new Paint();
         Typeface metadataFace = Typeface.create("sans-serif-medium", Typeface.NORMAL);
         float metadataSize = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP,
@@ -266,13 +291,14 @@ final class MaterialCardRenderer {
             titleMaxWidth = Math.max(1, available - spacing
                     - (int) Math.ceil(paint.measureText(updated)));
         }
-        if (failure) {
+        if (!status.isEmpty()) {
             paint.setTypeface(Typeface.DEFAULT_BOLD);
             paint.setTextSize(VALUE_TEXT * textScale * density);
             int titleWidth = Math.min(titleMaxWidth, (int) Math.ceil(paint.measureText(title)));
             paint.setTypeface(metadataFace);
             paint.setTextSize(metadataSize);
-            statusVisible = available - titleWidth - spacing >= Math.ceil(paint.measureText(status));
+            statusVisible = wide
+                    && available - titleWidth - spacing >= Math.ceil(paint.measureText(status));
         }
         views.setInt(R.id.md_title, "setMaxWidth", titleMaxWidth);
         views.setTextViewText(R.id.md_status, metadataText(statusVisible ? status : "", mediumStatus));
@@ -280,8 +306,27 @@ final class MaterialCardRenderer {
         views.setViewVisibility(R.id.md_status,
                 statusVisible ? View.VISIBLE : View.INVISIBLE);
         views.setImageViewResource(R.id.md_refresh,
-                failure ? R.drawable.ic_ms_sync_problem : R.drawable.ic_ms_sync);
-        views.setContentDescription(R.id.md_refresh, failure ? status
+                problem ? R.drawable.ic_ms_sync_problem : R.drawable.ic_ms_sync);
+        views.setViewVisibility(R.id.md_refresh, state.refreshing ? View.INVISIBLE : View.VISIBLE);
+        views.removeAllViews(R.id.md_refresh_button);
+        if (state.refreshing) {
+            RemoteViews spinner = new RemoteViews(context.getPackageName(),
+                    problem ? R.layout.widget_refresh_problem_spinner
+                            : R.layout.widget_refresh_spinner);
+            spinner.setViewLayoutWidth(R.id.md_refresh_spinner, ICON * scale,
+                    TypedValue.COMPLEX_UNIT_DIP);
+            spinner.setViewLayoutHeight(R.id.md_refresh_spinner, ICON * scale,
+                    TypedValue.COMPLEX_UNIT_DIP);
+            if (options.opacity <= 0) {
+                spinner.setColorStateList(R.id.md_refresh_spinner, "setIndeterminateTintList",
+                        android.content.res.ColorStateList.valueOf(Color.WHITE));
+            } else {
+                spinner.setColorStateList(R.id.md_refresh_spinner, "setIndeterminateTintList",
+                        Role.TEXT.resource);
+            }
+            views.addStableView(R.id.md_refresh_button, spinner, 1);
+        }
+        views.setContentDescription(R.id.md_refresh_button, !status.isEmpty() ? status
                 : resources.getString(R.string.widget_material_refresh));
         if (options.opacity <= 0) {
             views.setTextColor(R.id.md_title, Color.WHITE);
@@ -403,7 +448,8 @@ final class MaterialCardRenderer {
         if (gradient) {
             views.setInt(FILLS[slot], "setColorFilter", Color.TRANSPARENT);
         } else {
-            views.setColor(FILLS[slot], "setColorFilter", classic ? fillColor : Role.FILL.resource);
+            views.setColor(FILLS[slot], "setColorFilter", classic ? fillColor
+                    : WidgetUsageColors.materialColor(meter.window, usage));
         }
         int level = 0;
         if (progress > 0) {
@@ -424,7 +470,7 @@ final class MaterialCardRenderer {
         PendingIntent refresh = WidgetActions.refresh(context, appWidgetId);
         views.setOnClickPendingIntent(android.R.id.background,
                 WidgetActions.openApp(context, appWidgetId));
-        views.setOnClickPendingIntent(R.id.md_refresh, refresh);
+        views.setOnClickPendingIntent(R.id.md_refresh_button, refresh);
         views.setOnClickPendingIntent(R.id.md_status, refresh);
     }
 

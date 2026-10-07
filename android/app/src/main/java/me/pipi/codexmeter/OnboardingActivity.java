@@ -307,9 +307,10 @@ public final class OnboardingActivity extends AppCompatActivity {
         this.signInButton = addPrimaryAction(signInLabel, this::startSignIn);
         Button later = Ui.button(this, getString(R.string.auth_onboarding_not_now), false,
                 this.dark);
+        later.setMinHeight(Ui.dp(this, 54));
         later.setOnClickListener(view -> completeAndOpenMain());
         LinearLayout.LayoutParams laterParams =
-                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 54));
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         laterParams.setMargins(0, Ui.dp(this, 10), 0, Ui.dp(this, 8));
         this.content.addView(later, laterParams);
     }
@@ -382,7 +383,7 @@ public final class OnboardingActivity extends AppCompatActivity {
         Button button = Ui.nativePrimaryButton(this, label);
         button.setOnClickListener(view -> action.run());
         LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60));
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         params.setMargins(0, Ui.dp(this, 22), 0, Ui.dp(this, 8));
         this.content.addView(button, params);
         return button;

@@ -25,6 +25,7 @@ public final class UsageRefreshJobService extends JobService {
         if (!SecureTokenStore.isSignedIn(this)) {
             DiagnosticLog.info(this, "scheduler", "refresh_job_skipped_signed_out",
                     "job_id", params.getJobId());
+            WidgetRefreshStatus.finished(this, params.getExtras());
             WidgetRenderer.updateAll(this);
             return false;
         }
@@ -34,6 +35,7 @@ public final class UsageRefreshJobService extends JobService {
             protected void done() {
                 if (isCancelled()) {
                     active.remove(params.getJobId(), run);
+                    run.endFeedback();
                 }
             }
         };
@@ -41,7 +43,14 @@ public final class UsageRefreshJobService extends JobService {
         if (previous != null) {
             previous.cancel();
         }
-        executor.execute(run.task);
+        WidgetRefreshStatus.started(this, params.getExtras());
+        try {
+            executor.execute(run.task);
+        } catch (RuntimeException exception) {
+            active.remove(params.getJobId(), run);
+            run.cancel();
+            throw exception;
+        }
         return true;
     }
 
@@ -49,8 +58,9 @@ public final class UsageRefreshJobService extends JobService {
     public boolean onStopJob(JobParameters params) {
         DiagnosticLog.warn(this, "scheduler", "refresh_job_stopped",
                 "job_id", params.getJobId());
-        JobRun run = active.remove(params.getJobId());
-        if (run != null) {
+        JobRun run = active.get(params.getJobId());
+        if (run != null && RefreshScheduler.generation(params.getExtras()).equals(run.generation)
+                && active.remove(params.getJobId(), run)) {
             run.cancel();
         }
         return true;
@@ -81,6 +91,7 @@ public final class UsageRefreshJobService extends JobService {
         /** Whether this job is a link in the chain that schedules its own successor. */
         private final boolean chainedCycle;
         private final String reason;
+        private final String generation;
         private final UsageApi.Session session = UsageApi.session();
         private volatile boolean stopped;
         private FutureTask<Void> task;
@@ -88,6 +99,7 @@ public final class UsageRefreshJobService extends JobService {
         JobRun(JobParameters params) {
             this.params = params;
             this.reason = RefreshScheduler.reason(params.getExtras());
+            this.generation = RefreshScheduler.generation(params.getExtras());
             this.chainedCycle = RefreshScheduler.REASON_SHORT_PERIODIC.equals(reason)
                     || RefreshScheduler.REASON_ADAPTIVE.equals(reason);
         }
@@ -95,7 +107,14 @@ public final class UsageRefreshJobService extends JobService {
         void cancel() {
             session.cancel();
             stopped = true;
+            endFeedback();
             task.cancel(true);
+        }
+
+        void endFeedback() {
+            if (WidgetRefreshStatus.finished(getApplicationContext(), params.getExtras())) {
+                WidgetRenderer.updateAll(getApplicationContext());
+            }
         }
 
         @Override
@@ -113,6 +132,7 @@ public final class UsageRefreshJobService extends JobService {
                     onRefreshFailed(e, startedAt);
                 }
             } catch (Throwable throwable) {
+                endFeedback();
                 try {
                     session.commit(() -> WidgetRenderer.updateAll(getApplicationContext()));
                 } catch (CancellationException ignored) {
@@ -131,6 +151,7 @@ public final class UsageRefreshJobService extends JobService {
             session.commit(() -> {
                 RefreshScheduler.scheduleAtNextReset(app, snapshot);
                 AppPreferences.recordRefreshSuccess(app);
+                WidgetRefreshStatus.finished(app, params.getExtras());
                 WidgetRenderer.updateAll(app);
                 DiagnosticLog.info(UsageRefreshJobService.this, "scheduler",
                         "refresh_job_succeeded",
@@ -153,6 +174,7 @@ public final class UsageRefreshJobService extends JobService {
                     AppPreferences.setLastError(app, safeMessage(e),
                             RefreshScheduler.REASON_MANUAL.equals(reason));
                     AppPreferences.recordRefreshFailure(app);
+                    WidgetRefreshStatus.finished(app, params.getExtras());
                     WidgetRenderer.updateAll(app);
                 });
             } catch (CancellationException exception) {
@@ -170,6 +192,7 @@ public final class UsageRefreshJobService extends JobService {
          * schedules the next link of a chained refresh.
          */
         private void finish(boolean needsReschedule) {
+            endFeedback();
             active.remove(params.getJobId(), this);
             if (stopped) {
                 return;

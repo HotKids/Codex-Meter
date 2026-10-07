@@ -3,13 +3,12 @@ package me.pipi.codexmeter;
 import androidx.preference.SwitchPreferenceCompat;
 import dev.oneuiproject.oneui.preference.HorizontalRadioPreference;
 
-/** Appearance page: light/dark/system theme and Material You colors. */
+/** Appearance page: light/dark/system theme. */
 public final class SettingsAppearanceFragment extends SettingsPageFragment {
     @Override
     void onCreatePage() {
         addPreferencesFromResource(R.xml.preferences_settings_appearance);
         bindTheme();
-        bindMaterialYou();
     }
 
     private void bindTheme() {
@@ -34,18 +33,6 @@ public final class SettingsAppearanceFragment extends SettingsPageFragment {
             boolean followSystem = (Boolean) value;
             AppPreferences.setAppTheme(requireContext(),
                     followSystem ? WidgetOptions.THEME_SYSTEM : effectiveTheme());
-            requireActivity().recreate();
-            return true;
-        });
-    }
-
-    private void bindMaterialYou() {
-        SwitchPreferenceCompat materialYou = findPreference("material_you");
-        materialYou.setPersistent(false);
-        materialYou.setChecked(AppPreferences.isMaterialYouEnabled(requireContext()));
-        materialYou.setOnPreferenceChangeListener((preference, value) -> {
-            AppPreferences.setMaterialYouEnabled(requireContext(), (Boolean) value);
-            WidgetRenderer.updateAll(requireContext());
             requireActivity().recreate();
             return true;
         });

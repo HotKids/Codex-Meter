@@ -18,14 +18,21 @@ final class UsageCardState {
     final UsageSnapshot snapshot;
     final ResetCreditsSnapshot credits;
     final String refreshError;
+    final boolean refreshing;
     final long nowMillis;
 
     UsageCardState(boolean signedIn, UsageSnapshot snapshot, ResetCreditsSnapshot credits,
             String refreshError, long nowMillis) {
+        this(signedIn, snapshot, credits, refreshError, nowMillis, false);
+    }
+
+    UsageCardState(boolean signedIn, UsageSnapshot snapshot, ResetCreditsSnapshot credits,
+            String refreshError, long nowMillis, boolean refreshing) {
         this.signedIn = signedIn;
         this.snapshot = signedIn ? snapshot : null;
         this.credits = signedIn ? credits : null;
         this.refreshError = refreshError == null ? "" : refreshError;
+        this.refreshing = signedIn && refreshing;
         this.nowMillis = nowMillis;
     }
 
@@ -35,7 +42,7 @@ final class UsageCardState {
                 signedIn ? AppPreferences.loadSnapshot(context) : null,
                 signedIn ? AppPreferences.loadResetCredits(context) : null,
                 signedIn ? AppPreferences.getVisibleRefreshError(context) : "",
-                System.currentTimeMillis());
+                System.currentTimeMillis(), WidgetRefreshStatus.isRefreshing(context));
     }
 
     /** Available reset credits worth showing, or 0. */

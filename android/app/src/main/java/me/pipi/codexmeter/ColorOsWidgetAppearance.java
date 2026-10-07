@@ -65,6 +65,10 @@ final class ColorOsWidgetAppearance {
         views.setFloat(surface, "setPivotY", 0f);
         views.setFloat(surface, "setScaleX", 1f);
         views.setFloat(surface, "setScaleY", 1f);
+        if (!dial) {
+            views.setViewLayoutWidth(R.id.md_refresh_corner_anchor, cardCornerRadiusPx(context),
+                    TypedValue.COMPLEX_UNIT_PX);
+        }
         if (!colorOs || !positive(widthDp) || !positive(heightDp)) {
             return;
         }
@@ -84,8 +88,7 @@ final class ColorOsWidgetAppearance {
             return;
         }
         float baseRadius = context.getResources().getDimension(R.dimen.widget_coloros_card_radius);
-        int radiusPx = (int) (Math.round(iconDp * density) / (density * 56f)
-                * Math.round(baseRadius));
+        float radiusPx = cardCornerRadiusPx(context);
         float scale = radiusPx / baseRadius;
         if (!positive(scale) || widthDp / scale * density < 1f
                 || heightDp / scale * density < 1f) {
@@ -106,6 +109,18 @@ final class ColorOsWidgetAppearance {
         } catch (SecurityException | NumberFormatException exception) {
             return 0f;
         }
+    }
+
+    static float cardCornerRadiusPx(Context context) {
+        if (!isStockLauncher(context)) {
+            return context.getResources().getDimension(R.dimen.widget_card_corner_radius);
+        }
+        float radius = context.getResources().getDimension(R.dimen.widget_coloros_card_radius);
+        float iconDp = iconSizeDp(context);
+        float density = context.getResources().getDisplayMetrics().density;
+        return positive(iconDp) && Math.round(iconDp * density) >= 1
+                ? (int) (Math.round(iconDp * density) / (density * 56f) * Math.round(radius))
+                : radius;
     }
 
     private static boolean positive(float value) {

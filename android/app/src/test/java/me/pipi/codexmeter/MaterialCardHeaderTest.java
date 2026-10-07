@@ -86,11 +86,7 @@ public class MaterialCardHeaderTest {
                 assertEquals("The shared picker inherits the panel alignment",
                         leftIn(applied.findViewById(R.id.md_panel_0), applied),
                         leftIn(applied.findViewById(R.id.md_logo), applied));
-                ImageView refresh = applied.findViewById(R.id.md_refresh);
-                View panel = applied.findViewById(R.id.md_panel_0);
-                assertEquals(0, refresh.getPaddingLeft() + refresh.getPaddingRight());
-                assertEquals(leftIn(panel, applied) + panel.getWidth(),
-                        leftIn(refresh, applied) + lastOpaqueColumn(refresh) + 1, 1);
+                assertVisibleRefreshCentered(applied);
                 assertEquals(Math.round(8f * context().getResources().getDisplayMetrics().density),
                         applied.findViewById(R.id.md_title).getLeft()
                                 - applied.findViewById(R.id.md_logo).getRight());
@@ -99,27 +95,74 @@ public class MaterialCardHeaderTest {
     }
 
     @Test
-    public void refreshGlyphSharesThePanelEdgeAcrossSuccessfulAndFailedReapply() {
+    public void refreshKeepsItsHeaderLineAndAlignsWithTheCornerAxis() {
+        for (int[] size : new int[][] {{110, 130}, {140, 200}, {350, 170}, {500, 300}}) {
+            for (boolean failed : new boolean[] {false, true}) {
+                View card = build(size[0], size[1], failed, 100);
+                ImageView image = card.findViewById(R.id.md_refresh);
+                View header = card.findViewById(R.id.md_header);
+                android.graphics.Rect visible = visibleRefreshBounds(image);
+                assertEquals("Refresh stays on the original header line",
+                        topIn(header, card) + header.getHeight() / 2f,
+                        topIn(image, card) + visible.exactCenterY(), 1f);
+                assertEquals("Refresh centers on the shell corner axis",
+                        card.getWidth() - ColorOsWidgetAppearance.cardCornerRadiusPx(context()),
+                        leftIn(image, card) + visible.exactCenterX(), 1f);
+                View target = card.findViewById(R.id.md_refresh_button);
+                int targetBottom = topIn(target, card) + target.getHeight();
+                int rowTop = topIn(card.findViewById(R.id.md_row_0), card);
+                assertTrue("Refresh target " + size[0] + "x" + size[1] + " ends at "
+                        + targetBottom + " past row " + rowTop, targetBottom <= rowTop);
+            }
+        }
+    }
+
+    @Test
+    public void startingAndEndingRefreshPreservesTheCurrentHeaderAndContentGeometry() {
+        for (int[] size : new int[][] {{110, 130}, {140, 170}, {350, 170}}) {
+            for (boolean failed : new boolean[] {false, true}) {
+                View card = build(size[0], size[1], failed, 100);
+                View target = card.findViewById(R.id.md_refresh_button);
+                int left = leftIn(target, card);
+                int top = topIn(target, card);
+                int headerHeight = card.findViewById(R.id.md_header).getHeight();
+                int rowTop = topIn(card.findViewById(R.id.md_row_0), card);
+                UsageCardState busy = new UsageCardState(true,
+                        UsageCardFixtures.snapshot("pro200", 19, 23, false), null,
+                        failed ? "Synthetic network failure" : "", UsageCardFixtures.NOW, true);
+                WidgetOptions options = new WidgetOptions("auto", "system", "app", 100,
+                        "hidden", "remaining");
+                MaterialCardRenderer.build(context(), 73, options, METERS, busy,
+                        size[0], size[1]).reapply(context(), card);
+                measure(card, size[0], size[1]);
+                assertEquals(left, leftIn(target, card));
+                assertEquals(top, topIn(target, card));
+                assertEquals(headerHeight, card.findViewById(R.id.md_header).getHeight());
+                assertEquals(rowTop, topIn(card.findViewById(R.id.md_row_0), card));
+                remote(size[0], size[1], failed, 100).reapply(context(), card);
+                measure(card, size[0], size[1]);
+                assertEquals(left, leftIn(target, card));
+                assertEquals(top, topIn(target, card));
+                assertEquals(rowTop, topIn(card.findViewById(R.id.md_row_0), card));
+            }
+        }
+    }
+
+    @Test
+    public void refreshGlyphStaysCenteredAcrossSuccessfulAndFailedReapply() {
         for (int width : new int[] {140, 170, 350, 430}) {
             View applied = build(width, 200, false, 100);
             for (boolean failed : new boolean[] {false, true, false}) {
                 remote(width, 200, failed, 100).reapply(context(), applied);
                 measure(applied, width, 200);
-                ImageView refresh = applied.findViewById(R.id.md_refresh);
-                View rightPanel = applied.findViewById(R.id.md_panel_1);
-                if (rightPanel.getVisibility() != View.VISIBLE) {
-                    rightPanel = applied.findViewById(R.id.md_panel_0);
-                }
-                assertEquals("The visible refresh glyph shares the panel's trailing edge",
-                        leftIn(rightPanel, applied) + rightPanel.getWidth(),
-                        leftIn(refresh, applied) + lastOpaqueColumn(refresh) + 1, 1);
+                assertVisibleRefreshCentered(applied);
             }
         }
     }
 
     @Test
     @Config(qualifiers = "ar-rEG-ldrtl-xhdpi")
-    public void rtlRefreshGlyphSharesTheLogicalPanelEnd() {
+    public void rtlRefreshGlyphStaysCentered() {
         for (int width : new int[] {140, 350}) {
             FrameLayout host = new FrameLayout(context());
             host.setLayoutDirection(View.LAYOUT_DIRECTION_RTL);
@@ -130,12 +173,7 @@ public class MaterialCardHeaderTest {
                 measure(applied, width, 200);
                 ImageView refresh = applied.findViewById(R.id.md_refresh);
                 assertEquals(View.LAYOUT_DIRECTION_RTL, refresh.getLayoutDirection());
-                View endPanel = applied.findViewById(R.id.md_panel_1);
-                if (endPanel.getVisibility() != View.VISIBLE) {
-                    endPanel = applied.findViewById(R.id.md_panel_0);
-                }
-                assertEquals(leftIn(endPanel, applied),
-                        leftIn(refresh, applied) + firstOpaqueColumn(refresh), 1);
+                assertVisibleRefreshCentered(applied);
             }
         }
     }
@@ -257,7 +295,9 @@ public class MaterialCardHeaderTest {
                 }
                 ImageView refresh = applied.findViewById(R.id.md_refresh);
                 View header = applied.findViewById(R.id.md_header);
-                assertTrue(refresh.getLeft() >= 0 && refresh.getRight() <= header.getWidth());
+                assertTrue(leftIn(refresh, applied) >= leftIn(header, applied)
+                        && leftIn(refresh, applied) + refresh.getWidth()
+                                <= leftIn(header, applied) + header.getWidth());
                 float expected = TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_SP, 12f,
                         context().getResources().getDisplayMetrics());
                 assertEquals(expected, status.getTextSize(), 0f);
@@ -324,16 +364,28 @@ public class MaterialCardHeaderTest {
         throw new AssertionError("The existing Codex logo must be visible");
     }
 
-    private static int lastOpaqueColumn(ImageView image) {
+    private static void assertVisibleRefreshCentered(View card) {
+        ImageView image = card.findViewById(R.id.md_refresh);
+        View target = card.findViewById(R.id.md_refresh_button);
+        android.graphics.Rect visible = visibleRefreshBounds(image);
+        assertEquals(leftIn(target, card) + target.getWidth() / 2f,
+                leftIn(image, card) + visible.exactCenterX(), 1f);
+        assertEquals(topIn(target, card) + target.getHeight() / 2f,
+                topIn(image, card) + visible.exactCenterY(), 1f);
+    }
+
+    private static android.graphics.Rect visibleRefreshBounds(ImageView image) {
         Bitmap bitmap = draw(image);
-        for (int x = bitmap.getWidth() - 1; x >= 0; x--) {
+        android.graphics.Rect visible = new android.graphics.Rect();
+        for (int x = 0; x < bitmap.getWidth(); x++) {
             for (int y = 0; y < bitmap.getHeight(); y++) {
                 if (Color.alpha(bitmap.getPixel(x, y)) > 127) {
-                    return x;
+                    visible.union(x, y, x + 1, y + 1);
                 }
             }
         }
-        throw new AssertionError("The refresh glyph must be visible");
+        assertTrue("The refresh glyph must be visible", !visible.isEmpty());
+        return visible;
     }
 
     private static Bitmap draw(View view) {

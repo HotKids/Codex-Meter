@@ -226,7 +226,7 @@ public class UsageCardModelTest {
             host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height);
             manager.updateAppWidgetOptions(widgetId, host);
             assertEquals("The card provider must match its Clear picker preview at " + height,
-                    R.layout.widget_material, WidgetRenderer.build(app, widgetId, options, state,
+                    R.layout.widget_material_refresh, WidgetRenderer.build(app, widgetId, options, state,
                             180f, height, manager.getAppWidgetOptions(widgetId)).getLayoutId());
         }
     }
@@ -244,7 +244,7 @@ public class UsageCardModelTest {
             host.putInt(AppWidgetManager.OPTION_APPWIDGET_MIN_WIDTH, 180);
             host.putInt(AppWidgetManager.OPTION_APPWIDGET_MAX_HEIGHT, height);
             manager.updateAppWidgetOptions(widgetId, host);
-            assertEquals(height == 90 ? R.layout.widget_rings : R.layout.widget_material,
+            assertEquals(height == 90 ? R.layout.widget_rings : R.layout.widget_material_refresh,
                     WidgetRenderer.build(app, widgetId, options, state, 180f, height,
                             manager.getAppWidgetOptions(widgetId)).getLayoutId());
         }
@@ -272,7 +272,7 @@ public class UsageCardModelTest {
                     ClassParameter.from(SizeF.class, size));
             assertEquals("The selected variant must use the host's actual content size",
                     size, ReflectionHelpers.callInstanceMethod(selected, "getIdealSize"));
-            assertEquals(R.layout.widget_material, selected.getLayoutId());
+            assertEquals(R.layout.widget_material_refresh, selected.getLayoutId());
         }
     }
 
@@ -288,7 +288,7 @@ public class UsageCardModelTest {
                 ClassParameter.from(SizeF.class, new SizeF(110f, 60f)));
         assertEquals(new SizeF(110f, 60f),
                 ReflectionHelpers.callInstanceMethod(selected, "getIdealSize"));
-        assertEquals(R.layout.widget_material, selected.getLayoutId());
+        assertEquals(R.layout.widget_material_refresh, selected.getLayoutId());
     }
 
     @Test

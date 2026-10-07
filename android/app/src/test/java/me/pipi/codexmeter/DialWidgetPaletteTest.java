@@ -38,7 +38,7 @@ public class DialWidgetPaletteTest {
     }
 
     @Test
-    public void neutralLayersFollowAppearanceWhileProgressKeepsTheDynamicPrimary() {
+    public void neutralLayersFollowAppearanceWhileNormalProgressUsesDynamicPrimary() {
         Context light = themedContext(Configuration.UI_MODE_NIGHT_NO);
         Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);
         assertEquals(light.getColor(android.R.color.system_accent2_50),
@@ -83,7 +83,8 @@ public class DialWidgetPaletteTest {
             int fullPixels = opaquePixels(draw(nearlyFull.findViewById(id)),
                     host.getColor(R.color.widget_material_fill));
             int emptyPixels = opaquePixels(draw(nearlyEmpty.findViewById(id)),
-                    host.getColor(R.color.widget_material_fill));
+                    host.getColor(R.color.widget_material_fill_critical));
+            assertTrue("3% remaining must still draw its tertiary fill", emptyPixels > 0);
             assertTrue("97% remaining must fill more of the arc than 3% remaining",
                     fullPixels > emptyPixels * 4);
         }
@@ -100,7 +101,8 @@ public class DialWidgetPaletteTest {
             View applied = apply(host, build(host, 100,
                     UsageCardFixtures.snapshot("plus", used[index], used[index], false), false));
             filled[index] = opaquePixels(draw(applied.findViewById(R.id.primary_samsung_progress)),
-                    host.getColor(R.color.widget_material_fill));
+                    host.getColor(index == 2 ? R.color.widget_material_fill_critical
+                            : R.color.widget_material_fill));
         }
         assertTrue("A full allowance must fill more than half of the arc", filled[0] > filled[1]);
         assertTrue("Half an allowance must have a visible fill", filled[1] > 0);

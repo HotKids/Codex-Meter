@@ -51,7 +51,6 @@ public final class AppPreferences {
     // Appearance.
     private static final String KEY_APP_STYLE = "app_surface_style";
     private static final String KEY_APP_THEME = "app_theme";
-    private static final String KEY_MATERIAL_YOU = "material_you";
 
     // Widget option fields, stored per widget as "default_<field>" (defaults for new home-screen
     // widgets), "widget_<id>_<field>" (placed home-screen widgets), and "lock_widget_<id>_<field>".
@@ -540,15 +539,6 @@ public final class AppPreferences {
     private static String normalizeAppTheme(String theme) {
         return WidgetOptions.THEME_DARK.equals(theme) || WidgetOptions.THEME_LIGHT.equals(theme)
                 ? theme : WidgetOptions.THEME_SYSTEM;
-    }
-
-    /** When enabled, accents follow Android Material You system colors (API 31+). */
-    public static boolean isMaterialYouEnabled(Context context) {
-        return prefs(context).getBoolean(KEY_MATERIAL_YOU, false);
-    }
-
-    public static void setMaterialYouEnabled(Context context, boolean enabled) {
-        prefs(context).edit().putBoolean(KEY_MATERIAL_YOU, enabled).commit();
     }
 
     /** The app always uses the One UI surface; other styles are no longer offered. */

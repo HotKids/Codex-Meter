@@ -1843,13 +1843,13 @@ public final class ParserSelfTest {
                 + "- Centralized production GitHub release URLs (#24).\n\n"
                 + "**Full Changelog**: https://github.com/example/Codex-Meter/compare/v2.2.0...v2.3.0 "
                 + "<!-- pragma: allowlist secret -->");
-        check(html.contains("<p><b>Fixed</b></p>"), "markdown heading rendered");
+        check(html.contains("<h3>Fixed</h3>"), "markdown heading rendered");
         check(html.contains("<ul>"), "markdown list opened");
         check(html.contains("<li>Improved reset-duration contrast (#23).</li>"),
                 "markdown bullet rendered");
         check(html.contains("<li>Restored in-app update discovery (#24).</li>"),
                 "second markdown bullet rendered");
-        check(html.contains("<p><b>Development</b></p>"), "second markdown heading rendered");
+        check(html.contains("<h3>Development</h3>"), "second markdown heading rendered");
         check(html.contains("<b>Full Changelog</b>"), "markdown bold rendered");
         check(html.contains("<a href=\"https://github.com/example/Codex-Meter/compare/v2.2.0...v2.3.0\">"),
                 "markdown autolink rendered");

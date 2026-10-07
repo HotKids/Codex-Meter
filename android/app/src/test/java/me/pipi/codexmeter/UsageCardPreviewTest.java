@@ -342,7 +342,7 @@ public class UsageCardPreviewTest {
         assertEquals(R.layout.widget_rings,
                 WidgetRenderer.build(context, 1, options, state, 260f, 90f, host).getLayoutId());
         host.putInt("semAppWidgetRowSpan", 2);
-        assertEquals(R.layout.widget_material,
+        assertEquals(R.layout.widget_material_refresh,
                 WidgetRenderer.build(context, 1, options, state, 260f, 90f, host).getLayoutId());
     }
 
@@ -445,8 +445,8 @@ public class UsageCardPreviewTest {
         WidgetOptions selected = options.withVisibleMeters(WidgetMeters.serialize(keys));
         RemoteViews views = WidgetRenderer.build(context, 1, selected, state, widthDp,
                 heightDp, null);
-        assertEquals(options.opacity <= 0 ? R.layout.widget_material_shadow
-                : R.layout.widget_material, views.getLayoutId());
+        assertEquals(options.opacity <= 0 ? R.layout.widget_material_refresh_shadow
+                : R.layout.widget_material_refresh, views.getLayoutId());
         sheet.add(label, apply(context, views), px(widthDp, density), px(heightDp, density));
     }
 

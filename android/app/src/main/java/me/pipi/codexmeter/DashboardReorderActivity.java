@@ -33,7 +33,6 @@ import java.util.List;
  * visibility are saved immediately so the dashboard rebuilds on return.
  */
 public final class DashboardReorderActivity extends AppCompatActivity {
-    private static final float HIDDEN_ROW_ALPHA = 0.45f;
     private static final float DRAGGED_ROW_ALPHA = 0.85f;
     private static final int DRAGGED_ROW_ELEVATION_DP = 4;
 
@@ -185,7 +184,6 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         row.addView(labels, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1.0f));
 
         SwitchCompat toggle = new SwitchCompat(context);
-        toggle.setContentDescription(context.getString(R.string.dashboard_edit_show));
         LinearLayout.LayoutParams toggleParams =
                 new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         toggleParams.setMargins(Ui.dp(context, 8), 0, Ui.dp(context, 4), 0);
@@ -194,7 +192,6 @@ public final class DashboardReorderActivity extends AppCompatActivity {
         ImageView handle = new ImageView(context);
         handle.setImageResource(R.drawable.ic_ms_drag_handle);
         handle.setImageTintList(ColorStateList.valueOf(Ui.mainText(context, dark)));
-        handle.setContentDescription(context.getString(R.string.dashboard_edit_reorder));
         int pad = Ui.dp(context, 12);
         handle.setPadding(pad, pad, pad, pad);
         row.addView(handle, new LinearLayout.LayoutParams(Ui.dp(context, 48),
@@ -235,21 +232,16 @@ public final class DashboardReorderActivity extends AppCompatActivity {
             SectionItem item = items.get(position);
             holder.title.setText(item.title);
             holder.summary.setText(item.summary);
+            holder.toggle.setContentDescription(getString(R.string.dashboard_edit_show_section,
+                    item.title));
+            holder.handle.setContentDescription(getString(R.string.dashboard_edit_reorder_section,
+                    item.title));
             // Detach the old listener so restoring the checked state does not write it back.
             holder.toggle.setOnCheckedChangeListener(null);
             boolean visible = isSectionVisible(item.key);
             holder.toggle.setChecked(visible);
-            applyRowVisibility(holder, visible);
-            holder.toggle.setOnCheckedChangeListener((button, checked) -> {
-                setSectionVisible(item.key, checked);
-                applyRowVisibility(holder, checked);
-            });
-        }
-
-        private void applyRowVisibility(SectionHolder holder, boolean visible) {
-            float alpha = visible ? 1.0f : HIDDEN_ROW_ALPHA;
-            holder.title.setAlpha(alpha);
-            holder.summary.setAlpha(alpha);
+            holder.toggle.setOnCheckedChangeListener((button, checked) ->
+                    setSectionVisible(item.key, checked));
         }
 
         @Override

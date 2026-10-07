@@ -9,7 +9,7 @@
             <TextView android:id="@+id/md_title" style="@style/WidgetMaterialHeaderShadow.Title" android:layout_marginStart="8dp" android:text="@string/widget_material_title" android:textSize="15.5dp" />
             <TextView android:id="@+id/md_status" style="@style/WidgetMaterialHeaderShadow.Status" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:paddingStart="8dp" android:textSize="10.5dp" />
             <TextView android:id="@+id/md_updated" style="@style/WidgetMaterialHeaderShadow.Status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="8dp" android:visibility="gone" android:textSize="14dp" />
-            <ImageView android:id="@+id/md_refresh" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp" android:contentDescription="@string/widget_material_refresh" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" />
+            <ImageView android:id="@+id/md_refresh" android:layout_width="22dp" android:layout_height="22dp" android:layout_marginStart="8dp" android:importantForAccessibility="no" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" />
         </LinearLayout>
         <LinearLayout android:id="@+id/md_row_0" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="10dp" android:layout_weight="1" android:baselineAligned="false" android:orientation="horizontal">
             <FrameLayout android:id="@+id/md_panel_0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
@@ -80,4 +80,6 @@
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
+    <!-- Foreground feedback stays above the image-based shell instead of projecting behind it. -->
+    <FrameLayout android:id="@+id/md_refresh_button" android:layout_width="38dp" android:layout_height="38dp" android:layout_marginTop="4dp" android:layout_gravity="top|end" android:theme="@android:style/Theme.DeviceDefault.DayNight" android:foreground="@drawable/widget_refresh_feedback" android:contentDescription="@string/widget_material_refresh" android:importantForAccessibility="yes" />
 </FrameLayout>

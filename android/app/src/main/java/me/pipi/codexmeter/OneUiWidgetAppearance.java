@@ -141,7 +141,9 @@ final class OneUiWidgetAppearance {
                             Process.myUserHandle(), category);
                     int layout = type == CodexDialWidget.class ? R.layout.widget_oneui_rings
                             : R.layout.widget_material;
-                    if (previous != null && previous.getLayoutId() == layout) {
+                    if (previous != null && (previous.getLayoutId() == layout
+                            || (type == CodexUsageWidget.class
+                                    && previous.getLayoutId() == R.layout.widget_material_refresh))) {
                         manager.removeWidgetPreview(provider, category);
                     }
                 }

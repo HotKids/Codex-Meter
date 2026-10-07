@@ -283,7 +283,6 @@ public final class WidgetConfigActivity extends AppCompatActivity {
                     ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
             SwitchCompat toggle = new SwitchCompat(activity);
-            toggle.setContentDescription(getString(R.string.widget_editor_show));
             LinearLayout.LayoutParams toggleParams = new LinearLayout.LayoutParams(
                     ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
             toggleParams.setMargins(Ui.dp(activity, 8), 0, Ui.dp(activity, 4), 0);
@@ -319,6 +318,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
         public void onBindViewHolder(WindowHolder holder, int position) {
             String key = windowOrder.get(position);
             holder.title.setText(editorMeterTitle(key));
+            holder.toggle.setContentDescription(holder.title.getText());
             String description = editorMeterSummary(key);
             WidgetMeter meter = new WidgetMeter(WidgetConfigActivity.this, key, saved,
                     new UsageCardState(snapshot != null, snapshot, null, "",
@@ -498,6 +498,7 @@ public final class WidgetConfigActivity extends AppCompatActivity {
     private LinearLayout switchRow(String title, SwitchCompat toggle) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.VERTICAL);
+        toggle.setContentDescription(title);
         LinearLayout content = new LinearLayout(this);
         content.setGravity(Gravity.CENTER_VERTICAL);
         content.setMinimumHeight(Ui.dp(this, 64));

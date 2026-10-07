@@ -172,7 +172,7 @@ public final class UpdateActivity extends AppCompatActivity {
         actionButton.setEnabled(!operationRunning);
         actionButton.setOnClickListener(view ->
                 checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
-        card.addView(actionButton, fixedHeightParams(60));
+        card.addView(actionButton, wrapContentParams(0, 0, 0, 0));
         content.addView(card);
     }
 
@@ -262,7 +262,7 @@ public final class UpdateActivity extends AppCompatActivity {
         actionButton = Ui.nativePrimaryButton(this, getString(R.string.updates_open_on_github));
         actionButton.setEnabled(!operationRunning);
         actionButton.setOnClickListener(view -> openReleasePage());
-        card.addView(actionButton, fixedHeightParams(60));
+        card.addView(actionButton, wrapContentParams(0, 0, 0, 0));
         progress = null;
         status = null;
     }
@@ -278,7 +278,7 @@ public final class UpdateActivity extends AppCompatActivity {
                 requestInstall();
             }
         });
-        card.addView(actionButton, fixedHeightParams(60));
+        card.addView(actionButton, wrapContentParams(0, 0, 0, 0));
 
         progress = Ui.progress(this, dark);
         progress.setMax(PROGRESS_MAX);
@@ -328,7 +328,7 @@ public final class UpdateActivity extends AppCompatActivity {
         actionButton = Ui.nativePrimaryButton(this, getString(R.string.updates_check_again));
         actionButton.setEnabled(!operationRunning);
         actionButton.setOnClickListener(view -> checkReleases(getIntent().getStringExtra(EXTRA_VERSION)));
-        card.addView(actionButton, fixedHeightParams(60));
+        card.addView(actionButton, wrapContentParams(0, 0, 0, 0));
         content.addView(card);
     }
 

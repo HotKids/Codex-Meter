@@ -157,8 +157,8 @@
     <!-- Dashboard editor (DashboardReorderActivity, DashboardSections keys). -->
     <string name="dashboard_edit_hint">Drag the handles to arrange your usage cards and use the switches to hide the ones you don\'t need.</string>
     <string name="dashboard_edit_note">Changes are saved immediately. You can re-enable disabled items. Home only shows enabled cards with available data.</string>
-    <string name="dashboard_edit_show">Show on dashboard</string>
-    <string name="dashboard_edit_reorder">Reorder</string>
+    <string name="dashboard_edit_show_section">Show %1$s</string>
+    <string name="dashboard_edit_reorder_section">Reorder %1$s</string>
     <string name="dashboard_section_five_hour_title">Session limit</string>
     <string name="dashboard_section_five_hour_summary">5h session usage and reset time</string>
     <string name="dashboard_section_weekly_title">Weekly limit</string>

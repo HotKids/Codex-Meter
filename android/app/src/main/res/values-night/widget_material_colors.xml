@@ -5,6 +5,8 @@
     <color name="widget_material_panel">@color/widget_material_panel_dark</color>
     <color name="widget_material_track">@color/widget_material_track_dark</color>
     <color name="widget_material_fill">@color/widget_material_fill_dark</color>
+    <color name="widget_material_fill_warning">@color/widget_material_fill_warning_dark</color>
+    <color name="widget_material_fill_critical">@color/widget_material_fill_critical_dark</color>
     <color name="widget_material_text">@color/widget_material_text_dark</color>
     <color name="widget_material_secondary">@color/widget_material_secondary_dark</color>
     <color name="widget_material_accent">@color/widget_material_accent_dark</color>

@@ -79,7 +79,6 @@ public class OneUiThemeIntegrationTest {
     public void dynamicPrimaryButtonsRetainThemeAccentAndReadableLabels() {
         Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
                 R.style.AppTheme_MaterialYou);
-        AppPreferences.setMaterialYouEnabled(context, true);
         int accent = context.getColor(android.R.color.system_accent1_200);
         for (Button button : new Button[]{Ui.nativePrimaryButton(context, "Continue"),
                 Ui.button(context, "Continue", true, true)}) {
@@ -97,6 +96,20 @@ public class OneUiThemeIntegrationTest {
             assertTrue(ColorUtils.calculateContrast(button.getCurrentTextColor(), accent) >= 4.5);
             assertEquals(17f, button.getTextSize()
                     / context.getResources().getDisplayMetrics().scaledDensity, 0.01f);
+        }
+    }
+
+    @Test
+    @Config(qualifiers = "night")
+    public void dynamicPrimaryButtonsKeepDistinctDisabledText() {
+        Context context = new ContextThemeWrapper(RuntimeEnvironment.getApplication(),
+                R.style.AppTheme_MaterialYou);
+        for (Button button : new Button[]{Ui.nativePrimaryButton(context, "Continue"),
+                Ui.button(context, "Continue", true, true)}) {
+            int enabled = button.getCurrentTextColor();
+            button.setEnabled(false);
+            assertTrue("Disabled actions must retain the theme's text state",
+                    enabled != button.getCurrentTextColor());
         }
     }
 }

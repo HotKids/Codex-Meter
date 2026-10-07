@@ -8,7 +8,7 @@
             <TextView android:id="@+id/md_title" style="@style/WidgetMaterialHeader.Title" android:layout_marginStart="8dp" android:text="@string/widget_preview_plan" android:textSize="13.95dp" android:textColor="@color/widget_material_text" />
             <TextView android:id="@+id/md_status" style="@style/WidgetMaterialHeader.Status" android:layout_width="0dp" android:layout_weight="1" android:gravity="end" android:paddingStart="5.6dp" android:textSize="7.35dp" android:textColor="@color/widget_material_text" android:visibility="invisible" />
             <TextView android:id="@+id/md_updated" style="@style/WidgetMaterialHeader.Status" android:layout_width="wrap_content" android:layout_height="wrap_content" android:layout_marginStart="5.6dp" android:visibility="gone" android:textSize="12sp" android:textColor="@color/widget_material_text" android:fontFamily="sans-serif-medium" />
-            <ImageView android:id="@+id/md_refresh" android:layout_width="15.4dp" android:layout_height="15.4dp" android:layout_marginStart="8dp" android:contentDescription="@string/widget_material_refresh" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" android:tint="@color/widget_material_text" android:paddingStart="2.56667dp" android:paddingEnd="-2.56667dp" />
+            <ImageView android:layout_width="15.4dp" android:layout_height="15.4dp" android:layout_marginStart="5.6dp" android:importantForAccessibility="no" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" android:tint="@color/widget_material_text" android:visibility="invisible" />
         </LinearLayout>
         <LinearLayout android:id="@+id/md_row_0" android:layout_width="match_parent" android:layout_height="0dp" android:layout_marginTop="7dp" android:layout_weight="1" android:baselineAligned="false" android:orientation="horizontal">
             <FrameLayout android:id="@+id/md_panel_0" android:layout_width="0dp" android:layout_height="match_parent" android:layout_weight="1">
@@ -79,4 +79,9 @@
             </FrameLayout>
         </LinearLayout>
     </LinearLayout>
+    <FrameLayout android:id="@+id/md_refresh_corner_anchor" android:layout_width="@dimen/widget_card_corner_radius" android:layout_height="match_parent" android:layout_gravity="top|end" android:clipChildren="false" android:clipToPadding="false">
+        <FrameLayout android:id="@+id/md_refresh_button" android:layout_width="30.8dp" android:layout_height="30.8dp" android:layout_marginTop="1.4dp" android:layout_gravity="top|start" android:theme="@android:style/Theme.DeviceDefault.DayNight" android:foreground="@drawable/widget_refresh_feedback" android:contentDescription="@string/widget_material_refresh" android:importantForAccessibility="yes" android:layout_marginStart="-15.4dp">
+            <ImageView android:id="@+id/md_refresh" android:layout_width="15.4dp" android:layout_height="15.4dp" android:importantForAccessibility="no" android:scaleType="fitCenter" android:src="@drawable/ic_ms_sync" android:tint="@color/widget_material_text" android:layout_gravity="center" android:padding="0dp" />
+        </FrameLayout>
+    </FrameLayout>
 </FrameLayout>

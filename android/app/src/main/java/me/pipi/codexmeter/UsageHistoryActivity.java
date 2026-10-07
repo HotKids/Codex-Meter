@@ -11,6 +11,7 @@ import dev.bennett.codexmeter.UsageWindow;
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
 import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
+import android.content.res.ColorStateList;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.view.Gravity;
@@ -18,10 +19,12 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.TextView;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.app.AlertDialog;
+import dev.oneuiproject.oneui.widget.CardItemView;
 import java.util.Date;
 import java.util.List;
 import java.util.Locale;
@@ -177,6 +180,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
     private void addClearHistoryButton(boolean hasSamples) {
         Button clear = Ui.button(this, getString(R.string.dashboard_history_clear), false, dark);
+        clear.setMinHeight(Ui.dp(this, CLEAR_BUTTON_HEIGHT_DP));
         clear.setEnabled(hasSamples);
         clear.setOnClickListener(view -> new AlertDialog.Builder(this)
                 .setTitle(R.string.dashboard_history_clear_title)
@@ -187,8 +191,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     render();
                 })
                 .show());
-        content.addView(clear, new LinearLayout.LayoutParams(MATCH_PARENT,
-                Ui.dp(this, CLEAR_BUTTON_HEIGHT_DP)));
+        content.addView(clear, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
     }
 
     /**
@@ -274,7 +277,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
             List<UsageStats.WindowStats> breakdown, PlanPricing pricing) {
         boolean dayGranularity = UsageHistory.WEEKLY.equals(history.kind)
                 || UsageHistory.MONTHLY.equals(history.kind);
-        TextView[] titles = new TextView[breakdown.size()];
+        CardItemView[] rows = new CardItemView[breakdown.size()];
         // Rows run newest first; breakdown and the chart's windows are both oldest first.
         for (int index = breakdown.size() - 1; index >= 0; index--) {
             UsageStats.WindowStats stats = breakdown.get(index);
@@ -283,34 +286,39 @@ public final class UsageHistoryActivity extends AppCompatActivity {
                     : windowRangeLabel(stats, dayGranularity);
             String subtitle = windowSubtitle(stats, history, pricing);
 
-            LinearLayout row = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
-            row.setPadding(Ui.dp(this, 12), Ui.dp(this, 8), Ui.dp(this, 12), Ui.dp(this, 8));
-            LinearLayout texts = new LinearLayout(this);
-            texts.setOrientation(LinearLayout.VERTICAL);
-            TextView titleView = Ui.text(this, rowTitle, 14,
-                    current ? Ui.accent(this, dark) : Ui.mainText(this, dark));
-            titleView.setTypeface(Ui.mediumTypeface(this));
-            texts.addView(titleView);
-            texts.addView(Ui.text(this, subtitle, 12, Ui.secondaryText(this, dark)));
-            row.addView(texts, new LinearLayout.LayoutParams(0, WRAP_CONTENT, 1f));
+            CardItemView row = Ui.actionRow(this, rowTitle, subtitle, 0, null);
+            ImageView selectedIcon = row.getEndImageView();
+            selectedIcon.setImageResource(R.drawable.ic_oui_checkbox_checked_outline);
+            selectedIcon.setImageTintList(ColorStateList.valueOf(Ui.accent(this, dark)));
+            selectedIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             card.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
 
-            titles[index] = titleView;
+            rows[index] = row;
+            setWindowRowSelected(row, current);
             int chartWindowIndex = chart.windowCount() - breakdown.size() + index;
             int rowIndex = index;
             row.setOnClickListener(view -> {
                 chart.setSelectedWindow(
                         current ? UsageBurnChartView.CURRENT_WINDOW : chartWindowIndex);
-                for (int i = 0; i < titles.length; i++) {
-                    titles[i].setTextColor(i == rowIndex ? Ui.accent(this, dark)
-                            : Ui.mainText(this, dark));
+                for (int i = 0; i < rows.length; i++) {
+                    setWindowRowSelected(rows[i], i == rowIndex);
                 }
             });
             row.setClickable(true);
             row.setFocusable(true);
-            row.setContentDescription(
+            View target = row.findViewById(dev.oneuiproject.oneui.design.R.id.cardview_container);
+            target.setContentDescription(
                     getString(R.string.dashboard_history_inspect, rowTitle, subtitle));
+            row.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
         }
+    }
+
+    private void setWindowRowSelected(CardItemView row, boolean selected) {
+        row.setSelected(selected);
+        row.findViewById(dev.oneuiproject.oneui.design.R.id.cardview_container)
+                .setSelected(selected);
+        row.getTitleView().setTextColor(selected ? Ui.accent(this, dark) : Ui.mainText(this, dark));
+        row.getEndImageView().setVisibility(selected ? View.VISIBLE : View.INVISIBLE);
     }
 
     /** Facts about one window joined by " · ", e.g. "82% used · avg 4.1%/h · ≈ $96". */

@@ -18,7 +18,6 @@
     <string name="widget_editor_windows_limit">最多选择 4 项。</string>
     <string name="widget_editor_windows_minimum">至少保留 1 项。</string>
     <string name="widget_editor_window_missing">%1$s · 暂无数据</string>
-    <string name="widget_editor_show">显示在小组件中</string>
     <string name="widget_editor_reorder">调整顺序</string>
     <string name="widget_editor_appearance">外观</string>
     <string name="widget_editor_refresh_hint">小组件随用量数据同步更新，也可点按刷新按钮手动刷新。</string>

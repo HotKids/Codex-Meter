@@ -290,7 +290,7 @@ public final class UsageBurnChartView extends View {
 
         paint.setTypeface(regularTypeface);
         paint.setTextSize(10f * density);
-        paint.setColor(Ui.secondaryText(getContext(), dark));
+        paint.setColor(Ui.secondaryText(dark));
         String sampleLabel = samples.size() < 2
                 ? getContext().getString(R.string.dashboard_chart_building)
                 : getResources().getQuantityString(R.plurals.dashboard_chart_samples,
@@ -455,7 +455,7 @@ public final class UsageBurnChartView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setTypeface(regularTypeface);
         paint.setTextSize(10f * density);
-        paint.setColor(Ui.secondaryText(getContext(), dark));
+        paint.setColor(Ui.secondaryText(dark));
         canvas.drawText("0%", plot.left, baseline, paint);
         String reset = getContext().getString(R.string.dashboard_chart_axis_reset);
         canvas.drawText(reset, plot.right - paint.measureText(reset), baseline, paint);
@@ -465,7 +465,7 @@ public final class UsageBurnChartView extends View {
         paint.setStyle(Paint.Style.FILL);
         paint.setTypeface(regularTypeface);
         paint.setTextSize(12f * density);
-        paint.setColor(Ui.secondaryText(getContext(), dark));
+        paint.setColor(Ui.secondaryText(dark));
         canvas.drawText(text, plot.left, plot.top + 24f * density, paint);
     }
 

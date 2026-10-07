@@ -1,19 +1,20 @@
 # Widget appearance
 
-Color selection and launcher geometry are independent. Automatic selects the native dynamic palette
-only on Google Pixel devices and the classic palette elsewhere. Native and Classic explicitly select
+Color selection and launcher geometry are independent. Automatic selects the Material dynamic palette
+only on Google Pixel devices and the classic palette elsewhere. Material and Classic explicitly select
 their respective palettes on every device. The selection is stored per widget and survives editor
 recreation and widget restoration. Default widget options are included in settings export/import.
 
-Native uses the Pixel/Gmail-style system palette. Classic retains the Samsung SmartThings neutral
-backgrounds; on the ColorOS stock launcher, only its background colors and existing corner parameters
+Material (质感) uses the Pixel/Gmail-style system palette. Its stored identifier remains `native`.
+Classic retains the Samsung SmartThings neutral backgrounds; on the ColorOS stock launcher,
+only its background colors and existing corner parameters
 are overlaid. ColorOS references Consumer IR's QuickCard configuration preview: outer `#FFFFFF` /
 `#373737` and inner `#F5F5F5` / `#474747` for light/dark appearance. The light panel color composites
 `#0A000000` over white before the common renderer applies the selected opacity. The running launcher card uses
 the separately distributed `com.oplus.consumerirapp.quickapp` template; its exact CSS remains
 unverified, so the preview palette is a visual reference rather than a verified host color contract.
 For every host, card opacity applies to the outer background, inner panels and progress fills/tracks
-in Native and Classic styles, including the editor preview. Pixel retains its stored 56/65/100% ticks;
+in Material and Classic styles, including the editor preview. Pixel retains its stored 56/65/100% ticks;
 Samsung and ColorOS keep their existing 30/66/100% conversion. Text and icons retain their original
 opacity. Turning Background off hides the backgrounds but keeps progress at full opacity. The 2×1
 dials have no inner card panels and retain their existing behavior.
@@ -25,6 +26,25 @@ reduces internal padding and gaps using actual font line heights. Normal placeme
 existing spacing. Widget-editor drafts survive activity recreation and are persisted only by
 Save; Cancel leaves the placed widget unchanged.
 
+Card refresh controls retain the header center line and place the glyph center on the shell's
+right-corner axis (mirrored in RTL), using the actual system or ColorOS radius. Their independent
+targets fit inside the card and end before the first content row; the centered foreground ripple
+uses a 22dp circular mask and an 11dp radius. The framework DayNight theme keeps native feedback
+visible above the image-based shell. Layout aliases reload previously cached foregrounds once.
+Picker previews derive the same geometry from the common layout and host radius resources.
+
+Accepted manual refreshes show a native rotating version of the current status icon: Sync for
+current data, Sync Problem for waiting, failed, or stale data. Rotation ends on completion,
+failure, cancellation, or reconciliation of an abandoned job. State capture and host publication
+share one serialized update boundary so a completed refresh cannot be overwritten by an older
+busy render. Transient feedback has a separate
+noncredential generation record; an older job cannot end a newer request's animation. Reconciliation
+uses a nonexact alarm through the existing refresh receiver and may be delayed by the OS. Queued
+feedback expires after five minutes without cancelling the underlying job; an active request
+continues rotating until its terminal state. Old boot or invalid elapsed-time records are discarded.
+Narrow cards below 250dp show no status text. Wider cards use complete status messages where they
+fit; all nonnormal resting states use Sync Problem, and only normal idle data shows its timestamp.
+
 Explicit refresh failures from the dashboard, widget, or live notification are shown immediately.
 The 15-minute fresh-cache grace applies only to background failures. Once a manual failure is
 visible, subsequent background failures keep it visible until a successful usage response clears
@@ -35,7 +55,9 @@ Classic usage severity follows
 used below 60% is green, 60% to below 85% is orange, and 85% or above is red. Fill lengths and labels
 continue to show the remaining allowance. Reset countdown progress is waiting time, not usage, so it
 keeps the normal green. Missing usage has no visible fill. Green and red use the Samsung battery
-widget's colors; orange uses AI-Usage's warning color. Native progress keeps its system primary color.
+widget's colors; orange uses AI-Usage's warning color. Material uses the same thresholds with system
+primary, secondary and tertiary fills, respectively (tone 40 in light mode, tone 80 in dark mode).
+Its reset countdown keeps the primary fill. Palette resources are resolved by the launcher.
 
 Classic card headers and live-notification capsules use the transparent
 [colored Codex asset](https://zonalogo.com/codex-logo). Capsules use transparent PNGs generated by

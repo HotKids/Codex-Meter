@@ -1,10 +1,12 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <!-- Layers follow Gmail widgets; progress keeps the dynamic primary. -->
+    <!-- Gmail surfaces; usage severity selects dynamic primary, secondary, then tertiary. -->
     <color name="widget_material_surface_light">@android:color/system_accent2_50</color>       <!-- S95 -->
     <color name="widget_material_panel_light">@android:color/system_accent2_100</color>        <!-- S90 -->
     <color name="widget_material_track_light">#1A000000</color>
     <color name="widget_material_fill_light">@android:color/system_accent1_600</color>         <!-- P40 -->
+    <color name="widget_material_fill_warning_light">@android:color/system_accent2_600</color> <!-- S40 -->
+    <color name="widget_material_fill_critical_light">@android:color/system_accent3_600</color><!-- T40 -->
     <color name="widget_material_text_light">@android:color/system_neutral1_900</color>        <!-- N10 -->
     <color name="widget_material_secondary_light">@android:color/system_neutral2_700</color>   <!-- NV30 -->
     <color name="widget_material_accent_light">@android:color/system_accent1_600</color>       <!-- P40 -->
@@ -13,6 +15,8 @@
     <color name="widget_material_panel_dark">@android:color/system_accent2_700</color>         <!-- S30 -->
     <color name="widget_material_track_dark">#33FCFCFF</color>
     <color name="widget_material_fill_dark">@android:color/system_accent1_200</color>          <!-- P80 -->
+    <color name="widget_material_fill_warning_dark">@android:color/system_accent2_200</color>  <!-- S80 -->
+    <color name="widget_material_fill_critical_dark">@android:color/system_accent3_200</color> <!-- T80 -->
     <color name="widget_material_text_dark">@android:color/system_neutral1_50</color>          <!-- N95 -->
     <color name="widget_material_secondary_dark">@android:color/system_neutral2_200</color>    <!-- NV80 -->
     <color name="widget_material_accent_dark">@android:color/system_accent1_200</color>        <!-- P80 -->
@@ -21,6 +25,8 @@
     <color name="widget_material_panel">@color/widget_material_panel_light</color>
     <color name="widget_material_track">@color/widget_material_track_light</color>
     <color name="widget_material_fill">@color/widget_material_fill_light</color>
+    <color name="widget_material_fill_warning">@color/widget_material_fill_warning_light</color>
+    <color name="widget_material_fill_critical">@color/widget_material_fill_critical_light</color>
     <color name="widget_material_text">@color/widget_material_text_light</color>
     <color name="widget_material_secondary">@color/widget_material_secondary_light</color>
     <color name="widget_material_accent">@color/widget_material_accent_light</color>

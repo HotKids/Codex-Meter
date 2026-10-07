@@ -8,9 +8,11 @@ import android.content.Intent;
 public final class WidgetRefreshReceiver extends BroadcastReceiver {
     @Override
     public void onReceive(Context context, Intent intent) {
-        if (intent != null && AppConstants.ACTION_REFRESH_WIDGET.equals(intent.getAction())) {
-            RefreshScheduler.scheduleManual(context);
-            WidgetRenderer.updateAll(context);
+        String action = intent == null ? null : intent.getAction();
+        if (AppConstants.ACTION_REFRESH_WIDGET.equals(action)) {
+            if (!RefreshScheduler.scheduleManual(context)) WidgetRenderer.updateAll(context);
+        } else if (WidgetRefreshStatus.ACTION_RECONCILE.equals(action)) {
+            if (WidgetRefreshStatus.reconcile(context)) WidgetRenderer.updateAll(context);
         }
     }
 }

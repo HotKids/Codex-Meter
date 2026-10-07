@@ -45,7 +45,9 @@ public final class ReleaseNotesMarkdown {
                 index++;
             } else if (headingLevel > 0) {
                 String text = trimmed.substring(headingLevel).trim();
-                html.append("<p><b>").append(inline(text)).append("</b></p>");
+                html.append("<h").append(headingLevel).append('>')
+                        .append(inline(text))
+                        .append("</h").append(headingLevel).append('>');
                 index++;
             } else if (isUnorderedItem(trimmed)) {
                 index = appendList(html, lines, index, false);

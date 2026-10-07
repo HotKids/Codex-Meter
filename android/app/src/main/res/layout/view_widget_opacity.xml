@@ -12,6 +12,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:fontFamily="sec"
+        android:labelFor="@id/opacity_slider"
         android:text="@string/widget_opacity"
         android:textColor="?android:textColorPrimary"
         android:textSize="17sp" />
@@ -33,7 +34,7 @@
 
         <FrameLayout
             android:layout_width="0dp"
-            android:layout_height="32dp"
+            android:layout_height="48dp"
             android:layout_weight="1">
 
             <View
@@ -71,7 +72,7 @@
             <androidx.appcompat.widget.SeslSeekBar
                 android:id="@+id/opacity_slider"
                 android:layout_width="match_parent"
-                android:layout_height="32dp"
+                android:layout_height="48dp"
                 android:max="2"
                 android:paddingStart="24dp"
                 android:paddingEnd="22dp"

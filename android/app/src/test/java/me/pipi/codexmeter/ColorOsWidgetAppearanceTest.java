@@ -171,7 +171,7 @@ public class ColorOsWidgetAppearanceTest {
             assertEquals(R.drawable.ic_ms_sync_problem,
                     shadowOf(refresh.getDrawable()).getCreatedFromResId());
             assertEquals(app.getString(R.string.widget_card_refresh_failed),
-                    refresh.getContentDescription());
+                    view.findViewById(R.id.md_refresh_button).getContentDescription());
             assertHeaderSharesPanelEdge(view);
             state = new UsageCardState(true, failed.snapshot, null, "", UsageCardFixtures.NOW);
             dispatched(size, options).reapply(app, view);

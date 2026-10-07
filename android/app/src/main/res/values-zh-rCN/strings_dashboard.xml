@@ -154,8 +154,8 @@
     <!-- 首页编辑（DashboardReorderActivity、DashboardSections）。 -->
     <string name="dashboard_edit_hint">拖动排序手柄可调整卡片顺序；关闭开关可隐藏卡片。</string>
     <string name="dashboard_edit_note">更改立即保存，关闭的项目可重新开启。首页仅显示已开启且有可用数据的卡片。</string>
-    <string name="dashboard_edit_show">在首页显示</string>
-    <string name="dashboard_edit_reorder">调整顺序</string>
+    <string name="dashboard_edit_show_section">显示%1$s</string>
+    <string name="dashboard_edit_reorder_section">调整%1$s的顺序</string>
     <string name="dashboard_section_five_hour_title">会话限额</string>
     <string name="dashboard_section_five_hour_summary">5h 会话用量及重置时间</string>
     <string name="dashboard_section_weekly_title">每周限额</string>

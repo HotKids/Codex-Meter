@@ -629,7 +629,7 @@ public class OneUiDialAppearanceTest {
         assertEquals("75%", ((TextView) widget.findViewById(R.id.secondary_samsung_value)).getText());
         RemoteViews cardPreview = manager.getWidgetPreview(cardProvider, Process.myUserHandle(), category);
         assertNotNull(cardPreview);
-        assertEquals(R.layout.widget_material, cardPreview.getLayoutId());
+        assertEquals(R.layout.widget_material_refresh, cardPreview.getLayoutId());
         View card = apply(context, parcel(cardPreview), 170, 170);
         assertCenteredColor(card.findViewById(R.id.md_panel_bg_0), 0xFFF2F2F5);
         assertEquals("76%", ((TextView) card.findViewById(R.id.md_value_0)).getText());
@@ -653,7 +653,7 @@ public class OneUiDialAppearanceTest {
         OneUiWidgetAppearance.publishPreview(context, manager);
         assertEquals("Returning to stock One UI must regenerate its preview", R.layout.widget_oneui_rings,
                 manager.getWidgetPreview(provider, Process.myUserHandle(), category).getLayoutId());
-        assertEquals(R.layout.widget_material,
+        assertEquals(R.layout.widget_material_refresh,
                 manager.getWidgetPreview(cardProvider, Process.myUserHandle(), category).getLayoutId());
     }
 

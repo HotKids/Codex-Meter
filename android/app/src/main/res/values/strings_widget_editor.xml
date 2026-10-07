@@ -19,7 +19,6 @@
     <string name="widget_editor_windows_minimum">Keep at least one item.</string>
     <string name="widget_editor_next_reset">Reset</string>
     <string name="widget_editor_window_missing">%1$s · Not reported right now</string>
-    <string name="widget_editor_show">Show on widget</string>
     <string name="widget_editor_reorder">Reorder</string>
     <string name="widget_editor_appearance">Appearance</string>
     <string name="widget_editor_refresh_hint">Widgets update with usage data. You can also tap the refresh button to refresh manually.</string>

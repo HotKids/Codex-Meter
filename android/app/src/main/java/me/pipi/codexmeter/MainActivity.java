@@ -63,7 +63,6 @@ public final class MainActivity extends AppCompatActivity {
     private final ExecutorService executor = Executors.newSingleThreadExecutor();
     /** Theme inputs this activity was created with; a change on resume recreates it. */
     private String appliedTheme;
-    private boolean appliedMaterialYou;
     private boolean dark;
     private LinearLayout content;
     private SwipeRefreshLayout swipeRefresh;
@@ -101,7 +100,6 @@ public final class MainActivity extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         this.appliedTheme = AppPreferences.getAppTheme(this);
-        this.appliedMaterialYou = AppPreferences.isMaterialYouEnabled(this);
         Ui.applySelectedTheme(this);
         super.onCreate(savedInstanceState);
         if (routeToOnboarding(getIntent())) {
@@ -207,14 +205,12 @@ public final class MainActivity extends AppCompatActivity {
         this.swipeRefresh.setOnRefreshListener(this::refreshFromPull);
     }
 
-    /** True when the theme, dark mode, or Material You setting changed since creation. */
+    /** True when the theme or dark mode changed since creation. */
     private boolean appearanceChanged() {
         String appTheme = AppPreferences.getAppTheme(this);
         boolean isDark = Ui.isDark(this);
-        boolean materialYou = AppPreferences.isMaterialYouEnabled(this);
         return !appTheme.equals(this.appliedTheme)
-                || isDark != this.dark
-                || materialYou != this.appliedMaterialYou;
+                || isDark != this.dark;
     }
 
     @SuppressLint("UnspecifiedRegisterReceiverFlag")
@@ -404,13 +400,13 @@ public final class MainActivity extends AppCompatActivity {
         Button signIn = Ui.nativePrimaryButton(this, getString(AppPreferences.isOAuthPending(this)
                 ? R.string.dashboard_sign_in_continue : R.string.dashboard_sign_in));
         signIn.setOnClickListener(view -> startOrContinueSignIn());
-        this.content.addView(signIn, new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60)));
+        this.content.addView(signIn, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         Ui.addSpacer(this.content, SECTION_SPACING_DP);
     }
 
     private void addEmptyDashboardHint() {
         TextView empty = Ui.text(this, getString(R.string.dashboard_empty),
-                14.0f, Ui.secondaryText(this, this.dark));
+                14.0f, Ui.secondaryText(this.dark));
         empty.setGravity(Gravity.CENTER);
         this.content.addView(empty, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
     }
@@ -424,7 +420,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView summary = Ui.text(this, updateSummary(release, returnToStable), 13,
-                Ui.secondaryText(this, this.dark));
+                Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams summaryParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(this, 7), 0, Ui.dp(this, 14));
@@ -432,7 +428,7 @@ public final class MainActivity extends AppCompatActivity {
         Button update = Ui.nativePrimaryButton(this, getString(R.string.dashboard_update_review));
         update.setOnClickListener(view -> startActivity(new Intent(this, UpdateActivity.class)
                 .putExtra(UpdateActivity.EXTRA_VERSION, release.version)));
-        card.addView(update, new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60)));
+        card.addView(update, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));
         return card;
     }
 
@@ -574,7 +570,7 @@ public final class MainActivity extends AppCompatActivity {
         titleParams.setMargins(Ui.dp(this, 12), 0, Ui.dp(this, 12), 0);
         card.addView(title, titleParams);
         TextView detail = Ui.text(this, getString(R.string.dashboard_history_card_detail),
-                12, Ui.secondaryText(this, this.dark));
+                12, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(Ui.dp(this, 12), Ui.dp(this, 4), Ui.dp(this, 12), Ui.dp(this, 4));
@@ -604,7 +600,7 @@ public final class MainActivity extends AppCompatActivity {
 
         if (!hasCharts) {
             TextView waiting = Ui.text(this, getString(R.string.dashboard_history_card_waiting),
-                    12, Ui.secondaryText(this, this.dark));
+                    12, Ui.secondaryText(this.dark));
             LinearLayout.LayoutParams waitingParams =
                     new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             waitingParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 8),
@@ -617,7 +613,7 @@ public final class MainActivity extends AppCompatActivity {
         open.setOnClickListener(
                 view -> Ui.startSecondaryActivity(this, UsageHistoryActivity.class));
         LinearLayout.LayoutParams openParams =
-                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 54));
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         openParams.setMargins(Ui.dp(this, 10), Ui.dp(this, 4), Ui.dp(this, 10), 0);
         card.addView(open, openParams);
         return card;
@@ -640,7 +636,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_credits_detail),
-                12, Ui.secondaryText(this, this.dark));
+                12, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(0, Ui.dp(this, 4), 0, 0);
@@ -668,7 +664,7 @@ public final class MainActivity extends AppCompatActivity {
         TextView valueText = Ui.text(this, value, 17.0f, Ui.mainText(this, this.dark));
         valueText.setTypeface(Ui.mediumTypeface(this));
         labels.addView(valueText);
-        TextView summaryText = Ui.text(this, summary, 13.0f, Ui.secondaryText(this, this.dark));
+        TextView summaryText = Ui.text(this, summary, 13.0f, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams summaryParams =
                 new LinearLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT);
         summaryParams.setMargins(0, Ui.dp(this, 2), 0, 0);
@@ -678,7 +674,7 @@ public final class MainActivity extends AppCompatActivity {
             LinearLayout summaryRow = Ui.horizontal(this, Gravity.CENTER_VERTICAL);
             ImageView clock = new ImageView(this);
             clock.setImageResource(summaryIcon);
-            clock.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(this, this.dark)));
+            clock.setImageTintList(ColorStateList.valueOf(Ui.secondaryText(this.dark)));
             clock.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             LinearLayout.LayoutParams clockParams =
                     new LinearLayout.LayoutParams(Ui.dp(this, 14), Ui.dp(this, 14));
@@ -737,7 +733,7 @@ public final class MainActivity extends AppCompatActivity {
         title.setTypeface(Ui.mediumTypeface(this));
         card.addView(title);
         TextView detail = Ui.text(this, getString(R.string.dashboard_reset_credits_detail),
-                12, Ui.secondaryText(this, this.dark));
+                12, Ui.secondaryText(this.dark));
         LinearLayout.LayoutParams detailParams =
                 new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         detailParams.setMargins(0, Ui.dp(this, 4), 0, 0);
@@ -754,7 +750,7 @@ public final class MainActivity extends AppCompatActivity {
             button.setEnabled(available > 0);
             button.setOnClickListener(view -> openResetCredits());
             LinearLayout.LayoutParams buttonParams =
-                    new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60.0f));
+                    new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
             buttonParams.setMargins(0, Ui.dp(this, 16.0f), 0, 0);
             card.addView(button, buttonParams);
         }

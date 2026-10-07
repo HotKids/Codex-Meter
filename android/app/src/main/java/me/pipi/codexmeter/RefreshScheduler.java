@@ -9,6 +9,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.os.PersistableBundle;
 import java.util.Calendar;
+import java.util.UUID;
 import java.util.concurrent.TimeUnit;
 
 /**
@@ -26,6 +27,7 @@ public final class RefreshScheduler {
     private static final String REASON_PERIODIC = "periodic";
     private static final String REASON_RESET = "reset";
     private static final String EXTRA_REASON = "reason";
+    private static final String EXTRA_GENERATION = "generation";
 
     private static final int PERIODIC_JOB_ID = 73100;
     private static final int IMMEDIATE_JOB_ID = 73101;
@@ -159,20 +161,30 @@ public final class RefreshScheduler {
             return false;
         }
         if (!SecureTokenStore.isSignedIn(app)) {
+            WidgetRefreshStatus.clear(app);
             WidgetRenderer.updateAll(app);
             return true;
         }
         try {
-            JobScheduler scheduler = scheduler(app);
-            JobInfo pending = scheduler == null ? null : scheduler.getPendingJob(IMMEDIATE_JOB_ID);
-            boolean manualFeedback = manual || (pending != null
-                    && REASON_MANUAL.equals(reason(pending.getExtras())));
-            DiagnosticLog.info(app, "scheduler", "immediate_refresh_requested");
-            return submit(app, baseJob(app, IMMEDIATE_JOB_ID,
-                    manualFeedback ? REASON_MANUAL : REASON_IMMEDIATE)
-                    .setMinimumLatency(0L)
-                    .setOverrideDeadline(IMMEDIATE_DEADLINE_MS)
-                    .build());
+            boolean accepted;
+            boolean refreshing;
+            synchronized (WidgetRefreshStatus.class) {
+                JobScheduler scheduler = scheduler(app);
+                JobInfo pending = scheduler == null ? null : scheduler.getPendingJob(IMMEDIATE_JOB_ID);
+                boolean manualFeedback = manual || (pending != null
+                        && REASON_MANUAL.equals(reason(pending.getExtras())));
+                refreshing = manual || WidgetRefreshStatus.isRefreshing(app);
+                DiagnosticLog.info(app, "scheduler", "immediate_refresh_requested");
+                JobInfo job = baseJob(app, IMMEDIATE_JOB_ID,
+                        manualFeedback ? REASON_MANUAL : REASON_IMMEDIATE)
+                        .setMinimumLatency(0L)
+                        .setOverrideDeadline(IMMEDIATE_DEADLINE_MS)
+                        .build();
+                accepted = submit(app, job);
+                if (accepted && refreshing) WidgetRefreshStatus.queued(app, job);
+            }
+            if (accepted && refreshing) WidgetRenderer.updateAll(app);
+            return accepted;
         } catch (RuntimeException e) {
             return failed(app, e);
         }
@@ -207,26 +219,36 @@ public final class RefreshScheduler {
         if (app == null) {
             return;
         }
+        boolean feedbackEnded = false;
         try {
-            JobScheduler scheduler = scheduler(app);
-            if (scheduler == null) {
-                return;
+            synchronized (WidgetRefreshStatus.class) {
+                feedbackEnded = WidgetRefreshStatus.clear(app);
+                JobScheduler scheduler = scheduler(app);
+                if (scheduler == null) {
+                    return;
+                }
+                scheduler.cancel(PERIODIC_JOB_ID);
+                scheduler.cancel(IMMEDIATE_JOB_ID);
+                scheduler.cancel(RESET_JOB_ID);
+                scheduler.cancel(SHORT_JOB_ID_A);
+                scheduler.cancel(SHORT_JOB_ID_B);
+                AppPreferences.setSchedulerError(app, "");
+                DiagnosticLog.info(app, "scheduler", "all_refresh_jobs_cancelled");
             }
-            scheduler.cancel(PERIODIC_JOB_ID);
-            scheduler.cancel(IMMEDIATE_JOB_ID);
-            scheduler.cancel(RESET_JOB_ID);
-            scheduler.cancel(SHORT_JOB_ID_A);
-            scheduler.cancel(SHORT_JOB_ID_B);
-            AppPreferences.setSchedulerError(app, "");
-            DiagnosticLog.info(app, "scheduler", "all_refresh_jobs_cancelled");
         } catch (RuntimeException e) {
             failed(app, e);
+        } finally {
+            if (feedbackEnded) WidgetRenderer.updateAll(app);
         }
     }
 
     /** The scheduling reason stored in a refresh job's extras, or "" when absent. */
     static String reason(PersistableBundle extras) {
         return extras == null ? "" : extras.getString(EXTRA_REASON, "");
+    }
+
+    static String generation(PersistableBundle extras) {
+        return extras == null ? "" : extras.getString(EXTRA_GENERATION, "");
     }
 
     private static boolean submit(Context context, JobInfo job) {
@@ -256,6 +278,7 @@ public final class RefreshScheduler {
     private static JobInfo.Builder baseJob(Context context, int jobId, String reason) {
         PersistableBundle extras = new PersistableBundle();
         extras.putString(EXTRA_REASON, reason);
+        extras.putString(EXTRA_GENERATION, UUID.randomUUID().toString());
         return new JobInfo.Builder(jobId,
                 new ComponentName(context, UsageRefreshJobService.class))
                 .setRequiredNetworkType(JobInfo.NETWORK_TYPE_ANY)

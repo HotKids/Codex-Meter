@@ -1,6 +1,7 @@
 package me.pipi.codexmeter;
 
 import static android.view.ViewGroup.LayoutParams.MATCH_PARENT;
+import static android.view.ViewGroup.LayoutParams.WRAP_CONTENT;
 
 import androidx.appcompat.app.AlertDialog;
 import android.content.Context;
@@ -196,7 +197,7 @@ public final class ResetCreditActivity extends AppCompatActivity {
                 : R.string.alerts_reset_credits_none_available));
         this.useButton.setEnabled(available > 0 && SecureTokenStore.isSignedIn(this));
         LinearLayout.LayoutParams params =
-                new LinearLayout.LayoutParams(MATCH_PARENT, Ui.dp(this, 60.0f));
+                new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT);
         params.setMargins(0, Ui.dp(this, 22.0f), 0, Ui.dp(this, 8.0f));
         this.useButton.setOnClickListener(view -> confirmUse());
         this.content.addView(this.useButton, params);

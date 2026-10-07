@@ -69,7 +69,8 @@ public final class WidgetRenderer {
         }
     }
 
-    public static void update(Context context, AppWidgetManager manager, int appWidgetId) {
+    /** Serializes state capture and host publication so an older busy render cannot win last. */
+    public static synchronized void update(Context context, AppWidgetManager manager, int appWidgetId) {
         if (context == null || manager == null
                 || appWidgetId == AppWidgetManager.INVALID_APPWIDGET_ID) {
             return;

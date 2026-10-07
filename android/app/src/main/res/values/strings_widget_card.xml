@@ -17,8 +17,9 @@
     <string name="widget_card_resetting_soon">Resetting soon</string>
 
     <!-- States. -->
-    <string name="widget_card_sign_in">Open app to sign in</string>
+    <string name="widget_card_sign_in">Not signed in</string>
     <string name="widget_card_waiting">Waiting for data</string>
+    <string name="widget_card_refreshing">Refreshing</string>
     <string name="widget_card_refresh_failed">Refresh failed</string>
     <string name="widget_card_refresh_failed_cached">Refresh failed · showing cached data</string>
     <string name="widget_card_stale">Data is out of date</string>

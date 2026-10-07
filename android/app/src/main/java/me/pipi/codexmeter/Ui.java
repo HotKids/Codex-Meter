@@ -96,9 +96,7 @@ public final class Ui {
         if (activity instanceof AppCompatActivity) {
             ((AppCompatActivity) activity).getDelegate().setLocalNightMode(nightModeFor(appTheme));
         }
-        activity.setTheme(AppPreferences.isMaterialYouEnabled(activity)
-                ? R.style.AppTheme_MaterialYou
-                : R.style.AppTheme);
+        activity.setTheme(R.style.AppTheme_MaterialYou);
     }
 
     private static int nightModeFor(String appTheme) {
@@ -254,6 +252,10 @@ public final class Ui {
         }
     }
 
+    public static int secondaryText(boolean dark) {
+        return dark ? Color.rgb(183, 186, 194) : Color.rgb(132, 132, 135);
+    }
+
     public static int divider(Context context, boolean dark) {
         return context.getColor(dev.oneuiproject.oneui.design.R.color.oui_des_list_divider_color);
     }
@@ -264,12 +266,8 @@ public final class Ui {
     }
 
     public static int accent(Context context, boolean dark) {
-        int oneUi = oneUiAccent(dark);
-        if (AppPreferences.isMaterialYouEnabled(context)) {
-            // Material You system accents; fall back to One UI blues when unavailable.
-            return systemColor(context, dark ? "system_accent1_200" : "system_accent1_600", oneUi);
-        }
-        return oneUi;
+        return systemColor(context, dark ? "system_accent1_200" : "system_accent1_600",
+                oneUiAccent(dark));
     }
 
     public static int desaturatedAccent(Context context, boolean dark) {
@@ -487,10 +485,12 @@ public final class Ui {
     }
 
     private static void applyDynamicPrimaryText(Button button, Context context) {
-        if (AppPreferences.isMaterialYouEnabled(context)) {
-            // The library's white label cannot contrast with pale dynamic accents in dark mode.
-            button.setTextColor(onAccent(context, isDark(context)));
-        }
+        // The library's white label cannot contrast with pale dynamic accents in dark mode.
+        int disabled = button.getTextColors().getColorForState(
+                new int[]{-android.R.attr.state_enabled}, button.getCurrentTextColor());
+        button.setTextColor(new ColorStateList(
+                new int[][]{new int[]{-android.R.attr.state_enabled}, new int[0]},
+                new int[]{disabled, onAccent(context, isDark(context))}));
     }
 
     /** Borderless-looking pill used for toolbar-style actions. */

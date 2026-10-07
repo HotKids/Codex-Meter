@@ -15,8 +15,9 @@
     <string name="widget_card_resetting_soon">即将重置</string>
 
 
-    <string name="widget_card_sign_in">打开应用以登录</string>
-    <string name="widget_card_waiting">正在等待数据…</string>
+    <string name="widget_card_sign_in">尚未登录</string>
+    <string name="widget_card_waiting">等待数据</string>
+    <string name="widget_card_refreshing">正在刷新</string>
     <string name="widget_card_refresh_failed">刷新失败</string>
     <string name="widget_card_refresh_failed_cached">刷新失败 · 显示缓存数据</string>
     <string name="widget_card_stale">数据较旧</string>

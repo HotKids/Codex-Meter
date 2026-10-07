@@ -443,6 +443,64 @@ public class WidgetConfigActivityTest {
 
     @Test
     @Config(qualifiers = "zh-rCN")
+    public void switchesNameTheirMeterAfterRebindingAndBackgroundNamesItsSetting()
+            throws Exception {
+        saveSelection(WidgetMeters.FIVE_HOUR, WidgetMeters.WEEKLY,
+                WidgetMeters.NEXT_RESET, WidgetOptions.USAGE_CREDITS);
+        WidgetConfigActivity activity = openEditor();
+        RecyclerView list = findWindowList(activity.findViewById(android.R.id.content));
+        String[] titles = {activity.getString(R.string.widget_editor_five_hour_limit),
+                activity.getString(R.string.widget_editor_weekly_limit),
+                activity.getString(R.string.widget_editor_reset_time),
+                activity.getString(R.string.widget_editor_remaining_credits)};
+        for (int position = 0; position < titles.length; position++) {
+            rowSummary(activity, position);
+            SwitchCompat toggle = findToggle(list.findViewHolderForAdapterPosition(position)
+                    .itemView);
+            assertEquals("Each switch must identify the meter it controls", titles[position],
+                    toggle.getContentDescription());
+        }
+        List<String> order = windowOrder(activity);
+        order.add(0, order.remove(order.size() - 1));
+        list.getAdapter().notifyDataSetChanged();
+        rowSummary(activity, 0);
+        SwitchCompat rebound = findToggle(list.findViewHolderForAdapterPosition(0).itemView);
+        assertEquals("Rebinding must update the switch name with the reordered meter", titles[3],
+                rebound.getContentDescription());
+        assertEquals(activity.getString(R.string.widget_background),
+                backgroundSwitch(activity).getContentDescription());
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN-night")
+    public void opacitySliderHasALabeledTouchTargetWithoutEnlargingItsVisualThumb()
+            throws Exception {
+        WidgetConfigActivity activity = openEditor();
+        SeslSeekBar slider = activity.findViewById(R.id.opacity_slider);
+        ViewGroup touchArea = (ViewGroup) slider.getParent();
+        float density = activity.getResources().getDisplayMetrics().density;
+        int width = Math.round(280f * density);
+        touchArea.measure(View.MeasureSpec.makeMeasureSpec(width, View.MeasureSpec.EXACTLY),
+                View.MeasureSpec.makeMeasureSpec(0, View.MeasureSpec.UNSPECIFIED));
+        touchArea.layout(0, 0, width, touchArea.getMeasuredHeight());
+        assertTrue("The slider must provide at least a 48dp vertical touch target",
+                slider.getHeight() >= Math.round(48f * density));
+        assertTrue("The touch target must fit its parent",
+                touchArea.getHeight() >= slider.getHeight());
+        TextView label = findText(activity.findViewById(android.R.id.content),
+                activity.getString(R.string.widget_opacity));
+        assertNotNull(label);
+        assertEquals("The visible label must name the adjustable control", slider.getId(),
+                label.getLabelFor());
+        View thumb = touchArea.findViewById(R.id.opacity_thumb_visual);
+        assertEquals("Expanding the target must keep the visual thumb at its existing size",
+                Math.round(20f * density), thumb.getHeight());
+        assertEquals("The visual thumb remains centered in the expanded target",
+                (touchArea.getHeight() - thumb.getHeight()) / 2, thumb.getTop());
+    }
+
+    @Test
+    @Config(qualifiers = "zh-rCN")
     public void colorStyleChoicesSitBelowBackgroundAndRefreshThePreview() throws Exception {
         bindProvider(CodexUsageWidget.class, 180);
         WidgetConfigActivity activity = openEditor();
@@ -462,13 +520,13 @@ public class WidgetConfigActivityTest {
         AlertDialog dialog = openColorStyleChoices(activity);
         assertEquals(0, dialog.getListView().getCheckedItemPosition());
         assertEquals("自动", dialog.getListView().getAdapter().getItem(0));
-        assertEquals("原生", dialog.getListView().getAdapter().getItem(1));
+        assertEquals("质感", dialog.getListView().getAdapter().getItem(1));
         assertEquals("经典", dialog.getListView().getAdapter().getItem(2));
         dialog.getListView().performItemClick(null, 1, 1);
         org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle();
         assertFalse(dialog.isShowing());
         assertEquals(WidgetOptions.COLOR_NATIVE, currentOptions(activity).colorStyle);
-        assertNotNull(findText(styleRow, "原生"));
+        assertNotNull(findText(styleRow, "质感"));
         assertNotSame(automaticPreview, preview.getChildAt(1));
         assertEquals(before.opacity, currentOptions(activity).opacity);
         assertEquals(before.layout, currentOptions(activity).layout);
@@ -611,7 +669,7 @@ public class WidgetConfigActivityTest {
     private static void assertNativeColorDraft(WidgetConfigActivity activity) throws Exception {
         org.robolectric.Shadows.shadowOf(Looper.getMainLooper()).idle();
         assertEquals(WidgetOptions.COLOR_NATIVE, currentOptions(activity).colorStyle);
-        assertNotNull(findText(colorStyleRow(activity), "原生"));
+        assertNotNull(findText(colorStyleRow(activity), "质感"));
         AlertDialog dialog = openColorStyleChoices(activity);
         assertEquals(1, dialog.getListView().getCheckedItemPosition());
         dialog.getButton(DialogInterface.BUTTON_NEGATIVE).performClick();

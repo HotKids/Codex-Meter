@@ -133,7 +133,7 @@ public class WidgetModuleNavigationTest {
                 "Synthetic refresh failure", UsageCardFixtures.NOW);
         View card = card(350, failed, UsageCardFixtures.keys(WidgetMeters.WEEKLY));
         assertClickSection(card, android.R.id.background, null);
-        assertRefresh(card, R.id.md_refresh);
+        assertRefresh(card, R.id.md_refresh_button);
         assertRefresh(card, R.id.md_status);
     }
 

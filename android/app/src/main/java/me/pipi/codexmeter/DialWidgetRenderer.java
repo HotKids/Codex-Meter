@@ -13,8 +13,6 @@ import java.util.Locale;
 
 /** Two-column, one-row dials using upstream arcs and the Clear system palette. */
 final class DialWidgetRenderer {
-    private static final int[] DIAL_COLORS = {
-            R.color.widget_material_track, R.color.widget_material_fill};
     private static final int[][] RING_ARC_LAYERS = {
             {R.id.primary_samsung_track, R.id.primary_samsung_fill},
             {R.id.secondary_samsung_track, R.id.secondary_samsung_fill}};
@@ -69,7 +67,9 @@ final class DialWidgetRenderer {
                 } else if (coloredFill) {
                     views.setInt(viewId, "setColorFilter", Color.TRANSPARENT);
                 } else {
-                    views.setColor(viewId, "setColorFilter", DIAL_COLORS[layer]);
+                    views.setColor(viewId, "setColorFilter",
+                            WidgetUsageColors.materialColor(meter.window,
+                                    WidgetMeters.FIVE_HOUR.equals(key) || WidgetMeters.WEEKLY.equals(key)));
                 }
             }
             String value = WidgetMeters.NEXT_RESET.equals(key) && meter.resetAtMillis > state.nowMillis

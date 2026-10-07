@@ -548,6 +548,13 @@ public class SettingsAccountCardTest {
                 .getPreferenceAdapterPosition(fragment.findPreference("account_card"));
         RecyclerView.ViewHolder holder = list.findViewHolderForAdapterPosition(position);
         assertNotNull(holder);
+        TextView title = holder.itemView.findViewById(R.id.settings_account_title);
+        View identity = (View) title.getParent();
+        View plan = holder.itemView.findViewById(R.id.settings_account_plan);
+        assertEquals("Plan and reauthentication must stay beside the account identity",
+                identity.getParent(), plan.getParent());
+        assertTrue("The trailing account label must not cover the identity",
+                plan.getLeft() >= identity.getRight());
         return holder.itemView;
     }
 

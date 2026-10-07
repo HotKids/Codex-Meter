@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 
 import android.app.Application;
 import android.content.Context;
+import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.os.Parcel;
@@ -53,7 +54,7 @@ public class ClassicWidgetProgressTest {
     }
 
     @Test
-    public void nativeModeRetainsDynamicFillAfterReapplyingOverClassicMode() {
+    public void nativeModeUsesSystemSeverityAfterReapplyingOverClassicMode() {
         Context context = RuntimeEnvironment.getApplication();
         for (boolean dial : new boolean[] {false, true}) {
             int width = dial ? 180 : 170;
@@ -65,8 +66,99 @@ public class ClassicWidgetProgressTest {
                     .reapply(context, widget);
             layout(widget, width, height);
             ImageView fill = widget.findViewById(dial ? R.id.primary_samsung_fill : R.id.md_fill_0);
-            assertStatusColor("native", fill, context.getColor(R.color.widget_material_fill));
+            assertStatusColor("native", fill, context.getColor(android.R.color.system_accent3_600));
         }
+    }
+
+    @Test
+    public void materialCardsAndDialsUseAllThreeWallpaperPalettes() throws Exception {
+        assertMaterialSeverity(false);
+        writeMaterialPreview("light");
+    }
+
+    @Test
+    @Config(qualifiers = "night-mdpi")
+    public void darkMaterialCardsAndDialsUseTheLightWallpaperTones() throws Exception {
+        assertMaterialSeverity(true);
+        writeMaterialPreview("dark");
+    }
+
+    @Test
+    public void materialResetCountdownKeepsPrimaryWhenUsageIsCritical() {
+        assertMaterialResetColor(false);
+    }
+
+    @Test
+    @Config(qualifiers = "night-mdpi")
+    public void darkMaterialResetCountdownKeepsPrimaryWhenUsageIsCritical() {
+        assertMaterialResetColor(true);
+    }
+
+    @Test
+    public void serializedMaterialSeverityResolvesTheApplyingHostsNightPalette() {
+        Context app = RuntimeEnvironment.getApplication();
+        Configuration night = new Configuration(app.getResources().getConfiguration());
+        night.uiMode = (night.uiMode & ~Configuration.UI_MODE_NIGHT_MASK)
+                | Configuration.UI_MODE_NIGHT_YES;
+        Context host = app.createConfigurationContext(night);
+        int[] used = {20, 60, 85};
+        int[] colors = {android.R.color.system_accent1_200,
+                android.R.color.system_accent2_200, android.R.color.system_accent3_200};
+        for (boolean dial : new boolean[] {false, true}) {
+            for (int tier = 0; tier < used.length; tier++) {
+                RemoteViews remote = remote(app, WidgetOptions.COLOR_NATIVE, used[tier], dial,
+                        WidgetMeters.WEEKLY);
+                View applied = remote.apply(host, new FrameLayout(host));
+                layout(applied, dial ? 180 : 170, dial ? 90 : 218);
+                assertStatusColor("Host resolves tier " + tier, applied.findViewById(dial
+                        ? R.id.primary_samsung_fill : R.id.md_fill_0), host.getColor(colors[tier]));
+            }
+        }
+    }
+
+    private static void assertMaterialSeverity(boolean dark) {
+        Context context = RuntimeEnvironment.getApplication();
+        int[] colors = dark ? new int[] {android.R.color.system_accent1_200,
+                android.R.color.system_accent2_200, android.R.color.system_accent3_200}
+                : new int[] {android.R.color.system_accent1_600,
+                        android.R.color.system_accent2_600, android.R.color.system_accent3_600};
+        for (boolean dial : new boolean[] {false, true}) {
+            for (String key : new String[] {WidgetMeters.FIVE_HOUR, WidgetMeters.WEEKLY}) {
+                View retained = render(context, WidgetOptions.COLOR_NATIVE, 1, dial, key);
+                for (int used : new int[] {59, 60, 84, 85, 99, 60, 59}) {
+                    remote(context, WidgetOptions.COLOR_NATIVE, used, dial, key)
+                            .reapply(context, retained);
+                    layout(retained, dial ? 180 : 170, dial ? 90 : 218);
+                    int expected = context.getColor(colors[used >= 85 ? 2 : used >= 60 ? 1 : 0]);
+                    int fillId = dial ? R.id.primary_samsung_fill : R.id.md_fill_0;
+                    String label = "used=" + used + ", dial=" + dial + ", key=" + key;
+                    assertStatusColor(label + " reapplied", retained.findViewById(fillId), expected);
+                    assertStatusColor(label + " fresh", render(context, WidgetOptions.COLOR_NATIVE,
+                            used, dial, key).findViewById(fillId), expected);
+                }
+            }
+        }
+    }
+
+    private static void assertMaterialResetColor(boolean dark) {
+        Context context = RuntimeEnvironment.getApplication();
+        for (boolean dial : new boolean[] {false, true}) {
+            View widget = render(context, WidgetOptions.COLOR_NATIVE, 99, dial,
+                    WidgetMeters.NEXT_RESET);
+            assertStatusColor("Material reset", widget.findViewById(dial
+                    ? R.id.primary_samsung_fill : R.id.md_fill_0), context.getColor(dark
+                    ? android.R.color.system_accent1_200 : android.R.color.system_accent1_600));
+        }
+    }
+
+    private static void writeMaterialPreview(String theme) throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        PreviewSheet sheet = new PreviewSheet("material-severity-" + theme);
+        for (int used : new int[] {20, 60, 85}) {
+            sheet.add("Material remaining " + (100 - used), render(context,
+                    WidgetOptions.COLOR_NATIVE, used, false, WidgetMeters.WEEKLY), 170, 218);
+        }
+        assertTrue(sheet.writeSheet().isFile());
     }
 
     @Test

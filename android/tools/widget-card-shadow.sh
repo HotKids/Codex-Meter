@@ -46,6 +46,8 @@ elements = {element.get(android + "id", "").split("/")[-1]: element
             for element in root.iter()}
 
 for element in root.iter():
+    if element.get(android + "id") == "@+id/md_refresh_button":
+        continue
     for attribute, value in list(element.attrib.items()):
         if re.fullmatch(r"[\d.]+dp", value):
             element.set(attribute, f"{float(value[:-2]) * scale:g}dp")
@@ -59,9 +61,30 @@ def set_attrs(identifier, **attributes):
 set_attrs("md_surface", tint="@color/widget_material_surface")
 set_attrs("md_logo", tint="@color/widget_material_accent")
 set_attrs("md_refresh", tint="@color/widget_material_text")
-refresh_shift = metric("ICON") * scale * metric("REFRESH_END_INSET")
-set_attrs("md_refresh", paddingStart=f"{refresh_shift:g}dp",
-          paddingEnd=f"{-refresh_shift:g}dp", layout_marginStart=f"{metric('HEADER_SPACING'):g}dp")
+# A resource-width anchor keeps the picker icon on the host's actual corner axis.
+refresh_icon = copy.deepcopy(elements["md_refresh"])
+elements["md_refresh"].attrib.pop(android + "id")
+elements["md_refresh"].set(android + "visibility", "invisible")
+refresh_icon.set(android + "layout_gravity", "center")
+refresh_icon.set(android + "padding", "0dp")
+refresh_icon.attrib.pop(android + "layout_marginStart", None)
+refresh_top_center = (metric("PADDING") + metric("HEADER_HEIGHT") / 2) * scale
+refresh_size = min(metric("REFRESH_TARGET"), 2 * min(refresh_top_center,
+                   (metric("HEADER_HEIGHT") / 2 + metric("FIRST_ROW_GAP")) * scale))
+set_attrs("md_refresh_button", layout_width=f"{refresh_size:g}dp", layout_height=f"{refresh_size:g}dp",
+          layout_gravity="top|start", layout_marginStart=f"{-refresh_size / 2:g}dp",
+          layout_marginTop=f"{refresh_top_center - refresh_size / 2:g}dp")
+elements["md_refresh_button"].attrib.pop(android + "layout_marginEnd", None)
+elements["md_refresh_button"].append(refresh_icon)
+root.remove(elements["md_refresh_button"])
+anchor = ET.SubElement(root, "FrameLayout", {
+    android + "id": "@+id/md_refresh_corner_anchor",
+    android + "layout_width": "@dimen/widget_card_corner_radius",
+    android + "layout_height": "match_parent",
+    android + "layout_gravity": "top|end",
+    android + "clipChildren": "false",
+    android + "clipToPadding": "false"})
+anchor.append(elements["md_refresh_button"])
 set_attrs("md_header", layout_marginStart="0dp")
 set_attrs("md_title", text="@string/widget_preview_plan",
           textSize=f"{metric('VALUE_TEXT') * text_scale:g}dp",
@@ -136,6 +159,7 @@ ET.indent(samsung_card, space="    ")
 # ColorOS measures generated previews without constraints and never enlarges them.
 # Match Calendar's 146dp square preview without changing the placed-widget contract.
 classic_card(root)
+anchor.set(android + "layout_width", "@dimen/widget_coloros_card_radius")
 root.set(android + "minWidth", "146dp")
 root.set(android + "minHeight", "146dp")
 (layouts / "widget_coloros_card_preview.xml").write_text(
