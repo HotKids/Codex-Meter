@@ -16,6 +16,7 @@ import android.util.Log;
 import android.util.TypedValue;
 import android.view.View;
 import android.widget.RemoteViews;
+import java.util.List;
 import dev.bennett.codexmeter.UsageSnapshot;
 import dev.bennett.codexmeter.UsageWindow;
 import dev.bennett.codexmeter.WidgetMeters;
@@ -159,11 +160,16 @@ final class OneUiWidgetAppearance {
             WidgetOptions options = new WidgetOptions("auto", "system", "app", 100,
                     "hidden", "remaining").withColorStyle(WidgetOptions.COLOR_CLASSIC);
             UsageCardState state = new UsageCardState(true, sample, null, "", 0L);
+            UsageCardState dialState = new UsageCardState(true,
+                    new UsageSnapshot("plus", true, false,
+                            new UsageWindow(24, 18000L, 0L, 13500L), sample.weekly, 0L),
+                    null, "", 0L);
             for (Class<?> type : new Class<?>[] {CodexDialWidget.class, CodexUsageWidget.class}) {
                 boolean dial = type == CodexDialWidget.class;
                 RemoteViews preview = dial ? DialWidgetRenderer.build(context,
-                        AppWidgetManager.INVALID_APPWIDGET_ID, options, WidgetMeters.defaultVisible(),
-                        state, 180f, 90f) : MaterialCardRenderer.build(context,
+                        AppWidgetManager.INVALID_APPWIDGET_ID, options,
+                        List.of(WidgetMeters.FIVE_HOUR, WidgetMeters.NEXT_RESET),
+                        dialState, 180f, 90f) : MaterialCardRenderer.build(context,
                         AppWidgetManager.INVALID_APPWIDGET_ID, options, WidgetMeters.defaultVisible(),
                         state, 170f, 170f);
                 applySurface(context, preview, dial, options.opacity);

@@ -322,6 +322,8 @@ public class OneUiDialAppearanceTest {
                 assertEquals(context.getColor(R.color.widget_oneui_surface),
                         ((ColorDrawable) preview.getBackground()).getColor());
                 if (dial) {
+                    assertEquals("76%", ((TextView) preview.findViewById(R.id.primary_samsung_value)).getText());
+                    assertEquals("3h 45m", ((TextView) preview.findViewById(R.id.secondary_samsung_value)).getText());
                     for (int id : new int[] {R.id.primary_samsung_value, R.id.secondary_samsung_value}) {
                         assertPickerTextVisible(preview.findViewById(id));
                     }
@@ -626,7 +628,7 @@ public class OneUiDialAppearanceTest {
         assertEquals(R.layout.widget_oneui_rings, preview.getLayoutId());
         View widget = apply(context, parcel(preview), 180, 90);
         assertEquals("76%", ((TextView) widget.findViewById(R.id.primary_samsung_value)).getText());
-        assertEquals("75%", ((TextView) widget.findViewById(R.id.secondary_samsung_value)).getText());
+        assertEquals("3h 45m", ((TextView) widget.findViewById(R.id.secondary_samsung_value)).getText());
         RemoteViews cardPreview = manager.getWidgetPreview(cardProvider, Process.myUserHandle(), category);
         assertNotNull(cardPreview);
         assertEquals(R.layout.widget_material_refresh, cardPreview.getLayoutId());

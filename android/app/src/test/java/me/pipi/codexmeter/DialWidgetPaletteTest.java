@@ -10,6 +10,7 @@ import static org.junit.Assert.assertTrue;
 import android.app.Application;
 import android.content.Context;
 import android.content.res.Configuration;
+import android.content.res.XmlResourceParser;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -58,10 +59,18 @@ public class DialWidgetPaletteTest {
     }
 
     @Test
-    public void pickerShowsArcsWithoutAProviderUpdate() {
+    public void pickerShowsArcsWithoutAProviderUpdate() throws Exception {
         Context host = themedContext(Configuration.UI_MODE_NIGHT_NO);
-        RemoteViews preview = new RemoteViews(host.getPackageName(), R.layout.widget_rings);
+        int layout;
+        try (XmlResourceParser metadata = host.getResources().getXml(R.xml.codex_dial_widget_info)) {
+            while (metadata.next() != XmlResourceParser.START_TAG) { }
+            layout = metadata.getAttributeResourceValue(
+                    "http://schemas.android.com/apk/res/android", "previewLayout", 0);
+        }
+        RemoteViews preview = new RemoteViews(host.getPackageName(), layout);
         View applied = apply(host, preview);
+        assertEquals("76%", ((TextView) applied.findViewById(R.id.primary_samsung_value)).getText());
+        assertEquals("3h 45m", ((TextView) applied.findViewById(R.id.secondary_samsung_value)).getText());
         for (int id : new int[] {R.id.primary_samsung_progress, R.id.secondary_samsung_progress}) {
             Bitmap arc = draw(applied.findViewById(id));
             assertTrue("The static picker needs a complete track",

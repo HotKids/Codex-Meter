@@ -167,6 +167,18 @@ root.set(android + "minHeight", "146dp")
 (layouts / "widget_coloros_card_preview.xml").write_text(
     output + ET.tostring(root, encoding="unicode") + "\n")
 
+# Keep picker samples separate from the initial and lock-screen layouts.
+dial_preview = ET.parse(layouts / "widget_rings.xml").getroot()
+preview_nodes = {element.get(android + "id", "").split("/")[-1]: element
+                 for element in dial_preview.iter()}
+preview_nodes["secondary_samsung_value"].set(android + "text", "@string/widget_sample_reset_value")
+preview_nodes["secondary_samsung_icon"].set(android + "src", "@drawable/widget_dial_icon_reset")
+preview_nodes["secondary_samsung_icon"].set(android + "contentDescription", "@string/widget_editor_next_reset")
+ET.indent(dial_preview, space="    ")
+(layouts / "widget_dial_preview.xml").write_text(
+    output.replace("widget_material.xml", "widget_rings.xml")
+    + ET.tostring(dial_preview, encoding="unicode") + "\n")
+
 # Populate the common One UI dial layout at Samsung's 125x52dp Small preview size.
 # Its padding, arc, icon and value geometry follow OneUiWidgetAppearance.sizeDial.
 dial_root = ET.parse(layouts / "widget_oneui_rings.xml").getroot()
@@ -210,7 +222,7 @@ for name, fraction in (("track", "1.0"), ("primary", "0.76"), ("secondary", "0.7
         output.replace("widget_material.xml", "widget_dial_preview_track.xml")
         + ET.tostring(vector, encoding="unicode") + "\n")
 
-for section, icon, sample in (("primary", "time", "primary"), ("secondary", "calendar_week", "secondary")):
+for section, icon, sample in (("primary", "time", "primary"), ("secondary", "alarm", "reset")):
     for layer, source in (("track", "track"), ("fill", section)):
         node = dial_nodes[f"{section}_samsung_{layer}"]
         node.set(android + "layout_width", f"{arc_size:g}dp")
@@ -222,6 +234,8 @@ for section, icon, sample in (("primary", "time", "primary"), ("secondary", "cal
     node.set(android + "layout_height", f"{cell_height * icon_fraction:g}dp")
     node.set(android + "layout_marginTop", f"{cell_height * icon_fraction:g}dp")
     node.set(android + "src", f"@drawable/ic_oui_{icon}")
+    if section == "secondary":
+        node.set(android + "contentDescription", "@string/widget_editor_next_reset")
     node = dial_nodes[f"{section}_samsung_value"]
     node.set(android + "layout_width", f"{cell_width:g}dp")
     value_fraction = dial_metric(r"size\(views, VALUES\[index\], cellWidth, cellHeight \* ([\d.]+)f")

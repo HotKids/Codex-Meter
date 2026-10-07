@@ -48,6 +48,7 @@
     <string name="widget_name">Codex Usage</string>
     <string name="widget_sample_primary_value" translatable="false">76%</string>
     <string name="widget_sample_secondary_value" translatable="false">75%</string>
+    <string name="widget_sample_reset_value" translatable="false">3h 45m</string>
     <string name="about_version">Version %1$s</string>
     <string name="about_benit_title" translatable="false">BenIt Buhner</string>
     <string name="about_oneui_title" translatable="false">Tribalfs</string>

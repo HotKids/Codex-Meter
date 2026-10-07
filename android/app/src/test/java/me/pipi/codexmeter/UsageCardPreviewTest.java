@@ -54,15 +54,17 @@ public class UsageCardPreviewTest {
         renderPickerPreview("picker-dark");
     }
 
-    private static void renderPickerPreview(String name) throws Exception {
-        Context context = RuntimeEnvironment.getApplication();
-        int layout;
-        try (XmlResourceParser metadata = context.getResources().getXml(R.xml.codex_widget_info)) {
-            while (metadata.next() != XmlPullParser.START_TAG) {
-            }
-            layout = metadata.getAttributeResourceValue(
+    private static int pickerLayout(Context context, int provider) throws Exception {
+        try (XmlResourceParser metadata = context.getResources().getXml(provider)) {
+            while (metadata.next() != XmlPullParser.START_TAG) { }
+            return metadata.getAttributeResourceValue(
                     "http://schemas.android.com/apk/res/android", "previewLayout", 0);
         }
+    }
+
+    private static void renderPickerPreview(String name) throws Exception {
+        Context context = RuntimeEnvironment.getApplication();
+        int layout = pickerLayout(context, R.xml.codex_widget_info);
         View view = apply(context, new RemoteViews(context.getPackageName(), layout));
         assertEquals("Plus", ((TextView) view.findViewById(R.id.md_title)).getText().toString());
         assertEquals("会话", ((TextView) view.findViewById(R.id.md_name_0)).getText().toString());
@@ -195,14 +197,19 @@ public class UsageCardPreviewTest {
         WidgetOptions options = WidgetOptions.defaults().withVisibleMeters("weekly,next_reset");
         float density = context.getResources().getDisplayMetrics().density;
         PreviewSheet sheet = new PreviewSheet("dials-height");
+        int previewLayout = pickerLayout(context, R.xml.codex_dial_widget_info);
         int shortArcHeight = 0;
         for (int height : new int[] {60, 75, 90}) {
             Rect liveArc = null;
             for (boolean picker : new boolean[] {false, true}) {
                 RemoteViews remote = picker
-                        ? new RemoteViews(context.getPackageName(), R.layout.widget_rings)
+                        ? new RemoteViews(context.getPackageName(), previewLayout)
                         : WidgetRenderer.build(context, 1, options, state, 260f, height, null);
                 ViewGroup view = (ViewGroup) apply(context, remote);
+                if (picker) {
+                    assertEquals("76%", ((TextView) view.findViewById(R.id.primary_samsung_value)).getText());
+                    assertEquals("3h 45m", ((TextView) view.findViewById(R.id.secondary_samsung_value)).getText());
+                }
                 sheet.add((picker ? "picker" : "live") + " dials " + height + "dp",
                         view, px(260, density), px(height, density));
                 ImageView track = view.findViewById(R.id.primary_samsung_track);
@@ -258,10 +265,13 @@ public class UsageCardPreviewTest {
         float density = context.getResources().getDisplayMetrics().density;
         PreviewSheet sheet = new PreviewSheet("dials-width");
         for (int width : new int[] {110, 180}) {
-            for (String keys : new String[] {"weekly", "weekly,next_reset"}) {
+            for (String keys : new String[] {"weekly", "weekly,next_reset", "picker"}) {
                 WidgetOptions options = WidgetOptions.defaults().withVisibleMeters(keys);
-                ViewGroup view = (ViewGroup) apply(context, WidgetRenderer.build(context, 1,
-                        options, state, width, 90f, null));
+                RemoteViews remote = "picker".equals(keys)
+                        ? new RemoteViews(context.getPackageName(),
+                                pickerLayout(context, R.xml.codex_dial_widget_info))
+                        : WidgetRenderer.build(context, 1, options, state, width, 90f, null);
+                ViewGroup view = (ViewGroup) apply(context, remote);
                 sheet.add("dial width " + width + " " + keys, view,
                         px(width, density), px(90, density));
                 for (int id : new int[] {R.id.primary_samsung_value, R.id.secondary_samsung_value}) {
