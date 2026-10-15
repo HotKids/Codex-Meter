@@ -1,6 +1,6 @@
 # Phone icons
 
-Application action and information icons use Material Symbols Outlined, with fill 0,
+Material Symbols action and information icons use the Outlined family, with fill 0,
 weight 400, grade 0 and optical size 24. The Android VectorDrawables are converted
 from Google source commit `737e3324305806514d7909874fa1818ae1808232`:
 https://github.com/google/material-design-icons/tree/737e3324305806514d7909874fa1818ae1808232/symbols/web
@@ -29,9 +29,19 @@ icon comes from the same Google source commit:
 
 - [`stop_circle_24px.svg`](https://github.com/google/material-design-icons/blob/737e3324305806514d7909874fa1818ae1808232/symbols/web/stop_circle/materialsymbolsoutlined/stop_circle_24px.svg)
 
+The sign-in foreground notification uses white `notifications` and `close` vectors
+without a theme tint. The notification path matches `ic_ms_notifications`; the
+cancel action comes from the same Google source commit:
+
+- [`close_24px.svg`](https://github.com/google/material-design-icons/blob/737e3324305806514d7909874fa1818ae1808232/symbols/web/close/materialsymbolsoutlined/close_24px.svg)
+
+Remaining semantic icons from One UI are the history selection check, reset-reminder
+alarm, and the time/calendar/alarm glyphs in desktop and lock-screen dials. The
+reset-credit expiry notification still uses the older reset-arrow vector.
+
 The source SVG viewport starts at y=-960; the vector group translates it by 960.
 The local `ic_ms_*` names isolate app UI replacements from upstream widget and
-notification graphics. Brand marks, notification small icons, contributor avatars,
+notification graphics. Brand marks, branded notification small icons, contributor avatars,
 the launcher and native control indicators retain their own identities. No runtime
 icon font is loaded.
 

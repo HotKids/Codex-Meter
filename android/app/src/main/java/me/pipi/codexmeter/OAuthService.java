@@ -558,10 +558,10 @@ public final class OAuthService extends Service {
         PendingIntent cancel = PendingIntent.getService(this, REQUEST_CANCEL, cancelIntent,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification.Action cancelAction = new Notification.Action.Builder(
-                Icon.createWithResource(this, R.drawable.ic_oui_close),
+                Icon.createWithResource(this, R.drawable.ic_oauth_cancel),
                 getString(R.string.auth_sign_in_notification_cancel), cancel).build();
         Notification.Builder notification = new Notification.Builder(this, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_oui_notification)
+                .setSmallIcon(R.drawable.ic_oauth_notification)
                 .setContentTitle(getString(R.string.auth_sign_in_notification_title))
                 .setContentText(text)
                 .setContentIntent(open)

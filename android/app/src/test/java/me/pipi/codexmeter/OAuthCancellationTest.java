@@ -8,6 +8,7 @@ import static org.junit.Assert.assertTrue;
 import static org.robolectric.Shadows.shadowOf;
 
 import android.app.Application;
+import android.app.Notification;
 import android.content.Context;
 import android.content.Intent;
 import android.net.Uri;
@@ -59,6 +60,9 @@ public class OAuthCancellationTest {
     @Test
     public void cancellationDuringTheExchangeCannotCommitOrBroadcastSuccess() throws Exception {
         try (Flow flow = startCallback()) {
+            Notification notification = shadowOf(flow.service).getLastForegroundNotification();
+            assertEquals(R.drawable.ic_oauth_notification, notification.getSmallIcon().getResId());
+            assertEquals(R.drawable.ic_oauth_cancel, notification.actions[0].getIcon().getResId());
             cancel(flow.service);
             ControlledExchange.release.countDown();
             flow.awaitCompletion();
