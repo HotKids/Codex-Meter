@@ -105,9 +105,11 @@ public class NowBarManagerTextTest {
                 content.getClass(), boolean.class);
         baseBuilder.setAccessible(true);
         Notification notification = ((Notification.Builder) baseBuilder.invoke(null, app,
-                content, true)).build();
+                content, false)).build();
         assertEquals(R.drawable.ic_live_capsule, notification.getSmallIcon().getResId());
-        assertEquals(R.drawable.ic_notification, notification.actions[0].getIcon().getResId());
+        assertEquals(2, notification.actions.length);
+        assertEquals(R.drawable.ic_now_bar_stop, notification.actions[0].getIcon().getResId());
+        assertEquals(R.drawable.ic_now_bar_refresh, notification.actions[1].getIcon().getResId());
         assertNull(notification.getLargeIcon());
         Notification samsung = samsungNotification(content);
         android.graphics.drawable.Icon chip = samsung.extras.getParcelable(

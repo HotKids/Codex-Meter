@@ -21,9 +21,18 @@ fitCenter scale and click target; the shift is mirrored in RTL layouts.
 The default tint follows primary text in light and dark themes. Explicitly disabled
 controls keep their disabled state.
 
+Live-notification actions use notification-specific white `stop_circle` and `sync`
+vectors without a theme tint. Both retain a 24dp canvas; Sync is scaled by 1.25
+around the center to match the stop-circle's 20dp visible bounds. Their system
+button containers and the app/widget icon resources remain unchanged. The stop
+icon comes from the same Google source commit:
+
+- [`stop_circle_24px.svg`](https://github.com/google/material-design-icons/blob/737e3324305806514d7909874fa1818ae1808232/symbols/web/stop_circle/materialsymbolsoutlined/stop_circle_24px.svg)
+
 The source SVG viewport starts at y=-960; the vector group translates it by 960.
 The local `ic_ms_*` names isolate app UI replacements from upstream widget and
-notification graphics. Brand marks, contributor avatars, the launcher and native
-control indicators retain their own identities. No runtime icon font is loaded.
+notification graphics. Brand marks, notification small icons, contributor avatars,
+the launcher and native control indicators retain their own identities. No runtime
+icon font is loaded.
 
 See [Apache-2.0 license](Material-Symbols-LICENSE.txt).

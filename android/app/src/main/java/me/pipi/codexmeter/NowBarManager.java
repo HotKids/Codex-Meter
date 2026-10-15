@@ -547,8 +547,8 @@ public final class NowBarManager {
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         PendingIntent stopIntent = actionIntent(context, REQUEST_STOP, ACTION_STOP);
         PendingIntent refreshIntent = actionIntent(context, REQUEST_REFRESH, ACTION_REFRESH);
-        Icon stopActionIcon = Icon.createWithResource(context, R.drawable.ic_notification);
-        Icon refreshActionIcon = Icon.createWithResource(context, R.drawable.ic_refresh);
+        Icon stopActionIcon = Icon.createWithResource(context, R.drawable.ic_now_bar_stop);
+        Icon refreshActionIcon = Icon.createWithResource(context, R.drawable.ic_now_bar_refresh);
         Notification.Builder builder = new Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_live_capsule)
                 .setContentTitle(context.getString(R.string.alerts_now_bar_title))
