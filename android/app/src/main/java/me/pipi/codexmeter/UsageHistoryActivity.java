@@ -288,7 +288,7 @@ public final class UsageHistoryActivity extends AppCompatActivity {
 
             CardItemView row = Ui.actionRow(this, rowTitle, subtitle, 0, null);
             ImageView selectedIcon = row.getEndImageView();
-            selectedIcon.setImageResource(R.drawable.ic_oui_checkbox_checked_outline);
+            selectedIcon.setImageResource(R.drawable.ic_ms_check_circle);
             selectedIcon.setImageTintList(ColorStateList.valueOf(Ui.accent(this, dark)));
             selectedIcon.setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_NO);
             card.addView(row, new LinearLayout.LayoutParams(MATCH_PARENT, WRAP_CONTENT));

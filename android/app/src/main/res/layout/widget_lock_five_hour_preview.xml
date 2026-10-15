@@ -1,5 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- The lock-screen host inflates framework RemoteViews, so its ImageView requires android:tint. -->
 <FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:ignore="UseAppTint"
     android:layout_width="56dp"
     android:layout_height="56dp">
 
@@ -17,7 +20,8 @@
         android:layout_gravity="top|center_horizontal"
         android:layout_marginTop="15dp"
         android:contentDescription="@null"
-        android:src="@drawable/ic_oui_time" />
+        android:tint="@color/widget_lock_preview_icon"
+        android:src="@drawable/ic_ms_schedule" />
 
     <TextView
         android:layout_width="match_parent"

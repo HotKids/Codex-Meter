@@ -77,10 +77,10 @@ final class DialWidgetRenderer {
             views.setTextViewText(RING_VALUES[index], value);
             views.setImageViewResource(RING_ICONS[index],
                     WidgetMeters.FIVE_HOUR.equals(key)
-                            ? (oneUi ? R.drawable.ic_oui_time : R.drawable.widget_dial_icon_session)
+                            ? (oneUi ? R.drawable.ic_ms_schedule : R.drawable.widget_dial_icon_session)
                             : WidgetMeters.WEEKLY.equals(key)
-                                    ? (oneUi ? R.drawable.ic_oui_calendar_week : R.drawable.widget_dial_icon_weekly)
-                                    : (oneUi ? R.drawable.ic_oui_alarm : R.drawable.widget_dial_icon_reset));
+                                    ? (oneUi ? R.drawable.ic_ms_calendar_today : R.drawable.widget_dial_icon_weekly)
+                                    : (oneUi ? R.drawable.ic_ms_alarm : R.drawable.widget_dial_icon_reset));
             if (oneUi) {
                 OneUiWidgetAppearance.sizeDial(context, views, index,
                         Math.min(keys.size(), RING_SECTIONS.length), value, widthDp, heightDp);

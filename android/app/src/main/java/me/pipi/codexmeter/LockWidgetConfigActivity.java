@@ -259,8 +259,8 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
                 WidgetMeters.lockSlotCapacity());
         int primary = SAMPLE_PRIMARY_PERCENT;
         int secondary = -1;
-        int primaryIcon = R.drawable.ic_oui_time;
-        int secondaryIcon = R.drawable.ic_oui_calendar_week;
+        int primaryIcon = R.drawable.ic_ms_schedule;
+        int secondaryIcon = R.drawable.ic_ms_calendar_today;
         if (!visible.isEmpty()) {
             primary = previewRemaining(visible.get(0), snapshot, SAMPLE_PRIMARY_PERCENT);
             primaryIcon = previewIcon(visible.get(0));
@@ -280,9 +280,9 @@ public final class LockWidgetConfigActivity extends AppCompatActivity {
 
     private static int previewIcon(String key) {
         if (WidgetMeters.WEEKLY.equals(key)) {
-            return R.drawable.ic_oui_calendar_week;
+            return R.drawable.ic_ms_calendar_today;
         }
-        return R.drawable.ic_oui_time;
+        return R.drawable.ic_ms_schedule;
     }
 
     private static int previewRemaining(String key, UsageSnapshot snapshot, int fallback) {

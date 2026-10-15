@@ -24,7 +24,7 @@ final class WidgetMeter {
     WidgetMeter(Context context, String key, WidgetOptions options, UsageCardState state) {
         title = title(context.getResources(), key, state.snapshot);
         if (WidgetMeters.NEXT_RESET.equals(key)) {
-            icon = R.drawable.ic_oui_alarm;
+            icon = R.drawable.ic_ms_alarm;
             window = nextWindow(state);
             resetAtMillis = resetAt(window, state.fetchedAtMillis());
             value = UsageCardFormat.absoluteReset(resetAtMillis);
@@ -43,8 +43,8 @@ final class WidgetMeter {
                     : credits != null && !credits.balance.isEmpty() ? credits.balance
                     : UsageCardFormat.MISSING;
         } else {
-            icon = WidgetMeters.WEEKLY.equals(key) ? R.drawable.ic_oui_calendar_week
-                    : R.drawable.ic_oui_time;
+            icon = WidgetMeters.WEEKLY.equals(key) ? R.drawable.ic_ms_calendar_today
+                    : R.drawable.ic_ms_schedule;
             window = WidgetMeters.meterWindow(key, state.snapshot);
             resetAtMillis = resetAt(window, state.fetchedAtMillis());
             int percent = window == null ? -1 : window.remainingPercent();

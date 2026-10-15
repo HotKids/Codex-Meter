@@ -575,7 +575,7 @@ public final class ResetNotificationManager {
                 destination,
                 PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
         Notification notification = new Notification.Builder(context, channel)
-                .setSmallIcon(R.drawable.ic_oui_alarm)
+                .setSmallIcon(R.drawable.ic_notification_alarm)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setStyle(new Notification.BigTextStyle().bigText(text))

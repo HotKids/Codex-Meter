@@ -13,8 +13,8 @@ android {
         applicationId = "me.pipi.codexmeter"
         minSdk = 31
         targetSdk = 37
-        versionCode = 8
-        versionName = "0.4.1"
+        versionCode = 9
+        versionName = "0.4.2"
         providers.gradleProperty("demoVersionCode").orNull?.toIntOrNull()?.let {
             versionCode = it
         }
@@ -114,7 +114,6 @@ configurations.configureEach {
 dependencies {
     implementation(project(":shared"))
     implementation("io.github.tribalfs:oneui-design:0.9.14+oneui8")
-    implementation("io.github.oneuiproject:icons:1.1.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16.1")
 }

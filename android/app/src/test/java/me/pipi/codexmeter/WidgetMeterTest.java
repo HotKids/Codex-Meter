@@ -45,7 +45,7 @@ public class WidgetMeterTest {
                 options(WidgetOptions.DISPLAY_REMAINING, true), state);
         assertEquals("64%", remaining.value);
         assertEquals(64, remaining.progress);
-        assertEquals(R.drawable.ic_oui_time, remaining.icon);
+        assertEquals(R.drawable.ic_ms_schedule, remaining.icon);
 
         WidgetMeter used = meter(WidgetMeters.FIVE_HOUR,
                 options(WidgetOptions.DISPLAY_USED, false), state);
@@ -56,7 +56,7 @@ public class WidgetMeterTest {
                 options(WidgetOptions.DISPLAY_REMAINING, false), state);
         assertEquals("42", weekly.value);
         assertEquals(42, weekly.progress);
-        assertEquals(R.drawable.ic_oui_calendar_week, weekly.icon);
+        assertEquals(R.drawable.ic_ms_calendar_today, weekly.icon);
     }
 
     @Test
@@ -79,7 +79,7 @@ public class WidgetMeterTest {
         WidgetMeter shortReset = nextReset(snapshot);
         assertEquals(UsageCardFormat.absoluteReset(UsageCardFixtures.NOW + 3 * HOUR), shortReset.value);
         assertEquals(60, shortReset.progress);
-        assertEquals(R.drawable.ic_oui_alarm, shortReset.icon);
+        assertEquals(R.drawable.ic_ms_alarm, shortReset.icon);
 
         UsageWindow earlierWeekly = UsageCardFixtures.window(30, TimeUnit.DAYS.toSeconds(7), HOUR);
         WidgetMeter longReset = nextReset(snapshot(fiveHour, earlierWeekly, null,

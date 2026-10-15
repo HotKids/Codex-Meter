@@ -1,6 +1,6 @@
 # Phone icons
 
-Material Symbols action and information icons use the Outlined family, with fill 0,
+Application action and information icons use Material Symbols Outlined, with fill 0,
 weight 400, grade 0 and optical size 24. The Android VectorDrawables are converted
 from Google source commit `737e3324305806514d7909874fa1818ae1808232`:
 https://github.com/google/material-design-icons/tree/737e3324305806514d7909874fa1818ae1808232/symbols/web
@@ -35,9 +35,14 @@ cancel action comes from the same Google source commit:
 
 - [`close_24px.svg`](https://github.com/google/material-design-icons/blob/737e3324305806514d7909874fa1818ae1808232/symbols/web/close/materialsymbolsoutlined/close_24px.svg)
 
-Remaining semantic icons from One UI are the history selection check, reset-reminder
-alarm, and the time/calendar/alarm glyphs in desktop and lock-screen dials. The
-reset-credit expiry notification still uses the older reset-arrow vector.
+History selection uses `check_circle`. Desktop and lock-screen dial glyphs use
+`schedule`, `calendar_today` and `alarm`, including their editor and picker
+previews. Static lock-screen picker glyphs retain the previous light/dark
+colors (`#FF010101` / `#FFFAFAFA`); runtime lock-screen glyphs retain their
+explicit foreground tint. Reset reminders use a white `alarm` vector without a theme tint;
+reset-credit expiry notifications and actions use a white `restart_alt` vector.
+These paths come from the same Google source commit. The dial geometry, progress
+graphics and system control indicators retain the existing One UI implementation.
 
 The source SVG viewport starts at y=-960; the vector group translates it by 960.
 The local `ic_ms_*` names isolate app UI replacements from upstream widget and

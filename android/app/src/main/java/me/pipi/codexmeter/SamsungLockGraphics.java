@@ -95,8 +95,8 @@ final class SamsungLockGraphics {
         float top = (height - (DIAL_HEIGHT * dialScale)) / 2.0f;
         Drawable icon = context == null ? null : context.getDrawable(
                 metric == SamsungLockWidgetSupport.Metric.FIVE_HOUR
-                        ? R.drawable.ic_oui_time
-                        : R.drawable.ic_oui_calendar_week);
+                        ? R.drawable.ic_ms_schedule
+                        : R.drawable.ic_ms_calendar_today);
         drawDial(canvas, paint, width / 2.0f, top, dialScale, value, icon);
         return bitmap;
     }

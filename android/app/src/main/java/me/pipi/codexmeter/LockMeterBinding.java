@@ -100,24 +100,24 @@ final class LockMeterBinding {
     }
 
     int primaryIconRes() {
-        return primary == null ? R.drawable.ic_oui_time : primary.iconRes;
+        return primary == null ? R.drawable.ic_ms_schedule : primary.iconRes;
     }
 
     int secondaryIconRes() {
-        return secondary == null ? R.drawable.ic_oui_calendar_week : secondary.iconRes;
+        return secondary == null ? R.drawable.ic_ms_calendar_today : secondary.iconRes;
     }
 
     private static Slot slot(Context context, String key, UsageSnapshot snapshot) {
         if (WidgetMeters.FIVE_HOUR.equals(key)) {
             UsageWindow window = snapshot == null ? null : snapshot.fiveHour;
             return new Slot(context.getString(R.string.dashboard_lock_face_five_hour),
-                    remaining(window), window, R.drawable.ic_oui_time);
+                    remaining(window), window, R.drawable.ic_ms_schedule);
         }
         if (WidgetMeters.WEEKLY.equals(key)) {
             UsageWindow window = WidgetMeters.meterWindow(key, snapshot);
             String label = context.getString(WidgetMeters.weeklyMeterIsMonthly(snapshot)
                     ? R.string.dashboard_lock_face_monthly : R.string.dashboard_lock_face_weekly);
-            return new Slot(label, remaining(window), window, R.drawable.ic_oui_calendar_week);
+            return new Slot(label, remaining(window), window, R.drawable.ic_ms_calendar_today);
         }
         throw new IllegalArgumentException("Unsupported lock widget meter: " + key);
     }

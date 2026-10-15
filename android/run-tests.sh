@@ -71,12 +71,12 @@ javac -encoding UTF-8 -cp "$JSON_JAR" -d "$OUT" \
 java -ea -cp "$OUT:$JSON_JAR" me.pipi.codexmeter.ParserSelfTest
 
 # Source-level release checks.
-grep -q 'VERSION_NAME = "0.4.1"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_CODE = 8' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'versionName = "0.4.1"' "$ROOT/app/build.gradle.kts"
-grep -q 'versionCode = 8' "$ROOT/app/build.gradle.kts"
-grep -q 'codex-meter-android/0.4.1' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
-grep -q 'VERSION_NAME="0.4.1"' "$ROOT/build.sh"
+grep -q 'VERSION_NAME = "0.4.2"' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_CODE = 9' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'versionName = "0.4.2"' "$ROOT/app/build.gradle.kts"
+grep -q 'versionCode = 9' "$ROOT/app/build.gradle.kts"
+grep -q 'codex-meter-android/0.4.2' "$ROOT/app/src/main/java/me/pipi/codexmeter/AppConstants.java"
+grep -q 'VERSION_NAME="0.4.2"' "$ROOT/build.sh"
 WORKFLOW="$ROOT/../.github/workflows/build-apk.yml"
 grep -Fq ':app:assembleDebug' "$WORKFLOW"
 grep -Fq 'android/app/build/outputs/apk/debug/app-debug.apk' "$WORKFLOW"
