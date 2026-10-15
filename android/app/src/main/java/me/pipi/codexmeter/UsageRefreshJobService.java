@@ -78,10 +78,7 @@ public final class UsageRefreshJobService extends JobService {
 
     /** The failure's localized message, bounded, or a generic refresh failure. */
     private String safeMessage(Exception exception) {
-        String message = exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return getString(R.string.auth_error_usage_refresh_failed);
-        }
+        String message = OAuthClient.localizedMessage(this, exception, R.string.auth_error_usage_refresh_failed);
         return message.length() > MAX_MESSAGE_LENGTH
                 ? message.substring(0, MAX_MESSAGE_LENGTH) : message;
     }

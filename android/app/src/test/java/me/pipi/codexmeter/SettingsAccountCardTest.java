@@ -193,6 +193,39 @@ public class SettingsAccountCardTest {
     }
 
     @Test
+    @Config(qualifiers = "zh-rCN", shadows = {InMemoryTokenStore.class, UsageAuthenticationTest.SyntheticBackend.class,
+            UsageAuthenticationTest.SyntheticTokenEndpoint.class})
+    public void expiredRefreshResponseUpdatesTheVisibleReloginPill() throws Exception {
+        AuthTokens original = syntheticTokens("retained");
+        InMemoryTokenStore.syntheticTokens = original;
+        AppPreferences.saveSnapshot(app, UsageCardFixtures.plus());
+        UsageAuthenticationTest.SyntheticTokenEndpoint.failure = OAuthClient.tokenEndpointFailure(app,
+                "oauth_token_refresh", 400, "{\"error\":{\"code\":\"refresh_token_expired\","
+                        + "\"message\":\"Your session has ended. Please log in again.\"}}");
+        try (ActivityController<SettingsActivity> controller = Robolectric
+                .buildActivity(SettingsActivity.class).setup()) {
+            SettingsRootFragment fragment = (SettingsRootFragment) controller.get()
+                    .getSupportFragmentManager().findFragmentById(R.id.settings_fragment);
+            View card = visibleAccountCard(fragment);
+            assertEquals("Plus", text(card, R.id.settings_account_plan));
+            runInBackground(() -> {
+                org.junit.Assert.assertThrows(OAuthClient.TokenEndpointException.class,
+                        () -> UsageApi.refreshAndSave(app, original));
+                return null;
+            });
+            assertEquals("重新登录", text(card, R.id.settings_account_plan));
+            assertEquals("retained@example.test", text(card, R.id.settings_account_summary));
+            assertSame(original, InMemoryTokenStore.syntheticTokens);
+            assertEquals(0, InMemoryTokenStore.clearCalls);
+            assertTrue(card.findViewById(R.id.settings_account_plan).performClick());
+            assertTrue(shadowOf(controller.get()).getNextStartedActivity()
+                    .getBooleanExtra("reauthenticate", false));
+        } finally {
+            UsageAuthenticationTest.SyntheticTokenEndpoint.failure = null;
+        }
+    }
+
+    @Test
     @Config(qualifiers = "zh-rCN")
     public void confirmedRejectionReplacesOnlyThePlanPillAndStartsReauthentication()
             throws Exception {

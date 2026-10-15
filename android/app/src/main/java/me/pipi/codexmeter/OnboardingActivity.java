@@ -468,11 +468,8 @@ public final class OnboardingActivity extends AppCompatActivity {
         finish();
     }
 
-    private static String safeMessage(RuntimeException exception) {
-        String message = exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return exception.getClass().getSimpleName();
-        }
+    private String safeMessage(RuntimeException exception) {
+        String message = OAuthClient.localizedMessage(this, exception, R.string.auth_sign_in_failed);
         return message.length() > MAX_ERROR_MESSAGE_LENGTH
                 ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)
                 : message;

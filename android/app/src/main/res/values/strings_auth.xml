@@ -57,7 +57,6 @@
     <string name="auth_sign_in_succeeded">Signed in successfully.</string>
     <string name="auth_sign_in_succeeded_usage_pending">Signed in. Usage can be refreshed from the app.</string>
     <string name="auth_sign_in_failed">Sign-in could not be completed.</string>
-    <string name="auth_sign_in_failed_reason">Sign-in failed: %1$s</string>
     <string name="auth_sign_in_failed_no_code">Sign-in failed because no authorization code was returned.</string>
     <string name="auth_sign_in_timed_out">Sign-in timed out. Start again from the app.</string>
     <string name="auth_sign_in_port_unavailable">Could not open the local OAuth callback port (1455 or 1457).</string>
@@ -82,6 +81,11 @@
 
     <!-- Token, usage, and reset-credit request failures shown on the dashboard, in toasts and on widgets. -->
     <string name="auth_error_sign_in_required">Sign in to ChatGPT first.</string>
+    <string name="auth_error_session_expired">Your sign-in is no longer valid. Please sign in again.</string>
+    <string name="auth_error_network_timeout">The request timed out. Please try again later.</string>
+    <string name="auth_error_network_connection">Cannot connect to the server. Check your connection and try again.</string>
+    <string name="auth_error_network_secure_connection">Cannot establish a secure connection. Please try again later.</string>
+    <string name="auth_error_authorization_denied">Sign-in was not authorized. Please try signing in again.</string>
     <string name="auth_error_authentication_http">Authentication failed (HTTP %1$d).</string>
     <string name="auth_error_incomplete_credentials">The authorization server returned incomplete credentials.</string>
     <string name="auth_error_credentials_not_saved">Could not persist encrypted credentials.</string>

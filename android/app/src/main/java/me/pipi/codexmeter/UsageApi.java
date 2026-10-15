@@ -167,6 +167,9 @@ public final class UsageApi {
     }
 
     private static Exception usageFailure(Context context, Response response) {
+        if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            return OAuthClient.responseError(context, response.body, R.string.auth_error_session_expired);
+        }
         if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
             return OAuthClient.responseError(context, response.body,
                     R.string.auth_error_usage_denied);
@@ -392,14 +395,11 @@ public final class UsageApi {
     }
 
     /**
-     * A trimmed, bounded, localized exception message suitable for persisting as a visible
-     * error, or a generic reset-credit refresh failure when the exception has none.
+     * Bounds localized display text before persisting it for the app and widgets.
      */
     static String safeMessage(Context context, Exception exception) {
-        String message = exception == null ? "" : exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return context.getString(R.string.auth_error_reset_credits_refresh_failed);
-        }
+        String message = OAuthClient.localizedMessage(context, exception,
+                R.string.auth_error_reset_credits_refresh_failed);
         String trimmed = message.trim();
         return trimmed.length() > MAX_MESSAGE_LENGTH
                 ? trimmed.substring(0, MAX_MESSAGE_LENGTH) : trimmed;

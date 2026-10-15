@@ -86,8 +86,7 @@ public final class ReleaseUpdateClient {
                     "duration_ms", SystemClock.elapsedRealtime() - started,
                     "url", DiagnosticSanitizer.safeUrl(finalUrl.toString()));
             if (!isTrustedApiUrl(finalUrl, localDebugServer)) {
-                throw new SecurityException(
-                        app.getString(R.string.updates_error_check_redirect_untrusted));
+                throw OAuthClient.userError(app, R.string.updates_error_check_redirect_untrusted);
             }
             if (status == HttpURLConnection.HTTP_NOT_MODIFIED) {
                 if (!UpdatePreferences.hasUsableCache(app)) {
@@ -99,7 +98,7 @@ public final class ReleaseUpdateClient {
             }
             if (status != HttpURLConnection.HTTP_OK) {
                 String detail = read(app, connection.getErrorStream(), MAX_ERROR_BODY_BYTES);
-                throw new IllegalStateException(githubError(app, status, detail));
+                throw githubError(app, status, detail);
             }
             String json = read(app, connection.getInputStream(), MAX_RESPONSE_BYTES);
             UpdatePreferences.saveSuccess(app, json, connection.getHeaderField("ETag"));
@@ -144,8 +143,7 @@ public final class ReleaseUpdateClient {
             while ((read = stream.read(buffer)) != -1) {
                 total += read;
                 if (total > limit) {
-                    throw new IllegalStateException(
-                            context.getString(R.string.updates_error_too_much_metadata));
+                    throw OAuthClient.userError(context, R.string.updates_error_too_much_metadata);
                 }
                 output.write(buffer, 0, read);
             }
@@ -153,8 +151,8 @@ public final class ReleaseUpdateClient {
         }
     }
 
-    /** User-facing check failure; GitHub's own {@code message} is passed through untranslated. */
-    private static String githubError(Context context, int status, String detail) {
+    /** HTTP status supplies user copy; GitHub's diagnostic detail stays in the exception. */
+    private static Exception githubError(Context context, int status, String detail) {
         String message = "";
         try {
             message = new JSONObject(detail).optString("message", "");
@@ -162,19 +160,21 @@ public final class ReleaseUpdateClient {
             // Not a JSON error body; fall back to the status code alone.
         }
         if (status == HttpURLConnection.HTTP_FORBIDDEN || status == HTTP_TOO_MANY_REQUESTS) {
-            return context.getString(R.string.updates_error_rate_limited);
+            return OAuthClient.userError(context, R.string.updates_error_rate_limited);
         }
+        OAuthClient.UserFacingException failure =
+                OAuthClient.userError(context, R.string.updates_error_check_http, status);
         if (!message.isEmpty()) {
-            return context.getString(R.string.updates_error_check_http_message, status, message);
+            return new OAuthClient.UserFacingException(OAuthClient.userError(context,
+                    R.string.updates_error_check_http_message, status, message).getMessage(),
+                    failure.getLocalizedMessage());
         }
-        return context.getString(R.string.updates_error_check_http, status);
+        return failure;
     }
 
     static String safeMessage(Context context, Exception exception) {
-        String message = exception == null ? "" : exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            message = context.getString(R.string.updates_error_check_failed);
-        }
+        String message = OAuthClient.localizedMessage(context, exception,
+                R.string.updates_error_check_failed);
         return message.length() <= UpdatePreferences.MAX_ERROR_LENGTH
                 ? message : message.substring(0, UpdatePreferences.MAX_ERROR_LENGTH);
     }

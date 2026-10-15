@@ -57,7 +57,6 @@
     <string name="auth_sign_in_succeeded">登录成功。</string>
     <string name="auth_sign_in_succeeded_usage_pending">已登录，可在应用中刷新用量。</string>
     <string name="auth_sign_in_failed">无法完成登录。</string>
-    <string name="auth_sign_in_failed_reason">登录失败：%1$s</string>
     <string name="auth_sign_in_failed_no_code">未收到授权码，无法完成登录。</string>
     <string name="auth_sign_in_timed_out">登录超时，请返回应用重新登录。</string>
     <string name="auth_sign_in_port_unavailable">无法打开本机 OAuth 回调端口（1455 或 1457）。</string>
@@ -82,6 +81,11 @@
 
     <!-- Token, usage and reset-credit failures shown on Home, in toasts and on widgets. -->
     <string name="auth_error_sign_in_required">请先登录 ChatGPT。</string>
+    <string name="auth_error_session_expired">登录已失效，请重新登录。</string>
+    <string name="auth_error_network_timeout">请求超时，请稍后重试。</string>
+    <string name="auth_error_network_connection">无法连接服务器，请检查网络后重试。</string>
+    <string name="auth_error_network_secure_connection">无法建立安全连接，请稍后重试。</string>
+    <string name="auth_error_authorization_denied">未完成授权，请重新登录。</string>
     <string name="auth_error_authentication_http">身份验证失败（HTTP %1$d）。</string>
     <string name="auth_error_incomplete_credentials">授权服务器返回的凭据不完整。</string>
     <string name="auth_error_credentials_not_saved">无法保存加密的登录凭据。</string>

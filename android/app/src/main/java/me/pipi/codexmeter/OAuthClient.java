@@ -8,6 +8,9 @@ import java.io.ByteArrayOutputStream;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
+import java.net.SocketException;
+import java.net.SocketTimeoutException;
+import java.net.UnknownHostException;
 import java.net.URI;
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
@@ -15,6 +18,7 @@ import java.util.LinkedHashMap;
 import java.util.Locale;
 import java.util.Map;
 import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLException;
 import org.json.JSONObject;
 
 /** OAuth token endpoint calls plus the response-reading helpers shared by backend requests. */
@@ -199,32 +203,44 @@ public final class OAuthClient {
     }
 
     /**
-     * The failure for an unsuccessful response: the server's own error message when it sent one,
-     * otherwise the string {@code fallbackRes} formatted with {@code args}.
+     * Remote descriptions stay diagnostic; user-visible text comes from app resources.
      */
     static Exception responseError(Context context, String body, int fallbackRes,
             Object... args) {
         String serverMessage = readError(body);
+        UserFacingException localized = userError(context, fallbackRes, args);
         return serverMessage.isEmpty()
-                ? userError(context, fallbackRes, args)
-                : new Exception(serverMessage);
+                ? localized
+                : new UserFacingException(serverMessage, localized.getLocalizedMessage());
     }
 
     static TokenEndpointException tokenEndpointFailure(Context context, String operation,
             int status, String body) {
         String errorCode = "";
         try {
-            Object error = new JSONObject(body == null ? "" : body).opt("error");
-            if (error instanceof String) {
-                errorCode = (String) error;
+            JSONObject response = new JSONObject(body == null ? "" : body);
+            Object error = response.opt("error");
+            Object code = error instanceof JSONObject ? ((JSONObject) error).opt("code") : error;
+            if (!(code instanceof String) || ((String) code).isEmpty()) {
+                code = response.opt("code");
             }
+            if (code instanceof String) errorCode = ((String) code).trim().toLowerCase(Locale.ROOT);
         } catch (Exception ignored) {
             // Gateway responses do not establish an OAuth rejection.
         }
-        Exception message = responseError(context, body, R.string.auth_error_authentication_http,
-                status);
+        boolean refresh = "oauth_token_refresh".equals(operation);
+        Exception message = rejectsRefreshToken(refresh, status, errorCode)
+                ? responseError(context, body, R.string.auth_error_session_expired)
+                : responseError(context, body, R.string.auth_error_authentication_http, status);
         return new TokenEndpointException(status, errorCode,
-                "oauth_token_refresh".equals(operation), message);
+                refresh, message);
+    }
+
+    private static boolean rejectsRefreshToken(boolean refresh, int status, String code) {
+        return refresh && status >= 400 && status < 500
+                && ("invalid_grant".equals(code) || "refresh_token_expired".equals(code)
+                        || "refresh_token_reused".equals(code)
+                        || "refresh_token_invalidated".equals(code));
     }
 
     static final class TokenEndpointException extends Exception {
@@ -243,14 +259,31 @@ public final class OAuthClient {
         }
 
         boolean rejectsRefreshToken() {
-            return refreshTokenRequest && status >= 400 && status < 500
-                    && "invalid_grant".equals(errorCode);
+            return OAuthClient.rejectsRefreshToken(refreshTokenRequest, status, errorCode);
         }
 
         @Override
         public String getLocalizedMessage() {
             return localizedMessage;
         }
+    }
+
+    /** Platform exception messages are not translations, even via getLocalizedMessage(). */
+    static String localizedMessage(Context context, Exception exception, int fallbackRes) {
+        if (exception instanceof UserFacingException || exception instanceof TokenEndpointException) {
+            String message = exception.getLocalizedMessage();
+            if (message != null && !message.trim().isEmpty()) return message.trim();
+        }
+        if (exception instanceof SocketTimeoutException) {
+            return context.getString(R.string.auth_error_network_timeout);
+        }
+        if (exception instanceof UnknownHostException || exception instanceof SocketException) {
+            return context.getString(R.string.auth_error_network_connection);
+        }
+        if (exception instanceof SSLException) {
+            return context.getString(R.string.auth_error_network_secure_connection);
+        }
+        return context.getString(fallbackRes);
     }
 
     /** Extracts a server-provided error message, or returns "" when there is none. */

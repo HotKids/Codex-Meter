@@ -52,6 +52,40 @@ public class UsageAuthenticationTest {
     }
 
     @Test
+    @Config(qualifiers = "zh-rCN")
+    public void nestedAndTopLevelRefreshRejectionsRequireSignInWithoutClearingTheAccount() {
+        for (String code : new String[] {"refresh_token_expired", "refresh_token_reused",
+                "refresh_token_invalidated", "invalid_grant"}) {
+            for (String body : new String[] {
+                    "{\"error\":{\"code\":\"" + code + "\",\"message\":\"Your session has ended. Please log in again.\"}}",
+                    "{\"code\":\"" + code + "\",\"message\":\"Your session has ended. Please log in again.\"}"}) {
+                AppPreferences.clearSnapshot(app);
+                AppPreferences.saveSnapshot(app, UsageCardFixtures.plus());
+                SyntheticTokenEndpoint.failure = OAuthClient.tokenEndpointFailure(app,
+                        "oauth_token_refresh", 400, body);
+                assertThrows(OAuthClient.TokenEndpointException.class,
+                        () -> UsageApi.refreshAndSave(app, original));
+                assertTrue(code, AppPreferences.isReauthenticationRequired(app));
+                assertEquals(code, ((OAuthClient.TokenEndpointException) SyntheticTokenEndpoint.failure).errorCode);
+                assertEquals("登录已失效，请重新登录。",
+                        MainActivity.safeMessage(app, SyntheticTokenEndpoint.failure));
+                assertRetainedAccount();
+            }
+        }
+    }
+
+    @Test
+    public void unknownOrClientFailuresDoNotInvalidateTheRefreshSession() {
+        for (String body : new String[] {"{\"error\":\"invalid_client\"}",
+                "{\"error\":{\"code\":\"temporarily_unavailable\"}}",
+                "{\"message\":\"Your session has ended. Please log in again.\"}"}) {
+            OAuthClient.TokenEndpointException failure = OAuthClient.tokenEndpointFailure(app,
+                    "oauth_token_refresh", 401, body);
+            assertFalse(failure.rejectsRefreshToken());
+        }
+    }
+
+    @Test
     public void expiredSessionInvalidGrantRequiresReauthenticationWithoutDiscardingTheAccount() {
         original = tokens("expired", 1L);
         SettingsAccountCardTest.InMemoryTokenStore.syntheticTokens = original;
@@ -64,7 +98,8 @@ public class UsageAuthenticationTest {
 
         assertEquals(400, failure.status);
         assertEquals("invalid_grant", failure.errorCode);
-        assertEquals("Synthetic revoked session", failure.getLocalizedMessage());
+        assertEquals("Synthetic revoked session", failure.getMessage());
+        assertEquals(app.getString(R.string.auth_error_session_expired), failure.getLocalizedMessage());
         assertTrue(AppPreferences.isReauthenticationRequired(app));
         assertRetainedAccount();
         assertEquals(0, SyntheticBackend.requests);

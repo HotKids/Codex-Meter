@@ -9,13 +9,17 @@ The rejection state is separate from `last_error`, so clearing a refresh message
 does not restore an invalid session. Only these remote outcomes set it:
 
 - The refresh-token exchange returns HTTP 4xx with the structured OAuth error
-  `invalid_grant`.
+  `invalid_grant`, `refresh_token_expired`, `refresh_token_reused`, or
+  `refresh_token_invalidated`. Codes are read from a top-level string `error`,
+  nested `error.code`, or top-level `code`, in that order.
 - An authenticated backend request still returns HTTP 401 after its token-refresh
   retry, including reset-credit requests that share the usage transport.
 
 An initial HTTP 401 can recover through refresh. Timeouts, other transport failures,
 HTTP 5xx responses, and error descriptions containing `invalid_grant` do not
 establish rejection.
+Unknown refresh-endpoint errors, including `invalid_client`, do not establish
+rejection merely because their HTTP status is 401 or 403.
 `invalid_grant` from an authorization-code exchange does not invalidate the stored
 session.
 

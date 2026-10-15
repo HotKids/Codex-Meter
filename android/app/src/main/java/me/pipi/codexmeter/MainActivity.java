@@ -852,7 +852,7 @@ public final class MainActivity extends AppCompatActivity {
             DiagnosticLog.error(this, "auth", "sign_in_service_start_failed", e);
             AppPreferences.setOAuthPending(this, false, "");
             Toast.makeText(this,
-                    getString(R.string.dashboard_sign_in_start_failed, failureDetail(e)),
+                    getString(R.string.dashboard_sign_in_start_failed, safeMessage(this, e)),
                     Toast.LENGTH_LONG).show();
         }
     }
@@ -946,16 +946,9 @@ public final class MainActivity extends AppCompatActivity {
         });
     }
 
-    /** User-facing error text: the exception message capped in length, or a generic failure. */
+    /** User-facing failures use app resources instead of platform or server descriptions. */
     public static String safeMessage(Context context, Exception exc) {
-        return cappedMessage(exc, context.getString(R.string.dashboard_operation_failed));
-    }
-
-    private static String cappedMessage(Exception exc, String fallback) {
-        String message = exc.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return fallback;
-        }
+        String message = OAuthClient.localizedMessage(context, exc, R.string.dashboard_operation_failed);
         return message.length() > MAX_ERROR_MESSAGE_LENGTH
                 ? message.substring(0, MAX_ERROR_MESSAGE_LENGTH)
                 : message;

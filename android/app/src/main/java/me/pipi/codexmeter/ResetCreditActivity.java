@@ -320,15 +320,9 @@ public final class ResetCreditActivity extends AppCompatActivity {
         });
     }
 
-    /**
-     * The exception's message, which the API layer words, or a localized fallback when it has
-     * none.
-     */
     private static String safeMessage(Context context, Exception exception) {
-        String message = exception == null ? "" : exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return context.getString(R.string.alerts_reset_credits_apply_failed);
-        }
+        String message = OAuthClient.localizedMessage(context, exception,
+                R.string.alerts_reset_credits_apply_failed);
         String trimmed = message.trim();
         return trimmed.length() > MAX_ERROR_MESSAGE_LENGTH
                 ? trimmed.substring(0, MAX_ERROR_MESSAGE_LENGTH)

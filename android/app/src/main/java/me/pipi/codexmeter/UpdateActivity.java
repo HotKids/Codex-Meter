@@ -454,10 +454,12 @@ public final class UpdateActivity extends AppCompatActivity {
     }
 
     private String safeMessage(Exception exception) {
-        String message = exception == null ? "" : exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            message = getString(R.string.updates_error_prepare_failed);
-        }
+        String message = exception instanceof UpdateInstaller.DowngradeNotSupportedException
+                ? getString(R.string.updates_error_downgrade_unsupported)
+                : exception instanceof InterruptedException
+                        ? getString(R.string.updates_error_download_canceled)
+                        : OAuthClient.localizedMessage(this, exception,
+                                R.string.updates_error_prepare_failed);
         return message.length() <= UpdatePreferences.MAX_ERROR_LENGTH
                 ? message : message.substring(0, UpdatePreferences.MAX_ERROR_LENGTH);
     }

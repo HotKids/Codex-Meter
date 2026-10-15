@@ -325,14 +325,13 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
 
     /**
      * Localized text for a failed export or import: transfer-file problems by their stable
-     * code, otherwise the exception's own (already localized) message, else {@code fallback}.
+     * code, otherwise a known localized failure or the operation's fallback.
      */
     private String failureMessage(Exception exception, int fallback) {
         if (exception instanceof SettingsTransfer.TransferException) {
             return problemMessage((SettingsTransfer.TransferException) exception);
         }
-        String message = exception.getLocalizedMessage();
-        return message == null || message.isEmpty() ? getString(fallback) : message;
+        return OAuthClient.localizedMessage(requireContext(), exception, fallback);
     }
 
     private String problemMessage(SettingsTransfer.TransferException exception) {
@@ -369,7 +368,7 @@ public final class SettingsTransferFragment extends SettingsPageFragment {
                         R.string.settings_transfer_error_lead_times_out_of_range_entry,
                         exception.argument);
             default:
-                return exception.getLocalizedMessage();
+                return getString(R.string.settings_transfer_import_failed);
         }
     }
 }

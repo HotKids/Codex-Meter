@@ -13,8 +13,8 @@ android {
         applicationId = "me.pipi.codexmeter"
         minSdk = 31
         targetSdk = 37
-        versionCode = 7
-        versionName = "0.4"
+        versionCode = 8
+        versionName = "0.4.1"
         providers.gradleProperty("demoVersionCode").orNull?.toIntOrNull()?.let {
             versionCode = it
         }

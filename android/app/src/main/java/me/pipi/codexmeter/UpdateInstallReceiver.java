@@ -25,11 +25,8 @@ public final class UpdateInstallReceiver extends BroadcastReceiver {
             UpdatePreferences.setInstallError(context, "");
             return;
         }
-        String message = intent.getStringExtra(PackageInstaller.EXTRA_STATUS_MESSAGE);
-        if (message == null || message.trim().isEmpty()) {
-            message = context.getString(R.string.updates_error_install_rejected, status);
-        }
-        UpdatePreferences.setInstallError(context, message);
+        UpdatePreferences.setInstallError(context,
+                context.getString(R.string.updates_error_install_rejected, status));
     }
 
     /** Launches Android's install confirmation, abandoning the session if that is impossible. */

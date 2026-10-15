@@ -70,12 +70,10 @@ public final class UpdateInstaller {
             ProgressListener listener) throws Exception {
         requireActiveDownload(context);
         if (release == null) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.updates_error_no_release_selected));
+            throw OAuthClient.userError(context, R.string.updates_error_no_release_selected);
         }
         if (release.apkSize <= 0L || release.apkSize > MAX_APK_BYTES) {
-            throw new IllegalStateException(
-                    context.getString(R.string.updates_error_unsafe_apk_size));
+            throw OAuthClient.userError(context, R.string.updates_error_unsafe_apk_size);
         }
         long started = SystemClock.elapsedRealtime();
         DiagnosticLog.info(context, "update", "update_prepare_started",
@@ -86,12 +84,11 @@ public final class UpdateInstaller {
         requireActiveDownload(context);
         String expected = ReleaseIntegrity.expectedSha256(checksumFile, release.apkName);
         if (expected.isEmpty()) {
-            throw new SecurityException(context.getString(
-                    R.string.updates_error_checksum_missing_apk, release.apkName));
+            throw OAuthClient.userError(context, R.string.updates_error_checksum_missing_apk, release.apkName);
         }
         File directory = new File(context.getCacheDir(), UPDATE_DIRECTORY);
         if (!directory.exists() && !directory.mkdirs()) {
-            throw new IllegalStateException(context.getString(R.string.updates_error_storage));
+            throw OAuthClient.userError(context, R.string.updates_error_storage);
         }
         // Cleanup must own its files even when a canceled request finishes after a new attempt.
         File partial = File.createTempFile("update-", PARTIAL_SUFFIX, directory);
@@ -126,8 +123,7 @@ public final class UpdateInstaller {
      */
     public static int commit(Context context, PreparedUpdate update) throws Exception {
         if (update == null || update.apk == null || !update.apk.isFile()) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.updates_error_verified_apk_missing));
+            throw OAuthClient.userError(context, R.string.updates_error_verified_apk_missing);
         }
         PackageInstaller installer = context.getPackageManager().getPackageInstaller();
         int sessionId = -1;
@@ -195,13 +191,11 @@ public final class UpdateInstaller {
     private static void verifyDownload(Context context, File download, long expectedSize,
             String expectedSha256) throws Exception {
         if (download.length() != expectedSize) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_apk_size_mismatch));
+            throw OAuthClient.userError(context, R.string.updates_error_apk_size_mismatch);
         }
         String actual = ReleaseIntegrity.sha256(download);
         if (!ReleaseIntegrity.digestsMatch(expectedSha256, actual)) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_sha256_mismatch));
+            throw OAuthClient.userError(context, R.string.updates_error_sha256_mismatch);
         }
     }
 
@@ -211,22 +205,19 @@ public final class UpdateInstaller {
         int flags = PackageManager.GET_SIGNING_CERTIFICATES;
         PackageInfo archive = manager.getPackageArchiveInfo(apk.getAbsolutePath(), flags);
         if (archive == null) {
-            throw new SecurityException(context.getString(R.string.updates_error_apk_unreadable));
+            throw OAuthClient.userError(context, R.string.updates_error_apk_unreadable);
         }
         if (!context.getPackageName().equals(archive.packageName)) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_package_name_mismatch));
+            throw OAuthClient.userError(context, R.string.updates_error_package_name_mismatch);
         }
         ReleaseVersion expected = ReleaseVersion.parse(release.version);
         ReleaseVersion actual = ReleaseVersion.parse(archive.versionName);
         if (expected == null || actual == null || expected.compareTo(actual) != 0) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_version_mismatch));
+            throw OAuthClient.userError(context, R.string.updates_error_version_mismatch);
         }
         PackageInfo installed = manager.getPackageInfo(context.getPackageName(), flags);
         if (!sameSigners(currentSigners(installed), currentSigners(archive))) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_signature_mismatch));
+            throw OAuthClient.userError(context, R.string.updates_error_signature_mismatch);
         }
         long installedCode = installed.getLongVersionCode();
         long archiveCode = archive.getLongVersionCode();
@@ -282,8 +273,7 @@ public final class UpdateInstaller {
                     requireActiveDownload(context);
                     total += read;
                     if (total > limit) {
-                        throw new SecurityException(
-                                context.getString(R.string.updates_error_checksum_too_large));
+                        throw OAuthClient.userError(context, R.string.updates_error_checksum_too_large);
                     }
                     output.write(buffer, 0, read);
                 }
@@ -322,8 +312,7 @@ public final class UpdateInstaller {
             int status = requireOk(context, connection);
             long declared = connection.getContentLengthLong();
             if (declared > MAX_APK_BYTES || (declared > 0L && declared != expected)) {
-                throw new SecurityException(
-                        context.getString(R.string.updates_error_download_size_changed));
+                throw OAuthClient.userError(context, R.string.updates_error_download_size_changed);
             }
             try (InputStream input = connection.getInputStream();
                     OutputStream output = new FileOutputStream(destination)) {
@@ -334,8 +323,7 @@ public final class UpdateInstaller {
                     requireActiveDownload(context);
                     total += read;
                     if (total > expected || total > MAX_APK_BYTES) {
-                        throw new SecurityException(
-                                context.getString(R.string.updates_error_download_too_large));
+                        throw OAuthClient.userError(context, R.string.updates_error_download_too_large);
                     }
                     output.write(buffer, 0, read);
                     if (listener != null) {
@@ -372,8 +360,7 @@ public final class UpdateInstaller {
     private static HttpURLConnection open(Context context, String value) throws Exception {
         URL url = new URL(value);
         if (!isTrustedDownloadUrl(url)) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_untrusted_download_url));
+            throw OAuthClient.userError(context, R.string.updates_error_untrusted_download_url);
         }
         HttpURLConnection connection = (HttpURLConnection) url.openConnection();
         connection.setConnectTimeout(CONNECT_TIMEOUT_MS);
@@ -394,12 +381,10 @@ public final class UpdateInstaller {
         int status = connection.getResponseCode();
         URL finalUrl = connection.getURL();
         if (!isTrustedDownloadUrl(finalUrl)) {
-            throw new SecurityException(
-                    context.getString(R.string.updates_error_download_redirect_untrusted));
+            throw OAuthClient.userError(context, R.string.updates_error_download_redirect_untrusted);
         }
         if (status != HttpURLConnection.HTTP_OK) {
-            throw new IllegalStateException(
-                    context.getString(R.string.updates_error_download_http, status));
+            throw OAuthClient.userError(context, R.string.updates_error_download_http, status);
         }
         return status;
     }

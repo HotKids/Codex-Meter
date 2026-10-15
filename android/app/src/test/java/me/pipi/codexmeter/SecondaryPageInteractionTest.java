@@ -151,7 +151,8 @@ public class SecondaryPageInteractionTest {
             invoke(activity, "refreshDetailsIfNeeded", new Class<?>[0]);
             assertEquals(1, executor.tasks.size());
             executor.tasks.remove(0).run();
-            assertTrue(hasText((ViewGroup) field(activity, "content"), RESET_FAILURE));
+            assertTrue(hasText((ViewGroup) field(activity, "content"),
+                    activity.getString(R.string.alerts_reset_credits_apply_failed)));
             assertRefreshStopped(activity);
         }
     }
@@ -168,9 +169,10 @@ public class SecondaryPageInteractionTest {
         View originalCard = content.getChildAt(1);
         controller.destroy();
         executor.tasks.remove(0).run();
-        assertEquals(RESET_FAILURE, AppPreferences.getResetCreditsError(app));
+        String localized = activity.getString(R.string.alerts_reset_credits_apply_failed);
+        assertEquals(localized, AppPreferences.getResetCreditsError(app));
         assertSame(originalCard, content.getChildAt(1));
-        assertFalse(hasText(content, RESET_FAILURE));
+        assertFalse(hasText(content, localized));
     }
 
     @Test

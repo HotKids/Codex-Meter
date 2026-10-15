@@ -131,11 +131,12 @@ public final class SettingsDiagnosticsFragment extends SettingsPageFragment {
         }
     }
 
-    /** Localized reason for a failed export; other failures keep their own message. */
+    /** Localized reason for a failed export without provider diagnostics. */
     private String exportFailureReason(Exception exception) {
         if (exception instanceof DiagnosticLog.ExportFileUnavailableException) {
             return getString(R.string.settings_diagnostics_export_file_unavailable);
         }
-        return MainActivity.safeMessage(requireContext(), exception);
+        return OAuthClient.localizedMessage(requireContext(), exception,
+                R.string.dashboard_operation_failed);
     }
 }

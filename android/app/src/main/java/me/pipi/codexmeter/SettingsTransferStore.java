@@ -35,8 +35,7 @@ public final class SettingsTransferStore {
         }
         if (!includeAppSettings && !includeNotifications && !includeNowBar
                 && !includeAuthentication) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_select_export));
+            throw OAuthClient.userError(context, R.string.settings_transfer_select_export);
         }
         Context app = context.getApplicationContext();
         JSONObject appSettings = includeAppSettings ? collectAppSettings(app) : null;
@@ -46,8 +45,7 @@ public final class SettingsTransferStore {
         if (includeAuthentication) {
             AuthTokens tokens = SecureTokenStore.load(app);
             if (tokens == null || !tokens.isUsable()) {
-                throw new IllegalStateException(
-                        context.getString(R.string.settings_transfer_error_no_auth_to_export));
+                throw OAuthClient.userError(context, R.string.settings_transfer_error_no_auth_to_export);
             }
             authentication = tokens.toJson();
         }
@@ -62,18 +60,15 @@ public final class SettingsTransferStore {
             throw new IllegalArgumentException("Export target is incomplete.");
         }
         if (uri == null || document == null) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_error_export_target));
+            throw OAuthClient.userError(context, R.string.settings_transfer_error_export_target);
         }
         if (!document.hasAnySection()) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_select_export));
+            throw OAuthClient.userError(context, R.string.settings_transfer_select_export);
         }
         byte[] bytes = document.toJsonString().getBytes(StandardCharsets.UTF_8);
         try (OutputStream output = context.getContentResolver().openOutputStream(uri, "wt")) {
             if (output == null) {
-                throw new Exception(
-                        context.getString(R.string.settings_transfer_error_open_export));
+                throw OAuthClient.userError(context, R.string.settings_transfer_error_open_export);
             }
             output.write(bytes);
             output.flush();
@@ -145,13 +140,11 @@ public final class SettingsTransferStore {
             throw new IllegalArgumentException("Import source is incomplete.");
         }
         if (uri == null) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_error_import_source));
+            throw OAuthClient.userError(context, R.string.settings_transfer_error_import_source);
         }
         try (InputStream input = context.getContentResolver().openInputStream(uri)) {
             if (input == null) {
-                throw new Exception(
-                        context.getString(R.string.settings_transfer_error_open_import));
+                throw OAuthClient.userError(context, R.string.settings_transfer_error_open_import);
             }
             ByteArrayOutputStream buffer = new ByteArrayOutputStream();
             byte[] chunk = new byte[READ_BUFFER_BYTES];
@@ -159,8 +152,7 @@ public final class SettingsTransferStore {
             while ((read = input.read(chunk)) >= 0) {
                 buffer.write(chunk, 0, read);
                 if (buffer.size() > MAX_TRANSFER_BYTES) {
-                    throw new IllegalArgumentException(
-                            context.getString(R.string.settings_transfer_error_too_large));
+                    throw OAuthClient.userError(context, R.string.settings_transfer_error_too_large);
                 }
             }
             return SettingsTransfer.parse(
@@ -180,8 +172,7 @@ public final class SettingsTransferStore {
             throw new IllegalArgumentException("Import source is incomplete.");
         }
         if (document == null) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_error_import_source));
+            throw OAuthClient.userError(context, R.string.settings_transfer_error_import_source);
         }
         validateImport(context, document, applyAppSettings, applyNotifications, applyNowBar,
                 applyAuthentication);
@@ -221,8 +212,7 @@ public final class SettingsTransferStore {
             boolean applyAppSettings, boolean applyNotifications, boolean applyNowBar,
             boolean applyAuthentication) throws Exception {
         if (!applyAppSettings && !applyNotifications && !applyNowBar && !applyAuthentication) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_select_import));
+            throw OAuthClient.userError(context, R.string.settings_transfer_select_import);
         }
         if (applyAppSettings) {
             requireSection(context, document.hasAppSettings(),
@@ -243,15 +233,15 @@ public final class SettingsTransferStore {
             requireSection(context, document.hasAuthentication(),
                     R.string.settings_transfer_error_no_authentication);
             if (!AuthTokens.fromJson(document.authentication).isUsable()) {
-                throw new IllegalArgumentException(
-                        context.getString(R.string.settings_transfer_error_auth_invalid));
+                throw OAuthClient.userError(context, R.string.settings_transfer_error_auth_invalid);
             }
         }
     }
 
-    private static void requireSection(Context context, boolean present, int missingMessage) {
+    private static void requireSection(Context context, boolean present, int missingMessage)
+            throws Exception {
         if (!present) {
-            throw new IllegalArgumentException(context.getString(missingMessage));
+            throw OAuthClient.userError(context, missingMessage);
         }
     }
 
@@ -367,8 +357,7 @@ public final class SettingsTransferStore {
     private static void applyAuthentication(Context context, JSONObject json) throws Exception {
         AuthTokens tokens = AuthTokens.fromJson(json);
         if (!tokens.isUsable()) {
-            throw new IllegalArgumentException(
-                    context.getString(R.string.settings_transfer_error_auth_invalid));
+            throw OAuthClient.userError(context, R.string.settings_transfer_error_auth_invalid);
         }
         UsageApi.saveTokens(context, tokens);
         AppPreferences.clearSnapshot(context);

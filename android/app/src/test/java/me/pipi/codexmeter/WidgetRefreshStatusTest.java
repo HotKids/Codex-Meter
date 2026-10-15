@@ -102,7 +102,8 @@ public class WidgetRefreshStatusTest {
         assertTrue(WidgetRefreshStatus.reconcile(app));
         runCompletedManual(job, new SocketTimeoutException("Synthetic timeout"), true, false);
         assertEquals(1, AppPreferences.getRefreshFailures(app));
-        assertEquals("Synthetic timeout", AppPreferences.getVisibleRefreshError(app));
+        assertEquals(app.getString(R.string.auth_error_network_timeout),
+                AppPreferences.getVisibleRefreshError(app));
     }
 
     @Test
@@ -223,7 +224,8 @@ public class WidgetRefreshStatusTest {
     public void manualFailureStopsFeedbackAndKeepsTheExistingSystemRetry() throws Exception {
         runCompletedManual(new SocketTimeoutException("Synthetic timeout"), true);
         assertEquals(1, AppPreferences.getRefreshFailures(app));
-        assertEquals("Synthetic timeout", AppPreferences.getVisibleRefreshError(app));
+        assertEquals(app.getString(R.string.auth_error_network_timeout),
+                AppPreferences.getVisibleRefreshError(app));
     }
 
     private void runCompletedManual(Exception failure, boolean retry) throws Exception {

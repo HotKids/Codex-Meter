@@ -204,8 +204,7 @@ public final class ResetCreditApi {
     }
 
     /**
-     * Throws the server's error for an unsuccessful response, or else the failure text for a
-     * forbidden (403), missing (404) or other HTTP status (formatted with the status code).
+     * Maps the response to localized recovery text after the authentication retry.
      */
     private static void ensureSuccess(Context context, UsageApi.Response response,
             UsageApi.Session session, int forbiddenRes, int notFoundRes, int httpStatusRes)
@@ -215,6 +214,9 @@ public final class ResetCreditApi {
             return;
         }
         UsageApi.recordAuthenticationRejection(context, response, session);
+        if (response.status == HttpURLConnection.HTTP_UNAUTHORIZED) {
+            throw OAuthClient.responseError(context, response.body, R.string.auth_error_session_expired);
+        }
         if (response.status == HttpURLConnection.HTTP_FORBIDDEN) {
             throw OAuthClient.responseError(context, response.body, forbiddenRes);
         }

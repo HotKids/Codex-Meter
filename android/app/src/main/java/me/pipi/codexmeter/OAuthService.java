@@ -170,10 +170,13 @@ public final class OAuthService extends Service {
                     String description = callback.parameters.get("error_description");
                     String message = description == null || description.isEmpty()
                             ? error : description;
-                    rejectRequest(browser, 400, message);
+                    Exception failure = OAuthClient.responseError(this,
+                            new org.json.JSONObject().put("error_description", message).toString(),
+                            "access_denied".equals(error)
+                                    ? R.string.auth_error_authorization_denied : R.string.auth_sign_in_failed);
+                    rejectRequest(browser, 400, failure.getLocalizedMessage());
                     browser = null;
-                    throw OAuthClient.userError(this, R.string.auth_sign_in_failed_reason,
-                            message);
+                    throw failure;
                 }
                 String code = callback.parameters.get("code");
                 if (code == null || code.isEmpty()) {
@@ -590,18 +593,12 @@ public final class OAuthService extends Service {
 
     /** The failure's localized message, bounded, or a generic sign-in failure. */
     private String cleanMessage(Exception exception) {
-        String message = exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return getString(R.string.auth_sign_in_failed);
-        }
+        String message = OAuthClient.localizedMessage(this, exception, R.string.auth_sign_in_failed);
         return truncate(message, MAX_ERROR_LENGTH);
     }
 
-    private static String widgetErrorMessage(RuntimeException exception) {
-        String message = exception.getLocalizedMessage();
-        if (message == null || message.trim().isEmpty()) {
-            return exception.getClass().getSimpleName();
-        }
+    private String widgetErrorMessage(RuntimeException exception) {
+        String message = OAuthClient.localizedMessage(this, exception, R.string.dashboard_operation_failed);
         return truncate(message, MAX_WIDGET_ERROR_LENGTH);
     }
 

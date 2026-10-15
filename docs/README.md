@@ -82,10 +82,15 @@ establish the verification status of a later release.
   历史分区、套餐价格、小组件项）、`NowBarText`（与 `NowBarCopy` 规则一致，自测逐项比对英文输出）。
 - 纯 Java 类（自测直接调用）保持英文，界面按错误代码或分区 ID 显示译文，例如
   `SettingsTransfer.Problem`、`UpdatePreferences.checkIntervalLabel`。
-- 后端与登录错误使用 `OAuthClient.UserFacingException`：`getMessage()` 为英文（写入诊断日志），
-  `getLocalizedMessage()` 为界面语言；界面一律显示后者。
-- 保留英文的内容：套餐名（产品名）、实时活动胶囊、单行（2×1、3×1）圆环小组件、
-  服务器或系统返回的错误原文、GitHub 发布说明原文、诊断日志、导出文件中的安全警告。
+- Backend and sign-in failures use `OAuthClient.UserFacingException`: `getMessage()`
+  retains diagnostic text, while `getLocalizedMessage()` uses app resources.
+  `OAuthClient.localizedMessage()` preserves known localized failures, translates
+  timeout/connection/TLS failures by type, and uses the operation's resource fallback
+  for unknown exceptions. OAuth callbacks, GitHub errors, and installer failures do
+  not expose remote or platform descriptions in user-facing messages.
+- Content kept in English: product plan names, live-activity capsules, one-row dial
+  widgets, original GitHub release notes, diagnostic logs, and export security warnings.
+  Server and platform error descriptions are retained only in diagnostics.
 - 已保存的错误信息（上次错误、更新错误）保持保存时的语言，直到下一次刷新或检查。
 
 术语：用量、额度、使用限额、周期、5 小时 / 每周 / 每月、剩余 / 已用、使用限额重置、重置次数、登录 / 退出登录、首页、
