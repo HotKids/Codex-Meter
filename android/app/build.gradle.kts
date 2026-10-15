@@ -114,6 +114,7 @@ configurations.configureEach {
 dependencies {
     implementation(project(":shared"))
     implementation("io.github.tribalfs:oneui-design:0.9.14+oneui8")
+    implementation("io.github.oneuiproject:icons:1.1.0")
     testImplementation("junit:junit:4.13.2")
     testImplementation("org.robolectric:robolectric:4.16.1")
 }

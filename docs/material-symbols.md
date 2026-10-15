@@ -35,9 +35,10 @@ cancel action comes from the same Google source commit:
 
 - [`close_24px.svg`](https://github.com/google/material-design-icons/blob/737e3324305806514d7909874fa1818ae1808232/symbols/web/close/materialsymbolsoutlined/close_24px.svg)
 
-History selection uses `check_circle`. Desktop and lock-screen dial glyphs use
-`schedule`, `calendar_today` and `alarm`, including their editor and picker
-previews. Static lock-screen picker glyphs retain the previous light/dark
+History selection uses `check_circle`. Larger desktop cards and lock-screen dial
+glyphs use `schedule`, `calendar_today` and `alarm`, including their editor and
+picker previews. The two-by-one desktop dials retain their original One UI
+time, calendar-week and alarm icons for every meter selection and preview. Static lock-screen picker glyphs retain the previous light/dark
 colors (`#FF010101` / `#FFFAFAFA`); runtime lock-screen glyphs retain their
 explicit foreground tint. Reset reminders use a white `alarm` vector without a theme tint;
 reset-credit expiry notifications and actions use a white `restart_alt` vector.

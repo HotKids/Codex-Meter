@@ -222,7 +222,7 @@ for name, fraction in (("track", "1.0"), ("primary", "0.76"), ("secondary", "0.7
         output.replace("widget_material.xml", "widget_dial_preview_track.xml")
         + ET.tostring(vector, encoding="unicode") + "\n")
 
-for section, icon, sample in (("primary", "schedule", "primary"), ("secondary", "alarm", "reset")):
+for section, icon, sample in (("primary", "time", "primary"), ("secondary", "alarm", "reset")):
     for layer, source in (("track", "track"), ("fill", section)):
         node = dial_nodes[f"{section}_samsung_{layer}"]
         node.set(android + "layout_width", f"{arc_size:g}dp")
@@ -233,7 +233,7 @@ for section, icon, sample in (("primary", "schedule", "primary"), ("secondary", 
     node.set(android + "layout_width", f"{cell_height * icon_fraction:g}dp")
     node.set(android + "layout_height", f"{cell_height * icon_fraction:g}dp")
     node.set(android + "layout_marginTop", f"{cell_height * icon_fraction:g}dp")
-    node.set(android + "src", f"@drawable/ic_ms_{icon}")
+    node.set(android + "src", f"@drawable/ic_oui_{icon}")
     if section == "secondary":
         node.set(android + "contentDescription", "@string/widget_editor_next_reset")
     node = dial_nodes[f"{section}_samsung_value"]
