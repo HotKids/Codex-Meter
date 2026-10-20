@@ -180,13 +180,12 @@ public final class UsageRefreshJobService extends JobService {
             } catch (Exception exception) {
                 throw new IllegalStateException(exception);
             }
-            // A chained job schedules its own retry instead of using JobScheduler's backoff.
+            // A chained failure uses the next cycle unless handing off to it fails.
             finish(!chainedCycle);
         }
 
         /**
-         * Releases this run and, unless the job was stopped or replaced, reports completion and
-         * schedules the next link of a chained refresh.
+         * Secures the next refresh before releasing this run; a failed handoff uses system retry.
          */
         private void finish(boolean needsReschedule) {
             endFeedback();
@@ -194,17 +193,21 @@ public final class UsageRefreshJobService extends JobService {
             if (stopped) {
                 return;
             }
-            jobFinished(params, needsReschedule && session.isCurrent());
             Context app = getApplicationContext();
-            if (chainedCycle && SecureTokenStore.isSignedIn(app)) {
-                try {
-                    session.commit(() -> RefreshScheduler.scheduleNextShort(app, params.getJobId()));
-                } catch (CancellationException exception) {
-                    // A completed old-session job is released without scheduling its successor.
-                } catch (Exception exception) {
-                    throw new IllegalStateException(exception);
-                }
+            boolean[] scheduled = {false};
+            try {
+                session.commit(() -> scheduled[0] = chainedCycle
+                        ? RefreshScheduler.scheduleNextShort(app, params.getJobId(), generation)
+                        : RefreshScheduler.schedulePeriodic(app));
+            } catch (CancellationException exception) {
+                // A completed old-session job cannot restore work for the current account.
+                jobFinished(params, false);
+                return;
+            } catch (Exception exception) {
+                throw new IllegalStateException(exception);
             }
+            if (!stopped) jobFinished(params,
+                    (needsReschedule || !scheduled[0]) && session.isCurrent());
         }
     }
 }

@@ -17,7 +17,7 @@ import java.util.concurrent.TimeUnit;
  *
  * <p>Fixed intervals of at least {@value #MIN_PERIODIC_MINUTES} minutes use a periodic job.
  * Shorter fixed intervals and automatic (adaptive) refresh use a chain of one-shot jobs that
- * alternate between two job IDs, each scheduling the next when it finishes.
+ * alternate between two job IDs, each scheduling the next before it finishes.
  */
 public final class RefreshScheduler {
     static final String REASON_ADAPTIVE = "adaptive";
@@ -34,6 +34,10 @@ public final class RefreshScheduler {
     private static final int RESET_JOB_ID = 73102;
     private static final int SHORT_JOB_ID_A = 73103;
     private static final int SHORT_JOB_ID_B = 73104;
+    private static final int[] RECURRING_JOB_IDS = {
+            PERIODIC_JOB_ID, SHORT_JOB_ID_A, SHORT_JOB_ID_B};
+    // Scheduling must not acquire the widget feedback monitor while holding this lock.
+    private static final Object SCHEDULE_LOCK = new Object();
 
     /** JobScheduler's minimum period; shorter fixed intervals are chained instead. */
     private static final int MIN_PERIODIC_MINUTES = 15;
@@ -47,7 +51,18 @@ public final class RefreshScheduler {
     private RefreshScheduler() {
     }
 
+    /** Keeps a healthy recurring job's deadline; rebuilds only missing or obsolete schedules. */
     public static boolean schedulePeriodic(Context context) {
+        return ensurePeriodic(context, -1, "");
+    }
+
+    /** The finishing generation cannot count as its own successor. */
+    static boolean scheduleNextShort(Context context, int finishedJobId, String finishedGeneration) {
+        return ensurePeriodic(context, finishedJobId, finishedGeneration);
+    }
+
+    private static boolean ensurePeriodic(Context context, int finishedJobId,
+            String finishedGeneration) {
         Context app = appContext(context);
         if (app == null) {
             return false;
@@ -58,73 +73,74 @@ public final class RefreshScheduler {
             return true;
         }
         try {
-            JobScheduler scheduler = scheduler(app);
-            if (scheduler == null) {
-                reportSchedulerUnavailable(app);
-                return false;
-            }
-            scheduler.cancel(PERIODIC_JOB_ID);
-            scheduler.cancel(SHORT_JOB_ID_A);
-            scheduler.cancel(SHORT_JOB_ID_B);
-            if (AppPreferences.getAutomaticRefresh(app)) {
+            synchronized (SCHEDULE_LOCK) {
+                if (!SecureTokenStore.isSignedIn(app)) return false;
+                JobScheduler scheduler = scheduler(app);
+                if (scheduler == null) {
+                    reportSchedulerUnavailable(app);
+                    return false;
+                }
+                boolean automatic = AppPreferences.getAutomaticRefresh(app);
+                int configuredMinutes = AppPreferences.getRefreshMinutes(app);
+                String reason = automatic ? REASON_ADAPTIVE
+                        : configuredMinutes < MIN_PERIODIC_MINUTES
+                                ? REASON_SHORT_PERIODIC : REASON_PERIODIC;
+                long intervalMillis = TimeUnit.MINUTES.toMillis(configuredMinutes);
+                for (int jobId : RECURRING_JOB_IDS) {
+                    JobInfo job = scheduler.getPendingJob(jobId);
+                    boolean finishing = job != null && jobId == finishedJobId
+                            && finishedGeneration.equals(generation(job.getExtras()));
+                    if (!finishing && matches(job, reason, intervalMillis)) {
+                        cancelObsolete(scheduler, reason, intervalMillis, finishedJobId);
+                        return true;
+                    }
+                }
+                int refreshMinutes = automatic ? effectiveRefreshMinutes(app) : configuredMinutes;
                 DiagnosticLog.info(app, "scheduler", "refresh_schedule_requested",
-                        "mode", "adaptive",
-                        "minutes", effectiveRefreshMinutes(app));
-                return scheduleNextChained(app, SHORT_JOB_ID_B, REASON_ADAPTIVE);
+                        "mode", automatic ? "adaptive" : "fixed",
+                        "minutes", refreshMinutes);
+                JobInfo.Builder next;
+                if (REASON_PERIODIC.equals(reason)) {
+                    next = baseJob(app, PERIODIC_JOB_ID, reason)
+                            .setPeriodic(intervalMillis).setPersisted(true);
+                } else {
+                    int nextJobId = finishedJobId == SHORT_JOB_ID_A
+                            ? SHORT_JOB_ID_B : SHORT_JOB_ID_A;
+                    long delayMillis = TimeUnit.MINUTES.toMillis(refreshMinutes);
+                    next = baseJob(app, nextJobId, reason)
+                            .setMinimumLatency(delayMillis)
+                            .setOverrideDeadline(delayMillis + DEADLINE_SLACK_MS);
+                }
+                if (!submit(app, next.build())) return false;
+                cancelObsolete(scheduler, reason, intervalMillis, finishedJobId);
+                return true;
             }
-            int refreshMinutes = AppPreferences.getRefreshMinutes(app);
-            DiagnosticLog.info(app, "scheduler", "refresh_schedule_requested",
-                    "mode", "fixed",
-                    "minutes", refreshMinutes);
-            if (refreshMinutes < MIN_PERIODIC_MINUTES) {
-                return scheduleNextChained(app, SHORT_JOB_ID_B, REASON_SHORT_PERIODIC);
-            }
-            return submit(app, baseJob(app, PERIODIC_JOB_ID, REASON_PERIODIC)
-                    .setPeriodic(TimeUnit.MINUTES.toMillis(refreshMinutes))
-                    .setPersisted(true)
-                    .build());
         } catch (RuntimeException e) {
             return failed(app, e);
         }
     }
 
-    /** Called when a chained job finishes to schedule the next link in the chain. */
-    static boolean scheduleNextShort(Context context, int finishedJobId) {
-        Context app = appContext(context);
-        if (app == null) {
-            return false;
+    private static boolean matches(JobInfo job, String expectedReason, long intervalMillis) {
+        if (job == null || !expectedReason.equals(reason(job.getExtras()))) return false;
+        if (REASON_PERIODIC.equals(expectedReason)) {
+            return job.getId() == PERIODIC_JOB_ID && job.isPeriodic()
+                    && job.getIntervalMillis() == intervalMillis;
         }
-        if (!SecureTokenStore.isSignedIn(app)) {
-            return true;
-        }
-        boolean automatic = AppPreferences.getAutomaticRefresh(app);
-        if (!automatic && AppPreferences.getRefreshMinutes(app) >= MIN_PERIODIC_MINUTES) {
-            // The user switched to an interval a periodic job can handle.
-            return schedulePeriodic(app);
-        }
-        return scheduleNextChained(app, finishedJobId,
-                automatic ? REASON_ADAPTIVE : REASON_SHORT_PERIODIC);
+        return (job.getId() == SHORT_JOB_ID_A || job.getId() == SHORT_JOB_ID_B)
+                && !job.isPeriodic()
+                && (REASON_ADAPTIVE.equals(expectedReason)
+                        || job.getMinLatencyMillis() == intervalMillis);
     }
 
-    private static boolean scheduleNextChained(Context context, int previousJobId,
-            String reason) {
-        int refreshMinutes = effectiveRefreshMinutes(context);
-        try {
-            JobScheduler scheduler = scheduler(context);
-            if (scheduler == null) {
-                reportSchedulerUnavailable(context);
-                return false;
+    private static void cancelObsolete(JobScheduler scheduler, String expectedReason,
+            long intervalMillis, int finishedJobId) {
+        for (int jobId : RECURRING_JOB_IDS) {
+            JobInfo job = scheduler.getPendingJob(jobId);
+            // Retain the running job until jobFinished so a rejected handoff can retry it.
+            if (job != null && jobId != finishedJobId
+                    && !matches(job, expectedReason, intervalMillis)) {
+                scheduler.cancel(jobId);
             }
-            // Alternate IDs so scheduling the next link never cancels the job that is running.
-            int nextJobId = previousJobId == SHORT_JOB_ID_A ? SHORT_JOB_ID_B : SHORT_JOB_ID_A;
-            scheduler.cancel(nextJobId);
-            long delayMillis = TimeUnit.MINUTES.toMillis(refreshMinutes);
-            return submit(context, baseJob(context, nextJobId, reason)
-                    .setMinimumLatency(delayMillis)
-                    .setOverrideDeadline(delayMillis + DEADLINE_SLACK_MS)
-                    .build());
-        } catch (RuntimeException e) {
-            return failed(context, e);
         }
     }
 
@@ -166,6 +182,7 @@ public final class RefreshScheduler {
             return true;
         }
         try {
+            schedulePeriodic(app);
             boolean accepted;
             boolean refreshing;
             synchronized (WidgetRefreshStatus.class) {
@@ -227,11 +244,13 @@ public final class RefreshScheduler {
                 if (scheduler == null) {
                     return;
                 }
-                scheduler.cancel(PERIODIC_JOB_ID);
-                scheduler.cancel(IMMEDIATE_JOB_ID);
-                scheduler.cancel(RESET_JOB_ID);
-                scheduler.cancel(SHORT_JOB_ID_A);
-                scheduler.cancel(SHORT_JOB_ID_B);
+                synchronized (SCHEDULE_LOCK) {
+                    scheduler.cancel(PERIODIC_JOB_ID);
+                    scheduler.cancel(IMMEDIATE_JOB_ID);
+                    scheduler.cancel(RESET_JOB_ID);
+                    scheduler.cancel(SHORT_JOB_ID_A);
+                    scheduler.cancel(SHORT_JOB_ID_B);
+                }
                 AppPreferences.setSchedulerError(app, "");
                 DiagnosticLog.info(app, "scheduler", "all_refresh_jobs_cancelled");
             }

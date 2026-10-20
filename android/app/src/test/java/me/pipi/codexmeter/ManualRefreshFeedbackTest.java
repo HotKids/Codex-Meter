@@ -35,14 +35,14 @@ public class ManualRefreshFeedbackTest {
     public void widgetRefreshPreservesThatTheRequestWasManual() {
         new WidgetRefreshReceiver().onReceive(app,
                 new Intent(AppConstants.ACTION_REFRESH_WIDGET));
-        JobInfo job = app.getSystemService(JobScheduler.class).getAllPendingJobs().get(0);
+        JobInfo job = app.getSystemService(JobScheduler.class).getPendingJob(73101);
         assertEquals("manual", job.getExtras().getString("reason"));
     }
 
     @Test
     public void liveNotificationRefreshAlsoPreservesManualFeedback() {
         new NowBarActionReceiver().onReceive(app, new Intent(NowBarManager.ACTION_REFRESH));
-        JobInfo job = app.getSystemService(JobScheduler.class).getAllPendingJobs().get(0);
+        JobInfo job = app.getSystemService(JobScheduler.class).getPendingJob(73101);
         assertEquals("manual", job.getExtras().getString("reason"));
     }
 
@@ -50,7 +50,7 @@ public class ManualRefreshFeedbackTest {
     public void automaticLaunchRefreshCannotReplacePendingManualFeedback() {
         new WidgetRefreshReceiver().onReceive(app, new Intent(AppConstants.ACTION_REFRESH_WIDGET));
         RefreshScheduler.scheduleImmediate(app);
-        JobInfo job = app.getSystemService(JobScheduler.class).getAllPendingJobs().get(0);
+        JobInfo job = app.getSystemService(JobScheduler.class).getPendingJob(73101);
         assertEquals("manual", job.getExtras().getString("reason"));
     }
 

@@ -351,10 +351,13 @@ public class WidgetRefreshStatusTest {
     @Test
     public void watchdogClearsALostQueuedJobWithoutSchedulingNewBusinessWork() {
         JobInfo job = manual();
+        JobInfo recurring = scheduler.getPendingJob(73103);
         scheduler.cancel(job.getId());
         new WidgetRefreshReceiver().onReceive(app, new Intent(WidgetRefreshStatus.ACTION_RECONCILE));
         assertFalse(WidgetRefreshStatus.isRefreshing(app));
-        assertTrue(scheduler.getAllPendingJobs().isEmpty());
+        assertEquals(1, scheduler.getAllPendingJobs().size());
+        assertEquals(RefreshScheduler.generation(recurring.getExtras()),
+                RefreshScheduler.generation(scheduler.getPendingJob(73103).getExtras()));
     }
 
     @Test
