@@ -14,9 +14,10 @@ and source commit:
 
 In the translated 960-unit viewport, Sync spans x=160–800 and y=160–800;
 Sync Problem spans x=120–840 and y=160–800. Both are centered at (480, 480).
-The shared card renderer shifts each glyph by its horizontal inset so the visible
-end aligns with the content panel. Equal and opposite padding retains the same
-fitCenter scale and click target; the shift is mirrored in RTL layouts.
+The shared card renderer compensates for each glyph's horizontal inset to center
+its visible bounds on the refresh target. Narrow cards balance the visible top
+and end gaps; wider cards retain the shell corner axis. Equal and opposite padding
+retains the same fitCenter scale; the shift is mirrored in RTL layouts.
 
 The default tint follows primary text in light and dark themes. Explicitly disabled
 controls keep their disabled state.

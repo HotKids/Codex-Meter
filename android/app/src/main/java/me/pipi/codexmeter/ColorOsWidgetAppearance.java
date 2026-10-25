@@ -65,10 +65,6 @@ final class ColorOsWidgetAppearance {
         views.setFloat(surface, "setPivotY", 0f);
         views.setFloat(surface, "setScaleX", 1f);
         views.setFloat(surface, "setScaleY", 1f);
-        if (!dial) {
-            views.setViewLayoutWidth(R.id.md_refresh_corner_anchor, cardCornerRadiusPx(context),
-                    TypedValue.COMPLEX_UNIT_PX);
-        }
         if (!colorOs || !positive(widthDp) || !positive(heightDp)) {
             return;
         }

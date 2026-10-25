@@ -12,6 +12,7 @@ import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.os.Parcel;
+import android.provider.Settings;
 import android.text.Spanned;
 import android.text.TextPaint;
 import android.text.style.TypefaceSpan;
@@ -149,25 +150,118 @@ public class MaterialCardHeaderTest {
     }
 
     @Test
-    public void refreshKeepsItsHeaderLineAndAlignsWithTheCornerAxis() {
-        for (int[] size : new int[][] {{110, 130}, {140, 200}, {350, 170}, {500, 300}}) {
-            for (boolean failed : new boolean[] {false, true}) {
-                View card = build(size[0], size[1], failed, 100);
-                ImageView image = card.findViewById(R.id.md_refresh);
-                View header = card.findViewById(R.id.md_header);
-                android.graphics.Rect visible = visibleRefreshBounds(image);
-                assertEquals("Refresh stays on the original header line",
-                        topIn(header, card) + header.getHeight() / 2f,
-                        topIn(image, card) + visible.exactCenterY(), 1f);
-                assertEquals("Refresh centers on the shell corner axis",
+    public void narrowSyncBalancesItsVisibleInsetsWithoutChangingTheHeaderLine() {
+        assertRefreshHeaderAlignment(true, false);
+    }
+
+    @Test
+    public void narrowSyncProblemBalancesItsVisibleInsetsWithoutChangingTheHeaderLine() {
+        assertRefreshHeaderAlignment(true, true);
+    }
+
+    @Test
+    public void wideRefreshRetainsItsCornerAxisAndOriginalHeaderLine() {
+        for (boolean failed : new boolean[] {false, true}) {
+            assertRefreshHeaderAlignment(false, failed);
+        }
+    }
+
+    private static void assertRefreshHeaderAlignment(boolean narrow, boolean failed) {
+        int[][] sizes = narrow ? new int[][] {{110, 130}, {140, 200}, {249, 170}}
+                : new int[][] {{250, 170}, {350, 170}, {500, 300}};
+        for (int[] size : sizes) {
+            View card = build(size[0], size[1], failed, 100);
+            ImageView image = card.findViewById(R.id.md_refresh);
+            View header = card.findViewById(R.id.md_header);
+            android.graphics.Rect visible = visibleRefreshBounds(image);
+            assertEquals("Refresh stays on the original header line",
+                    topIn(header, card) + header.getHeight() / 2f,
+                    topIn(image, card) + visible.exactCenterY(), 1f);
+            if (size[0] < 250) {
+                assertBalancedVisibleRefreshInsets(card);
+            } else {
+                assertEquals("Wide refresh centers on the shell corner axis",
                         card.getWidth() - ColorOsWidgetAppearance.cardCornerRadiusPx(context()),
                         leftIn(image, card) + visible.exactCenterX(), 1f);
-                View target = card.findViewById(R.id.md_refresh_button);
-                int targetBottom = topIn(target, card) + target.getHeight();
-                int rowTop = topIn(card.findViewById(R.id.md_row_0), card);
-                assertTrue("Refresh target " + size[0] + "x" + size[1] + " ends at "
-                        + targetBottom + " past row " + rowTop, targetBottom <= rowTop);
             }
+            View target = card.findViewById(R.id.md_refresh_button);
+            int targetBottom = topIn(target, card) + target.getHeight();
+            int rowTop = topIn(card.findViewById(R.id.md_row_0), card);
+            assertTrue("Refresh target " + size[0] + "x" + size[1] + " ends at "
+                    + targetBottom + " past row " + rowTop, targetBottom <= rowTop);
+        }
+    }
+
+    @Test
+    public void oppoNarrowRefreshBalancesItsVisibleInsetsAcrossLauncherIconSizes() {
+        assertOppoNarrowRefreshInsets();
+    }
+
+    @Test
+    @Config(qualifiers = "ar-rEG-ldrtl-xhdpi")
+    public void rtlOppoNarrowRefreshBalancesItsVisibleInsetsAcrossLauncherIconSizes() {
+        assertOppoNarrowRefreshInsets();
+    }
+
+    private static void assertOppoNarrowRefreshInsets() {
+        new ColorOsWidgetAppearanceTest().prepareSyntheticHost();
+        assertTrue(ColorOsWidgetAppearance.isStockLauncher(context()));
+        for (String iconSize : new String[] {"52", "40", "64"}) {
+            Settings.Secure.putString(context().getContentResolver(), "layout_icon_size", iconSize);
+            for (int[] size : new int[][] {{140, 200}, {170, 170}, {249, 170}}) {
+                for (boolean failed : new boolean[] {false, true}) {
+                    UsageCardState state = new UsageCardState(true,
+                            UsageCardFixtures.snapshot("pro200", 19, 23, false), null,
+                            failed ? "Synthetic network failure" : "", UsageCardFixtures.NOW);
+                    WidgetOptions options = new WidgetOptions("auto", "system", "app", 100,
+                            "hidden", "remaining");
+                    View card = apply(WidgetRenderer.build(context(), 42, options, state,
+                            size[0], size[1], null), size[0], size[1]);
+                    assertEquals(context().getResources().getConfiguration().getLayoutDirection(),
+                            card.findViewById(R.id.md_refresh).getLayoutDirection());
+                    assertBalancedVisibleRefreshInsets(card);
+                    assertVisibleRefreshCentered(card);
+                }
+            }
+        }
+    }
+
+    @Test
+    public void narrowPickerRefreshBalancesItsVisibleTopAndEndInsets() {
+        assertNarrowPickerRefreshInsets();
+    }
+
+    @Test
+    @Config(qualifiers = "ar-rEG-ldrtl-xhdpi")
+    public void rtlNarrowPickerRefreshBalancesItsVisibleTopAndEndInsets() {
+        assertNarrowPickerRefreshInsets();
+    }
+
+    @Test
+    public void oppoPickerAppearanceKeepsTheBalancedRefreshInsetsAcrossIconSizes() {
+        new ColorOsWidgetAppearanceTest().prepareSyntheticHost();
+        for (String iconSize : new String[] {"52", "40", "64"}) {
+            Settings.Secure.putString(context().getContentResolver(), "layout_icon_size", iconSize);
+            RemoteViews preview = new RemoteViews(context().getPackageName(),
+                    R.layout.widget_coloros_card_preview);
+            ColorOsWidgetAppearance.apply(context(), preview, false, 100);
+            View card = apply(preview, 146, 146);
+            assertBalancedVisibleRefreshInsets(card);
+            assertVisibleRefreshCentered(card);
+        }
+    }
+
+    private static void assertNarrowPickerRefreshInsets() {
+        for (int[] preview : new int[][] {
+                {R.layout.widget_material_preview, 140, 200},
+                {R.layout.widget_oneui_card_preview, 125, 130},
+                {R.layout.widget_coloros_card_preview, 146, 146}}) {
+            View card = apply(new RemoteViews(context().getPackageName(), preview[0]),
+                    preview[1], preview[2]);
+            assertEquals(context().getResources().getConfiguration().getLayoutDirection(),
+                    card.findViewById(R.id.md_refresh).getLayoutDirection());
+            assertBalancedVisibleRefreshInsets(card);
+            assertVisibleRefreshCentered(card);
         }
     }
 
@@ -228,6 +322,7 @@ public class MaterialCardHeaderTest {
                 ImageView refresh = applied.findViewById(R.id.md_refresh);
                 assertEquals(View.LAYOUT_DIRECTION_RTL, refresh.getLayoutDirection());
                 assertVisibleRefreshCentered(applied);
+                if (width < 250) assertBalancedVisibleRefreshInsets(applied);
             }
         }
     }
@@ -428,6 +523,17 @@ public class MaterialCardHeaderTest {
                 topIn(image, card) + visible.exactCenterY(), 1f);
     }
 
+    private static void assertBalancedVisibleRefreshInsets(View card) {
+        ImageView image = card.findViewById(R.id.md_refresh);
+        android.graphics.Rect visible = visibleRefreshBounds(image);
+        int topGap = topIn(image, card) + visible.top;
+        int left = leftIn(image, card);
+        int endGap = image.getLayoutDirection() == View.LAYOUT_DIRECTION_RTL
+                ? left + visible.left : card.getWidth() - left - visible.right;
+        assertEquals("Narrow refresh visible top and end gaps must match within one dp",
+                topGap, endGap, Math.max(1f, context().getResources().getDisplayMetrics().density));
+    }
+
     private static android.graphics.Rect visibleRefreshBounds(ImageView image) {
         Bitmap bitmap = draw(image);
         android.graphics.Rect visible = new android.graphics.Rect();
@@ -485,7 +591,10 @@ public class MaterialCardHeaderTest {
     }
 
     private static View apply(RemoteViews remote, int width, int height) {
-        View applied = remote.apply(context(), new FrameLayout(context()));
+        FrameLayout host = new FrameLayout(context());
+        host.setLayoutDirection(context().getResources().getConfiguration().getLayoutDirection());
+        View applied = remote.apply(context(), host);
+        host.addView(applied);
         measure(applied, width, height);
         return applied;
     }

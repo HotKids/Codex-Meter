@@ -26,12 +26,13 @@ reduces internal padding and gaps using actual font line heights. Normal placeme
 existing spacing. Widget-editor drafts survive activity recreation and are persisted only by
 Save; Cancel leaves the placed widget unchanged.
 
-Card refresh controls retain the header center line and place the glyph center on the shell's
-right-corner axis (mirrored in RTL), using the actual system or ColorOS radius. Their independent
+Card refresh controls retain the header center line. Narrow cards below 250dp balance the glyph's
+visible top and end gaps, including Sync Problem's wider bounds. Wider cards keep the glyph center
+on the shell's right-corner axis (mirrored in RTL), using the actual system or ColorOS radius. Their independent
 targets fit inside the card and end before the first content row; the centered foreground ripple
 uses a 22dp circular mask and an 11dp radius. The framework DayNight theme keeps native feedback
 visible above the image-based shell. Layout aliases reload previously cached foregrounds once.
-Picker previews derive the same geometry from the common layout and host radius resources.
+Picker previews represent the narrow card and derive balanced gaps from the common header metrics.
 
 Accepted manual refreshes show a native rotating version of the current status icon: Sync for
 current data, Sync Problem for waiting, failed, or stale data. Rotation ends on completion,

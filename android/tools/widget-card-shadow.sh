@@ -34,7 +34,7 @@ ET.register_namespace("tools", tools[1:-1])
 root = ET.parse(layouts / "widget_material.xml").getroot()
 # Widget hosts inflate framework ImageView; AppCompat's app:tint is not available.
 root.set(tools + "ignore", "UseAppTint")
-# The refresh glyph straddles its corner anchor, so the root must allow that overflow too.
+# The refresh glyph straddles its end anchor, so the root must allow that overflow too.
 root.set(android + "clipChildren", "false")
 renderer = layouts.parents[1] / "java/me/pipi/codexmeter/MaterialCardRenderer.java"
 renderer_source = renderer.read_text()
@@ -63,7 +63,7 @@ def set_attrs(identifier, **attributes):
 set_attrs("md_surface", tint="@color/widget_material_surface")
 set_attrs("md_logo", tint="@color/widget_material_accent")
 set_attrs("md_refresh", tint="@color/widget_material_text")
-# A resource-width anchor keeps the picker icon on the host's actual corner axis.
+# Narrow picker cards balance the glyph's visible top and end gaps.
 refresh_icon = copy.deepcopy(elements["md_refresh"])
 elements["md_refresh"].attrib.pop(android + "id")
 elements["md_refresh"].set(android + "visibility", "invisible")
@@ -81,7 +81,7 @@ elements["md_refresh_button"].append(refresh_icon)
 root.remove(elements["md_refresh_button"])
 anchor = ET.SubElement(root, "FrameLayout", {
     android + "id": "@+id/md_refresh_corner_anchor",
-    android + "layout_width": "@dimen/widget_card_corner_radius",
+    android + "layout_width": f"{refresh_top_center:g}dp",
     android + "layout_height": "match_parent",
     android + "layout_gravity": "top|end",
     android + "clipChildren": "false",
@@ -161,7 +161,6 @@ ET.indent(samsung_card, space="    ")
 # ColorOS measures generated previews without constraints and never enlarges them.
 # Match Calendar's 146dp square preview without changing the placed-widget contract.
 classic_card(root)
-anchor.set(android + "layout_width", "@dimen/widget_coloros_card_radius")
 root.set(android + "minWidth", "146dp")
 root.set(android + "minHeight", "146dp")
 (layouts / "widget_coloros_card_preview.xml").write_text(

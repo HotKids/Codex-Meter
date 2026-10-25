@@ -240,16 +240,19 @@ final class MaterialCardRenderer {
         boolean rtl = resources.getConfiguration().getLayoutDirection() == View.LAYOUT_DIRECTION_RTL;
         int shift = Math.round(iconWidth * (problem ? SYNC_PROBLEM_INSET : REFRESH_END_INSET));
         views.setViewPadding(R.id.md_refresh, rtl ? -shift : shift, 0, rtl ? shift : -shift, 0);
-        float endCenter = ColorOsWidgetAppearance.cardCornerRadiusPx(context);
+        float topCenter = px(PADDING) + (headerHeightPx - iconWidth) / 2 + iconWidth / 2f;
+        // Narrow cards balance visible top/end gaps; Sync Problem has a wider glyph.
+        float endCenter = wide ? ColorOsWidgetAppearance.cardCornerRadiusPx(context)
+                : topCenter + (problem
+                        ? iconWidth * (REFRESH_END_INSET - SYNC_PROBLEM_INSET) : 0f);
         int endMargin = Math.round(endCenter - px(PADDING) - iconWidth / 2f + shift);
         views.setViewLayoutMargin(R.id.md_refresh, RemoteViews.MARGIN_END, endMargin,
                 TypedValue.COMPLEX_UNIT_PX);
-        float topCenter = px(PADDING) + (headerHeightPx - iconWidth) / 2 + iconWidth / 2f;
         // RemoteViews margins use pixel offsets (truncate), unlike explicit sizes (round).
         int rowGap = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_DIP,
                 FIRST_ROW_GAP * scale, resources.getDisplayMetrics());
         float rowTop = px(PADDING) + headerHeightPx + rowGap;
-        // Align with the shell's corner axis while retaining the original header center line.
+        // Keep feedback centered on the glyph and above the first content row.
         int targetSize = Math.min(Math.round(REFRESH_TARGET * resources.getDisplayMetrics().density),
                 (int) (2 * Math.min(endCenter, Math.min(topCenter, rowTop - topCenter))));
         targetSize -= (targetSize - iconWidth) & 1;
