@@ -8,6 +8,8 @@ import android.content.Context;
 import android.content.res.Configuration;
 import android.graphics.Bitmap;
 import android.graphics.Canvas;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.ScaleDrawable;
 import android.os.Parcel;
 import android.view.View;
 import android.widget.FrameLayout;
@@ -36,8 +38,15 @@ public class ClassicWidgetProgressTest {
                 View widget = render(context, WidgetOptions.COLOR_CLASSIC, used, dial,
                         WidgetMeters.WEEKLY);
                 ImageView fill = widget.findViewById(dial ? R.id.primary_samsung_fill : R.id.md_fill_0);
-                assertStatusColor("used=" + used + ", dial=" + dial, fill,
-                        used >= 85 ? 0xFFED5F64 : used >= 60 ? 0xFFFF9F0A : 0);
+                int expected = used >= 85 ? 0xFFED5F64 : used >= 60 ? 0xFFFF9F0A : 0;
+                if (!dial && expected != 0) {
+                    GradientDrawable gradient = (GradientDrawable)
+                            ((ScaleDrawable) fill.getDrawable()).getDrawable();
+                    assertEquals("The card gradient retains the severity endpoint at " + used,
+                            expected, gradient.getColors()[1]);
+                } else {
+                    assertStatusColor("used=" + used + ", dial=" + dial, fill, expected);
+                }
             }
         }
     }

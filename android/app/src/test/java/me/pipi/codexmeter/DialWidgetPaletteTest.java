@@ -39,17 +39,17 @@ public class DialWidgetPaletteTest {
     }
 
     @Test
-    public void neutralLayersFollowAppearanceWhileNormalProgressUsesDynamicPrimary() {
+    public void dialsRetainSecondarySurfacesWhileCardPanelsUseNeutralTones() {
         Context light = themedContext(Configuration.UI_MODE_NIGHT_NO);
         Context night = themedContext(Configuration.UI_MODE_NIGHT_YES);
         assertEquals(light.getColor(android.R.color.system_accent2_50),
                 light.getColor(R.color.widget_material_surface));
-        assertEquals(light.getColor(android.R.color.system_accent2_100),
-                light.getColor(R.color.widget_material_panel));
+        assertEquals(light.getColor(android.R.color.system_neutral2_100),
+                light.getColor(R.color.widget_card_panel));
         assertEquals(night.getColor(android.R.color.system_accent2_800),
                 night.getColor(R.color.widget_material_surface));
-        assertEquals(night.getColor(android.R.color.system_accent2_700),
-                night.getColor(R.color.widget_material_panel));
+        assertEquals(night.getColor(android.R.color.system_neutral2_800),
+                night.getColor(R.color.widget_card_panel));
         assertEquals(0x1A000000, light.getColor(R.color.widget_material_track));
         assertEquals(0x33FCFCFF, night.getColor(R.color.widget_material_track));
         assertEquals(light.getColor(android.R.color.system_accent1_600),

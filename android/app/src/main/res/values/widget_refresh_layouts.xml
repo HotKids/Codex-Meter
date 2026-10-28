@@ -1,6 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
-<resources>
+<resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Hosts must reinflate the compact refresh control and its bounded foreground once. -->
     <item name="widget_material_refresh" type="layout">@layout/widget_material</item>
-    <item name="widget_material_refresh_shadow" type="layout">@layout/widget_material_shadow</item>
+    <!-- Retained for serialized transparent widgets cached before their first new update. -->
+    <item name="widget_material_refresh_shadow" type="layout" tools:ignore="UnusedResources">@layout/widget_material_shadow</item>
+    <!-- New label styles require reinflation; reapply retains the host's old bold typeface. -->
+    <item name="widget_material_card" type="layout">@layout/widget_material</item>
+    <item name="widget_material_card_shadow" type="layout">@layout/widget_material_shadow</item>
 </resources>

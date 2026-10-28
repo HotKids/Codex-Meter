@@ -106,13 +106,13 @@ public class ColorOsWidgetAppearanceTest {
     @Test
     @Config(qualifiers = "zh-rCN-notnight-xhdpi")
     public void colorOsLightLayersKeepAllForegroundPixelsAndRenderReviewImages() throws Exception {
-        assertColorOsLayers(0xFFFFFFFF, 0xFFF5F5F5, "light");
+        assertColorOsLayers(0xFFFFFFFF, 0xFFF7F7F7, "light");
     }
 
     @Test
     @Config(qualifiers = "zh-rCN-night-xhdpi")
     public void colorOsDarkLayersKeepAllForegroundPixelsAndRenderReviewImages() throws Exception {
-        assertColorOsLayers(0xFF373737, 0xFF474747, "dark");
+        assertColorOsLayers(0xFF373737, 0xFF414141, "dark");
     }
 
     @Test
@@ -421,13 +421,13 @@ public class ColorOsWidgetAppearanceTest {
     @Test
     @Config(qualifiers = "zh-rCN-notnight-xhdpi")
     public void generatedLightPreviewsRenderTheSameClassicLayersDespiteXmlTint() throws Exception {
-        assertPublishedPreviews(0xFFFFFFFF, 0xFFF5F5F5, "light");
+        assertPublishedPreviews(0xFFFFFFFF, 0xFFF7F7F7, "light");
     }
 
     @Test
     @Config(qualifiers = "zh-rCN-night-xhdpi")
     public void generatedDarkPreviewsRenderTheSameClassicLayersDespiteXmlTint() throws Exception {
-        assertPublishedPreviews(0xFF373737, 0xFF474747, "dark");
+        assertPublishedPreviews(0xFF373737, 0xFF414141, "dark");
     }
 
     @Test
@@ -488,13 +488,13 @@ public class ColorOsWidgetAppearanceTest {
     @Test
     @Config(qualifiers = "zh-rCN-notnight-mdpi")
     public void colorOsEditorUsesTheSameLightPaletteAndOpacityTicks() {
-        assertEditorLayers(0xFFFFFFFF, 0xFFF5F5F5);
+        assertEditorLayers(0xFFFFFFFF, 0xFFF7F7F7);
     }
 
     @Test
     @Config(qualifiers = "zh-rCN-night-mdpi")
     public void colorOsEditorUsesTheSameDarkPaletteAndOpacityTicks() {
-        assertEditorLayers(0xFF373737, 0xFF474747);
+        assertEditorLayers(0xFF373737, 0xFF414141);
     }
 
     @Test
@@ -517,7 +517,7 @@ public class ColorOsWidgetAppearanceTest {
                 stale, current);
         View view = apply(SIZES[0], current);
         assertNeutralSurface(surface(SIZES[0], view), 0xFFFFFFFF);
-        assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF5F5F5);
+        assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF7F7F7);
         ColorOsWidgetAppearance.publishPreviews(app, manager);
         assertSame("An unchanged process must not repeatedly publish the same preview", current,
                 manager.getWidgetPreview(provider, Process.myUserHandle(), category));
@@ -546,7 +546,7 @@ public class ColorOsWidgetAppearanceTest {
             RemoteViews current = manager.getWidgetPreview(provider, Process.myUserHandle(), category);
             assertNotSame("The next call must retry the same-layout stale actions", stale, current);
             View view = apply(SIZES[0], current);
-            assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF5F5F5);
+            assertNeutralPanel(view.findViewById(R.id.md_panel_bg_0), 0xFFF7F7F7);
             ColorOsWidgetAppearance.publishPreviews(app, manager);
             assertSame("Successful publication closes the retry", current,
                     manager.getWidgetPreview(provider, Process.myUserHandle(), category));
@@ -809,10 +809,10 @@ public class ColorOsWidgetAppearanceTest {
         assertEquals("The rendered inner background retains the selected opacity", alpha,
                 actualAlpha, alpha == 0 || alpha == 255 ? 0 : 1);
         if (alpha == 255) {
-            assertEquals("ColorOS retains its reference inner surface color", color, actual);
+            assertEquals("ColorOS retains its softened inner surface color", color, actual);
         } else if (alpha > 0) {
             for (int shift : new int[] {0, 8, 16}) {
-                assertEquals("Premultiplied panel RGB retains the ColorOS reference color",
+                assertEquals("Premultiplied panel RGB retains the softened ColorOS color",
                         Math.round(((color >> shift) & 255) * actualAlpha / 255f),
                         Math.round(((actual >> shift) & 255) * actualAlpha / 255f), 1);
             }

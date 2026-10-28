@@ -80,11 +80,11 @@ public class WidgetPaletteSelectionTest {
                     int shell = context.getColor(classic
                             ? host == 2 ? R.color.widget_coloros_classic_surface
                                     : R.color.widget_oneui_surface
-                            : R.color.widget_material_surface);
+                            : R.color.widget_card_surface);
                     int panel = context.getColor(classic
                             ? host == 2 ? R.color.widget_coloros_classic_panel
-                                    : R.color.widget_oneui_panel
-                            : R.color.widget_material_panel);
+                                    : R.color.widget_card_classic_panel
+                            : R.color.widget_card_panel);
                     if (host == 1) {
                         assertEquals(shell, ((ColorDrawable) widget.getBackground()).getColor());
                     } else {
@@ -116,7 +116,8 @@ public class WidgetPaletteSelectionTest {
                     assertTrue(widget.getBackground() instanceof ColorDrawable);
                     int actual = ((ColorDrawable) widget.getBackground()).getColor();
                     assertEquals(alpha[index], Color.alpha(actual));
-                    assertEquals(host.getColor(R.color.widget_material_surface) & 0x00FFFFFF,
+                    assertEquals(host.getColor(height == 90 ? R.color.widget_material_surface
+                                    : R.color.widget_card_surface) & 0x00FFFFFF,
                             actual & 0x00FFFFFF);
                     assertEquals(1f, widget.getAlpha(), 0f);
                     assertEquals(View.GONE, widget.findViewById(height == 90
@@ -124,7 +125,7 @@ public class WidgetPaletteSelectionTest {
                     if (height != 90) {
                         assertCenteredColor(widget.findViewById(R.id.md_panel_bg_0),
                                 (alpha[index] << 24)
-                                        | (host.getColor(R.color.widget_material_panel) & 0x00FFFFFF));
+                                        | (host.getColor(R.color.widget_card_panel) & 0x00FFFFFF));
                     }
                 }
             }

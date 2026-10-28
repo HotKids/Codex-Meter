@@ -5,14 +5,24 @@ only on Google Pixel devices and the classic palette elsewhere. Material and Cla
 their respective palettes on every device. The selection is stored per widget and survives editor
 recreation and widget restoration. Default widget options are included in settings export/import.
 
-Material (质感) uses the Pixel/Gmail-style system palette. Its stored identifier remains `native`.
-Classic retains the Samsung SmartThings neutral backgrounds; on the ColorOS stock launcher,
-only its background colors and existing corner parameters
-are overlaid. ColorOS references Consumer IR's QuickCard configuration preview: outer `#FFFFFF` /
-`#373737` and inner `#F5F5F5` / `#474747` for light/dark appearance. The light panel color composites
-`#0A000000` over white before the common renderer applies the selected opacity. The running launcher card uses
-the separately distributed `com.oplus.consumerirapp.quickapp` template; its exact CSS remains
-unverified, so the preview palette is a visual reference rather than a verified host color contract.
+Material (质感) keeps the stored identifier `native`. Clear cards use low-chroma system neutral2
+surfaces: shell/panel tones 95/90 in light mode and 10/20 in dark mode. Their `widget_card_surface`
+and `widget_card_panel` roles are separate from the original `widget_material_surface`, so
+2×1 dials retain the Gmail-style secondary shell (light tone 95, dark 20); they have no inner
+panels. The launcher resolves both sets from its current system palette.
+
+Classic keeps the SmartThings-style shells (`#FCFCFF` / `#010102`). Clear card panels use the
+softer `#F4F4F7` / `#1E1E21` pair; one-row shells and dials remain unchanged.
+On the ColorOS stock launcher, only background colors and
+existing corner parameters are overlaid. Its Clear shells stay `#FFFFFF` / `#373737`, with softened
+panels `#F7F7F7` / `#414141`.
+
+The original ColorOS visual reference is Consumer IR's QuickCard configuration preview, whose
+shells are `#FFFFFF` / `#373737` and panels are `#F5F5F5` / `#474747`. The running launcher card
+uses the separately distributed `com.oplus.consumerirapp.quickapp` template; its exact CSS remains
+unverified. The reference preview does not establish a verified host color contract, and the
+polished Clear panels deliberately differ from its colors.
+
 For every host, card opacity applies to the outer background, inner panels and progress fills/tracks
 in Material and Classic styles, including the editor preview. Pixel retains its stored 56/65/100% ticks;
 Samsung and ColorOS keep their existing 30/66/100% conversion. Text and icons retain their original
@@ -23,8 +33,9 @@ the common narrow 2×2 layout. No launcher-specific fonts or content layouts are
 
 Card typography scales with height, independent of width. At minimum heights, the common renderer
 reduces internal padding and gaps using actual font line heights. Normal placements retain their
-existing spacing. Widget-editor drafts survive activity recreation and are persisted only by
-Save; Cancel leaves the placed widget unchanged.
+existing spacing and sizes. Meter labels use medium weight (500), while numeric values keep bold
+weight (700); the one-row dials are unchanged. Widget-editor drafts survive activity recreation
+and are persisted only by Save; Cancel leaves the placed widget unchanged.
 
 Card refresh controls retain the header center line. Narrow cards below 250dp balance the glyph's
 visible top and end gaps, including Sync Problem's wider bounds. Wider cards keep the glyph center
@@ -55,9 +66,11 @@ Classic usage severity follows
 [AI-Usage](https://raw.githubusercontent.com/StarYunLee/Scripting/main/AI-Usage.scripting):
 used below 60% is green, 60% to below 85% is orange, and 85% or above is red. Fill lengths and labels
 continue to show the remaining allowance. Reset countdown progress is waiting time, not usage, so it
-keeps the normal green. Missing usage has no visible fill. Green and red use the Samsung battery
-widget's colors; orange uses AI-Usage's warning color. Material uses the same thresholds with system
-primary, secondary and tertiary fills, respectively (tone 40 in light mode, tone 80 in dark mode).
+keeps the normal green. Missing usage has no visible fill. Clear card fills use gradients in all
+three ranges: green `#6FCA4B` → `#09C265`, orange `#FFB74D` → `#FF9F0A`, and red `#F58B8F` →
+`#ED5F64`. Their end colors retain the Samsung battery green/red and AI-Usage warning orange.
+The 2×1 dials retain their existing green gradient and solid orange/red fills. Material uses the
+same thresholds with system primary, secondary and tertiary fills, respectively (tone 40 in light mode, tone 80 in dark mode).
 Its reset countdown keeps the primary fill. Palette resources are resolved by the launcher.
 
 Classic card headers and live-notification capsules use the transparent

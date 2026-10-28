@@ -69,13 +69,14 @@ final class OneUiWidgetAppearance {
         int classicSurface = colorOs ? R.color.widget_coloros_classic_surface
                 : R.color.widget_oneui_surface;
         int classicPanel = colorOs ? R.color.widget_coloros_classic_panel
-                : R.color.widget_oneui_panel;
+                : R.color.widget_card_classic_panel;
+        int nativeSurface = dial ? R.color.widget_material_surface : R.color.widget_card_surface;
         int resolvedOpacity = resolveOpacity(context, opacity);
         int surface = dial ? R.id.dial_surface : R.id.md_surface;
         views.setImageViewResource(surface, dial && stock ? R.drawable.widget_oneui_dial_surface
                 : dial ? R.drawable.widget_dial_surface : R.drawable.widget_card_surface);
         views.setColor(surface, "setColorFilter", classic ? classicSurface
-                : R.color.widget_material_surface);
+                : nativeSurface);
         views.setInt(surface, "setImageAlpha", Math.round(resolvedOpacity * 2.55f));
         if (!dial) {
             float progressAlpha = opacity > 0 ? resolvedOpacity / 100f : 1f;
@@ -84,7 +85,7 @@ final class OneUiWidgetAppearance {
                 views.setImageViewResource(panel, R.drawable.widget_material_panel);
                 // The launcher can provide its own dynamic palette when applying these resources.
                 views.setColor(panel, "setColorFilter", classic ? classicPanel
-                        : R.color.widget_material_panel);
+                        : R.color.widget_card_panel);
                 views.setInt(panel, "setImageAlpha", Math.round(resolvedOpacity * 2.55f));
                 views.setFloat(BARS[index], "setAlpha", progressAlpha);
             }
@@ -94,10 +95,12 @@ final class OneUiWidgetAppearance {
         // ImageView alpha is invisible to the host and would paint the shell twice.
         if (stock && !classic && opacity > 0) {
             // The selector retains launcher-resolved colors and the host-visible shell alpha.
-            int nativeSurface = resolvedOpacity == 30 ? R.color.widget_material_surface_low
-                    : resolvedOpacity == 66 ? R.color.widget_material_surface_medium
-                    : R.color.widget_material_surface;
-            views.setColor(android.R.id.background, "setBackgroundColor", nativeSurface);
+            int shell = resolvedOpacity == 30
+                    ? (dial ? R.color.widget_material_surface_low : R.color.widget_card_surface_low)
+                    : resolvedOpacity == 66
+                            ? (dial ? R.color.widget_material_surface_medium : R.color.widget_card_surface_medium)
+                            : nativeSurface;
+            views.setColor(android.R.id.background, "setBackgroundColor", shell);
         } else {
             views.setColorInt(android.R.id.background, "setBackgroundColor",
                     stock ? alpha | (context.getColor(R.color.widget_oneui_surface_light)
@@ -144,7 +147,8 @@ final class OneUiWidgetAppearance {
                             : R.layout.widget_material;
                     if (previous != null && (previous.getLayoutId() == layout
                             || (type == CodexUsageWidget.class
-                                    && previous.getLayoutId() == R.layout.widget_material_refresh))) {
+                                    && (previous.getLayoutId() == R.layout.widget_material_refresh
+                                            || previous.getLayoutId() == R.layout.widget_material_card)))) {
                         manager.removeWidgetPreview(provider, category);
                     }
                 }

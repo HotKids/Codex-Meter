@@ -2,7 +2,6 @@
 <resources>
     <!-- Night-mode aliases of the Material widget roles; see values/widget_material_colors.xml. -->
     <color name="widget_material_surface">@color/widget_material_surface_dark</color>
-    <color name="widget_material_panel">@color/widget_material_panel_dark</color>
     <color name="widget_material_track">@color/widget_material_track_dark</color>
     <color name="widget_material_fill">@color/widget_material_fill_dark</color>
     <color name="widget_material_fill_warning">@color/widget_material_fill_warning_dark</color>

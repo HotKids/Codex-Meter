@@ -60,7 +60,7 @@ def set_attrs(identifier, **attributes):
     for name, value in attributes.items():
         elements[identifier].set(android + name, value)
 
-set_attrs("md_surface", tint="@color/widget_material_surface")
+set_attrs("md_surface", tint="@color/widget_card_surface")
 set_attrs("md_logo", tint="@color/widget_material_accent")
 set_attrs("md_refresh", tint="@color/widget_material_text")
 # Narrow picker cards balance the glyph's visible top and end gaps.
@@ -96,7 +96,7 @@ set_attrs("md_updated", textSize=f"{metric('UPDATED_TEXT'):g}sp", fontFamily="sa
 for slot in (1, 3):
     set_attrs(f"md_panel_{slot}", visibility="gone")
 for slot, window in ((0, "five_hour"), (2, "weekly")):
-    set_attrs(f"md_panel_bg_{slot}", tint="@color/widget_material_panel")
+    set_attrs(f"md_panel_bg_{slot}", tint="@color/widget_card_panel")
     set_attrs(f"md_name_{slot}", text=f"@string/widget_card_{window}",
               textSize=f"{metric('NAME_TEXT') * text_scale:g}dp")
     set_attrs(f"md_value_{slot}", text=f"@string/widget_preview_{window}_value",
@@ -124,7 +124,7 @@ def classic_card(preview):
     nodes["md_logo"].set(android + "src", "@drawable/ic_codex_logo_color")
     nodes["md_logo"].attrib.pop(android + "tint", None)
     for slot, window in ((0, "five_hour"), (2, "weekly")):
-        nodes[f"md_panel_bg_{slot}"].set(android + "tint", "@color/widget_oneui_panel")
+        nodes[f"md_panel_bg_{slot}"].set(android + "tint", "@color/widget_card_classic_panel")
         nodes[f"md_fill_{slot}"].set(android + "src", f"@drawable/widget_classic_preview_{window}_fill")
         nodes[f"md_fill_{slot}"].attrib.pop(android + "tint", None)
     return nodes

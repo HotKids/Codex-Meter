@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Card-only surfaces keep the one-row dials on their accepted palette. -->
+    <color name="widget_card_surface_light">@android:color/system_neutral2_50</color>
+    <color name="widget_card_panel_light">@android:color/system_neutral2_100</color>
+    <color name="widget_card_surface_dark">@android:color/system_neutral2_900</color>
+    <color name="widget_card_panel_dark">@android:color/system_neutral2_800</color>
+    <color name="widget_card_classic_panel_light">#F4F4F7</color>
+    <color name="widget_card_classic_panel_dark">#1E1E21</color>
+
+    <color name="widget_card_surface">@color/widget_card_surface_light</color>
+    <color name="widget_card_panel">@color/widget_card_panel_light</color>
+    <color name="widget_card_classic_panel">@color/widget_card_classic_panel_light</color>
+</resources>

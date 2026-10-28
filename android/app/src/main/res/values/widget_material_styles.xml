@@ -21,6 +21,10 @@
         <item name="android:textStyle">bold</item>
     </style>
     <style name="WidgetMaterialText.Regular" parent="WidgetMaterialBase" />
+    <style name="WidgetMaterialText.Medium" parent="WidgetMaterialBase">
+        <item name="android:fontFamily">sans-serif-medium</item>
+        <item name="android:textStyle">normal</item>
+    </style>
 
     <style name="WidgetMaterialHeader.Title" parent="WidgetMaterialBase">
         <item name="android:textStyle">bold</item>

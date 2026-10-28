@@ -2,6 +2,6 @@
 <resources>
     <!-- Consumer IR's QuickCard preview: device_back_bg and device_middle_bg. -->
     <color name="widget_coloros_classic_surface">#FFFFFF</color>
-    <!-- Composite its #0A000000 panel over white before the shared opacity is applied. -->
-    <color name="widget_coloros_classic_panel">#F5F5F5</color>
+    <!-- Keep the reference shell, with a quieter panel before shared opacity is applied. -->
+    <color name="widget_coloros_classic_panel">#F7F7F7</color>
 </resources>

@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_card_surface">@color/widget_card_surface_dark</color>
+    <color name="widget_card_panel">@color/widget_card_panel_dark</color>
+    <color name="widget_card_classic_panel">@color/widget_card_classic_panel_dark</color>
+</resources>

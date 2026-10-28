@@ -677,7 +677,7 @@ public class WidgetConfigActivityTest {
                 .findViewById(R.id.md_surface);
         assertNotNull(shell);
         assertTrue(shell.getColorFilter() instanceof PorterDuffColorFilter);
-        assertEquals(activity.getColor(R.color.widget_material_surface),
+        assertEquals(activity.getColor(R.color.widget_card_surface),
                 org.robolectric.Shadows.shadowOf(
                         (PorterDuffColorFilter) shell.getColorFilter()).getColor());
     }

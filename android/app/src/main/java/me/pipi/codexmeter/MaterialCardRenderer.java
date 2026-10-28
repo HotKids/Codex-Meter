@@ -87,8 +87,8 @@ final class MaterialCardRenderer {
 
     /** Colour roles; each resource follows the night mode (see widget_material_colors). */
     private enum Role {
-        SURFACE(R.color.widget_material_surface),
-        PANEL(R.color.widget_material_panel),
+        SURFACE(R.color.widget_card_surface),
+        PANEL(R.color.widget_card_panel),
         TRACK(R.color.widget_material_track),
         TEXT(R.color.widget_material_text),
         SECONDARY(R.color.widget_material_secondary),
@@ -155,9 +155,9 @@ final class MaterialCardRenderer {
         float panelWidth = (widthDp - PADDING * 2f * scale - (columns - 1) * GAP * scale)
                 / columns;
         this.panelContentWidth = Math.max(1f, panelWidth - PANEL_PADDING_H * 2f * scale);
-        // New layout identities reload cached foregrounds without changing the common layouts.
+        // Reinflate labels on existing hosts instead of retaining the previous bold typeface.
         this.views = new RemoteViews(context.getPackageName(), options.opacity <= 0
-                ? R.layout.widget_material_refresh_shadow : R.layout.widget_material_refresh,
+                ? R.layout.widget_material_card_shadow : R.layout.widget_material_card,
                 android.R.id.background);
     }
 
@@ -387,7 +387,7 @@ final class MaterialCardRenderer {
         boolean balance = WidgetOptions.USAGE_CREDITS.equals(key);
         boolean stackedBalance = balance && balanceNeedsSecondLine(slot, meter.title, value);
         boolean detailVisible = usage || reset || stackedBalance;
-        int fixedHeight = Math.max(lineHeight(NAME_TEXT, true), lineHeight(VALUE_TEXT, true))
+        int fixedHeight = Math.max(lineHeight(NAME_TEXT, false), lineHeight(VALUE_TEXT, true))
                 + (balance ? 0 : px(BAR_HEIGHT))
                 + (detailVisible ? lineHeight(stackedBalance ? VALUE_TEXT : DETAIL_TEXT,
                         stackedBalance) : 0);
@@ -429,9 +429,10 @@ final class MaterialCardRenderer {
         float available = (widthDp * density - 2 * px(PADDING) - gap) / rowColumns
                 - 2 * px(PANEL_PADDING_H);
         Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
-        paint.setTypeface(Typeface.DEFAULT_BOLD);
+        paint.setTypeface(Typeface.create("sans-serif-medium", Typeface.NORMAL));
         paint.setTextSize(NAME_TEXT * textScale * density);
         float nameWidth = paint.measureText(title);
+        paint.setTypeface(Typeface.DEFAULT_BOLD);
         paint.setTextSize(VALUE_TEXT * textScale * density);
         // The XML name/value margin is fixed at 8dp.
         return nameWidth + 8f * density + paint.measureText(value) > available;
@@ -444,15 +445,19 @@ final class MaterialCardRenderer {
         WidgetGraphics.tintTrack(views, TRACKS[slot]);
         boolean classic = OneUiWidgetAppearance.classicPalette(options.colorStyle);
         int fillColor = WidgetUsageColors.color(meter.window, usage);
-        boolean gradient = classic && fillColor == R.color.widget_classic_progress_normal;
-        views.setImageViewResource(FILLS[slot], gradient ? R.drawable.widget_classic_capsule_fill
+        int classicFill = fillColor == R.color.widget_classic_progress_critical
+                ? R.drawable.widget_classic_capsule_fill_critical
+                : fillColor == R.color.widget_classic_progress_warning
+                        ? R.drawable.widget_classic_capsule_fill_warning
+                        : R.drawable.widget_classic_capsule_fill;
+        views.setImageViewResource(FILLS[slot], classic ? classicFill
                 : R.drawable.widget_card_capsule_fill);
         views.setColorStateList(FILLS[slot], "setImageTintList", null);
-        if (gradient) {
+        if (classic) {
             views.setInt(FILLS[slot], "setColorFilter", Color.TRANSPARENT);
         } else {
-            views.setColor(FILLS[slot], "setColorFilter", classic ? fillColor
-                    : WidgetUsageColors.materialColor(meter.window, usage));
+            views.setColor(FILLS[slot], "setColorFilter",
+                    WidgetUsageColors.materialColor(meter.window, usage));
         }
         int level = 0;
         if (progress > 0) {

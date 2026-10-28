@@ -67,7 +67,7 @@ public class OneUiDialAppearanceTest {
                                     ? mode == Configuration.UI_MODE_NIGHT_YES ? 0xFF373737 : 0xFFFFFFFF
                                     : mode == Configuration.UI_MODE_NIGHT_YES ? 0xFF010102 : 0xFFFCFCFF
                             : context.getColor(mode == Configuration.UI_MODE_NIGHT_YES
-                                    ? android.R.color.system_accent2_800 : android.R.color.system_accent2_50);
+                                    ? android.R.color.system_neutral2_900 : android.R.color.system_neutral2_50);
                     if ("Samsung".equals(host[0])) {
                         assertEquals(expected, ((ColorDrawable) card.getBackground()).getColor());
                     } else {
@@ -108,7 +108,7 @@ public class OneUiDialAppearanceTest {
                     if (height != 90) {
                         assertCenteredColor(widget.findViewById(R.id.md_panel_bg_0),
                                 nativeAlpha(opacity) << 24
-                                        | (context == night ? 0x0029292C : 0x00F2F2F5));
+                                        | (context == night ? 0x001E1E21 : 0x00F4F4F7));
                     } else {
                         for (int id : new int[] {R.id.primary_samsung_track,
                                 R.id.secondary_samsung_track}) {
@@ -148,10 +148,10 @@ public class OneUiDialAppearanceTest {
         assertEquals(View.VISIBLE, surface.getVisibility());
         assertEquals(166, surface.getImageAlpha());
         assertCenteredColor(card.findViewById(R.id.md_panel_bg_0),
-                0xA6000000 | (context.getColor(R.color.widget_oneui_panel) & 0x00FFFFFF));
+                0xA6000000 | (context.getColor(R.color.widget_card_classic_panel) & 0x00FFFFFF));
         setHost("Samsung", "com.sec.android.app.launcher");
         WidgetRenderer.build(context, 1, options, state, 188, 218, null).reapply(context, card);
-        assertCenteredColor(card.findViewById(R.id.md_panel_bg_0), 0xA8F2F2F5);
+        assertCenteredColor(card.findViewById(R.id.md_panel_bg_0), 0xA8F4F4F7);
         assertEquals(168, Color.alpha(((ColorDrawable) card.getBackground()).getColor()));
     }
 
@@ -343,7 +343,7 @@ public class OneUiDialAppearanceTest {
                                 ((TextView) preview.findViewById(id)).getTextSize(), 0.5f);
                     }
                     assertCenteredColor(preview.findViewById(R.id.md_panel_bg_0),
-                            context.getColor(R.color.widget_oneui_panel));
+                            context.getColor(R.color.widget_card_classic_panel));
                     ImageView fill = preview.findViewById(R.id.md_fill_0);
                     Bitmap expected = Bitmap.createBitmap(fill.getWidth(), fill.getHeight(),
                             Bitmap.Config.ARGB_8888);
@@ -431,10 +431,10 @@ public class OneUiDialAppearanceTest {
                 ImageView surface = card.findViewById(R.id.md_surface);
                 assertEquals(Math.round(opacity * 2.55f), surface.getImageAlpha());
                 assertColor(surface, (Math.round(opacity * 2.55f) << 24)
-                        | (context.getColor(R.color.widget_material_surface) & 0x00FFFFFF));
+                        | (context.getColor(R.color.widget_card_surface) & 0x00FFFFFF));
                 assertCenteredColor(card.findViewById(R.id.md_panel_bg_0),
                         (Math.round(opacity * 2.55f) << 24)
-                                | (context.getColor(R.color.widget_material_panel) & 0x00FFFFFF));
+                                | (context.getColor(R.color.widget_card_panel) & 0x00FFFFFF));
             }
         }
     }
@@ -631,9 +631,9 @@ public class OneUiDialAppearanceTest {
         assertEquals("3h 45m", ((TextView) widget.findViewById(R.id.secondary_samsung_value)).getText());
         RemoteViews cardPreview = manager.getWidgetPreview(cardProvider, Process.myUserHandle(), category);
         assertNotNull(cardPreview);
-        assertEquals(R.layout.widget_material_refresh, cardPreview.getLayoutId());
+        assertEquals(R.layout.widget_material_card, cardPreview.getLayoutId());
         View card = apply(context, parcel(cardPreview), 170, 170);
-        assertCenteredColor(card.findViewById(R.id.md_panel_bg_0), 0xFFF2F2F5);
+        assertCenteredColor(card.findViewById(R.id.md_panel_bg_0), 0xFFF4F4F7);
         assertEquals("76%", ((TextView) card.findViewById(R.id.md_value_0)).getText());
         assertEquals("75%", ((TextView) card.findViewById(R.id.md_value_2)).getText());
         OneUiWidgetAppearance.publishPreview(context, manager);
@@ -655,7 +655,7 @@ public class OneUiDialAppearanceTest {
         OneUiWidgetAppearance.publishPreview(context, manager);
         assertEquals("Returning to stock One UI must regenerate its preview", R.layout.widget_oneui_rings,
                 manager.getWidgetPreview(provider, Process.myUserHandle(), category).getLayoutId());
-        assertEquals(R.layout.widget_material_refresh,
+        assertEquals(R.layout.widget_material_card,
                 manager.getWidgetPreview(cardProvider, Process.myUserHandle(), category).getLayoutId());
     }
 
@@ -685,7 +685,7 @@ public class OneUiDialAppearanceTest {
             assertNotSame("A successful first provider must not suppress retrying the second", stale,
                     current);
             assertCenteredColor(apply(context, parcel(current), 170, 170)
-                    .findViewById(R.id.md_panel_bg_0), 0xFFF2F2F5);
+                    .findViewById(R.id.md_panel_bg_0), 0xFFF4F4F7);
             OneUiWidgetAppearance.publishPreview(context, manager);
             assertSame("Both successful providers close the retry", current,
                     manager.getWidgetPreview(provider, Process.myUserHandle(), category));

@@ -3,6 +3,8 @@
     <!-- Samsung battery greens/red; AI-Usage warning range adds its orange. -->
     <color name="widget_classic_progress_start">#6FCA4B</color>
     <color name="widget_classic_progress_normal">#09C265</color>
+    <color name="widget_classic_progress_warning_start">#FFB74D</color>
     <color name="widget_classic_progress_warning">#FF9F0A</color>
+    <color name="widget_classic_progress_critical_start">#F58B8F</color>
     <color name="widget_classic_progress_critical">#ED5F64</color>
 </resources>
